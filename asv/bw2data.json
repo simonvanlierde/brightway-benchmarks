@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "project": "bw2data",
+  "project_url": "https://github.com/brightway-lca/brightway2-data",
+  "repo": "https://github.com/brightway-lca/brightway2-data.git",
+  "branches": [
+    "main"
+  ],
+  "environment_type": "uv",
+  "pythons": [
+    "3.12"
+  ],
+  "benchmark_dir": "../benchmarks/bench_bw2data",
+  "env_dir": "../.asv/env/bw2data",
+  "results_dir": "../results/bw2data",
+  "html_dir": "../site/bw2data",
+  "build_cache_size": 4,
+  "matrix": {
+    "req": {
+      "bw2calc": [
+        ""
+      ]
+    }
+  },
+  "build_command": [
+    "python -m pip wheel --no-deps -w {build_cache_dir} {build_dir}"
+  ]
+}

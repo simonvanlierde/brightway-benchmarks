@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "project": "bw_processing",
+  "project_url": "https://github.com/brightway-lca/bw_processing",
+  "repo": "https://github.com/brightway-lca/bw_processing.git",
+  "branches": [
+    "main"
+  ],
+  "environment_type": "uv",
+  "pythons": [
+    "3.12"
+  ],
+  "benchmark_dir": "../benchmarks/bench_bw_processing",
+  "env_dir": "../.asv/env/bw_processing",
+  "results_dir": "../results/bw_processing",
+  "html_dir": "../site/bw_processing",
+  "build_cache_size": 4,
+  "build_command": [
+    "python -m pip wheel --no-deps -w {build_cache_dir} {build_dir}"
+  ]
+}

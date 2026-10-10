@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "project": "bw2calc",
+  "project_url": "https://github.com/brightway-lca/brightway2-calc",
+  "repo": "https://github.com/brightway-lca/brightway2-calc.git",
+  "branches": [
+    "main"
+  ],
+  "environment_type": "uv",
+  "pythons": [
+    "3.12"
+  ],
+  "benchmark_dir": "../benchmarks/bench_bw2calc",
+  "env_dir": "../.asv/env/bw2calc",
+  "results_dir": "../results/bw2calc",
+  "html_dir": "../site/bw2calc",
+  "build_cache_size": 4,
+  "include": [
+    {
+      "python": "3.12",
+      "environment_type": "uv",
+      "req": {
+        "pypardiso": ""
+      }
+    },
+    {
+      "python": "3.12",
+      "environment_type": "uv",
+      "req": {
+        "scikit-umfpack": ""
+      }
+    }
+  ],
+  "build_command": [
+    "python -m pip wheel --no-deps -w {build_cache_dir} {build_dir}"
+  ]
+}

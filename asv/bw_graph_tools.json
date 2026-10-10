@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "project": "bw_graph_tools",
+  "project_url": "https://github.com/brightway-lca/bw_graph_tools",
+  "repo": "https://github.com/brightway-lca/bw_graph_tools.git",
+  "branches": [
+    "main"
+  ],
+  "environment_type": "uv",
+  "pythons": [
+    "3.12"
+  ],
+  "benchmark_dir": "../benchmarks/bench_bw_graph_tools",
+  "env_dir": "../.asv/env/bw_graph_tools",
+  "results_dir": "../results/bw_graph_tools",
+  "html_dir": "../site/bw_graph_tools",
+  "build_cache_size": 4,
+  "build_command": [
+    "python -m pip wheel --no-deps -w {build_cache_dir} {build_dir}"
+  ]
+}

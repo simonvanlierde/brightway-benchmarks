@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "project": "matrix_utils",
+  "project_url": "https://github.com/brightway-lca/matrix_utils",
+  "repo": "https://github.com/brightway-lca/matrix_utils.git",
+  "branches": [
+    "main"
+  ],
+  "environment_type": "uv",
+  "pythons": [
+    "3.12"
+  ],
+  "benchmark_dir": "../benchmarks/bench_matrix_utils",
+  "env_dir": "../.asv/env/matrix_utils",
+  "results_dir": "../results/matrix_utils",
+  "html_dir": "../site/matrix_utils",
+  "build_cache_size": 4,
+  "build_command": [
+    "python -m pip wheel --no-deps -w {build_cache_dir} {build_dir}"
+  ]
+}

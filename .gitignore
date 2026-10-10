@@ -1,0 +1,44 @@
+# One ignore file for every stack in this repo.
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+htmlcov/
+.coverage
+coverage.xml
+
+# Node
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+coverage/
+
+# Rust
+target/
+
+# Benchmarks: asv environments, caches and generated data; results and site until M1 picks their home
+.asv/
+results/
+site/
+asv/.*.local.json
+# asv's mirror clones of the upstream repositories
+asv/*/

@@ -677,6 +677,8 @@ class Stats:
     # What drives LU fill beyond degrees and loops (see dense_rows and the fields below).
     dense_rows: dict[str, int] | None = None  # supplier rows above and just below COLAMD's dense cut-off
     ata_fill: float | None = None  # nnz(A^T A) / nnz(A): the pattern COLAMD orders
+    hub_jaccard: float | None = None  # mean Jaccard overlap of the 50 largest suppliers' consumer sets
+    overlap_without_hubs: float | None = None  # ata_fill / row_pairs with the top 1% of supplier rows removed
     row_pairs: float | None = None  # sum over rows of (entries per row)^2 / nnz(A): ata_fill if no two rows overlapped
     clustering: float | None = None  # transitivity of A + A^T without its diagonal
     reciprocity: float | None = None  # inputs (i, j) for which (j, i) is an input too
@@ -772,6 +774,14 @@ def _fill_drivers(a: sparse.csc_matrix, x: sparse.csc_matrix) -> dict[str, Any]:
     p = (x != 0).astype(np.float64)
     sym = ((p + p.T) != 0).astype(np.float64).tocsr()
     degree = np.diff(sym.indptr)
+    top_rows = np.argsort(row_counts)[::-1]
+    big = pattern[top_rows[:50]]
+    shared = (big @ big.T).toarray()
+    union = row_counts[top_rows[:50], None] + row_counts[None, top_rows[:50]] - shared
+    upper = np.triu_indices(shared.shape[0], k=1)
+    rest = pattern[np.sort(top_rows[math.ceil(0.01 * n) :])]
+    rest_pairs = float((np.diff(rest.indptr).astype(np.float64) ** 2).sum())
+
     triangles = 0.0
     for start in range(0, n, 2_000):  # in blocks, so S @ S never sits in memory whole
         block = sym[start : start + 2_000]
@@ -793,6 +803,8 @@ def _fill_drivers(a: sparse.csc_matrix, x: sparse.csc_matrix) -> dict[str, Any]:
         },
         "ata_fill": float(ata / a.nnz),
         "row_pairs": float((row_counts.astype(np.float64) ** 2).sum() / a.nnz),
+        "hub_jaccard": float(np.mean(shared[upper] / union[upper])) if upper[0].size else 0.0,
+        "overlap_without_hubs": float((rest.T @ rest).nnz / rest_pairs) if rest_pairs else 0.0,
         "clustering": triangles / triples if triples else 0.0,
         "reciprocity": float(p.multiply(p.T).nnz / p.nnz) if p.nnz else 0.0,
         "core_after_hubs": float(alive.mean()),

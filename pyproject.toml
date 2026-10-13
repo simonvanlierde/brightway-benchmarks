@@ -1,7 +1,7 @@
 [project]
 name = "brightway-benchmarks"
 version = "0.1.0"
-description = "Continuous benchmarks for the Brightway LCA stack on seeded synthetic matrices"
+description = "Benchmarks for the Brightway LCA stack on seeded synthetic matrices"
 readme = "README.md"
 requires-python = ">=3.12"
 authors = [{ name = "Simon van Lierde", email = "simonvanlierde@gmail.com" }]
@@ -101,4 +101,4 @@ exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
 include = ["src", "tests"]
 
 [tool.ty.analysis]
-allowed-unresolved-imports = ["bw_processing", "bw2calc", "bw2data", "matrix_utils"]
+allowed-unresolved-imports = ["bw_processing"]

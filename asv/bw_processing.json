@@ -15,6 +15,19 @@
   "results_dir": "../results/bw_processing",
   "html_dir": "../site/bw_processing",
   "build_cache_size": 4,
+  "matrix": {
+    "req": {
+      "numpy": [
+        "2.5.3"
+      ],
+      "scipy": [
+        "1.18.1"
+      ],
+      "pip+asv_runner": [
+        "0.2.5"
+      ]
+    }
+  },
   "build_command": [
     "python -m pip wheel --no-deps -w {build_cache_dir} {build_dir}"
   ]

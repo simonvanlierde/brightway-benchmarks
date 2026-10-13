@@ -11,20 +11,28 @@ bw_processing and runs in the benchmark container.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import shutil
 from dataclasses import asdict, dataclass
+from importlib.metadata import version
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy import sparse
-from scipy.sparse.linalg import spsolve
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
+# Bump when generate() or the stored reference changes. It is part of the cache key, and
+# benchmarks on generated data use it as their asv `version`, so old results are dropped.
+# That replaces asv's hash of the benchmark code: bump it when their timed code changes too.
+GENERATOR_VERSION = "2"
 INPUTS_SHARE = 0.5  # upper bound on the sum of input amounts per column
+NEUMANN_TOL = 1e-17  # column norm of the last series term at which the reference stops
+REFERENCE_PRODUCTS = 30  # reference scores are stored for products 0 to 29, the most MultiScores demands
 
 
 @dataclass(frozen=True)
@@ -90,22 +98,49 @@ class System:
         shape = (self.size.flows, self.size.products)
         return sparse.csc_matrix((self.bio_data, (self.bio_rows - self.flow_offset, self.bio_cols)), shape=shape)
 
-    def reference_scores(self, product: int = 0) -> list[float]:
-        """Score of one unit of ``product`` per method, from scipy's SuperLU in float64.
+    def reference_scores(self, products: int = REFERENCE_PRODUCTS) -> list[list[float]]:
+        """Score of one unit of each of the first ``products`` products, per method.
 
-        This is the reference every bw2calc solver is checked against.
+        ``reference_scores()[p][m]`` is product ``p`` under method ``m``. This is the
+        reference every Brightway result is checked against.
         """
-        demand = np.zeros(self.size.products)
-        demand[product] = 1.0
-        supply = spsolve(self.technosphere(), demand, use_umfpack=False)
+        n = self.size.products
+        inputs = sparse.identity(n, format="csr") - self.technosphere().tocsr()
+        supply = neumann(inputs, np.eye(n, min(products, n)))
         inventory = self.biosphere() @ supply
-        return [float(inventory[f - self.flow_offset] @ c) for f, c in zip(self.cf_flows, self.cf_data, strict=True)]
+        return [
+            [float(inventory[f - self.flow_offset, p] @ c) for f, c in zip(self.cf_flows, self.cf_data, strict=True)]
+            for p in range(supply.shape[1])
+        ]
+
+
+def neumann(inputs: sparse.csr_matrix, demand: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Solve ``(I - inputs) x = demand`` as the series ``demand + inputs @ demand + ...``.
+
+    Shares no code with any solver under test and needs no factorization, so it stays
+    cheap at every size. It converges when every column of ``abs(inputs)`` sums to less
+    than 1; at ``INPUTS_SHARE`` (0.5) about 57 terms bring the next one below 1e-17.
+    """
+    x = demand.copy()
+    term = demand
+    for _ in range(500):
+        term = inputs @ term
+        x += term
+        # With column sums at most 0.5, the rest of the series is no larger than this term.
+        if np.abs(term).sum(axis=0).max() < NEUMANN_TOL:
+            return x
+    msg = "Neumann series did not converge: an input column sums to 1 or more"
+    raise ArithmeticError(msg)
 
 
 def generate(size: Size, seed: int = 0) -> System:
     """Build a synthetic system. Same ``size`` and ``seed``, same arrays."""
     rng = np.random.default_rng(seed)
     n, k = size.products, size.inputs
+
+    # TODO: inputs on uniformly random rows fill SuperLU's L+U to about 60% of a dense  # noqa: FIX002
+    # matrix, so timings at "ecoinvent" size and up measure that fill, not a real
+    # database. Giving the graph structure is the author's call: review 2026-10-13, row 1.
 
     cols = np.repeat(np.arange(n, dtype=np.int64), k)
     rows = rng.integers(0, n, size=n * k, dtype=np.int64)
@@ -139,6 +174,17 @@ def generate(size: Size, seed: int = 0) -> System:
     )
 
 
+def many_groups(n: int) -> object:
+    """An in-memory bw_processing datapackage with ``n`` one-entry resource groups on the diagonal."""
+    import bw_processing as bwp  # noqa: PLC0415 - only the container has it
+
+    dp = bwp.create_datapackage()
+    for i in range(n):
+        idx = np.array([(i, i)], dtype=bwp.INDICES_DTYPE)
+        dp.add_persistent_vector(matrix="technosphere_matrix", name=f"g{i}", indices_array=idx, data_array=np.ones(1))
+    return dp
+
+
 def method_name(i: int) -> tuple[str, str]:
     """Method identifier as bw2calc's MultiLCA matches it."""
     return ("synthetic", f"method {i}")
@@ -151,7 +197,7 @@ def write_datapackages(system: System, folder: Path, *, uncertain: bool = False)
     characterization each, with the ``identifier`` MultiLCA filters on. They are separate
     because a plain ``LCA`` sums every characterization it is given. With ``uncertain``,
     technosphere inputs get a normal distribution with a 10% standard deviation, for
-    Monte Carlo. ``reference.json`` holds the SuperLU reference scores for product 0.
+    Monte Carlo. ``reference.json`` holds ``reference_scores()``.
     """
     import bw_processing as bwp  # noqa: PLC0415 - only the container has it
 
@@ -168,7 +214,7 @@ def write_datapackages(system: System, folder: Path, *, uncertain: bool = False)
     distributions = None
     if uncertain:
         distributions = np.zeros(system.tech_data.size, dtype=bwp.UNCERTAINTY_DTYPE)
-        for field in ("scale", "shape", "minimum", "maximum"):
+        for field in ("shape", "minimum", "maximum"):
             distributions[field] = np.nan
         distributions["loc"] = system.tech_data
         distributions["uncertainty_type"] = np.where(system.tech_flip, 3, 0)  # 3: normal
@@ -208,15 +254,35 @@ def write_datapackages(system: System, folder: Path, *, uncertain: bool = False)
 
 
 def data_root() -> Path:
-    """Where generated datapackages are cached: ``$BWBENCH_DATA`` or ``~/.cache/bwbench``."""
-    return Path(os.environ.get("BWBENCH_DATA", Path.home() / ".cache" / "bwbench"))
+    """Where generated datapackages are cached: ``~/.cache/bwbench`` (under ``.asv/`` in the box)."""
+    return Path.home() / ".cache" / "bwbench"
+
+
+def cache_folder(name: str, *, seed: int, uncertain: bool, bwp_version: str) -> Path:
+    """Cache folder for one system: a new one whenever anything that shapes the files changes."""
+    key = [asdict(SIZES[name]), seed, uncertain, GENERATOR_VERSION, bwp_version]
+    digest = hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()[:12]
+    return data_root() / f"{name}-{digest}"
 
 
 def cached(name: str, *, seed: int = 0, uncertain: bool = False) -> Path:
-    """Folder of the datapackages for ``SIZES[name]``, generated on first use."""
-    folder = data_root() / f"{name}-seed{seed}{'-mc' if uncertain else ''}"
-    if not (folder / "reference.json").exists():
-        write_datapackages(generate(SIZES[name], seed), folder, uncertain=uncertain)
+    """Folder of the datapackages for ``SIZES[name]``, generated on first use.
+
+    Written to a temporary folder and renamed, so a run that dies half-way, or two runs at
+    once, never leave a folder that looks complete.
+    """
+    folder = cache_folder(name, seed=seed, uncertain=uncertain, bwp_version=version("bw_processing"))
+    if folder.exists():
+        return folder
+    tmp = folder.with_name(f"{folder.name}.tmp-{os.getpid()}")
+    shutil.rmtree(tmp, ignore_errors=True)
+    write_datapackages(generate(SIZES[name], seed), tmp, uncertain=uncertain)
+    try:
+        tmp.rename(folder)
+    except OSError:
+        if not folder.exists():
+            raise
+        shutil.rmtree(tmp)  # another run finished first
     return folder
 
 

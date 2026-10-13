@@ -3,76 +3,72 @@
 [![python](https://github.com/simonvanlierde/brightway-benchmarks/actions/workflows/python.yml/badge.svg)](https://github.com/simonvanlierde/brightway-benchmarks/actions/workflows/python.yml)
 [![license](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
 
-Benchmarks for the Brightway LCA stack, run over released versions on seeded synthetic
-systems. Each timing sits next to a check that the answer is still right.
-
-No licensed data is used: every system comes from `src/bwbench/synth.py`, and the same
-seed gives the same system on any machine.
+[asv](https://asv.readthedocs.io) benchmarks for the Brightway LCA stack, run over released
+versions on seeded synthetic systems from `src/bwbench/synth.py`. No licensed data is used.
+Each case checks its scores against a float64 reference, so a wrong answer shows up next
+to a fast one.
 
 ## What is measured
 
-One [asv](https://asv.readthedocs.io) configuration per package, in `asv/`. Each one
-installs the releases listed in `asv/<package>.hashes` straight from the upstream
-repository.
+One asv config per package in `asv/` installs the releases in `asv/<package>.hashes`
+from upstream git.
 
-| Package | Benchmarks | Check beside the timing |
+| Package | Benchmarks | Check |
 | --- | --- | --- |
-| bw2calc | `LCA`, `IterativeLCA` and `JacobiGMRESLCA` first score; a new demand on a factorized system; `MultiLCA` and `FastScoresOnlyMultiLCA` (forward, and adjoint where PR #165's `direction` exists) over 1 to 30 demands; Monte Carlo draws | Score against a SuperLU float64 reference: 1e-9 for direct solvers, 1e-6 for iterative ones. Monte Carlo draws are checked against SuperLU on that draw's matrix. `track_relative_error` records the error per release |
-| bw2data | `Database.write` | A written database must give the reference score (1e-6). `track_score_error` records the error |
-| bw_processing | `Datapackage.groups` against the group count (#113); `add_entries` against the `dict(vars(entry))` path (#111) | The group count |
-| matrix_utils | `MappedMatrix` build against the group count (#48) | The matrix sum |
-| bw_graph_tools | Traversal with `max_calc` 2 and 100 (the small case #55 slowed down) | The LCA score it starts from |
-| bw_timex | `TimexLCA.lci()` against timeline length (#244) | Both backgrounds are the same system, so the time-explicit static score must equal the plain LCA score (1e-9) |
+| bw2calc | First score, a second demand, `MultiLCA` and `FastScoresOnlyMultiLCA` over 1 to 30 demands, Monte Carlo | Every score against the reference |
+| bw2data | `Database.write` | The written database's score, at each size |
+| bw_processing | `groups` (#113), `add_entries` (#111) | Group count; none for `add_entries` |
+| matrix_utils | `MappedMatrix` build (#48) | Entry count and diagonal |
+| bw_graph_tools | Traversal at `max_calc` 2 and 100 (#55) | The starting score |
+| bw_timex | `TimexLCA.lci()` (#244) | Static score equals the plain LCA score |
 
-The solver is part of the bw2calc environment: bw2calc picks PyPardiso, then UMFPACK, then
-SuperLU at import. The base environment uses SuperLU. `BWBENCH_SOLVERS` adds
-`umfpack` and, on x86_64, `pypardiso`.
+bw2calc picks its solver at import. The base environment gets SuperLU, and the others add
+UMFPACK and, on x86_64, PyPardiso. `BWBENCH_SOLVERS=umfpack` narrows that list. matrix_utils
+runs against bw_processing 1.6 and the #113 head.
 
-The bw2data history includes the commits of #268 (`106d627`, raw SQLite `executemany`)
-and #270 (`646849c`, which put peewee's `insert_many` back). Release 4.7 contains both, so
-it ships without #268's change, although its changelog lists #268.
-
-`scripts/registry_vs_sqlite.py` compares a bw2data SQLite project with the Parquet
-registry proposed in bw2data #290, using sentier-brightway's implementation. It reports
-write time, bytes on disk, time to the first score in a fresh process, and the score.
+Each config pins numpy, scipy, asv_runner and the Brightway packages around its subject.
+Installs take only releases from before 2026-10-06, and each run records what it installed
+next to its results.
 
 ## Running it
 
-Brightway's code runs only in a throwaway `tmp-bwbench-*` container that sees only this
-repository (`scripts/box.sh`, image from `docker/Dockerfile`). On the Mac the container
-is capped at 2 GB and 2 CPUs; set `BWBENCH_MEM` and `BWBENCH_CPUS` to change that. BLAS
-threads are pinned to `BWBENCH_THREADS` (default 1).
+Brightway's code runs only in a throwaway container. It sees the repo read-only, with
+`.asv/`, `results/`, `site/` and `asv/` writable.
 
 ```sh
-just smoke                        # one quick pass per package at its latest release
-just bench bw2calc                # every release in asv/bw2calc.hashes
-just bench bw2data "4.7^!"        # one commit, as an asv range
-just registry-vs-sqlite           # the #290 comparison, smoke size
-just site                         # static history site in site/
+just smoke                       # latest release of each package, smoke size; not results
+just bench bw2calc               # every release in asv/bw2calc.hashes
+just bench bw2data "4.7^!" -e    # one commit; extra arguments go to asv run
+just site                        # history site in site/
 ```
 
-Sizes come from the environment, because asv reads parameters at import:
-`BWBENCH_SIZES` (`smoke`, `ecoinvent`, `exiobase`, `regional`), `BWBENCH_MC_SIZES`
-(`smoke`, `mc100k`), `BWBENCH_WRITE_SIZES`, `BWBENCH_TIMEX_SIZES`, `BWBENCH_GROUPS`,
-`BWBENCH_ENTRIES`, `BWBENCH_STEPS` and `BWBENCH_ITERATIONS`. `BWBENCH_MACHINE` labels the
-results: set one name per host and CPU slot.
+`BWBENCH_SIZES` and the other `knob(...)` variables in the benchmark files set the sizes.
+Smoke results go to `.asv/smoke/`, never to the site. CI runs the smoke pass weekly.
 
-## What still needs a quiet machine
+### On the devbox
 
-The Mac runs prove that the harness works. Their numbers are single samples (`--quick`)
-at the smoke size, on 2 shared CPUs, and none of them is a result.
+When `oss-bench` is on the PATH, `box.sh` runs through it. Each run gets a pinned CPU slot, and
+its results land under `<host>-<slot>`:
 
-- Every real timing: the devbox, one pinned `oss-bench` slot, sizes from `ecoinvent` up.
-- The run-to-run noise floor (10 repeats), before any comparison is published.
-- PyPardiso, which has no ARM wheels: x86_64 only.
-- The release backfill for each package, and the `results/` and `site/` that go public.
-- Calibrating the generator: only the product counts in `SIZES` have a source.
+```sh
+BWBENCH_SIZES=ecoinvent just bench bw2calc
+```
+
+At `ecoinvent` size the generator's random structure needs about 3 GB per SuperLU
+factorization, so timings from that size up are provisional.
+
+### Add a package
+
+1. Copy an `asv/*.json` config and change the project, repo and folders.
+2. List its tags or full commit SHAs in `asv/<package>.hashes`.
+3. Copy a `benchmarks/bench_*/` folder, keep `__init__.py`, and check scores with `bwbench.check`.
+4. Run `just smoke`.
 
 ## Development
 
 ```sh
 uv sync
-just check       # lint, types and tests for this repo's own code (host-safe)
+just check    # lint, types, tests; runs no Brightway code
 ```
 
 ## License

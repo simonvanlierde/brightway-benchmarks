@@ -15,6 +15,22 @@
   "results_dir": "../results/bw_graph_tools",
   "html_dir": "../site/bw_graph_tools",
   "build_cache_size": 4,
+  "matrix": {
+    "req": {
+      "numpy": [
+        "2.5.3"
+      ],
+      "scipy": [
+        "1.18.1"
+      ],
+      "pip+asv_runner": [
+        "0.2.5"
+      ],
+      "bw2calc": [
+        "2.5.0"
+      ]
+    }
+  },
   "build_command": [
     "python -m pip wheel --no-deps -w {build_cache_dir} {build_dir}"
   ]

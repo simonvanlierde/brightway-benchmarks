@@ -15,6 +15,23 @@
   "results_dir": "../results/matrix_utils",
   "html_dir": "../site/matrix_utils",
   "build_cache_size": 4,
+  "matrix": {
+    "req": {
+      "numpy": [
+        "2.5.3"
+      ],
+      "scipy": [
+        "1.18.1"
+      ],
+      "pip+asv_runner": [
+        "0.2.5"
+      ],
+      "bw_processing": [
+        "1.6",
+        "git+https://github.com/simonvanlierde/bw_processing@1a6f8982adc6ad9197a3b154a82bb747d6c0a374"
+      ]
+    }
+  },
   "build_command": [
     "python -m pip wheel --no-deps -w {build_cache_dir} {build_dir}"
   ]

@@ -1,22 +1,21 @@
 """bw2calc: single scores, multiple scores and Monte Carlo on synthetic systems.
 
 The solver is whatever the asv environment installs (PyPardiso, UMFPACK or SuperLU),
-because bw2calc picks it at import. Every setup checks the score against the SuperLU
-reference in ``reference.json`` before anything is timed, and the ``track_`` results
-record the relative error, so a wrong answer shows up in the history next to a fast one.
+because bw2calc picks it at import. Every case checks its scores against the float64
+reference in ``reference.json``, in setup or in its ``track_`` result, and the ``track_``
+results record the relative error, so a wrong answer shows up in the history next to a
+fast one.
 """
 
 import inspect
 
 import bw2calc as bc
 import numpy as np
-from scipy.sparse.linalg import spsolve
+from scipy import sparse
 
-from bwbench import knob
-from bwbench.synth import cached, load, method_name
+from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, knob
+from bwbench.synth import GENERATOR_VERSION, cached, load, method_name, neumann
 
-DIRECT_RTOL = 1e-9
-ITERATIVE_RTOL = 1e-6  # bw2calc's iterative classes stop at a relative residual near 1e-8
 CLASSES = ["LCA", "IterativeLCA", "JacobiGMRESLCA"]
 
 
@@ -27,20 +26,24 @@ def solver() -> str:
     return "umfpack" if getattr(bc, "UMFPACK", False) else "superlu"
 
 
+def forget_factorization() -> None:
+    """Drop the factorization PyPardiso keeps from the last solve.
+
+    PyPardiso's module-level solver skips factorizing a matrix it has just factorized, so
+    without this the timed call after a checking setup would skip the work that SuperLU
+    and UMFPACK pay for.
+    """
+    if bc.PYPARDISO:
+        from pypardiso.scipy_aliases import pypardiso_solver  # noqa: PLC0415
+
+        pypardiso_solver.free_memory(everything=True)
+
+
 def lca_class(name: str) -> type:
     """A bw2calc class by name; asv skips the case when this release lacks it."""
     if not hasattr(bc, name):
         raise NotImplementedError(f"bw2calc {bc.__version__} has no {name}")
     return getattr(bc, name)
-
-
-def check(score: float, reference: float, rtol: float) -> float:
-    """Relative error of ``score``; raises when it exceeds ``rtol``."""
-    err = abs(score - reference) / abs(reference)
-    if err > rtol:
-        msg = f"score {score!r} vs reference {reference!r}: relative error {err:.2e} > {rtol:.0e} ({solver()})"
-        raise AssertionError(msg)
-    return err
 
 
 def score_of(scores: object, method: tuple, demand: str) -> float:
@@ -53,16 +56,19 @@ def score_of(scores: object, method: tuple, demand: str) -> float:
 class SingleScore:
     """One demand, one method: build the matrices, factorize, solve, characterize."""
 
+    version = GENERATOR_VERSION
     params = (knob("sizes", "smoke"), CLASSES)
     param_names = ["size", "cls"]
+    number = 1  # with setup before every sample, each timed call starts unfactorized
     timeout = 600
 
     def setup(self, size: str, cls: str) -> None:
         self.cls = lca_class(cls)
         self.inventory, methods, refs = load(cached(size))
-        self.method, self.reference = methods[0], refs[0]
+        self.method, self.reference = methods[0], refs[0][0]
         self.rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
-        self.err = check(self._score(), self.reference, self.rtol)
+        self.err = check(self._score(), self.reference, self.rtol, f"score ({solver()})")
+        forget_factorization()
 
     def _score(self) -> float:
         lca = self.cls(demand={0: 1}, data_objs=[self.inventory, self.method])
@@ -78,20 +84,34 @@ class SingleScore:
 
 
 class NewDemand:
-    """A second demand on a system already factorized: the solve alone."""
+    """A second demand on a system already solved once: the solve alone.
 
-    params = (knob("sizes", "smoke"),)
-    param_names = ["size"]
+    For ``IterativeLCA`` this is the first CGS solve, warm-started from the first
+    demand's supply; its first solve is a direct one. ``number = 1`` and the fresh setup
+    per sample keep the iterative classes from starting at the answer of the last call.
+    """
+
+    version = GENERATOR_VERSION
+    params = (knob("sizes", "smoke"), CLASSES)
+    param_names = ["size", "cls"]
+    number = 1
     timeout = 600
 
-    def setup(self, size: str) -> None:
-        inventory, methods, _ = load(cached(size))
-        self.lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]])
+    def setup(self, size: str, cls: str) -> None:
+        inventory, methods, refs = load(cached(size))
+        self.reference = refs[1][0]
+        self.rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
+        self.lca = lca_class(cls)(demand={0: 1}, data_objs=[inventory, methods[0]])
         self.lca.lci(factorize=True)
         self.lca.lcia()
 
-    def time_redo_lci(self, size: str) -> None:
+    def time_redo_lci(self, size: str, cls: str) -> None:
         self.lca.redo_lci({1: 1})
+
+    def track_relative_error(self, size: str, cls: str) -> float:
+        self.lca.redo_lci({1: 1})
+        score = float((self.lca.characterization_matrix @ self.lca.inventory).sum())
+        return check(score, self.reference, self.rtol, f"second-demand score ({solver()})")
 
 
 class MultiScores:
@@ -102,8 +122,10 @@ class MultiScores:
     demand counts straddle that threshold.
     """
 
+    version = GENERATOR_VERSION
     params = (knob("sizes", "smoke"), [1, 3, 10, 30], ["MultiLCA", "forward", "adjoint"])
     param_names = ["size", "demands", "variant"]
+    number = 1  # as in SingleScore
     timeout = 900
 
     def setup(self, size: str, demands: int, variant: str) -> None:
@@ -123,8 +145,9 @@ class MultiScores:
             elif variant == "adjoint":
                 raise NotImplementedError(f"bw2calc {bc.__version__} has no adjoint direction")
         scores = self._scores()
-        for i, ref in enumerate(refs):
-            check(score_of(scores, method_name(i), "d0"), ref, DIRECT_RTOL)
+        table = [[score_of(scores, method_name(m), f"d{d}") for m in range(len(methods))] for d in range(demands)]
+        check_table(table, refs[:demands], DIRECT_RTOL, f"score ({solver()})")
+        forget_factorization()
 
     def _scores(self) -> dict:
         lca = self.cls(demands=self.demands, method_config=self.config, data_objs=self.data_objs, **self.kwargs)
@@ -143,9 +166,11 @@ class MonteCarlo:
     """``iterations`` Monte Carlo draws after the first score.
 
     #131 names Monte Carlo at the 100k-product size (``BWBENCH_MC_SIZES=mc100k``) as the
-    case worth benchmarking. Setup checks one draw against SuperLU on that draw's matrix.
+    case worth benchmarking. Setup checks one draw against a Neumann solve of that draw's
+    matrix, and that the draw differs from the static score.
     """
 
+    version = GENERATOR_VERSION
     params = (knob("mc_sizes", "smoke"), [int(x) for x in knob("iterations", "10")], CLASSES)
     param_names = ["size", "iterations", "cls"]
     timeout = 1800
@@ -153,17 +178,20 @@ class MonteCarlo:
     repeat = (1, 5, 600)
 
     def setup(self, size: str, iterations: int, cls: str) -> None:
-        inventory, methods, _ = load(cached(size, uncertain=True))
+        inventory, methods, refs = load(cached(size, uncertain=True))
         self.lca = lca_class(cls)(
             demand={0: 1}, data_objs=[inventory, methods[0]], use_distributions=True, seed_override=1
         )
         self.lca.lci()
         self.lca.lcia()
         next(self.lca)
-        supply = spsolve(self.lca.technosphere_matrix.tocsc(), self.lca.demand_array, use_umfpack=False)
+        a = self.lca.technosphere_matrix
+        supply = neumann(sparse.identity(a.shape[0], format="csr") - a, self.lca.demand_array)
         expected = float((self.lca.characterization_matrix @ self.lca.biosphere_matrix @ supply).sum())
         rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
-        check(float(self.lca.score), expected, rtol)
+        check(float(self.lca.score), expected, rtol, f"Monte Carlo score ({solver()})")
+        if abs(self.lca.score - refs[0][0]) <= ITERATIVE_RTOL * abs(refs[0][0]):
+            raise AssertionError("the Monte Carlo draw equals the static score: distributions were ignored")
 
     def time_iterations(self, size: str, iterations: int, cls: str) -> None:
         for _ in range(iterations):

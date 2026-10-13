@@ -2,14 +2,15 @@
 
 ``filter_groups_for_packages`` checked every group against the whole package, so this
 is quadratic in groups (PR #48; 4.32 s to 0.030 s at 16k groups with bw_processing #113
-installed, 45.8 s to 3.0 s for both PRs together).
+installed, 45.8 s to 3.0 s for both PRs together). bw_processing's own ``groups`` is
+quadratic too until #113, and dominates the build, so asv/matrix_utils.json runs every
+commit against bw_processing 1.6 and against the #113 head (1a6f898).
 """
 
-import bw_processing as bwp
 import matrix_utils as mu
-import numpy as np
 
 from bwbench import knob
+from bwbench.synth import many_groups
 
 
 class MappedMatrixBuild:
@@ -18,15 +19,10 @@ class MappedMatrixBuild:
     timeout = 600
 
     def setup(self, groups: int) -> None:
-        self.dp = bwp.create_datapackage()
-        for i in range(groups):
-            idx = np.array([(i, i)], dtype=bwp.INDICES_DTYPE)
-            self.dp.add_persistent_vector(
-                matrix="technosphere_matrix", name=f"g{i}", indices_array=idx, data_array=np.ones(1)
-            )
-        mm = mu.MappedMatrix(packages=[self.dp], matrix="technosphere_matrix")
-        if mm.matrix.sum() != groups:
-            raise AssertionError("matrix does not hold one entry per group")
+        self.dp = many_groups(groups)
+        m = mu.MappedMatrix(packages=[self.dp], matrix="technosphere_matrix").matrix
+        if m.nnz != groups or not (m.diagonal() == 1).all():
+            raise AssertionError("matrix does not hold one diagonal entry of 1 per group")
 
     def time_mapped_matrix(self, groups: int) -> None:
         mu.MappedMatrix(packages=[self.dp], matrix="technosphere_matrix")

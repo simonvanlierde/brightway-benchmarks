@@ -2,7 +2,8 @@
 
 Writes one synthetic system both ways from the same ``BuildResult`` and prints one JSON
 line per format: write time, bytes on disk, the first score in a fresh Python process
-(imports timed apart from the work), and the score against the float64 reference.
+(imports timed apart from the work), and the score against the float64 reference. It
+exits non-zero when either score is off by more than ``BW2DATA_RTOL``.
 Synthetic data only, so the Sentier data licences do not apply. Run it with
 ``just registry-vs-sqlite`` (in the box, never on the host).
 """
@@ -14,7 +15,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from bwbench import temporary_brightway_dir
+from bwbench import BW2DATA_RTOL, check, temporary_brightway_dir
 from bwbench.synth import SIZES, as_bw2data, generate
 
 METHOD_KEY = ("synthetic", "method 0")
@@ -77,7 +78,7 @@ def build_result(size: str) -> tuple[object, float]:
         inventory_db="synthetic",
         residual_db="synthetic-residual",
     )
-    return result, system.reference_scores()[0]
+    return result, system.reference_scores(1)[0][0]
 
 
 def disk_bytes(path: Path) -> int:
@@ -125,8 +126,8 @@ def main() -> None:  # noqa: D103 - the module docstring is the usage
     for row in rows:
         row |= {"size": size, "reference": ref, "relative_error": abs(row["score"] - ref) / abs(ref), **versions}
         print(json.dumps(row))
-    if rows[0]["score"] != rows[1]["score"]:
-        print(f"scores differ: relative {abs(rows[0]['score'] - rows[1]['score']) / abs(ref):.1e}", file=sys.stderr)
+    for row in rows:  # after printing both, so a failure still shows the numbers
+        check(row["score"], ref, BW2DATA_RTOL, f"{row['format']} score")
 
 
 if __name__ == "__main__":

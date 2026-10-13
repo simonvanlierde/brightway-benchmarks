@@ -8,13 +8,15 @@ next to the large case.
 import bw2calc as bc
 from bw_graph_tools import GraphTraversalSettings, NewNodeEachVisitGraphTraversal
 
-from bwbench import knob
-from bwbench.synth import cached, load
+from bwbench import DIRECT_RTOL, check, knob
+from bwbench.synth import GENERATOR_VERSION, cached, load
 
 
 class Traversal:
+    version = GENERATOR_VERSION
     params = (knob("sizes", "smoke"), [2, 100])
     param_names = ["size", "max_calc"]
+    number = 1  # a second call in one sample would reuse the solver state of the first
     timeout = 900
 
     def setup(self, size: str, max_calc: int) -> None:
@@ -22,9 +24,20 @@ class Traversal:
         self.lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]])
         self.lca.lci()
         self.lca.lcia()
-        if abs(self.lca.score - refs[0]) > 1e-9 * abs(refs[0]):
-            raise AssertionError("LCA score differs from the reference")
+        check(self.lca.score, refs[0][0], DIRECT_RTOL, "LCA score")
         self.settings = GraphTraversalSettings(max_calc=max_calc, cutoff=1e-3)
 
     def time_traverse(self, size: str, max_calc: int) -> None:
         NewNodeEachVisitGraphTraversal(self.lca, self.settings).traverse()
+
+    def track_calculation_count(self, size: str, max_calc: int) -> int:
+        """The traversal's counter: one per node above the cutoff; it stops once past ``max_calc``.
+
+        A count well under ``max_calc`` means the cutoff ended the traversal first, so the
+        case does not test the ``max_calc`` limit.
+        """
+        traversal = NewNodeEachVisitGraphTraversal(self.lca, self.settings)
+        traversal.traverse()
+        if not hasattr(traversal, "calculation_count"):
+            raise NotImplementedError("this bw_graph_tools release has no calculation_count")
+        return traversal.calculation_count

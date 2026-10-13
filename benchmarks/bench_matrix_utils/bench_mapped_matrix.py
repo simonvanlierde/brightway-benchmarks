@@ -10,19 +10,18 @@ commit against bw_processing 1.6 and against the #113 head (1a6f898).
 import matrix_utils as mu
 
 from bwbench import knob
+from bwbench.asv import classes
+from bwbench.bench import UNCHECKED, BenchSetup, bench
 from bwbench.synth import many_groups
 
 
-class MappedMatrixBuild:
-    params = ([int(x) for x in knob("groups", "100,1000")],)
-    param_names = ["groups"]
-    timeout = 600
+@bench({"groups": knob("groups", "100,1000", int)}, asv="MappedMatrixBuild", timeout=600)
+def mapped_matrix(groups: int) -> BenchSetup:
+    dp = many_groups(groups)
+    m = mu.MappedMatrix(packages=[dp], matrix="technosphere_matrix").matrix
+    if m.nnz != groups or not (m.diagonal() == 1).all():
+        raise AssertionError("matrix does not hold one diagonal entry of 1 per group")
+    return lambda: mu.MappedMatrix(packages=[dp], matrix="technosphere_matrix"), UNCHECKED
 
-    def setup(self, groups: int) -> None:
-        self.dp = many_groups(groups)
-        m = mu.MappedMatrix(packages=[self.dp], matrix="technosphere_matrix").matrix
-        if m.nnz != groups or not (m.diagonal() == 1).all():
-            raise AssertionError("matrix does not hold one diagonal entry of 1 per group")
 
-    def time_mapped_matrix(self, groups: int) -> None:
-        mu.MappedMatrix(packages=[self.dp], matrix="technosphere_matrix")
+classes(__name__)

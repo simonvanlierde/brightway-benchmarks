@@ -15,8 +15,8 @@ asv() { uvx --quiet --from asv==0.6.6 asv "$@"; }
 # One run per subject at a time: two would rebuild the same environments under each other.
 exec 9>".asv/$subject.lock"
 flock -n 9 || {
-  echo "asv.sh: another $subject run holds .asv/$subject.lock" >&2
-  exit 1
+    echo "asv.sh: another $subject run holds .asv/$subject.lock" >&2
+    exit 1
 }
 
 # The config asv reads: bw2calc's solver environments filtered by BWBENCH_SOLVERS, and
@@ -24,7 +24,8 @@ flock -n 9 || {
 default=umfpack
 [ "$(uname -m)" = x86_64 ] && default=pypardiso,$default
 conf=asv/.$subject.local.json
-results=$(BWBENCH_SOLVERS=${BWBENCH_SOLVERS:-$default} python3 - "$subject" "$machine" <<'PY'
+results=$(
+    BWBENCH_SOLVERS=${BWBENCH_SOLVERS:-$default} python3 - "$subject" "$machine" <<'PY'
 import json, os, sys
 subject, machine = sys.argv[1:]
 conf = json.load(open(f"asv/{subject}.json"))
@@ -39,7 +40,7 @@ PY
 )
 
 grep -qs "\"$machine\"" "$HOME/.asv-machine.json" ||
-  asv machine --yes --machine "$machine" --config "$conf" >/dev/null
+    asv machine --yes --machine "$machine" --config "$conf" >/dev/null
 status=0
 case $cmd in
 run | continuous | compare) asv "$cmd" --config "$conf" --machine "$machine" "$@" || status=$? ;;
@@ -49,12 +50,23 @@ esac
 # Record what each environment holds next to the results. asv reinstalls only the
 # subject per commit, so this is the state after the last commit it installed.
 if [ "$cmd" = run ]; then
-  out=$results/$machine
-  mkdir -p "$out"
-  for info in .asv/env/"$subject"/*/asv-env-info.json; do
-    [ -e "$info" ] || continue
-    env=$(dirname "$info")
-    { cat "$info" && echo && "$env/bin/python" -m pip freeze; } >"$out/versions-${env##*/}.txt"
-  done
+    out=$results/$machine
+    mkdir -p "$out"
+    for info in .asv/env/"$subject"/*/asv-env-info.json; do
+        [ -e "$info" ] || continue
+        env=$(dirname "$info")
+        { cat "$info" && echo && "$env/bin/python" -m pip freeze; } >"$out/versions-${env##*/}.txt"
+        # The same as a PEP 751 lock file, with each package's index URL and hashes. The subject
+        # is left out: asv built it from the commit its result names, which need not be a release.
+        # asv names environment folders by a hex hash, which PEP 751's "pylock.<name>.toml" allows.
+        lock=$out/pylock.${env##*/}.toml
+        "$env/bin/python" -m pip freeze | grep -iv "^${subject}[ =@]" |
+            uv pip compile --quiet --no-deps --python "$env/bin/python" --no-header -o "$lock" - ||
+            status=1
+    done
+    # What ran, as one RO-Crate over every subject. It sits above the subjects' asv folders,
+    # where asv looks for no results.
+    uv run --quiet --no-project --with numpy==2.5.3 --with scipy==1.18.1 python scripts/run_crate.py "$(dirname "$results")" ||
+        status=1
 fi
 exit $status

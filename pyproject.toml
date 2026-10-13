@@ -67,7 +67,10 @@ ignore = [
 # Tests assert, use literal expectations, and need no docstrings, return
 # annotations, or package __init__.py.
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S101", "D1", "INP001", "PLR2004", "ANN201"]
+"**/tests/**" = ["S101", "S603", "D1", "INP001", "PLR2004", "ANN201", "ANN202", "ARG001"]
+# The seam passes runners' objects and benchmark results through untyped (ANN401), and
+# asv calls every method with the parameters (ARG001).
+"src/bwbench/{asv,bench,pytest}.py" = ["ANN401", "ARG001"]
 # asv's conventions: every method gets the parameters (ARG002), `params` are class lists
 # (RUF012), and a benchmark's name is its documentation (D1). Checks raise plain errors.
 "benchmarks/**" = ["ARG002", "RUF012", "D1", "EM101", "EM102", "TRY003", "PLR2004", "DTZ001"]
@@ -77,11 +80,13 @@ ignore = [
 convention = "google"
 
 [tool.ruff.lint.pylint]
-allow-magic-value-types = ["int"]
+allow-magic-value-types = ["int", "str"]
 max-args = 10
 
 [tool.pytest.ini_options]
 addopts = ["-ra", "--strict-config", "--strict-markers", "--import-mode=importlib"]
+# pytest-codspeed registers it in the benchmark runs; the unit tests only check it is set.
+markers = ["benchmark: a benchmark for pytest-codspeed"]
 testpaths = ["tests"]
 
 # Coverage is opt-in via `pytest --cov` (`just py-cov`), not addopts, because it
@@ -101,4 +106,4 @@ exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
 include = ["src", "tests"]
 
 [tool.ty.analysis]
-allowed-unresolved-imports = ["bw_processing"]
+allowed-unresolved-imports = ["bw_processing", "pypardiso.**"]

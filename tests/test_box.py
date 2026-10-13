@@ -26,7 +26,7 @@ def box(tmp_path: Path) -> tuple[Path, Path]:
 
 def run_box(repo: Path, **env: str) -> subprocess.CompletedProcess:
     path = f"{repo / 'stub'}:/usr/bin:/bin"
-    return subprocess.run(  # noqa: S603 - fixed script and arguments
+    return subprocess.run(
         ["/bin/bash", str(repo / "scripts" / "box.sh"), "echo", "hi"],
         env={"PATH": path, **env},
         capture_output=True,

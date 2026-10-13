@@ -36,6 +36,7 @@ def load(monkeypatch: pytest.MonkeyPatch, *, pardiso: bool = True, delete: objec
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
+    monkeypatch.setitem(sys.modules, spec.name, module)  # classes(__name__) looks the module up
     spec.loader.exec_module(module)
     return module
 

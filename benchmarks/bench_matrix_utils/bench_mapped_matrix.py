@@ -5,11 +5,10 @@ is quadratic in groups (PR #48; 4.32 s to 0.030 s at 16k groups with bw_processi
 installed, 45.8 s to 3.0 s for both PRs together).
 """
 
-import bw_processing as bwp
 import matrix_utils as mu
-import numpy as np
 
 from bwbench import knob
+from bwbench.synth import many_groups
 
 
 class MappedMatrixBuild:
@@ -18,12 +17,7 @@ class MappedMatrixBuild:
     timeout = 600
 
     def setup(self, groups: int) -> None:
-        self.dp = bwp.create_datapackage()
-        for i in range(groups):
-            idx = np.array([(i, i)], dtype=bwp.INDICES_DTYPE)
-            self.dp.add_persistent_vector(
-                matrix="technosphere_matrix", name=f"g{i}", indices_array=idx, data_array=np.ones(1)
-            )
+        self.dp = many_groups(groups)
         mm = mu.MappedMatrix(packages=[self.dp], matrix="technosphere_matrix")
         if mm.matrix.sum() != groups:
             raise AssertionError("matrix does not hold one entry per group")

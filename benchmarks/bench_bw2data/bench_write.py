@@ -9,7 +9,7 @@ removal cost.
 
 import uuid
 
-from bwbench import knob, temporary_brightway_dir
+from bwbench import BW2DATA_RTOL, check, knob, temporary_brightway_dir
 
 temporary_brightway_dir()
 
@@ -39,12 +39,7 @@ class DatabaseWrite:
     timeout = 1800
 
     def setup_cache(self) -> float:
-        """Check once per environment that a written database gives the reference score.
-
-        The tolerance is 1e-6, not 1e-9: bw2data's processed arrays give a relative error
-        near 3e-8 against the float64 reference (bw_processing #112 reports float32
-        amounts moving scores by about 1e-7). ``track_score_error`` records it.
-        """
+        """Check once per environment that a written database gives the reference score."""
         tech, system = fresh_project("smoke")
         ref = system.reference_scores(1)[0][0]
         bd.Database("synth").write(tech)
@@ -52,10 +47,7 @@ class DatabaseWrite:
         lca = bc.LCA(fu, data_objs=data_objs)
         lca.lci()
         lca.lcia()
-        err = abs(lca.score - ref) / abs(ref)
-        if err > 1e-6:
-            msg = f"bw2data {bd.__version__}: score {lca.score} vs reference {ref}"
-            raise AssertionError(msg)
+        err = check(lca.score, ref, BW2DATA_RTOL, f"bw2data {bd.__version__} score")
         bd.projects.delete_project(delete_dir=True)
         return err
 

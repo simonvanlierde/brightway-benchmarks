@@ -174,6 +174,17 @@ def generate(size: Size, seed: int = 0) -> System:
     )
 
 
+def many_groups(n: int) -> object:
+    """An in-memory bw_processing datapackage with ``n`` one-entry resource groups on the diagonal."""
+    import bw_processing as bwp  # noqa: PLC0415 - only the container has it
+
+    dp = bwp.create_datapackage()
+    for i in range(n):
+        idx = np.array([(i, i)], dtype=bwp.INDICES_DTYPE)
+        dp.add_persistent_vector(matrix="technosphere_matrix", name=f"g{i}", indices_array=idx, data_array=np.ones(1))
+    return dp
+
+
 def method_name(i: int) -> tuple[str, str]:
     """Method identifier as bw2calc's MultiLCA matches it."""
     return ("synthetic", f"method {i}")

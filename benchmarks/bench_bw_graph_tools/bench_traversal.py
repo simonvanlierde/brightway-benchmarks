@@ -8,7 +8,7 @@ next to the large case.
 import bw2calc as bc
 from bw_graph_tools import GraphTraversalSettings, NewNodeEachVisitGraphTraversal
 
-from bwbench import knob
+from bwbench import DIRECT_RTOL, check, knob
 from bwbench.synth import GENERATOR_VERSION, cached, load
 
 
@@ -23,8 +23,7 @@ class Traversal:
         self.lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]])
         self.lca.lci()
         self.lca.lcia()
-        if abs(self.lca.score - refs[0][0]) > 1e-9 * abs(refs[0][0]):
-            raise AssertionError("LCA score differs from the reference")
+        check(self.lca.score, refs[0][0], DIRECT_RTOL, "LCA score")
         self.settings = GraphTraversalSettings(max_calc=max_calc, cutoff=1e-3)
 
     def time_traverse(self, size: str, max_calc: int) -> None:

@@ -9,7 +9,7 @@ system, so the time-explicit static score must equal the plain LCA score.
 
 from datetime import datetime
 
-from bwbench import knob, temporary_brightway_dir
+from bwbench import DIRECT_RTOL, check, knob, temporary_brightway_dir
 
 temporary_brightway_dir()
 
@@ -82,8 +82,4 @@ class TimelineLCI:
         lca = bc.LCA({self.fu: 1}, method=method_name(0))
         lca.lci()
         lca.lcia()
-        err = abs(self.tlca.static_score - lca.score) / abs(lca.score)
-        if err > 1e-9:
-            msg = f"timex static score {self.tlca.static_score} vs LCA {lca.score}"
-            raise AssertionError(msg)
-        return err
+        return check(self.tlca.static_score, lca.score, DIRECT_RTOL, "timex static score")

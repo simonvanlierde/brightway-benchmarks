@@ -11,15 +11,7 @@ import bw_processing as bwp
 import numpy as np
 
 from bwbench import knob
-
-
-def many_groups(n: int) -> object:
-    """An in-memory datapackage with ``n`` one-entry resource groups."""
-    dp = bwp.create_datapackage()
-    for i in range(n):
-        idx = np.array([(i, i)], dtype=bwp.INDICES_DTYPE)
-        dp.add_persistent_vector(matrix="technosphere_matrix", name=f"g{i}", indices_array=idx, data_array=np.ones(1))
-    return dp
+from bwbench.synth import many_groups
 
 
 class Groups:

@@ -12,11 +12,9 @@ import bw2calc as bc
 import numpy as np
 from scipy import sparse
 
-from bwbench import knob
+from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, knob
 from bwbench.synth import GENERATOR_VERSION, cached, load, method_name, neumann
 
-DIRECT_RTOL = 1e-9
-ITERATIVE_RTOL = 1e-6  # bw2calc's iterative classes stop at a relative residual near 1e-8
 CLASSES = ["LCA", "IterativeLCA", "JacobiGMRESLCA"]
 
 
@@ -32,15 +30,6 @@ def lca_class(name: str) -> type:
     if not hasattr(bc, name):
         raise NotImplementedError(f"bw2calc {bc.__version__} has no {name}")
     return getattr(bc, name)
-
-
-def check(score: float, reference: float, rtol: float) -> float:
-    """Relative error of ``score``; raises when it exceeds ``rtol``."""
-    err = abs(score - reference) / abs(reference)
-    if err > rtol:
-        msg = f"score {score!r} vs reference {reference!r}: relative error {err:.2e} > {rtol:.0e} ({solver()})"
-        raise AssertionError(msg)
-    return err
 
 
 def score_of(scores: object, method: tuple, demand: str) -> float:
@@ -63,7 +52,7 @@ class SingleScore:
         self.inventory, methods, refs = load(cached(size))
         self.method, self.reference = methods[0], refs[0][0]
         self.rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
-        self.err = check(self._score(), self.reference, self.rtol)
+        self.err = check(self._score(), self.reference, self.rtol, f"score ({solver()})")
 
     def _score(self) -> float:
         lca = self.cls(demand={0: 1}, data_objs=[self.inventory, self.method])
@@ -127,7 +116,7 @@ class MultiScores:
                 raise NotImplementedError(f"bw2calc {bc.__version__} has no adjoint direction")
         scores = self._scores()
         for i, ref in enumerate(refs[0]):
-            check(score_of(scores, method_name(i), "d0"), ref, DIRECT_RTOL)
+            check(score_of(scores, method_name(i), "d0"), ref, DIRECT_RTOL, f"score ({solver()})")
 
     def _scores(self) -> dict:
         lca = self.cls(demands=self.demands, method_config=self.config, data_objs=self.data_objs, **self.kwargs)
@@ -168,7 +157,7 @@ class MonteCarlo:
         supply = neumann(sparse.identity(a.shape[0], format="csr") - a, self.lca.demand_array)
         expected = float((self.lca.characterization_matrix @ self.lca.biosphere_matrix @ supply).sum())
         rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
-        check(float(self.lca.score), expected, rtol)
+        check(float(self.lca.score), expected, rtol, f"Monte Carlo score ({solver()})")
 
     def time_iterations(self, size: str, iterations: int, cls: str) -> None:
         for _ in range(iterations):

@@ -11,8 +11,9 @@
 - [ ] Check bw2data's write and Monte Carlo's first draw once per parameter set, not after
       every timed sample: each check loads matrices and runs a Neumann solve. Measure what
       that costs at the ecoinvent size first.
-- [ ] Before publishing results, require a neutral `BWBENCH_MACHINE` in `asv.sh`: asv names
-      each machine folder after the container hostname, which includes the host's name.
+- [ ] `asv.sh` still names machines after the container hostname by default, which includes
+      the host's name. `just results-commit` refuses such results; a neutral default
+      (for example the slot name) would save a rerun.
 - [ ] Setups solve once before the timed call (a warm-up and early check), on the same
       datapackage objects, so "first score" is warm. Time a cold `run()` on fresh packages
       against it in the box and decide whether to drop the warm-up at 25k products and up.
@@ -24,15 +25,14 @@
 - [ ] First publication: turn on GitHub Pages with "GitHub Actions" as the source, benchmark
       with a neutral `BWBENCH_MACHINE` (for example `pinned-e0`), then `just results-commit`,
       `git push origin results` and `gh workflow run site.yml`. Only after the noise is
-      measured (below).
+      measured (above).
 - [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
       hold the same versions.
-- [ ] Publish the site from a gh-pages branch. The benchmark job gets `contents: read` and
-      a separate job deploys; no self-hosted runner. CodSpeed, if added, runs on
-      `pull_request` only.
+- [ ] The site job builds the box image and clones six upstream repos on every run, though
+      `asv publish` only reads results. Run asv there directly, or cache `.asv/`, once the
+      first runs show how long it takes. CodSpeed, if added, runs on `pull_request` only.
 - [ ] Run `just registry-vs-sqlite ecoinvent` on the devbox: does the SQLite path's 3e-8
       score error hold at size?
-- [ ] `oss-bench` mounts the repo read-write. Add a read-only mode there, as `box.sh` has.
 
 ## Verify in the box
 

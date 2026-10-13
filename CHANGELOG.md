@@ -28,7 +28,6 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - asv installs each benchmarked commit without touching its dependencies, so the pins in
   `matrix.req` and the bw_processing #113 build in the matrix_utils config stay installed.
   asv's default `--force-reinstall` put PyPI's bw_processing 1.6 back in place of #113.
-
 - Reference scores come from a Neumann series instead of SuperLU, for products 0 to 29.
 - Cached systems are keyed on everything that shapes them, so caches from earlier
   checkouts are no longer used. `BWBENCH_DATA` and `BWBENCH_IMAGE` are gone.

@@ -16,10 +16,10 @@ temporary_brightway_dir()
 import bw2calc as bc  # noqa: E402
 import bw2data as bd  # noqa: E402
 
-from bwbench.synth import SIZES, as_bw2data, generate, method_name  # noqa: E402
+from bwbench.synth import SIZES, System, as_bw2data, generate, method_name  # noqa: E402
 
 
-def fresh_project(size: str) -> tuple[dict, list]:
+def fresh_project(size: str) -> tuple[dict, System]:
     """A new project holding the biosphere and the methods; returns the technosphere data."""
     bd.projects.set_current(f"write-{uuid.uuid4().hex[:8]}")
     system = generate(SIZES[size])
@@ -27,7 +27,7 @@ def fresh_project(size: str) -> tuple[dict, list]:
     bd.Database("bio").write(bio)
     for i, cf in enumerate(cfs):
         bd.Method(method_name(i)).write(cf)
-    return tech, system.reference_scores()
+    return tech, system
 
 
 class DatabaseWrite:
@@ -44,15 +44,16 @@ class DatabaseWrite:
         near 3e-8 against the float64 reference (bw_processing #112 reports float32
         amounts moving scores by about 1e-7). ``track_score_error`` records it.
         """
-        tech, refs = fresh_project("smoke")
+        tech, system = fresh_project("smoke")
+        ref = system.reference_scores(1)[0][0]
         bd.Database("synth").write(tech)
         fu, data_objs, _ = bd.prepare_lca_inputs({bd.get_node(database="synth", code="p0"): 1}, method=method_name(0))
         lca = bc.LCA(fu, data_objs=data_objs)
         lca.lci()
         lca.lcia()
-        err = abs(lca.score - refs[0]) / abs(refs[0])
+        err = abs(lca.score - ref) / abs(ref)
         if err > 1e-6:
-            msg = f"bw2data {bd.__version__}: score {lca.score} vs reference {refs[0]}"
+            msg = f"bw2data {bd.__version__}: score {lca.score} vs reference {ref}"
             raise AssertionError(msg)
         bd.projects.delete_project(delete_dir=True)
         return err

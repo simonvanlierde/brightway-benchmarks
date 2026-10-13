@@ -22,7 +22,7 @@ class Traversal:
         self.lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]])
         self.lca.lci()
         self.lca.lcia()
-        if abs(self.lca.score - refs[0]) > 1e-9 * abs(refs[0]):
+        if abs(self.lca.score - refs[0][0]) > 1e-9 * abs(refs[0][0]):
             raise AssertionError("LCA score differs from the reference")
         self.settings = GraphTraversalSettings(max_calc=max_calc, cutoff=1e-3)
 

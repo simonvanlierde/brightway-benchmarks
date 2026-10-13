@@ -19,12 +19,13 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy import sparse
-from scipy.sparse.linalg import spsolve
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
 INPUTS_SHARE = 0.5  # upper bound on the sum of input amounts per column
+NEUMANN_TOL = 1e-17  # column norm of the last series term at which the reference stops
+REFERENCE_PRODUCTS = 30  # reference scores are stored for products 0 to 29, the most MultiScores demands
 
 
 @dataclass(frozen=True)
@@ -90,22 +91,49 @@ class System:
         shape = (self.size.flows, self.size.products)
         return sparse.csc_matrix((self.bio_data, (self.bio_rows - self.flow_offset, self.bio_cols)), shape=shape)
 
-    def reference_scores(self, product: int = 0) -> list[float]:
-        """Score of one unit of ``product`` per method, from scipy's SuperLU in float64.
+    def reference_scores(self, products: int = REFERENCE_PRODUCTS) -> list[list[float]]:
+        """Score of one unit of each of the first ``products`` products, per method.
 
-        This is the reference every bw2calc solver is checked against.
+        ``reference_scores()[p][m]`` is product ``p`` under method ``m``. This is the
+        reference every Brightway result is checked against.
         """
-        demand = np.zeros(self.size.products)
-        demand[product] = 1.0
-        supply = spsolve(self.technosphere(), demand, use_umfpack=False)
+        n = self.size.products
+        inputs = sparse.identity(n, format="csr") - self.technosphere().tocsr()
+        supply = neumann(inputs, np.eye(n, min(products, n)))
         inventory = self.biosphere() @ supply
-        return [float(inventory[f - self.flow_offset] @ c) for f, c in zip(self.cf_flows, self.cf_data, strict=True)]
+        return [
+            [float(inventory[f - self.flow_offset, p] @ c) for f, c in zip(self.cf_flows, self.cf_data, strict=True)]
+            for p in range(supply.shape[1])
+        ]
+
+
+def neumann(inputs: sparse.csr_matrix, demand: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Solve ``(I - inputs) x = demand`` as the series ``demand + inputs @ demand + ...``.
+
+    Shares no code with any solver under test and needs no factorization, so it stays
+    cheap at every size. It converges when every column of ``abs(inputs)`` sums to less
+    than 1; at ``INPUTS_SHARE`` (0.5) about 57 terms bring the next one below 1e-17.
+    """
+    x = demand.copy()
+    term = demand
+    for _ in range(500):
+        term = inputs @ term
+        x += term
+        # With column sums at most 0.5, the rest of the series is no larger than this term.
+        if np.abs(term).sum(axis=0).max() < NEUMANN_TOL:
+            return x
+    msg = "Neumann series did not converge: an input column sums to 1 or more"
+    raise ArithmeticError(msg)
 
 
 def generate(size: Size, seed: int = 0) -> System:
     """Build a synthetic system. Same ``size`` and ``seed``, same arrays."""
     rng = np.random.default_rng(seed)
     n, k = size.products, size.inputs
+
+    # TODO: inputs on uniformly random rows fill SuperLU's L+U to about 60% of a dense  # noqa: FIX002
+    # matrix, so timings at "ecoinvent" size and up measure that fill, not a real
+    # database. Giving the graph structure is the author's call: review 2026-10-13, row 1.
 
     cols = np.repeat(np.arange(n, dtype=np.int64), k)
     rows = rng.integers(0, n, size=n * k, dtype=np.int64)
@@ -151,7 +179,7 @@ def write_datapackages(system: System, folder: Path, *, uncertain: bool = False)
     characterization each, with the ``identifier`` MultiLCA filters on. They are separate
     because a plain ``LCA`` sums every characterization it is given. With ``uncertain``,
     technosphere inputs get a normal distribution with a 10% standard deviation, for
-    Monte Carlo. ``reference.json`` holds the SuperLU reference scores for product 0.
+    Monte Carlo. ``reference.json`` holds ``reference_scores()``.
     """
     import bw_processing as bwp  # noqa: PLC0415 - only the container has it
 

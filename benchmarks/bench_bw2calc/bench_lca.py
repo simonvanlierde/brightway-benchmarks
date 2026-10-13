@@ -10,10 +10,10 @@ import inspect
 
 import bw2calc as bc
 import numpy as np
-from scipy.sparse.linalg import spsolve
+from scipy import sparse
 
 from bwbench import knob
-from bwbench.synth import cached, load, method_name
+from bwbench.synth import cached, load, method_name, neumann
 
 DIRECT_RTOL = 1e-9
 ITERATIVE_RTOL = 1e-6  # bw2calc's iterative classes stop at a relative residual near 1e-8
@@ -60,7 +60,7 @@ class SingleScore:
     def setup(self, size: str, cls: str) -> None:
         self.cls = lca_class(cls)
         self.inventory, methods, refs = load(cached(size))
-        self.method, self.reference = methods[0], refs[0]
+        self.method, self.reference = methods[0], refs[0][0]
         self.rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
         self.err = check(self._score(), self.reference, self.rtol)
 
@@ -123,7 +123,7 @@ class MultiScores:
             elif variant == "adjoint":
                 raise NotImplementedError(f"bw2calc {bc.__version__} has no adjoint direction")
         scores = self._scores()
-        for i, ref in enumerate(refs):
+        for i, ref in enumerate(refs[0]):
             check(score_of(scores, method_name(i), "d0"), ref, DIRECT_RTOL)
 
     def _scores(self) -> dict:
@@ -143,7 +143,7 @@ class MonteCarlo:
     """``iterations`` Monte Carlo draws after the first score.
 
     #131 names Monte Carlo at the 100k-product size (``BWBENCH_MC_SIZES=mc100k``) as the
-    case worth benchmarking. Setup checks one draw against SuperLU on that draw's matrix.
+    case worth benchmarking. Setup checks one draw against a Neumann solve of that draw's matrix.
     """
 
     params = (knob("mc_sizes", "smoke"), [int(x) for x in knob("iterations", "10")], CLASSES)
@@ -160,7 +160,8 @@ class MonteCarlo:
         self.lca.lci()
         self.lca.lcia()
         next(self.lca)
-        supply = spsolve(self.lca.technosphere_matrix.tocsc(), self.lca.demand_array, use_umfpack=False)
+        a = self.lca.technosphere_matrix
+        supply = neumann(sparse.identity(a.shape[0], format="csr") - a, self.lca.demand_array)
         expected = float((self.lca.characterization_matrix @ self.lca.biosphere_matrix @ supply).sum())
         rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
         check(float(self.lca.score), expected, rtol)

@@ -77,7 +77,7 @@ def build_result(size: str) -> tuple[object, float]:
         inventory_db="synthetic",
         residual_db="synthetic-residual",
     )
-    return result, system.reference_scores()[0]
+    return result, system.reference_scores(1)[0][0]
 
 
 def disk_bytes(path: Path) -> int:

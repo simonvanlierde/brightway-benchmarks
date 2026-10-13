@@ -3,15 +3,15 @@
 [![python](https://github.com/simonvanlierde/brightway-benchmarks/actions/workflows/python.yml/badge.svg)](https://github.com/simonvanlierde/brightway-benchmarks/actions/workflows/python.yml)
 [![license](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
 
-[asv](https://asv.readthedocs.io) benchmarks for the Brightway LCA stack, run over released
-versions on seeded synthetic systems from `src/bwbench/synth.py`. No licensed data is used.
-Each case checks its scores against a float64 reference, so a wrong answer shows up next
-to a fast one.
+[asv](https://asv.readthedocs.io) benchmarks for the Brightway LCA stack. They run over
+released versions, on seeded synthetic systems from `src/bwbench/synth.py`, and use no licensed
+data. Each case checks its scores against a float64 reference, so a wrong answer
+shows up next to a fast one.
 
 ## What is measured
 
-One asv config per package in `asv/` installs the releases in `asv/<package>.hashes`
-from upstream git.
+`asv/` holds one asv config per package. Each config installs the releases listed in
+`asv/<package>.hashes` from upstream git.
 
 | Package | Benchmarks | Check |
 | --- | --- | --- |
@@ -22,18 +22,18 @@ from upstream git.
 | bw_graph_tools | Traversal at `max_calc` 2 and 100 (#55) | The starting score |
 | bw_timex | `TimexLCA.lci()` (#244) | Static score equals the plain LCA score |
 
-bw2calc picks its solver at import. The base environment gets SuperLU, and the others add
-UMFPACK and, on x86_64, PyPardiso. `BWBENCH_SOLVERS=umfpack` narrows that list. matrix_utils
-runs against bw_processing 1.6 and the #113 head.
+bw2calc picks its solver at import. The base environment gets SuperLU. The other
+environments add UMFPACK and, on x86_64, PyPardiso. `BWBENCH_SOLVERS=umfpack` leaves out
+the PyPardiso environment. matrix_utils runs against bw_processing 1.6 and the #113 head.
 
 Each config pins numpy, scipy, asv_runner and the Brightway packages around its subject.
-Installs take only releases from before 2026-10-06, and each run records what it installed
+Installs only take releases from before 2026-10-06. Each run records what it installed
 next to its results.
 
 ## Running it
 
-Brightway's code runs only in a throwaway container. It sees the repo read-only, with
-`.asv/`, `results/`, `site/` and `asv/` writable.
+Brightway's code only runs in a throwaway container. With plain Docker, the container sees
+the repo read-only, and only `.asv/`, `results/`, `site/` and `asv/` are writable.
 
 ```sh
 just smoke                       # latest release of each package, smoke size; not results
@@ -47,15 +47,15 @@ Smoke results go to `.asv/smoke/`, never to the site. CI runs the smoke pass wee
 
 ### On the devbox
 
-When `oss-bench` is on the PATH, `box.sh` runs through it. Each run gets a pinned CPU slot, and
-its results land under `<host>-<slot>`:
+When `oss-bench` is on the PATH, `box.sh` runs through it. Each run gets a pinned CPU slot,
+and its results land under `<host>-<slot>`. oss-bench mounts the whole repo read-write.
 
 ```sh
 BWBENCH_SIZES=ecoinvent just bench bw2calc
 ```
 
-At `ecoinvent` size the generator's random structure needs about 3 GB per SuperLU
-factorization, so timings from that size up are provisional.
+At `ecoinvent` size, the generator's random structure needs about 3 GB per SuperLU
+factorization. Timings at that size and above are provisional.
 
 ### Add a package
 

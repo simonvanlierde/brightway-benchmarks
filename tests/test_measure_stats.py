@@ -64,4 +64,7 @@ def test_measure_stats_builds_the_technosphere(tmp_path: Path, monkeypatch: pyte
     assert stats["same_sector_share"] == 0  # 35 against 38
     # Column A: 0.5 / (1 - 0.1); column B: 0.2 / -1, a negative input.
     assert stats["negative_input_share"] == pytest.approx(0.5)
-    assert stats["log10_abs_input"]["q100"] == pytest.approx(np.log10(0.5 / 0.9))
+    amounts = stats["log10_abs_input"]
+    assert amounts["mean"] == pytest.approx((np.log10(0.5 / 0.9) + np.log10(0.2)) / 2)
+    assert "q00" not in amounts
+    assert "q100" not in amounts

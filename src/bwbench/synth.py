@@ -341,12 +341,17 @@ def as_bw2data(system: System, db: str = "synth", bio: str = "bio") -> tuple[dic
 QUANTILES = (0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99, 1.0)
 
 
-def _quantiles(values: NDArray) -> dict[str, float]:
-    """Mean and the ``QUANTILES`` of ``values``: a distribution, never the values themselves."""
+def _quantiles(values: NDArray, *, extremes: bool = True) -> dict[str, float]:
+    """Mean and the ``QUANTILES`` of ``values``: a distribution, never the values themselves.
+
+    ``extremes=False`` leaves out the minimum and maximum, which are each one value: for amounts
+    from a licensed database that would publish a single exchange.
+    """
     v = np.asarray(values, dtype=np.float64)
     if v.size == 0:
         return {}
-    return {"mean": float(v.mean()), **{f"q{round(q * 100):02d}": float(np.quantile(v, q)) for q in QUANTILES}}
+    qs = QUANTILES if extremes else [q for q in QUANTILES if 0 < q < 1]
+    return {"mean": float(v.mean()), **{f"q{round(q * 100):02d}": float(np.quantile(v, q)) for q in qs}}
 
 
 @dataclass(frozen=True)
@@ -361,9 +366,9 @@ class Stats:
     entries: int  # nonzero inputs (off-diagonal)
     inputs_per_product: dict[str, float]  # nonzero entries per column
     consumers_per_supplier: dict[str, float]  # nonzero entries per row
-    log10_abs_input: dict[str, float]  # distribution of log10 |X[i, j]|
+    log10_abs_input: dict[str, float]  # distribution of log10 |X[i, j]|, without min and max
     negative_input_share: float  # inputs with X < 0 (wastes sent to treatment)
-    column_abs_sum: dict[str, float]  # sum over i of |X[i, j]|
+    column_abs_sum: dict[str, float]  # sum over i of |X[i, j]|, without min and max
     loops: dict[str, float]  # strongly connected components of more than one product
     spectral_radius: float | None  # largest |eigenvalue| of X; None if ARPACK did not converge
     spectral_radius_abs: float | None  # largest eigenvalue of |X|, an upper bound on the above
@@ -426,9 +431,9 @@ def measure(
         entries=int(x.nnz),
         inputs_per_product=_quantiles(np.diff(x.indptr)),
         consumers_per_supplier=_quantiles(np.bincount(rows, minlength=n)),
-        log10_abs_input=_quantiles(np.log10(xa.data)),
+        log10_abs_input=_quantiles(np.log10(xa.data), extremes=False),
         negative_input_share=float(np.mean(x.data < 0)) if x.nnz else 0.0,
-        column_abs_sum=_quantiles(xa.sum(axis=0).A1),
+        column_abs_sum=_quantiles(xa.sum(axis=0).A1, extremes=False),
         loops={
             "components": int(loops.size),
             "largest": int(loops.max()) if loops.size else 0,

@@ -33,7 +33,8 @@ def test_measure_matches_the_generator_bounds():
     system = generate(SIZES["smoke"])
     s = measure(system.technosphere())
     assert s.products == SIZES["smoke"].products
-    assert s.column_abs_sum["q100"] < 0.5
+    assert s.column_abs_sum["q99"] < 0.5
+    assert "q100" not in s.column_abs_sum  # one column's sum is a single value, never published
     assert s.spectral_radius is not None
     assert s.spectral_radius < 0.5
     assert s.negative_input_share == 0

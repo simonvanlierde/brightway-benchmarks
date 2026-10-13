@@ -40,7 +40,7 @@
 
 ## Verify in the box
 
-Checked on the benchmark machine on 2026-10-13: the read-only mount (plain docker only), `just smoke`,
+Checked on the benchmark machine on 2026-10-13: the read-only mount (plain docker, and oss-bench through `OSS_BENCH_RW`), `just smoke`,
 the PyPardiso reset (4.32 ms against 3.18 ms at `cfad4bf`), the lock and the image tag.
 Still open:
 

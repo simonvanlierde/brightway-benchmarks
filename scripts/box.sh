@@ -9,13 +9,14 @@ repo=$(cd "$(dirname "$0")/.." && pwd)
 image=${BWBENCH_IMAGE:-bwbench-box}
 [ "$image" != bwbench-box ] || docker image inspect bwbench-box >/dev/null 2>&1 ||
   docker build -q -t bwbench-box "$repo/docker" >/dev/null
+# ${knobs[@]+...} below: bash 3.2 (macOS) treats an empty array as unset under `set -u`.
 knobs=()
 while IFS='=' read -r name value; do
   knobs+=("$name=$value")
 done < <(env | grep '^BWBENCH_' || true)
 
 if command -v oss-bench >/dev/null; then
-  OSS_BENCH_IMAGE=$image exec oss-bench "$repo" env "${knobs[@]}" scripts/in-box.sh "$@"
+  OSS_BENCH_IMAGE=$image exec oss-bench "$repo" env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
 fi
 exec docker run --rm -i --name "tmp-bwbench-$$" --memory "${BWBENCH_MEM:-2g}" --cpus "${BWBENCH_CPUS:-2}" --user "$(id -u):$(id -g)" \
-  -v "$repo":/src -w /src "$image" env "${knobs[@]}" scripts/in-box.sh "$@"
+  -v "$repo":/src -w /src "$image" env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"

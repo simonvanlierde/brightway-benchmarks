@@ -1,5 +1,6 @@
 {
   "source": "ecoinvent 3.12-cutoff (ecospold2), aggregates only",
+  "credit": "Calculated from the ecoinvent 3.12 cut-off database (ecoinvent Association, https://ecoinvent.org). Aggregate statistics only: no dataset, name, amount or single-dataset figure.",
   "measured": "2026-10-13",
   "datasets": 26533,
   "unlinked_inputs": 0,
@@ -12,29 +13,22 @@
     "products": 26533,
     "entries": 311662,
     "inputs_per_product": {
-      "mean": 11.746202841744243,
-      "q00": 0.0,
       "q10": 1.0,
       "q25": 2.0,
       "q50": 5.0,
       "q75": 12.0,
       "q90": 28.0,
-      "q99": 111.0,
-      "q100": 410.0
+      "q99": 111.0
     },
     "consumers_per_supplier": {
-      "mean": 11.746202841744243,
-      "q00": 0.0,
       "q10": 0.0,
       "q25": 1.0,
       "q50": 1.0,
       "q75": 2.0,
       "q90": 16.0,
-      "q99": 210.0,
-      "q100": 1865.0
+      "q99": 210.0
     },
     "log10_abs_input": {
-      "mean": -2.8026997468453216,
       "q10": -6.380445721565107,
       "q25": -4.527468464943633,
       "q50": -2.6381022559041187,
@@ -44,7 +38,6 @@
     },
     "negative_input_share": 0.22266108797350975,
     "column_abs_sum": {
-      "mean": 106341235.05389418,
       "q10": 0.00097087,
       "q25": 0.9999999999999996,
       "q50": 1.0673247966792248,
@@ -78,23 +71,38 @@
     "overlap_by_band": {
       "2-4": {
         "overlap": 0.7611336450237897,
-        "pairs_share": 0.000937456687582407
+        "pairs_share": 0.000937456687582407,
+        "suppliers_shared": 1.1060976571744103,
+        "same_location": 0.5649996055849176,
+        "same_sector": 0.8422374811589348
       },
       "5-16": {
         "overlap": 0.647087255151361,
-        "pairs_share": 0.001901694811120972
+        "pairs_share": 0.001901694811120972,
+        "suppliers_shared": 1.4886338668514543,
+        "same_location": 0.371017628069701,
+        "same_sector": 0.6157996014019655
       },
       "17-64": {
         "overlap": 0.43881605863266954,
-        "pairs_share": 0.021497065821812985
+        "pairs_share": 0.021497065821812985,
+        "suppliers_shared": 2.2472971766010787,
+        "same_location": 0.27710352878130445,
+        "same_sector": 0.44701723968246987
       },
       "65-256": {
         "overlap": 0.38398645598108405,
-        "pairs_share": 0.15286269894081259
+        "pairs_share": 0.15286269894081259,
+        "suppliers_shared": 2.5928738869785497,
+        "same_location": 0.21686644271305938,
+        "same_sector": 0.3373718459464477
       },
       "257+": {
         "overlap": 0.43977911003497583,
-        "pairs_share": 0.8227709352724718
+        "pairs_share": 0.8227709352724718,
+        "suppliers_shared": 2.2719689315027596,
+        "same_location": 0.24414944317417872,
+        "same_sector": 0.25653909216881
       }
     },
     "copied_inputs": 0.3927396759654038,

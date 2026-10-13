@@ -3,9 +3,15 @@ import json
 import numpy as np
 import pytest
 from scipy import sparse
+from scipy.sparse import linalg as sla
 
 from bwbench import synth
 from bwbench.synth import PROFILES_DIR, Stats, measure, system
+
+
+def test_measure_refuses_a_product_without_net_production():
+    with pytest.raises(ValueError, match="nonzero net production"):
+        measure(sparse.csc_matrix(np.array([[1.0, 0.5], [0.2, 0.0]])))
 
 
 def test_measure_a_known_matrix():
@@ -21,7 +27,7 @@ def test_measure_a_known_matrix():
     assert s.spectral_radius_abs == pytest.approx(np.sqrt(0.2))
     assert s.same_location_share == pytest.approx(2 / 3)
     assert s.same_sector_share == pytest.approx(1 / 3)  # only 2 -> 0 stays in sector a
-    assert s.inputs_per_product["q100"] == 1
+    assert "q100" not in s.inputs_per_product  # one dataset's count, never published
 
 
 def test_unknown_labels_are_left_out():
@@ -57,12 +63,12 @@ def test_ecoinvent_profile_matches_its_target():
     want = Stats(**json.loads((PROFILES_DIR / "ecoinvent-3.12-cutoff.json").read_text())["stats"])
     assert got.products == want.products
     assert got.entries == pytest.approx(want.entries, rel=0.05)
-    assert got.inputs_per_product["mean"] == pytest.approx(want.inputs_per_product["mean"], rel=0.05)
+    assert got.inputs_per_product["q90"] == pytest.approx(want.inputs_per_product["q90"], rel=0.1)
     assert abs(got.inputs_per_product["q50"] - want.inputs_per_product["q50"]) <= 1
     assert got.inputs_per_product["q99"] == pytest.approx(want.inputs_per_product["q99"], rel=0.3)
     for q in ("q25", "q50"):
         assert got.consumers_per_supplier[q] == want.consumers_per_supplier[q]
-    for q in ("q90", "q99", "q100"):
+    for q in ("q90", "q99"):
         assert got.consumers_per_supplier[q] == pytest.approx(want.consumers_per_supplier[q], rel=0.3)
     share = got.loops["largest"] / got.products
     assert share == pytest.approx(want.loops["largest"] / want.products, abs=0.03)
@@ -83,7 +89,12 @@ def test_fill_drivers_on_a_known_matrix():
     # Rows {0, 1, 2}, {0, 1} and {2} pairwise: Jaccard 2/3, 1/3 and 0.
     assert s.hub_jaccard == pytest.approx((2 / 3 + 1 / 3 + 0) / 3)
     # Rows 0 and 1 (3 and 2 entries) fall in the 2-4 band; together they join 9 column pairs.
-    assert s.overlap_by_band == {"2-4": {"overlap": pytest.approx(9 / 13), "pairs_share": pytest.approx(13 / 14)}}
+    band = {"overlap": pytest.approx(9 / 13), "pairs_share": pytest.approx(13 / 14), "suppliers_shared": 4 / 3}
+    assert s.overlap_by_band == {"2-4": band}  # pairs (0, 1), (0, 2), (1, 2) share 2, 1 and 1 suppliers
+    labelled = measure(a, locations=["CH", "CH", "DE"], sectors=["a", "b", "a"], repeats=0)
+    assert labelled.overlap_by_band is not None
+    assert labelled.overlap_by_band["2-4"]["same_location"] == pytest.approx(1 / 3)
+    assert labelled.overlap_by_band["2-4"]["same_sector"] == pytest.approx(1 / 3)
     assert s.copied_inputs == pytest.approx(2 / 3)  # products 1 and 2 both take in product 0 only
     # Without product 0's row (the top 1%), rows {0, 1} and {2} share no pair: no overlap.
     assert s.overlap_without_hubs == pytest.approx(1.0)
@@ -137,3 +148,60 @@ def test_overlap_bands_include_both_ends_and_label_the_last_one_open(monkeypatch
     assert s.overlap_by_band is not None
     assert set(s.overlap_by_band) == {"2-3", "4+"}
     assert sum(b["pairs_share"] for b in s.overlap_by_band.values()) == pytest.approx(1 - 1 / (16 + 9 + 4 + 1))
+
+
+def test_lu_fill_of_the_identity_is_one():
+    # L and U are both the identity: 4 + 4 entries, the diagonal counted once, over nnz(A) = 4.
+    assert measure(sparse.csc_matrix(np.eye(4)), repeats=1).lu_fill == {"COLAMD": 1.0, "MMD_AT_PLUS_A": 1.0}
+
+
+def test_column_sums_are_over_columns_not_rows():
+    # X has column sums 0, 0.5 and 0.25; its row sums are 0.75, 0 and 0.
+    a = sparse.csc_matrix(np.array([[1.0, -0.5, -0.25], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]))
+    sums = measure(a, repeats=0).column_abs_sum
+    want = {"q10": 0.05, "q25": 0.125, "q50": 0.25, "q75": 0.375, "q90": 0.45, "q99": 0.495}
+    assert sums == pytest.approx(want)
+
+
+def test_dense_rows_count_the_hub_and_the_half_hub_rows():
+    n = 400  # cutoff max(16, int(10 * 20)) = 200, half 100; row counts include the diagonal
+    a = sparse.lil_matrix(np.eye(n))
+    a[0, 1:250] = -0.001  # 250 entries: above
+    a[1, 2:151] = -0.001  # 150: between
+    a[2, 3:202] = -0.001  # 200: exactly the cutoff, so not above
+    a[3, 4:103] = -0.001  # 100: exactly half, so not between
+    s = measure(a.tocsc(), repeats=0)
+    assert s.dense_rows == {"cutoff": 200, "above": 1, "half_to_cutoff": 2}
+
+
+def test_core_after_hubs_keeps_a_cycle_but_not_the_hub():
+    n = 100  # the top 1% by degree is one product: the hub, product 0
+    a = sparse.lil_matrix(np.eye(n))
+    a[0, 1:] = -0.01
+    for i, j in ((1, 2), (2, 3), (3, 4), (4, 1)):  # a 4-cycle, each also linked to the hub
+        a[i, j] = -0.1
+    s = measure(a.tocsc(), repeats=0)
+    assert s.core_after_hubs == pytest.approx(4 / n)  # the pendants peel off; the hub is removed first
+
+
+def test_copied_inputs_counts_only_products_with_inputs():
+    # Products 1 and 2 take in product 0 only, product 3 takes in 0 and 1; 0 and 4 take in nothing.
+    a = sparse.lil_matrix(np.eye(5))
+    a[0, 1] = a[0, 2] = a[0, 3] = a[1, 3] = -0.1
+    assert measure(a.tocsc(), repeats=0).copied_inputs == pytest.approx(2 / 3)
+
+
+def test_spectral_radius_branches(monkeypatch: pytest.MonkeyPatch):
+    assert synth.spectral_radius(sparse.csc_matrix((5, 5))) == 0.0
+    # n < 3 is dense: eigenvalues 0.5 +- 2i.
+    small = sparse.csc_matrix(np.array([[0.5, 2.0], [-2.0, 0.5]]))
+    assert synth.spectral_radius(small) == pytest.approx(np.sqrt(4.25))
+    assert synth.spectral_radius(sparse.csc_matrix(np.diag([1.0, -2.0, 3.0]))) == pytest.approx(3.0)
+
+    def no_convergence(*_args: object, **_kwargs: object):
+        msg = "stuck"
+        raise sla.ArpackNoConvergence(msg, np.array([]), np.array([]))
+
+    monkeypatch.setattr(sla, "eigs", no_convergence)
+    assert synth.spectral_radius(sparse.csc_matrix(np.diag([1.0, 2.0, 3.0]))) is None
+    assert synth.spectral_radius(small) == pytest.approx(np.sqrt(4.25))  # the dense branch never calls eigs

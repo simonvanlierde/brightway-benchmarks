@@ -68,3 +68,11 @@ def test_measure_stats_builds_the_technosphere(tmp_path: Path, monkeypatch: pyte
     assert amounts["mean"] == pytest.approx((np.log10(0.5 / 0.9) + np.log10(0.2)) / 2)
     assert "q00" not in amounts
     assert "q100" not in amounts
+    assert stats["lu_fill"]
+
+    # A structure-only rerun updates the structure and keeps the measured fill.
+    fill = stats["lu_fill"]
+    script.main(tmp_path / "3.12-cutoff", out, structure_only=True)
+    again = json.loads(out.read_text())["stats"]
+    assert again["lu_fill"] == fill
+    assert again["entries"] == 2

@@ -1,7 +1,11 @@
 # TODO
 
 - [ ] Lower the `ecoinvent` profile's LU fill: COLAMD 323 and MMD_AT_PLUS_A 99, against
-      ecoinvent's 175 and 76. The comment on `ECOINVENT` in `synth.py` lists what was tried.
+      ecoinvent's 175 and 76. `measure()` traces it to consumer overlap among the smaller
+      suppliers: with the top 1% of supplier rows removed, nnz(A^T A) is 0.37 of the summed
+      squared row counts in ecoinvent and 0.88 in the generator, while the hubs overlap alike
+      (Jaccard 0.072 against 0.064). Regional hub bundles, consumer baskets, product families
+      and locality settings did not get below 0.70.
 - [ ] Run the six suites under pytest-codspeed: entry modules calling `bwbench.pytest.tests`,
       and the runner image from the `spike/bench-seam` branch.
 - [ ] Check bw2data's write and Monte Carlo's first draw once per parameter set, not after
@@ -17,8 +21,10 @@
 - [ ] Measure run-to-run noise (10 repeats of one commit) before publishing any number.
 - [ ] Backfill each package on the devbox in one `oss-bench` slot, with
       `BWBENCH_SIZES=ecoinvent,exiobase`. Include the PyPardiso environments there.
-- [ ] Keep results as data on a `results` branch (asv JSON, lock files, RO-Crate per machine)
-      and build the site from it in CI, instead of from a local `results/`.
+- [ ] First publication: turn on GitHub Pages with "GitHub Actions" as the source, benchmark
+      with a neutral `BWBENCH_MACHINE` (for example `pinned-e0`), then `just results-commit`,
+      `git push origin results` and `gh workflow run site.yml`. Only after the noise is
+      measured (below).
 - [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
       hold the same versions.
 - [ ] Publish the site from a gh-pages branch. The benchmark job gets `contents: read` and
@@ -37,6 +43,3 @@ Still open:
 - [ ] Pins hold: run `just smoke` on another day and `diff` `.asv/smoke/*/smoke/versions-*.txt`
       against the copies in `.asv/versions-2026-10-13/`. Also check old releases in a full
       `just bench bw2calc`: a versions file showing another numpy means pip replaced the pin.
-- [ ] matrix_utils #48: no release has it, so every commit times the same in both
-      environments (about 720 ms at 1,000 groups on bw_processing 1.6, 420 ms with #113).
-      Add a column for the #48 head from the fork to show its effect.

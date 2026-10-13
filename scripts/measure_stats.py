@@ -2,6 +2,9 @@
 
     uv run scripts/measure_stats.py ~/ecoinvent/3.12-cutoff src/bwbench/profiles/ecoinvent-3.12-cutoff.json
 
+``--structure-only`` skips the SuperLU factorizations and keeps the fill figures already in
+the output file: about a minute instead of ten.
+
 Reads the linked ecospold2 datasets (one file per activity and reference product) and
 writes only what ``bwbench.synth.measure`` returns: counts and distributions, never a
 dataset, a name or an amount. Publishing these aggregates is allowed under the ecoinvent
@@ -52,8 +55,12 @@ def read(path: Path) -> tuple:
     return ref[0], ref[1], location, isic, inputs
 
 
-def main(folder: Path, out: Path) -> None:
-    """Parse every dataset in ``folder/datasets`` and write the statistics to ``out``."""
+def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
+    """Parse every dataset in ``folder/datasets`` and write the statistics to ``out``.
+
+    ``structure_only`` skips the SuperLU factorizations (minutes) and keeps the fill and
+    timing figures already in ``out``.
+    """
     files = sorted((folder / "datasets").glob("*.spold"))
     with ProcessPoolExecutor(max_workers=min(8, os.cpu_count() or 1)) as pool:
         records = list(pool.map(read, files, chunksize=200))
@@ -81,7 +88,14 @@ def main(folder: Path, out: Path) -> None:
     a = sparse.csc_matrix((np.array(data), (np.array(rows), np.array(cols))), shape=(n, n))
     a.sum_duplicates()
 
-    stats = measure(a, locations=[r[2] for r in records], sectors=[r[3] for r in records])
+    stats = asdict(
+        measure(
+            a, locations=[r[2] for r in records], sectors=[r[3] for r in records], repeats=0 if structure_only else 3
+        )
+    )
+    if structure_only and out.exists():
+        kept = json.loads(out.read_text())["stats"]
+        stats |= {k: v for k, v in kept.items() if stats.get(k) in ({}, None)}
     result = {
         "source": f"ecoinvent {folder.name} (ecospold2), aggregates only",
         "measured": datetime.now(UTC).date().isoformat(),
@@ -89,7 +103,7 @@ def main(folder: Path, out: Path) -> None:
         "unlinked_inputs": unlinked,
         "self_inputs": self_inputs,
         "versions": {"numpy": version("numpy"), "scipy": version("scipy")},
-        "stats": asdict(stats),
+        "stats": stats,
     }
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=2) + "\n")
@@ -97,4 +111,5 @@ def main(folder: Path, out: Path) -> None:
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]).expanduser(), Path(sys.argv[2]))
+    args = [a for a in sys.argv[1:] if a != "--structure-only"]
+    main(Path(args[0]).expanduser(), Path(args[1]), structure_only="--structure-only" in sys.argv)

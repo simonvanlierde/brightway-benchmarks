@@ -75,6 +75,8 @@
       "half_to_cutoff": 31
     },
     "ata_fill": 119.5241591389583,
+    "hub_jaccard": 0.07242517334987485,
+    "overlap_without_hubs": 0.36980499740713857,
     "row_pairs": 305.608228980322,
     "clustering": 0.0013696649424561724,
     "reciprocity": 0.0009112435908131245,

@@ -4,7 +4,8 @@
 is quadratic in groups (PR #48; 4.32 s to 0.030 s at 16k groups with bw_processing #113
 installed, 45.8 s to 3.0 s for both PRs together). bw_processing's own ``groups`` is
 quadratic too until #113, and dominates the build, so asv/matrix_utils.json runs every
-commit against bw_processing 1.6 and against the #113 head (1a6f898).
+commit against bw_processing 1.6 and against the #113 head (1a6f898). No release has #48
+yet, so the config also benchmarks its head (7335e8a), as the branch ``pull/48/head``.
 """
 
 import matrix_utils as mu

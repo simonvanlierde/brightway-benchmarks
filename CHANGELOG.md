@@ -23,9 +23,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   partial pivoting.
 - `@bench`: write a benchmark once, as a setup that returns the timed call and its check,
   and run it under asv or pytest-codspeed. A setup that needs a teardown yields instead.
-- Next to each machine's results: a PEP 751 lock file per asv environment, and an RO-Crate
-  `ro-crate-metadata.json` that names the bwbench commit, the generator version and the
-  profiles.
+- Next to each machine's results, a PEP 751 lock file per asv environment. At the results
+  root, an RO-Crate `ro-crate-metadata.json` over all of them that names the bwbench commit,
+  the generator version and the profiles.
 - A comparison of a bw2data SQLite project with the Parquet registry of bw2data #290.
 - `just smoke`, `just bench`, `just site` and `just registry-vs-sqlite`. Each runs in a
   throwaway container.
@@ -34,6 +34,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   reason: `IterativeLCA`'s second solve where scipy rejects `atol="legacy"`, and
   `FastScoresOnlyMultiLCA` and `JacobiGMRESLCA` Monte Carlo with PyPardiso (bw2calc #157).
   A release with the fix runs them again.
+- Skips for cases whose SuperLU or UMFPACK factorizations would overrun the timeout without
+  PyPardiso, estimated from the profile's size: the 100k and 250k profiles, and `LCA` Monte
+  Carlo from the ecoinvent size up. `JacobiGMRESLCA` solves by GMRES and is never skipped.
 - A warning when numpy is imported before `bwbench`, because the BLAS thread pin then comes
   too late.
 

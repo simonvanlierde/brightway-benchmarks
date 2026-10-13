@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import shutil
+import time
 from dataclasses import asdict, dataclass
 from importlib.metadata import version
 from pathlib import Path
@@ -22,6 +23,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy import sparse
+from scipy.sparse import csgraph
+from scipy.sparse import linalg as sla
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -333,3 +336,113 @@ def as_bw2data(system: System, db: str = "synth", bio: str = "bio") -> tuple[dic
         for flows, factors in zip(system.cf_flows, system.cf_data, strict=True)
     ]
     return biosphere, technosphere, cfs
+
+
+QUANTILES = (0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99, 1.0)
+
+
+def _quantiles(values: NDArray, *, extremes: bool = True) -> dict[str, float]:
+    """Mean and the ``QUANTILES`` of ``values``: a distribution, never the values themselves.
+
+    ``extremes=False`` leaves out the minimum and maximum, which are each one value: for amounts
+    from a licensed database that would publish a single exchange.
+    """
+    v = np.asarray(values, dtype=np.float64)
+    if v.size == 0:
+        return {}
+    qs = QUANTILES if extremes else [q for q in QUANTILES if 0 < q < 1]
+    return {"mean": float(v.mean()), **{f"q{round(q * 100):02d}": float(np.quantile(v, q)) for q in qs}}
+
+
+@dataclass(frozen=True)
+class Stats:
+    """Structural statistics of a technosphere: aggregates only, safe to publish for licensed data.
+
+    ``X = I - A`` after scaling each column to a production amount of 1, so ``X[i, j]`` is how
+    much of product ``i`` one unit of product ``j`` takes in. Degrees count nonzero entries.
+    """
+
+    products: int
+    entries: int  # nonzero inputs (off-diagonal)
+    inputs_per_product: dict[str, float]  # nonzero entries per column
+    consumers_per_supplier: dict[str, float]  # nonzero entries per row
+    log10_abs_input: dict[str, float]  # distribution of log10 |X[i, j]|, without min and max
+    negative_input_share: float  # inputs with X < 0 (wastes sent to treatment)
+    column_abs_sum: dict[str, float]  # sum over i of |X[i, j]|, without min and max
+    loops: dict[str, float]  # strongly connected components of more than one product
+    spectral_radius: float | None  # largest |eigenvalue| of X; None if ARPACK did not converge
+    spectral_radius_abs: float | None  # largest eigenvalue of |X|, an upper bound on the above
+    lu_fill: dict[str, float]  # nnz(L + U) / nnz(A) per SuperLU column ordering
+    factor_seconds: dict[str, float]  # median of 3 SuperLU factorizations, per ordering
+    same_location_share: float | None = None  # inputs whose supplier has the consumer's location
+    same_sector_share: float | None = None  # the same for the sector; "" (unknown) is left out
+
+
+def measure(
+    technosphere: sparse.spmatrix,
+    locations: list[str] | None = None,
+    sectors: list[str] | None = None,
+) -> Stats:
+    """Structural statistics of a technosphere matrix ``A`` (production on the diagonal)."""
+    a = sparse.csc_matrix(technosphere, dtype=np.float64)
+    n = a.shape[0]
+    a = a @ sparse.diags(1.0 / a.diagonal())  # production amount 1 in every column
+    x = (sparse.identity(n, format="csc") - a).tocsc()
+    x.setdiag(0.0)
+    x.eliminate_zeros()
+    xa = abs(x)
+
+    _, labels = csgraph.connected_components(x, directed=True, connection="strong")
+    sizes = np.bincount(labels)
+    loops = sizes[sizes > 1]
+
+    def radius(m: sparse.csc_matrix) -> float | None:
+        if m.nnz == 0:
+            return 0.0
+        if n < 3:  # eigs needs k < n - 1
+            return float(np.abs(np.linalg.eigvals(m.toarray())).max())
+        try:
+            eig = sla.eigs(m, k=1, which="LM", return_eigenvectors=False, tol=1e-8, maxiter=n * 10)
+        except sla.ArpackNoConvergence:
+            return None  # keep the other statistics of a long run
+        return float(np.abs(eig).max())
+
+    fill, seconds = {}, {}
+    for order in ("COLAMD", "MMD_AT_PLUS_A"):
+        times = []
+        for _ in range(3):
+            t0 = time.perf_counter()
+            lu = sla.splu(a, permc_spec=order)
+            times.append(time.perf_counter() - t0)
+        fill[order] = float((lu.L.nnz + lu.U.nnz - n) / a.nnz)
+        seconds[order] = float(np.median(times))
+
+    rows, cols = x.nonzero()
+
+    def same_share(labels_: list[str] | None) -> float | None:
+        if labels_ is None:
+            return None
+        lab = np.asarray(labels_)
+        known = (lab[rows] != "") & (lab[cols] != "")
+        return float(np.mean(lab[rows][known] == lab[cols][known])) if known.any() else None
+
+    return Stats(
+        products=n,
+        entries=int(x.nnz),
+        inputs_per_product=_quantiles(np.diff(x.indptr)),
+        consumers_per_supplier=_quantiles(np.bincount(rows, minlength=n)),
+        log10_abs_input=_quantiles(np.log10(xa.data), extremes=False),
+        negative_input_share=float(np.mean(x.data < 0)) if x.nnz else 0.0,
+        column_abs_sum=_quantiles(xa.sum(axis=0).A1, extremes=False),
+        loops={
+            "components": int(loops.size),
+            "largest": int(loops.max()) if loops.size else 0,
+            "products_in_loops": int(loops.sum()),
+        },
+        spectral_radius=radius(x),
+        spectral_radius_abs=radius(xa),
+        lu_fill=fill,
+        factor_seconds=seconds,
+        same_location_share=same_share(locations),
+        same_sector_share=same_share(sectors),
+    )

@@ -15,26 +15,17 @@
 
 ## Verify in the box
 
-None of these has run yet.
+Run on the devbox on 2026-10-13: the read-only mount (plain docker; see the oss-bench item
+above), `just smoke`, the PyPardiso reset (4.32 ms against 3.18 ms at `cfad4bf`), the lock
+and the image tag all behave as intended. Open:
 
-- [ ] Read-only mount: `scripts/box.sh sh -c 'touch /src/justfile'` fails, and
-      `scripts/box.sh sh -c 'touch /src/.asv/x && rm /src/.asv/x'` works.
-- [ ] `just smoke` passes. If `IterativeLCA` fails in `NewDemand` or `MonteCarlo`, read the
-      stderr: bw2calc 2.5.0 passes `atol="legacy"` to scipy's `cgs`, which scipy 1.18
-      may reject. If confirmed, report it upstream.
-- [ ] Pins hold: copy `.asv/smoke/*/smoke/versions-*.txt` aside, run `just smoke` on
-      another day, and `diff` the two sets. Also check old releases in a full
+- [ ] Pins hold: run `just smoke` on another day and `diff` `.asv/smoke/*/smoke/versions-*.txt`
+      against the copies in `.asv/versions-2026-10-13/`. Also check old releases in a full
       `just bench bw2calc`: a versions file showing another numpy means pip replaced the pin.
-- [ ] PyPardiso reset, on the devbox (x86_64): run
-      `BWBENCH_SOLVERS=pypardiso just bench bw2calc "2.5.0^!"` here and in a worktree at
-      `cfad4bf`. `time_first_score` should be higher here.
-- [ ] matrix_utils: `just bench matrix_utils` builds a bw_processing 1.6 and a #113
-      environment. In the #113 one, 0.8 and 0.9 should differ.
-- [ ] Traversal: `just bench bw_graph_tools "0.10^!" -e` and compare
-      `track_calculation_count` for `max_calc` 2 and 100.
-- [ ] Lock: start `just bench bw2calc "2.5.0^!"` twice at once. The second exits at once
-      with "another bw2calc run holds".
-- [ ] Image tag: edit a comment in `docker/Dockerfile`; the next `just smoke` prints
-      "building the box image".
-- [ ] CI: after merging, run `gh workflow run smoke.yml`. It should go green, and red
-      with one check flipped on a branch.
+- [ ] matrix_utils: the #113 environment holds bw_processing 1.6 from PyPI, not the fork at
+      `1a6f898`, so both environments time the same. Make the `git+` requirement stick, then
+      check that 0.8 and 0.9 differ in the #113 environment.
+- [ ] Traversal: at smoke size the cutoff ends `max_calc=100` after 6 nodes, so that case does
+      not test `max_calc`. Pick a size or cutoff where it binds.
+- [ ] CI: run `gh workflow run smoke.yml`. It should go green, and red with one check flipped
+      on a branch.

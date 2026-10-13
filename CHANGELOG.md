@@ -18,6 +18,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `just smoke`, `just bench`, `just site` and `just registry-vs-sqlite`, all run in a
   throwaway container that sees the repo read-only.
 - A weekly smoke run in CI.
+- bw2calc cases that a release crashes on for an already reported reason are skipped with
+  the link: `IterativeLCA`'s second solve where scipy rejects `atol="legacy"`, and
+  `FastScoresOnlyMultiLCA` and `JacobiGMRESLCA` Monte Carlo with PyPardiso (bw2calc #157).
+  A release with the fix runs them again.
 
 ### Changed
 

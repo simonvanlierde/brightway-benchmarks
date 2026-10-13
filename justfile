@@ -24,25 +24,58 @@ hooks:
 # Everything below runs in a throwaway `tmp-bwbench-*` container (scripts/box.sh):
 # Brightway's code never runs on the host. BWBENCH_* variables set sizes and labels.
 
-# Benchmark SUBJECT over its releases (asv/SUBJECT.hashes), or over RANGE (an asv range).
+# A rerun skips what already succeeded, so a backfill that stopped partway picks up where it
+# was, if BWBENCH_MACHINE (or the CPU slot that names the machine) is the same.
 # Extra arguments reach `asv run`, e.g. `just bench bw2calc "" -e` to show each check's message.
+# Benchmark SUBJECT over its releases (asv/SUBJECT.hashes), or over RANGE (an asv range).
 bench subject range="" *args:
-    scripts/box.sh scripts/asv.sh {{ subject }} run {{ args }} {{ if range == "" { "HASHFILE:/src/asv/" + subject + ".hashes" } else { quote(range) } }}
+    scripts/box.sh scripts/asv.sh {{ subject }} run --skip-existing-successful {{ args }} {{ if range == "" { "HASHFILE:/src/asv/" + subject + ".hashes" } else { quote(range) } }}
 
-# One quick pass per subject at its latest release, smoke size: proves the harness, not the numbers.
-# Results go to .asv/smoke/, never to results/ or the site. Fails on any failed benchmark.
+# Proves the harness, not the numbers. Results go to .asv/smoke/, never to results/ or the site.
+# One quick pass per subject at its oldest and latest release, smoke size; fails on any failure.
 smoke:
     #!/usr/bin/env bash
     set -uo pipefail
     status=0
     for conf in asv/*.json; do
       s=$(basename "$conf" .json)
-      last=$(tail -n 1 "asv/$s.hashes")
       rm -rf ".asv/smoke/$s"
-      BWBENCH_MACHINE=smoke scripts/box.sh scripts/asv.sh "$s" run --quick --show-stderr "$last^!" || { echo "$s: exit $?"; status=1; }
+      for release in $( (head -n 1; tail -n 1) <"asv/$s.hashes" | uniq); do
+        BWBENCH_MACHINE=smoke scripts/box.sh scripts/asv.sh "$s" run --quick --show-stderr "$release^!" || { echo "$s $release: exit $?"; status=1; }
+      done
     done
     python3 scripts/check_smoke.py .asv/smoke || status=1
     exit $status
+
+# Results go to .asv/noise/, never to results/ or the site. Sizes come from BWBENCH_* as usual.
+# Short cases need the CPU's performance power profile (Linux: powerprofilesctl set performance).
+# Run-to-run noise: RUNS separate quick runs of SUBJECT's latest release, then each case's spread.
+noise subject runs="10":
+    #!/usr/bin/env bash
+    set -uo pipefail
+    last=$(tail -n 1 "asv/{{ subject }}.hashes")
+    rm -rf ".asv/noise/{{ subject }}"
+    for i in $(seq {{ runs }}); do
+      echo "noise: run $i of {{ runs }}" >&2
+      # A failed case fails the run, but the other cases' samples still count.
+      BWBENCH_MACHINE=noise scripts/box.sh scripts/asv.sh {{ subject }} run --quick --append-samples "$last^!" ||
+        echo "noise: run $i exited $?" >&2
+    done
+    uv run --no-project --with numpy==2.5.3 python scripts/noise_summary.py ".asv/noise/{{ subject }}"
+
+# After a new upstream release: add it to asv/SUBJECT.hashes, move the cutoff in scripts/in-box.sh,
+# run `just stack SUBJECT`, then `just stack-check SUBJECT` and drop the releases that no longer run.
+# Resolve SUBJECT's fixed stack (its latest release's dependencies at the cutoff) into asv/.
+stack subject:
+    scripts/box.sh scripts/stack.sh {{ subject }}
+    cp ".asv/stack/{{ subject }}.txt" "asv/{{ subject }}.stack.txt"
+
+# Results go to .asv/stack/. Failing cases are expected on old releases; the table is the signal.
+# Every release of SUBJECT once at smoke size on its fixed stack, then which cases pass per release.
+stack-check subject:
+    rm -rf ".asv/stack/{{ subject }}"
+    -BWBENCH_MACHINE=stack scripts/box.sh scripts/asv.sh {{ subject }} run --quick "HASHFILE:/src/asv/{{ subject }}.hashes"
+    python3 scripts/release_report.py {{ subject }}
 
 # Build the static history site in site/ from results/ (one asv site per subject plus an index).
 site:

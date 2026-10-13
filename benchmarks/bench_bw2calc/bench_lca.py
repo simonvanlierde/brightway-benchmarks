@@ -71,6 +71,8 @@ def skip_known_crash(cls: str, *, calls_next: bool) -> None:
                 "https://github.com/brightway-lca/brightway2-calc/pull/161#issuecomment-6140609983"
             ) from None
     free = getattr(bc.LCA, "_delete_solver_state", None)  # from bw2calc 2.3
+    if free is None and cls == "FastScoresOnlyMultiLCA":
+        free = bc.FastScoresOnlyMultiLCA.__next__  # bw2calc 2.2 frees the factorization here
     if (
         calls_next
         and cls in {"JacobiGMRESLCA", "FastScoresOnlyMultiLCA"}

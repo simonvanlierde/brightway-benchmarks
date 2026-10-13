@@ -17,7 +17,9 @@ def test_hashes_are_tags_or_full_commits_ending_on_a_release(subject: str):
     assert len(set(lines)) == len(lines)
     for line in lines:
         assert re.fullmatch(r"[0-9a-f]{40}|v?\d+(\.\d+)*", line), line
-    # `just smoke` benchmarks the last line as the latest release, so it must be a tag.
+    # `just smoke` benchmarks the first and last line as the oldest and latest release, and
+    # `just stack` resolves the last, so both must be tags.
+    assert not re.fullmatch(r"[0-9a-f]{40}", lines[0])
     assert not re.fullmatch(r"[0-9a-f]{40}", lines[-1])
 
 

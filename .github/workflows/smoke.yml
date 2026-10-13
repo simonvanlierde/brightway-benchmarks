@@ -1,9 +1,10 @@
 name: smoke
 
 # `just smoke` in the benchmark box: every benchmark imports, runs and passes its
-# checks at the latest release of its subject. The timings come from a shared runner
-# and are not results. Weekly, so a new upstream release or a broken check shows up
-# without anyone running it by hand.
+# checks at the oldest and latest release of its subject. The timings come from a shared runner
+# and are not results. Weekly, so an environment that stops building or a broken
+# check shows up without anyone running it by hand. New upstream releases are not
+# picked up: the releases come from asv/*.hashes.
 
 on:
   schedule:

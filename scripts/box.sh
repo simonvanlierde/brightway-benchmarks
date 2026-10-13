@@ -35,5 +35,5 @@ for d in $writable; do
 done
 exec docker run --rm -i --init --name "tmp-bwbench-$$" --hostname "$(hostname -s)-box" --user "$(id -u):$(id -g)" \
     --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
-    --memory "${BWBENCH_MEM:-2g}" --cpus "${BWBENCH_CPUS:-2}" \
+    --memory "${BWBENCH_MEM:-2g}" --memory-swap "${BWBENCH_MEM:-2g}" --cpus "${BWBENCH_CPUS:-2}" \
     "${mounts[@]}" -w /src "$image" env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"

@@ -21,10 +21,19 @@ def test_measure_a_known_matrix():
     assert s.inputs_per_product["q100"] == 1
 
 
+def test_unknown_labels_are_left_out():
+    a = sparse.csc_matrix(np.array([[1.0, -0.5, -0.2], [-0.4, -1.0, 0.0], [0.0, 0.0, 1.0]]))
+    # Only input 2 -> 0 has both labels; 0 <-> 1 touches the unknown product 1.
+    assert measure(a, sectors=["a", "", "a"]).same_sector_share == 1
+    assert measure(a, sectors=["b", "", "a"]).same_sector_share == 0
+    assert measure(a, sectors=["", "", ""]).same_sector_share is None
+
+
 def test_measure_matches_the_generator_bounds():
     system = generate(SIZES["smoke"])
     s = measure(system.technosphere())
     assert s.products == SIZES["smoke"].products
     assert s.column_abs_sum["q100"] < 0.5
+    assert s.spectral_radius is not None
     assert s.spectral_radius < 0.5
     assert s.negative_input_share == 0

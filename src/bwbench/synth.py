@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import shutil
+import time
 from dataclasses import asdict, dataclass
 from importlib.metadata import version
 from pathlib import Path
@@ -22,6 +23,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy import sparse
+from scipy.sparse import csgraph
+from scipy.sparse import linalg as sla
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
@@ -362,12 +365,12 @@ class Stats:
     negative_input_share: float  # inputs with X < 0 (wastes sent to treatment)
     column_abs_sum: dict[str, float]  # sum over i of |X[i, j]|
     loops: dict[str, float]  # strongly connected components of more than one product
-    spectral_radius: float  # largest |eigenvalue| of X
-    spectral_radius_abs: float  # largest eigenvalue of |X|, an upper bound on the above
+    spectral_radius: float | None  # largest |eigenvalue| of X; None if ARPACK did not converge
+    spectral_radius_abs: float | None  # largest eigenvalue of |X|, an upper bound on the above
     lu_fill: dict[str, float]  # nnz(L + U) / nnz(A) per SuperLU column ordering
     factor_seconds: dict[str, float]  # median of 3 SuperLU factorizations, per ordering
     same_location_share: float | None = None  # inputs whose supplier has the consumer's location
-    same_sector_share: float | None = None  # the same for the sector
+    same_sector_share: float | None = None  # the same for the sector; "" (unknown) is left out
 
 
 def measure(
@@ -376,11 +379,6 @@ def measure(
     sectors: list[str] | None = None,
 ) -> Stats:
     """Structural statistics of a technosphere matrix ``A`` (production on the diagonal)."""
-    import time  # noqa: PLC0415
-
-    from scipy.sparse import csgraph  # noqa: PLC0415
-    from scipy.sparse import linalg as sla  # noqa: PLC0415
-
     a = sparse.csc_matrix(technosphere, dtype=np.float64)
     n = a.shape[0]
     a = a @ sparse.diags(1.0 / a.diagonal())  # production amount 1 in every column
@@ -393,12 +391,16 @@ def measure(
     sizes = np.bincount(labels)
     loops = sizes[sizes > 1]
 
-    def radius(m: sparse.csc_matrix) -> float:
+    def radius(m: sparse.csc_matrix) -> float | None:
         if m.nnz == 0:
             return 0.0
         if n < 3:  # eigs needs k < n - 1
             return float(np.abs(np.linalg.eigvals(m.toarray())).max())
-        return float(np.abs(sla.eigs(m, k=1, which="LM", return_eigenvectors=False, tol=1e-8, maxiter=n * 10)).max())
+        try:
+            eig = sla.eigs(m, k=1, which="LM", return_eigenvectors=False, tol=1e-8, maxiter=n * 10)
+        except sla.ArpackNoConvergence:
+            return None  # keep the other statistics of a long run
+        return float(np.abs(eig).max())
 
     fill, seconds = {}, {}
     for order in ("COLAMD", "MMD_AT_PLUS_A"):
@@ -416,7 +418,8 @@ def measure(
         if labels_ is None:
             return None
         lab = np.asarray(labels_)
-        return float(np.mean(lab[rows] == lab[cols])) if rows.size else None
+        known = (lab[rows] != "") & (lab[cols] != "")
+        return float(np.mean(lab[rows][known] == lab[cols][known])) if known.any() else None
 
     return Stats(
         products=n,

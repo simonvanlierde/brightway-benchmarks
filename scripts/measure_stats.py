@@ -22,7 +22,6 @@ from pathlib import Path
 import numpy as np
 from scipy import sparse
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from bwbench.synth import measure
 
 NS = "{http://www.EcoInvent.org/EcoSpold02}"
@@ -62,7 +61,7 @@ def main(folder: Path, out: Path) -> None:
         msg = "two datasets share a reference product"
         raise ValueError(msg)
     rows, cols, data = [], [], []
-    unlinked = 0
+    unlinked = self_inputs = 0
     for j, (_key, ref, *_, inputs) in enumerate(records):
         rows.append(j)
         cols.append(j)
@@ -72,6 +71,7 @@ def main(folder: Path, out: Path) -> None:
             if i is None:
                 unlinked += 1
                 continue
+            self_inputs += i == j  # lands on the diagonal: bw2calc solves on net production
             rows.append(i)
             cols.append(j)
             data.append(-amount)  # bw2calc's sign: inputs negative, production positive
@@ -85,6 +85,7 @@ def main(folder: Path, out: Path) -> None:
         "measured": datetime.now(UTC).date().isoformat(),
         "datasets": n,
         "unlinked_inputs": unlinked,
+        "self_inputs": self_inputs,
         "versions": {"numpy": version("numpy"), "scipy": version("scipy")},
         "stats": asdict(stats),
     }

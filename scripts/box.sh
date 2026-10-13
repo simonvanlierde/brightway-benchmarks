@@ -18,15 +18,18 @@ while IFS='=' read -r name value; do
     knobs+=("$name=$value")
 done < <(env | grep '^BWBENCH_' || true)
 
-if command -v oss-bench >/dev/null; then
-    # The same read-only repo as below; oss-bench drops capabilities and caps processes itself.
-    OSS_BENCH_IMAGE=$image OSS_BENCH_RW=".asv results site asv" exec oss-bench "$repo" \
+# The repo is read-only in the box, so code asv installs cannot change what the host later
+# runs (.git, .venv, justfile, scripts/, the asv/ configs). Only these folders are writable.
+writable=".asv results site"
+
+# An oss-bench without OSS_BENCH_RW would mount the repo read-write, so use it only if it has it.
+if command -v oss-bench >/dev/null && grep -q OSS_BENCH_RW "$(command -v oss-bench)"; then
+    # oss-bench drops capabilities and caps processes itself.
+    OSS_BENCH_IMAGE=$image OSS_BENCH_RW=$writable exec oss-bench "$repo" \
         env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
 fi
-# The repo is read-only in the box, so code asv installs cannot change what the host
-# later runs (.git, .venv, justfile, scripts/). Only asv's working folders are writable.
 mounts=(-v "$repo":/src:ro)
-for d in .asv results site asv; do
+for d in $writable; do
     mkdir -p "$repo/$d"
     mounts+=(-v "$repo/$d":"/src/$d")
 done

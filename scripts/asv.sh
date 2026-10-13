@@ -23,7 +23,8 @@ flock -n 9 || {
 # smoke results kept under .asv/smoke/, out of results/ and so out of the site.
 default=umfpack
 [ "$(uname -m)" = x86_64 ] && default=pypardiso,$default
-conf=asv/.$subject.local.json
+# Written to .asv/ (writable in the box), so asv/ with the tracked configs can stay read-only.
+conf=.asv/.$subject.local.json
 results=$(
     BWBENCH_SOLVERS=${BWBENCH_SOLVERS:-$default} python3 - "$subject" "$machine" <<'PY'
 import json, os, sys
@@ -34,8 +35,8 @@ name = {"pypardiso": "pypardiso", "scikit-umfpack": "umfpack"}
 conf["include"] = [e for e in conf.get("include", []) if all(name[k] in wanted for k in e["req"] if k in name)]
 if machine == "smoke":
     conf["results_dir"] = f"../.asv/smoke/{subject}"
-json.dump(conf, open(f"asv/.{subject}.local.json", "w"), indent=2)
-print(f"asv/{conf['results_dir']}")
+json.dump(conf, open(f".asv/.{subject}.local.json", "w"), indent=2)
+print(f".asv/{conf['results_dir']}")
 PY
 )
 

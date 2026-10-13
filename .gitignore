@@ -39,6 +39,5 @@ target/
 .asv/
 results/
 site/
-asv/.*.local.json
 # asv's mirror clones of the upstream repositories
 asv/*/

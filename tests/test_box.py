@@ -54,7 +54,8 @@ def test_box_mounts_the_repo_read_only_and_drops_privileges(box: tuple[Path, Pat
     args = log.read_text().split("\n")
     assert f"{repo}:/src:ro" in args
     writable = {a for a in args if a.startswith(str(repo)) and not a.endswith(":ro")}
-    assert writable == {f"{repo}/{d}:/src/{d}" for d in (".asv", "results", "site", "asv")}
+    # asv/ holds the tracked configs and release lists, so it stays read-only too.
+    assert writable == {f"{repo}/{d}:/src/{d}" for d in (".asv", "results", "site")}
     for flag in ("--init", "--cap-drop", "--security-opt", "--pids-limit"):
         assert flag in args
 

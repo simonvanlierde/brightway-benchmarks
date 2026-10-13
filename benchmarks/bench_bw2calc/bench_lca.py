@@ -1,9 +1,10 @@
 """bw2calc: single scores, multiple scores and Monte Carlo on synthetic systems.
 
 The solver is whatever the asv environment installs (PyPardiso, UMFPACK or SuperLU),
-because bw2calc picks it at import. Every setup checks the score against the SuperLU
-reference in ``reference.json`` before anything is timed, and the ``track_`` results
-record the relative error, so a wrong answer shows up in the history next to a fast one.
+because bw2calc picks it at import. Every case checks its scores against the float64
+reference in ``reference.json``, in setup or in its ``track_`` result, and the ``track_``
+results record the relative error, so a wrong answer shows up in the history next to a
+fast one.
 """
 
 import inspect
@@ -12,7 +13,7 @@ import bw2calc as bc
 import numpy as np
 from scipy import sparse
 
-from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, knob
+from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, knob
 from bwbench.synth import GENERATOR_VERSION, cached, load, method_name, neumann
 
 CLASSES = ["LCA", "IterativeLCA", "JacobiGMRESLCA"]
@@ -68,21 +69,34 @@ class SingleScore:
 
 
 class NewDemand:
-    """A second demand on a system already factorized: the solve alone."""
+    """A second demand on a system already solved once: the solve alone.
+
+    For ``IterativeLCA`` this is the first CGS solve, warm-started from the first
+    demand's supply; its first solve is a direct one. ``number = 1`` and the fresh setup
+    per sample keep the iterative classes from starting at the answer of the last call.
+    """
 
     version = GENERATOR_VERSION
-    params = (knob("sizes", "smoke"),)
-    param_names = ["size"]
+    params = (knob("sizes", "smoke"), CLASSES)
+    param_names = ["size", "cls"]
+    number = 1
     timeout = 600
 
-    def setup(self, size: str) -> None:
-        inventory, methods, _ = load(cached(size))
-        self.lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]])
+    def setup(self, size: str, cls: str) -> None:
+        inventory, methods, refs = load(cached(size))
+        self.reference = refs[1][0]
+        self.rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
+        self.lca = lca_class(cls)(demand={0: 1}, data_objs=[inventory, methods[0]])
         self.lca.lci(factorize=True)
         self.lca.lcia()
 
-    def time_redo_lci(self, size: str) -> None:
+    def time_redo_lci(self, size: str, cls: str) -> None:
         self.lca.redo_lci({1: 1})
+
+    def track_relative_error(self, size: str, cls: str) -> float:
+        self.lca.redo_lci({1: 1})
+        score = float((self.lca.characterization_matrix @ self.lca.inventory).sum())
+        return check(score, self.reference, self.rtol, f"second-demand score ({solver()})")
 
 
 class MultiScores:
@@ -115,8 +129,8 @@ class MultiScores:
             elif variant == "adjoint":
                 raise NotImplementedError(f"bw2calc {bc.__version__} has no adjoint direction")
         scores = self._scores()
-        for i, ref in enumerate(refs[0]):
-            check(score_of(scores, method_name(i), "d0"), ref, DIRECT_RTOL, f"score ({solver()})")
+        table = [[score_of(scores, method_name(m), f"d{d}") for m in range(len(methods))] for d in range(demands)]
+        check_table(table, refs[:demands], DIRECT_RTOL, f"score ({solver()})")
 
     def _scores(self) -> dict:
         lca = self.cls(demands=self.demands, method_config=self.config, data_objs=self.data_objs, **self.kwargs)
@@ -135,7 +149,8 @@ class MonteCarlo:
     """``iterations`` Monte Carlo draws after the first score.
 
     #131 names Monte Carlo at the 100k-product size (``BWBENCH_MC_SIZES=mc100k``) as the
-    case worth benchmarking. Setup checks one draw against a Neumann solve of that draw's matrix.
+    case worth benchmarking. Setup checks one draw against a Neumann solve of that draw's
+    matrix, and that the draw differs from the static score.
     """
 
     version = GENERATOR_VERSION
@@ -146,7 +161,7 @@ class MonteCarlo:
     repeat = (1, 5, 600)
 
     def setup(self, size: str, iterations: int, cls: str) -> None:
-        inventory, methods, _ = load(cached(size, uncertain=True))
+        inventory, methods, refs = load(cached(size, uncertain=True))
         self.lca = lca_class(cls)(
             demand={0: 1}, data_objs=[inventory, methods[0]], use_distributions=True, seed_override=1
         )
@@ -158,6 +173,8 @@ class MonteCarlo:
         expected = float((self.lca.characterization_matrix @ self.lca.biosphere_matrix @ supply).sum())
         rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
         check(float(self.lca.score), expected, rtol, f"Monte Carlo score ({solver()})")
+        if abs(self.lca.score - refs[0][0]) <= ITERATIVE_RTOL * abs(refs[0][0]):
+            raise AssertionError("the Monte Carlo draw equals the static score: distributions were ignored")
 
     def time_iterations(self, size: str, iterations: int, cls: str) -> None:
         for _ in range(iterations):

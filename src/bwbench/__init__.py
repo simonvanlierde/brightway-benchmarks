@@ -28,6 +28,18 @@ def check(score: float, reference: float, rtol: float, what: str = "score") -> f
     return err
 
 
+def check_table(scores: list[list[float]], references: list[list[float]], rtol: float, what: str = "score") -> float:
+    """``check`` every ``scores[p][m]`` against ``references[p][m]``; returns the largest error."""
+    if len(scores) != len(references):
+        msg = f"{len(scores)} rows of scores against {len(references)} rows of references"
+        raise AssertionError(msg)
+    return max(
+        check(score, ref, rtol, f"{what} [{p}][{m}]")
+        for p, (row, ref_row) in enumerate(zip(scores, references, strict=True))
+        for m, (score, ref) in enumerate(zip(row, ref_row, strict=True))
+    )
+
+
 def knob(name: str, default: str) -> list[str]:
     """A comma-separated benchmark parameter from ``$BWBENCH_<NAME>``.
 

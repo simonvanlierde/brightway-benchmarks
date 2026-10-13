@@ -15,8 +15,9 @@ temporary_brightway_dir()
 
 import bw2calc as bc  # noqa: E402
 import bw2data as bd  # noqa: E402
+from scipy import sparse  # noqa: E402
 
-from bwbench.synth import GENERATOR_VERSION, SIZES, System, as_bw2data, generate, method_name  # noqa: E402
+from bwbench.synth import GENERATOR_VERSION, SIZES, System, as_bw2data, generate, method_name, neumann  # noqa: E402
 
 
 def fresh_project(size: str) -> tuple[dict, System]:
@@ -38,27 +39,28 @@ class DatabaseWrite:
     repeat = (1, 5, 1200)
     timeout = 1800
 
-    def setup_cache(self) -> float:
-        """Check once per environment that a written database gives the reference score."""
-        tech, system = fresh_project("smoke")
-        ref = system.reference_scores(1)[0][0]
-        bd.Database("synth").write(tech)
-        fu, data_objs, _ = bd.prepare_lca_inputs({bd.get_node(database="synth", code="p0"): 1}, method=method_name(0))
-        lca = bc.LCA(fu, data_objs=data_objs)
-        lca.lci()
-        lca.lcia()
-        err = check(lca.score, ref, BW2DATA_RTOL, f"bw2data {bd.__version__} score")
-        bd.projects.delete_project(delete_dir=True)
-        return err
+    def setup(self, size: str) -> None:
+        self.tech, self.system = fresh_project(size)
 
-    def setup(self, err: float, size: str) -> None:
-        self.tech, _ = fresh_project(size)
-
-    def teardown(self, err: float, size: str) -> None:
+    def teardown(self, size: str) -> None:
         bd.projects.delete_project(delete_dir=True)
 
-    def time_write(self, err: float, size: str) -> None:
+    def time_write(self, size: str) -> None:
         bd.Database("synth").write(self.tech)
 
-    def track_score_error(self, err: float, size: str) -> float:
-        return err
+    def track_score_error(self, size: str) -> float:
+        """Write the database, then check at this size that it gives the reference score.
+
+        bw2calc only loads the matrices: the solve is a Neumann series, because SuperLU
+        on this structure needs gigabytes from the ecoinvent size up.
+        """
+        bd.Database("synth").write(self.tech)
+        fu, data_objs, _ = bd.prepare_lca_inputs({bd.get_node(database="synth", code="p0"): 1}, method=method_name(0))
+        lca = bc.LCA(fu, data_objs=data_objs)
+        lca.load_lci_data()
+        lca.build_demand_array()
+        lca.load_lcia_data()
+        a = lca.technosphere_matrix
+        supply = neumann(sparse.identity(a.shape[0], format="csr") - a, lca.demand_array)
+        score = float((lca.characterization_matrix @ lca.biosphere_matrix @ supply).sum())
+        return check(score, self.system.reference_scores(1)[0][0], BW2DATA_RTOL, f"bw2data {bd.__version__} score")

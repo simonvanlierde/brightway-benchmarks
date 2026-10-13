@@ -18,9 +18,9 @@ class MappedMatrixBuild:
 
     def setup(self, groups: int) -> None:
         self.dp = many_groups(groups)
-        mm = mu.MappedMatrix(packages=[self.dp], matrix="technosphere_matrix")
-        if mm.matrix.sum() != groups:
-            raise AssertionError("matrix does not hold one entry per group")
+        m = mu.MappedMatrix(packages=[self.dp], matrix="technosphere_matrix").matrix
+        if m.nnz != groups or not (m.diagonal() == 1).all():
+            raise AssertionError("matrix does not hold one diagonal entry of 1 per group")
 
     def time_mapped_matrix(self, groups: int) -> None:
         mu.MappedMatrix(packages=[self.dp], matrix="technosphere_matrix")

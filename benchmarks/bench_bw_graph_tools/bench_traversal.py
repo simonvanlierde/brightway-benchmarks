@@ -28,3 +28,15 @@ class Traversal:
 
     def time_traverse(self, size: str, max_calc: int) -> None:
         NewNodeEachVisitGraphTraversal(self.lca, self.settings).traverse()
+
+    def track_calculation_count(self, size: str, max_calc: int) -> int:
+        """The traversal's counter: one per node above the cutoff; it stops once past ``max_calc``.
+
+        A count well under ``max_calc`` means the cutoff ended the traversal first, so the
+        case does not test the ``max_calc`` limit.
+        """
+        traversal = NewNodeEachVisitGraphTraversal(self.lca, self.settings)
+        traversal.traverse()
+        if not hasattr(traversal, "calculation_count"):
+            raise NotImplementedError("this bw_graph_tools release has no calculation_count")
+        return traversal.calculation_count

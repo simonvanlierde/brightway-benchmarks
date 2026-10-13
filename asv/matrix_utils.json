@@ -27,7 +27,8 @@
         "0.2.5"
       ],
       "bw_processing": [
-        "1.6"
+        "1.6",
+        "git+https://github.com/simonvanlierde/bw_processing@1a6f8982adc6ad9197a3b154a82bb747d6c0a374"
       ]
     }
   },

@@ -9,6 +9,8 @@ EULA (checked with the licence holder, 2026-10-13). The datasets themselves stay
 machine that holds the licence.
 """
 
+# First, so the BLAS thread pin lands before numpy loads (bwbench warns otherwise).
+import bwbench  # noqa: F401, I001
 import json
 import os
 import sys

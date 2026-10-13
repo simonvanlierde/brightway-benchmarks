@@ -57,17 +57,35 @@
       "largest": 16962,
       "products_in_loops": 17049
     },
-    "spectral_radius": 0.7818681817917376,
-    "spectral_radius_abs": 0.7818681815820011,
+    "spectral_radius": 0.781868188048221,
+    "spectral_radius_abs": 0.7818681880313029,
     "lu_fill": {
       "COLAMD": 175.4225875604311,
       "MMD_AT_PLUS_A": 75.69411729919129
     },
     "factor_seconds": {
-      "COLAMD": 91.27806890699867,
-      "MMD_AT_PLUS_A": 20.747328059998836
+      "COLAMD": 62.94937641499564,
+      "MMD_AT_PLUS_A": 14.013259319006465
     },
     "same_location_share": 0.23482490646918777,
-    "same_sector_share": 0.24395863298817436
+    "same_sector_share": 0.24395863298817436,
+    "dense_rows": {
+      "cutoff": 1628,
+      "above": 3,
+      "half_to_cutoff": 31
+    },
+    "ata_fill": 119.5241591389583,
+    "row_pairs": 305.608228980322,
+    "clustering": 0.0013696649424561724,
+    "reciprocity": 0.0009112435908131245,
+    "core_after_hubs": 0.8658651490596615,
+    "lu_fill_no_pivoting": {
+      "COLAMD": 138.96649861766141,
+      "MMD_AT_PLUS_A": 12.548544478777037
+    },
+    "off_diagonal_pivots": {
+      "COLAMD": 0.22236460257038404,
+      "MMD_AT_PLUS_A": 0.2243998040176384
+    }
   }
 }

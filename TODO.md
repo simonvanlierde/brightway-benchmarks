@@ -7,6 +7,10 @@
 - [ ] Measure run-to-run noise (10 repeats of one commit) before publishing any number.
 - [ ] Backfill each package on the devbox in one `oss-bench` slot, with
       `BWBENCH_SIZES=ecoinvent,exiobase`. Include the PyPardiso environments there.
+- [ ] Keep results as data on a `results` branch (asv JSON, lock files, RO-Crate per machine)
+      and build the site from it in CI, instead of from a local `results/`.
+- [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
+      hold the same versions.
 - [ ] Publish the site from a gh-pages branch. The benchmark job gets `contents: read` and
       a separate job deploys; no self-hosted runner. CodSpeed, if added, runs on
       `pull_request` only.

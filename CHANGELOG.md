@@ -16,6 +16,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `@bench`: each benchmark is one setup function returning the timed call and its check, run
   under asv (`bwbench.asv.classes`) or pytest-codspeed (`bwbench.pytest.tests`). A setup that
   needs a teardown yields instead of returning. asv names stay as they were.
+- Next to each machine's results: a PEP 751 `pylock.<env>.toml` per asv environment, with
+  every package's index URL and hashes, and an RO-Crate `ro-crate-metadata.json` naming the
+  bwbench commit, the generator version and the profiles.
 - A warning when numpy is imported before `bwbench`, whose BLAS thread pin would then come
   too late.
 

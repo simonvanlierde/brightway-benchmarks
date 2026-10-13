@@ -21,14 +21,17 @@ just bench bw2data "4.7^!" -e    # one commit; extra arguments go to asv run
 just site                        # history site in site/
 ```
 
-Test conditions: each config in `asv/` pins numpy, scipy, asv_runner and the Brightway
-packages around its subject, installs only releases from before 2026-10-06, and records
-what it installed next to its results.
-`BWBENCH_SIZES` picks the profiles. `ecoinvent` copies the structure of ecoinvent 3.12
-cut-off, measured in `src/bwbench/profiles/`. `smoke` is a 200-product version of it, and
-`mc100k` and `regional` scale it to 100k and 250k products. `exiobase` and `stress-random`
-keep the earlier random structure, whose LU factors fill several times more than a real
-database's.
+## Test conditions
+
+- Each config in `asv/` pins numpy, scipy, asv_runner and the Brightway packages around its
+  subject. It installs only releases from before 2026-10-06.
+- asv installs each benchmarked commit without touching those pins.
+- Each machine's results get a lock file per environment and an RO-Crate that names the
+  bwbench commit and the profiles.
+- `BWBENCH_SIZES` picks the profiles. `ecoinvent` copies the structure of ecoinvent 3.12
+  cut-off, measured in `src/bwbench/profiles/`. `smoke`, `mc100k` and `regional` scale it to
+  200, 100k and 250k products. `exiobase` and `stress-random` use a random structure, whose LU
+  factors fill several times more than a real database's.
 
 For development: `uv sync`, then `just check` (lint, types, tests; runs no Brightway code).
 

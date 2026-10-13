@@ -1,7 +1,7 @@
 # TODO
 
-- [ ] Lower the `ecoinvent` profile's LU fill: COLAMD 323 and MMD_AT_PLUS_A 99 against
-      ecoinvent's 175 and 76 (see the comment on `ECOINVENT` in `synth.py` for what was tried).
+- [ ] Lower the `ecoinvent` profile's LU fill: COLAMD 323 and MMD_AT_PLUS_A 99, against
+      ecoinvent's 175 and 76. The comment on `ECOINVENT` in `synth.py` lists what was tried.
 - [ ] Run the six suites under pytest-codspeed: entry modules calling `bwbench.pytest.tests`,
       and the runner image from the `spike/bench-seam` branch.
 - [ ] Check bw2data's write and Monte Carlo's first draw once per parameter set, not after
@@ -23,9 +23,9 @@
 
 ## Verify in the box
 
-Run on the devbox on 2026-10-13: the read-only mount (plain docker; see the oss-bench item
-above), `just smoke`, the PyPardiso reset (4.32 ms against 3.18 ms at `cfad4bf`), the lock
-and the image tag all behave as intended. Open:
+Checked on the devbox on 2026-10-13: the read-only mount (plain docker only), `just smoke`,
+the PyPardiso reset (4.32 ms against 3.18 ms at `cfad4bf`), the lock and the image tag.
+Still open:
 
 - [ ] Pins hold: run `just smoke` on another day and `diff` `.asv/smoke/*/smoke/versions-*.txt`
       against the copies in `.asv/versions-2026-10-13/`. Also check old releases in a full

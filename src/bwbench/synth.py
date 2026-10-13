@@ -1,28 +1,24 @@
 """Seeded synthetic LCA systems, written as bw_processing datapackages.
 
-``system(profile)`` builds one. The technosphere is ``A = I - X``: one production exchange
-of 1 per product on the diagonal and the inputs ``X`` off it. A profile picks one of two
-builders:
+``system(profile)`` builds one. Its technosphere is ``A = I - X``: production of 1 on the
+diagonal, inputs ``X`` off it. A profile picks one of two builders:
 
-- ``tiered`` imitates the structure of a real database (the ``ecoinvent`` profile is
-  calibrated to ecoinvent 3.12 cut-off, see ``profiles/``). Products sit in a supply-chain
-  order and mostly buy from products earlier in it; a share of inputs may come from
-  anywhere, which closes the loops. Suppliers are heavy-tailed hubs, and some inputs stay in
-  the consumer's region or sector. Some products are waste treatments, so inputs between a
-  treatment and a normal product are negative. Each product has its own unit, so amounts
-  span many orders of magnitude and solvers pivot as they do on real data.
-- ``random`` is the earlier generator: ``inputs`` inputs per column on random rows, summing
-  to less than 0.5. Its LU factors fill far more than a real database's (the ``stress-random``
-  profile), so it is a worst case, not a model.
+- ``tiered`` copies the structure of a real database. The ``ecoinvent`` profile is calibrated
+  to ecoinvent 3.12 cut-off (``profiles/``). Products sit in a supply-chain order and mostly
+  buy from earlier products. A share of inputs comes from anywhere, which closes loops.
+  Suppliers are heavy-tailed hubs, and some inputs stay in the consumer's region or sector.
+  Waste treatments make some inputs negative. Each product has its own unit, so amounts span
+  many orders of magnitude and solvers pivot as they do on real data.
+- ``random`` is the earlier generator: inputs on random rows, column sums below 0.5. Its LU
+  factors fill far more than a real database's, so it is a worst case (``stress-random``).
 
-Both builders keep ``X = T X0 T^-1`` with ``X0`` free of units and signs and every column of
-``X0`` summing to less than 1. ``T`` is the signed unit scale of each product (``scale``).
-So the series ``I + X + X^2 + ...`` converges, and the reference scores come from it
-(``neumann``), sharing no code with any solver under test. The same profile, overrides and
-seed give the same arrays on every machine.
+Both builders keep ``X = T X0 T^-1``. ``T`` holds each product's signed unit (``scale``), and
+every column of ``X0`` sums to less than 1. So ``I + X + X^2 + ...`` converges, and
+``neumann`` computes the reference scores from it without sharing code with any solver under
+test. The same arguments give the same arrays on every machine.
 
-Only numpy and scipy are needed to build the arrays. ``write_datapackages`` also needs
-bw_processing and runs in the benchmark container.
+Building the arrays needs only numpy and scipy. ``write_datapackages`` also needs
+bw_processing, so it runs in the benchmark container.
 """
 
 from __future__ import annotations
@@ -417,14 +413,15 @@ def neumann(
 ) -> NDArray[np.float64]:
     """Solve ``(I - inputs) x = demand`` as the series ``demand + inputs @ demand + ...``.
 
-    Shares no code with any solver under test and needs no factorization, so it stays
-    cheap at every size. ``scale`` is the system's signed unit per product (in the matrix's
-    order); the series runs on the matrix without units. When its largest column sum ``s``
-    is below 1, the rest of the series is at most ``|term| s / (1 - s)`` per column, and
-    the series stops once that is below ``NEUMANN_TOL`` of the demand: about 150 terms at
-    ``s = 0.78``. Otherwise (a Monte Carlo draw can push a column past 1) it stops once a
-    term alone is below that, which leaves about ``|term| r / (1 - r)`` at a spectral radius
-    ``r``; a series that does not get there in ``NEUMANN_MAX_TERMS`` terms raises.
+    It shares no code with any solver under test and needs no factorization, so it stays
+    cheap at every size. ``scale`` is the system's signed unit per product, in the matrix's
+    order; the series runs on the matrix without units.
+
+    When that matrix's largest column sum ``s`` is below 1, the rest of the series is at most
+    ``|term| s / (1 - s)``. The series stops once that is below ``NEUMANN_TOL`` of the
+    demand: about 150 terms at ``s = 0.78``. A Monte Carlo draw can push a column sum past 1.
+    Then the series stops once one term is below that tolerance, and raises if that takes
+    more than ``NEUMANN_MAX_TERMS`` terms.
     """
     t = np.ones(inputs.shape[0]) if scale is None else np.asarray(scale, dtype=np.float64)
     shape = (-1,) + (1,) * (np.ndim(demand) - 1)

@@ -1,13 +1,15 @@
 """The benchmark-to-runner seam: write a benchmark once, run it under asv or pytest-codspeed.
 
-A benchmark is a setup function decorated with ``@bench``. It returns ``(run, expect)``:
-``run`` is the timed call and ``expect`` checks its result, outside the timing. ``expect``
-is the value the result must match within ``rtol``, a function of the result that raises
-on a wrong one and returns its relative error, or ``UNCHECKED``. The setup is never timed
-and runs fresh before every timed call, and ``run`` is called exactly once per setup.
+A benchmark is a setup function decorated with ``@bench`` that returns ``(run, expect)``.
+``run`` is the timed call. ``expect`` checks its result, outside the timing, and is one of:
 
-A setup that needs a teardown yields ``(run, expect)`` instead of returning it; the code
-after the ``yield`` runs once the result is checked.
+- a value the result must match within ``rtol``;
+- a function of the result that raises on a wrong one and returns its relative error;
+- ``UNCHECKED``.
+
+The setup is never timed. It runs fresh before every timed call, which calls ``run`` once.
+A setup that needs a teardown yields ``(run, expect)`` instead; the code after the
+``yield`` runs once the result is checked.
 
 The adapters in ``bwbench.asv`` and ``bwbench.pytest`` turn a module's benchmarks into asv
 classes or pytest tests.

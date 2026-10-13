@@ -2,7 +2,7 @@
 # Run a command in a throwaway container that sees only this repo. Brightway's code
 # (installed by asv into its environments) never runs on the host.
 #
-# On a host with `oss-bench` (the devbox) the container gets a pinned CPU slot;
+# On a host with `oss-bench` (a CPU-slot runner from the author's dotfiles) the container gets a pinned CPU slot;
 # elsewhere it is a plain `docker run`. BWBENCH_* variables are passed through.
 set -euo pipefail
 repo=$(cd "$(dirname "$0")/.." && pwd)

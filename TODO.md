@@ -11,7 +11,7 @@
       did not move the mid bands. Next: measure how long the copied lists are, since short
       lists that agree by chance would explain the 39% without explaining the overlap.
 - [ ] Run the six suites under pytest-codspeed: entry modules calling `bwbench.pytest.tests`,
-      and the runner image from the `spike/bench-seam` branch.
+      and a runner image (a spike ran traversal under CPU simulation; not in the repo yet).
 - [ ] Check bw2data's write and Monte Carlo's first draw once per parameter set, not after
       every timed sample: each check loads matrices and runs a Neumann solve. Measure what
       that costs at the ecoinvent size first.
@@ -24,7 +24,7 @@
 - [ ] Check that pytest-codspeed's `pedantic` calls the target once per setup under CPU
       simulation; a warm-up call would trip the seam's "run called twice" guard.
 - [ ] Measure run-to-run noise (10 repeats of one commit) before publishing any number.
-- [ ] Backfill each package on the devbox in one `oss-bench` slot, with
+- [ ] Backfill each package on a pinned benchmark machine, in one fixed CPU slot, with
       `BWBENCH_SIZES=ecoinvent,exiobase`. Include the PyPardiso environments there.
 - [ ] First publication: turn on GitHub Pages with "GitHub Actions" as the source, benchmark
       with a neutral `BWBENCH_MACHINE` (for example `pinned-e0`), then `just results-commit`,
@@ -35,12 +35,12 @@
 - [ ] The site job builds the box image and clones six upstream repos on every run, though
       `asv publish` only reads results. Run asv there directly, or cache `.asv/`, once the
       first runs show how long it takes. CodSpeed, if added, runs on `pull_request` only.
-- [ ] Run `just registry-vs-sqlite ecoinvent` on the devbox: does the SQLite path's 3e-8
+- [ ] Run `just registry-vs-sqlite ecoinvent` on the benchmark machine: does the SQLite path's 3e-8
       score error hold at size?
 
 ## Verify in the box
 
-Checked on the devbox on 2026-10-13: the read-only mount (plain docker only), `just smoke`,
+Checked on the benchmark machine on 2026-10-13: the read-only mount (plain docker only), `just smoke`,
 the PyPardiso reset (4.32 ms against 3.18 ms at `cfad4bf`), the lock and the image tag.
 Still open:
 

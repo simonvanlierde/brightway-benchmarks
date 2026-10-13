@@ -4,7 +4,8 @@
   "project_url": "https://github.com/brightway-lca/matrix_utils",
   "repo": "https://github.com/brightway-lca/matrix_utils.git",
   "branches": [
-    "main"
+    "main",
+    "pull/48/head"
   ],
   "environment_type": "uv",
   "pythons": [

@@ -43,6 +43,3 @@ Still open:
 - [ ] Pins hold: run `just smoke` on another day and `diff` `.asv/smoke/*/smoke/versions-*.txt`
       against the copies in `.asv/versions-2026-10-13/`. Also check old releases in a full
       `just bench bw2calc`: a versions file showing another numpy means pip replaced the pin.
-- [ ] matrix_utils #48: no release has it, so every commit times the same in both
-      environments (about 720 ms at 1,000 groups on bw_processing 1.6, 420 ms with #113).
-      Add a column for the #48 head from the fork to show its effect.

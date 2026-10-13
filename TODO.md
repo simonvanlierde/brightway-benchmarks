@@ -1,7 +1,11 @@
 # TODO
 
 - [ ] Lower the `ecoinvent` profile's LU fill: COLAMD 323 and MMD_AT_PLUS_A 99, against
-      ecoinvent's 175 and 76. The comment on `ECOINVENT` in `synth.py` lists what was tried.
+      ecoinvent's 175 and 76. `measure()` traces it to consumer overlap among the smaller
+      suppliers: with the top 1% of supplier rows removed, nnz(A^T A) is 0.37 of the summed
+      squared row counts in ecoinvent and 0.88 in the generator, while the hubs overlap alike
+      (Jaccard 0.072 against 0.064). Regional hub bundles, consumer baskets, product families
+      and locality settings did not get below 0.70.
 - [ ] Run the six suites under pytest-codspeed: entry modules calling `bwbench.pytest.tests`,
       and the runner image from the `spike/bench-seam` branch.
 - [ ] Check bw2data's write and Monte Carlo's first draw once per parameter set, not after

@@ -10,7 +10,6 @@ set -eu
 subject=$1 cmd=$2
 shift 2
 machine=${BWBENCH_MACHINE:-$(uname -n)}
-conf=asv/$subject.json
 asv() { uvx --quiet --from asv==0.6.6 asv "$@"; }
 
 # One run per subject at a time: two would rebuild the same environments under each other.
@@ -20,19 +19,24 @@ flock -n 9 || {
   exit 1
 }
 
-if [ "$subject" = bw2calc ]; then
-  default=umfpack
-  [ "$(uname -m)" = x86_64 ] && default=pypardiso,$default
-  conf=asv/.bw2calc.local.json
-  BWBENCH_SOLVERS=${BWBENCH_SOLVERS:-$default} python3 - <<'PY'
-import json, os
-conf = json.load(open("asv/bw2calc.json"))
+# The config asv reads: bw2calc's solver environments filtered by BWBENCH_SOLVERS, and
+# smoke results kept under .asv/smoke/, out of results/ and so out of the site.
+default=umfpack
+[ "$(uname -m)" = x86_64 ] && default=pypardiso,$default
+conf=asv/.$subject.local.json
+results=$(BWBENCH_SOLVERS=${BWBENCH_SOLVERS:-$default} python3 - "$subject" "$machine" <<'PY'
+import json, os, sys
+subject, machine = sys.argv[1:]
+conf = json.load(open(f"asv/{subject}.json"))
 wanted = os.environ["BWBENCH_SOLVERS"].split(",")
 name = {"pypardiso": "pypardiso", "scikit-umfpack": "umfpack"}
-conf["include"] = [e for e in conf["include"] if all(name[k] in wanted for k in e["req"] if k in name)]
-json.dump(conf, open("asv/.bw2calc.local.json", "w"), indent=2)
+conf["include"] = [e for e in conf.get("include", []) if all(name[k] in wanted for k in e["req"] if k in name)]
+if machine == "smoke":
+    conf["results_dir"] = f"../.asv/smoke/{subject}"
+json.dump(conf, open(f"asv/.{subject}.local.json", "w"), indent=2)
+print(f"asv/{conf['results_dir']}")
 PY
-fi
+)
 
 grep -qs "\"$machine\"" "$HOME/.asv-machine.json" ||
   asv machine --yes --machine "$machine" --config "$conf" >/dev/null
@@ -45,7 +49,7 @@ esac
 # Record what each environment holds next to the results. asv reinstalls only the
 # subject per commit, so this is the state after the last commit it installed.
 if [ "$cmd" = run ]; then
-  out=results/$subject/$machine
+  out=$results/$machine
   mkdir -p "$out"
   for info in .asv/env/"$subject"/*/asv-env-info.json; do
     [ -e "$info" ] || continue

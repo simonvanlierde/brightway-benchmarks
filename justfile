@@ -32,14 +32,17 @@ bench subject range="" *args:
     scripts/box.sh scripts/asv.sh {{ subject }} run {{ args }} {{ if range == "" { "HASHFILE:/src/asv/" + subject + ".hashes" } else { quote(range) } }}
 
 # One quick pass per subject at its latest release, smoke size: proves the harness, not the numbers.
+# Results go to .asv/smoke/, never to results/ or the site. Fails on any failed benchmark.
 smoke:
     #!/usr/bin/env bash
     set -uo pipefail
     status=0
     for s in {{ subjects }}; do
       last=$(tail -n 1 asv/$s.hashes)
-      BWBENCH_MACHINE=${BWBENCH_MACHINE:-smoke} scripts/box.sh scripts/asv.sh "$s" run --quick "$last^!" || { echo "$s: exit $?"; status=1; }
+      rm -rf ".asv/smoke/$s"
+      BWBENCH_MACHINE=smoke scripts/box.sh scripts/asv.sh "$s" run --quick --show-stderr "$last^!" || { echo "$s: exit $?"; status=1; }
     done
+    python3 scripts/check_smoke.py .asv/smoke || status=1
     exit $status
 
 # Build the static history site in site/ from results/ (one asv site per subject plus an index).

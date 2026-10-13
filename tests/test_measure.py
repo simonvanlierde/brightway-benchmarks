@@ -78,6 +78,7 @@ def test_fill_drivers_on_a_known_matrix():
     assert s.reciprocity == pytest.approx(2 / 3)
     assert s.clustering == 0
     assert s.ata_fill == pytest.approx(9 / 6)  # row 0 joins all three columns in A^T A
+    assert s.row_pairs == pytest.approx((9 + 4 + 1) / 6)  # rows hold 3, 2 and 1 entries
     assert s.core_after_hubs == 0  # without product 0, nothing has two neighbours
     assert s.dense_rows == {"cutoff": 17, "above": 0, "half_to_cutoff": 0}  # max(16, 10 sqrt(3))
     assert s.off_diagonal_pivots == {"COLAMD": 0.0, "MMD_AT_PLUS_A": 0.0}  # diagonally dominant

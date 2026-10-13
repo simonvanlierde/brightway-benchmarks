@@ -677,6 +677,7 @@ class Stats:
     # What drives LU fill beyond degrees and loops (see dense_rows and the fields below).
     dense_rows: dict[str, int] | None = None  # supplier rows above and just below COLAMD's dense cut-off
     ata_fill: float | None = None  # nnz(A^T A) / nnz(A): the pattern COLAMD orders
+    row_pairs: float | None = None  # sum over rows of (entries per row)^2 / nnz(A): ata_fill if no two rows overlapped
     clustering: float | None = None  # transitivity of A + A^T without its diagonal
     reciprocity: float | None = None  # inputs (i, j) for which (j, i) is an input too
     core_after_hubs: float | None = None  # share of products in the 2-core of A + A^T without the top 1% by degree
@@ -791,6 +792,7 @@ def _fill_drivers(a: sparse.csc_matrix, x: sparse.csc_matrix) -> dict[str, Any]:
             "half_to_cutoff": int(((row_counts > cutoff // 2) & (row_counts <= cutoff)).sum()),
         },
         "ata_fill": float(ata / a.nnz),
+        "row_pairs": float((row_counts.astype(np.float64) ** 2).sum() / a.nnz),
         "clustering": triangles / triples if triples else 0.0,
         "reciprocity": float(p.multiply(p.T).nnz / p.nnz) if p.nnz else 0.0,
         "core_after_hubs": float(alive.mean()),

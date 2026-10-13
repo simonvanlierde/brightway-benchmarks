@@ -7,7 +7,7 @@ SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "check_smoke.py"
 
 
 def run(root: Path) -> subprocess.CompletedProcess:
-    return subprocess.run([sys.executable, SCRIPT, root], capture_output=True, text=True, check=False)  # noqa: S603
+    return subprocess.run([sys.executable, SCRIPT, root], capture_output=True, text=True, check=False)
 
 
 def write(root: Path, results: dict) -> None:

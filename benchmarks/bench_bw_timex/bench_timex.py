@@ -7,6 +7,7 @@ a background product spread over ``steps`` years, so the timeline has about
 system, so the time-explicit static score must equal the plain LCA score.
 """
 
+from collections.abc import Iterator
 from datetime import datetime
 
 from bwbench import DIRECT_RTOL, check, knob, temporary_brightway_dir
@@ -19,7 +20,9 @@ import numpy as np  # noqa: E402
 from bw_temporalis import TemporalDistribution  # noqa: E402
 from bw_timex import TimexLCA  # noqa: E402
 
-from bwbench.synth import method_name, profile_version, system  # noqa: E402
+from bwbench.asv import classes  # noqa: E402
+from bwbench.bench import BenchSetup, bench  # noqa: E402
+from bwbench.synth import method_name, system  # noqa: E402
 
 DATES = {"bg_2020": datetime(2020, 1, 1), "bg_2030": datetime(2030, 1, 1), "foreground": "dynamic"}
 CONSUMERS = 10
@@ -57,30 +60,28 @@ def build_project(size: str, steps: int) -> None:
     bd.Database("foreground").write(fg)
 
 
-class TimelineLCI:
-    version = profile_version(TIMEX_SIZES)
-    params = (TIMEX_SIZES, [int(x) for x in knob("steps", "5,20")])
-    param_names = ["size", "steps"]
-    number = 1
-    repeat = (1, 5, 600)
-    timeout = 1800
+@bench(
+    {"size": TIMEX_SIZES, "steps": [int(x) for x in knob("steps", "5,20")]},
+    error="static_score_error",
+    asv="TimelineLCI",
+    timeout=1800,
+    repeat=(1, 5, 600),
+)
+def lci(size: str, steps: int) -> Iterator[BenchSetup]:
+    build_project(size, steps)
+    fu = bd.get_node(database="foreground", code="fu")
+    tlca = TimexLCA({fu.key: 1}, method_name(0), DATES)
+    tlca.build_timeline(starting_datetime="2024-01-01")
 
-    def setup(self, size: str, steps: int) -> None:
-        build_project(size, steps)
-        self.fu = bd.get_node(database="foreground", code="fu")
-        self.tlca = TimexLCA({self.fu.key: 1}, method_name(0), DATES)
-        self.tlca.build_timeline(starting_datetime="2024-01-01")
-
-    def teardown(self, size: str, steps: int) -> None:
-        bd.projects.delete_project(delete_dir=True)
-
-    def time_lci(self, size: str, steps: int) -> None:
-        self.tlca.lci()
-
-    def track_static_score_error(self, size: str, steps: int) -> float:
-        self.tlca.lci()
-        self.tlca.static_lcia()
-        lca = bc.LCA({self.fu: 1}, method=method_name(0))
+    def static_score_error(_: None) -> float:
+        tlca.static_lcia()
+        lca = bc.LCA({fu: 1}, method=method_name(0))
         lca.lci()
         lca.lcia()
-        return check(self.tlca.static_score, lca.score, DIRECT_RTOL, "timex static score")
+        return check(tlca.static_score, lca.score, DIRECT_RTOL, "timex static score")
+
+    yield tlca.lci, static_score_error
+    bd.projects.delete_project(delete_dir=True)
+
+
+classes(__name__)

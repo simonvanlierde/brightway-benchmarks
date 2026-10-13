@@ -13,6 +13,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   order with loops, hub suppliers, region and sector locality, waste treatments (negative
   inputs) and per-product units. `system(profile, seed=..., **overrides)` builds one;
   `measure()` checks it against the measured statistics.
+- `@bench`: each benchmark is one setup function returning the timed call and its check, run
+  under asv (`bwbench.asv.classes`) or pytest-codspeed (`bwbench.pytest.tests`). A setup that
+  needs a teardown yields instead of returning. asv names stay as they were.
+- A warning when numpy is imported before `bwbench`, whose BLAS thread pin would then come
+  too late.
 
 - A seeded generator of synthetic LCA systems, written as bw_processing datapackages or
   as bw2data databases, at smoke, ecoinvent, EXIOBASE, 100k and 250k-product sizes.
@@ -33,6 +38,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Breaking:** profiles replace sizes. `smoke`, `ecoinvent`, `mc100k` and `regional` use the
   tiered generator; `exiobase` and the new `stress-random` keep the random one. The generator
   version is 3, so earlier results and cached systems are not reused.
+- The bw_processing and matrix_utils cases time one call per setup, like the others, instead
+  of asv's automatic count.
 - The Neumann reference stops on a bound of the rest of the series, valid up to column sums
   near 1, instead of a rule that held only up to 0.5.
 

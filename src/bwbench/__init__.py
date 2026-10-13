@@ -5,7 +5,16 @@ Importing this package pins the BLAS and OpenMP thread pools to ``$BWBENCH_THREA
 """
 
 import os
+import sys
+import warnings
 
+if "numpy" in sys.modules:
+    # The BLAS libraries read their thread count when numpy loads them, so the pin below is too late.
+    warnings.warn(
+        "numpy was imported before bwbench, so the BLAS threads may not follow BWBENCH_THREADS",
+        RuntimeWarning,
+        stacklevel=2,
+    )
 THREADS = os.environ.get("BWBENCH_THREADS", "1")
 for _var in ("OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "OMP_NUM_THREADS"):
     os.environ[_var] = THREADS

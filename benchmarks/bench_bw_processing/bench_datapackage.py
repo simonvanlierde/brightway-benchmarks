@@ -11,41 +11,52 @@ import bw_processing as bwp
 import numpy as np
 
 from bwbench import knob
+from bwbench.asv import classes
+from bwbench.bench import UNCHECKED, BenchSetup, bench
 from bwbench.synth import many_groups
 
-
-class Groups:
-    params = ([int(x) for x in knob("groups", "100,1000")],)
-    param_names = ["groups"]
-    timeout = 600
-
-    def setup(self, groups: int) -> None:
-        self.dp = many_groups(groups)
-        if len(self.dp.groups) != groups:
-            raise AssertionError("wrong group count")
-
-    def time_groups(self, groups: int) -> None:
-        self.dp.groups  # noqa: B018 - the property is the work
+GROUPS = {"groups": [int(x) for x in knob("groups", "100,1000")]}
+ENTRIES = {"entries": [int(x) for x in knob("entries", "10000,100000")]}
 
 
-class EntriesPath:
-    params = ([int(x) for x in knob("entries", "10000,100000")],)
-    param_names = ["entries"]
-    timeout = 600
+@bench(GROUPS, asv="Groups", timeout=600)
+def groups(groups: int) -> BenchSetup:
+    dp = many_groups(groups)
+    if len(dp.groups) != groups:
+        raise AssertionError("wrong group count")
+    return lambda: dp.groups, UNCHECKED
 
-    def setup(self, entries: int) -> None:
-        if not hasattr(bwp, "MatrixEntry"):
-            raise NotImplementedError(f"bw_processing {bwp.__version__} has no MatrixEntry")
-        rng = np.random.default_rng(0)
-        rows = rng.integers(0, 10_000, entries)
-        self.entries = [bwp.MatrixEntry(row=int(r), col=i, amount=1.0) for i, r in enumerate(rows)]
 
-    def time_add_entries(self, entries: int) -> None:
-        bwp.create_datapackage().add_entries(matrix="technosphere_matrix", entries=self.entries)
+def matrix_entries(entries: int) -> list:
+    if not hasattr(bwp, "MatrixEntry"):
+        raise NotImplementedError(f"bw_processing {bwp.__version__} has no MatrixEntry")
+    rng = np.random.default_rng(0)
+    rows = rng.integers(0, 10_000, entries)
+    return [bwp.MatrixEntry(row=int(r), col=i, amount=1.0) for i, r in enumerate(rows)]
 
-    def time_vars_iterator(self, entries: int) -> None:
+
+@bench(ENTRIES, asv="EntriesPath", timeout=600)
+def add_entries(entries: int) -> BenchSetup:
+    found = matrix_entries(entries)
+
+    def run() -> None:
+        bwp.create_datapackage().add_entries(matrix="technosphere_matrix", entries=found)
+
+    return run, UNCHECKED
+
+
+@bench(ENTRIES, asv="EntriesPath", timeout=600)
+def vars_iterator(entries: int) -> BenchSetup:
+    found = matrix_entries(entries)
+
+    def run() -> None:
         bwp.create_datapackage().add_persistent_vector_from_iterator(
             matrix="technosphere_matrix",
-            dict_iterator=(dict(vars(e)) for e in self.entries),
-            nrows=len(self.entries),
+            dict_iterator=(dict(vars(e)) for e in found),
+            nrows=len(found),
         )
+
+    return run, UNCHECKED
+
+
+classes(__name__)

@@ -1,8 +1,9 @@
 # TODO
 
-- [ ] Decide the generator's structure before calibrating. Random input rows fill SuperLU's
-      L+U to about 60% of a dense matrix (27.95 s at 8,000 products), so sizes from
-      `ecoinvent` up time that fill. Then calibrate `SIZES` against public summary statistics.
+- [ ] Lower the `ecoinvent` profile's LU fill: COLAMD 323 and MMD_AT_PLUS_A 99 against
+      ecoinvent's 175 and 76 (see the comment on `ECOINVENT` in `synth.py` for what was tried).
+- [ ] Run the six suites under pytest-codspeed: entry modules calling `bwbench.pytest.tests`,
+      and the runner image from the `spike/bench-seam` branch.
 - [ ] Measure run-to-run noise (10 repeats of one commit) before publishing any number.
 - [ ] Backfill each package on the devbox in one `oss-bench` slot, with
       `BWBENCH_SIZES=ecoinvent,exiobase`. Include the PyPardiso environments there.
@@ -25,7 +26,3 @@ and the image tag all behave as intended. Open:
 - [ ] matrix_utils #48: no release has it, so every commit times the same in both
       environments (about 720 ms at 1,000 groups on bw_processing 1.6, 420 ms with #113).
       Add a column for the #48 head from the fork to show its effect.
-- [ ] Traversal: at smoke size the cutoff ends `max_calc=100` after 6 nodes, so that case does
-      not test `max_calc`. Pick a size or cutoff where it binds.
-- [ ] CI: run `gh workflow run smoke.yml`. It should go green, and red with one check flipped
-      on a branch.

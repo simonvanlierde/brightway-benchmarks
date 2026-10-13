@@ -2,8 +2,12 @@
 
     uv run scripts/measure_stats.py ~/ecoinvent/3.12-cutoff src/bwbench/profiles/ecoinvent-3.12-cutoff.json
 
-``--structure-only`` skips the SuperLU factorizations and keeps the fill figures already in
-the output file: about a minute instead of ten.
+    uv run scripts/measure_stats.py --structure-only RELEASE_FOLDER PROFILE.json
+
+``--structure-only`` skips the SuperLU factorizations, which take most of a full run, and
+keeps the fill figures already in the output file (``FILL_KEYS``). ``measured`` and
+``versions`` then date the structure, and ``fill_measured`` and ``fill_versions`` the kept
+fill figures; a full run writes only the first pair.
 
 Reads the linked ecospold2 datasets (one file per activity and reference product) and
 writes only what ``bwbench.synth.measure`` returns: counts and distributions, never a
@@ -101,6 +105,17 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
             a, locations=[r[2] for r in records], sectors=[r[3] for r in records], repeats=0 if structure_only else 3
         )
     )
+    fill = {}
+    if old is not None:
+        if (old["stats"]["products"], old["stats"]["entries"]) != (stats["products"], stats["entries"]):
+            msg = f"{out} describes another matrix: run without --structure-only"
+            raise SystemExit(msg)
+        stats |= {k: old["stats"][k] for k in FILL_KEYS if old["stats"].get(k)}
+        if old["stats"].get("lu_fill"):
+            fill = {
+                "fill_measured": old.get("fill_measured", old["measured"]),
+                "fill_versions": old.get("fill_versions", old["versions"]),
+            }
     result = {
         "source": f"ecoinvent {folder.name} (ecospold2), aggregates only",
         "measured": datetime.now(UTC).date().isoformat(),
@@ -109,14 +124,8 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
         "self_inputs": self_inputs,
         "versions": {"numpy": version("numpy"), "scipy": version("scipy")},
         "stats": stats,
+        **fill,
     }
-    if old is not None:
-        if (old["stats"]["products"], old["stats"]["entries"]) != (stats["products"], stats["entries"]):
-            msg = f"{out} describes another matrix: run without --structure-only"
-            raise SystemExit(msg)
-        stats |= {k: old["stats"][k] for k in FILL_KEYS if k in old["stats"]}
-        result["fill_measured"] = old.get("fill_measured", old["measured"])
-        result["fill_versions"] = old.get("fill_versions", old["versions"])
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))

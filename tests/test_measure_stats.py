@@ -74,12 +74,16 @@ def test_measure_stats_builds_the_technosphere(tmp_path: Path, monkeypatch: pyte
     fill = stats["lu_fill"]
     before = json.loads(out.read_text())
     before["stats"]["gone"] = 1  # a field measure() no longer reports
+    before["measured"], before["versions"] = "2020-01-01", {"numpy": "0", "scipy": "0"}
     before["stats"]["clustering"] = 0.5  # a stale structural value
     out.write_text(json.dumps(before))
     script.main(tmp_path / "3.12-cutoff", out, structure_only=True)
     again = json.loads(out.read_text())
     assert again["stats"]["lu_fill"] == fill
-    assert again["fill_measured"] == before["measured"]
+    assert again["fill_measured"] == "2020-01-01"
+    assert again["fill_versions"] == {"numpy": "0", "scipy": "0"}
+    assert again["measured"] != "2020-01-01"
+    assert again["stats"]["factor_seconds"] == stats["factor_seconds"]
     assert "gone" not in again["stats"]
     assert again["stats"]["clustering"] == stats["clustering"]
 

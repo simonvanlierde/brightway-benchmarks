@@ -657,6 +657,14 @@ class Stats:
     factor_seconds: dict[str, float]  # median of the SuperLU factorizations, per ordering
     same_location_share: float | None = None  # inputs whose supplier has the consumer's location
     same_sector_share: float | None = None  # the same for the sector; "" (unknown) is left out
+    # What drives LU fill beyond degrees and loops (see dense_rows and the fields below).
+    dense_rows: dict[str, int] | None = None  # supplier rows above and just below COLAMD's dense cut-off
+    ata_fill: float | None = None  # nnz(A^T A) / nnz(A): the pattern COLAMD orders
+    clustering: float | None = None  # transitivity of A + A^T without its diagonal
+    reciprocity: float | None = None  # inputs (i, j) for which (j, i) is an input too
+    core_after_hubs: float | None = None  # share of products in the 2-core of A + A^T without the top 1% by degree
+    lu_fill_no_pivoting: dict[str, float] | None = None  # lu_fill with diag_pivot_thresh=0
+    off_diagonal_pivots: dict[str, float] | None = None  # share of columns pivoted off the diagonal, default threshold
 
 
 def measure(
@@ -683,15 +691,18 @@ def measure(
     sizes = np.bincount(labels)
     loops = sizes[sizes > 1]
 
-    fill, seconds = {}, {}
+    fill, seconds, fill_no_pivoting, pivots = {}, {}, {}, {}
     for order in ("COLAMD", "MMD_AT_PLUS_A") if repeats else ():
         times = []
         for _ in range(repeats):
             t0 = time.perf_counter()
             lu = sla.splu(a, permc_spec=order)
             times.append(time.perf_counter() - t0)
-        fill[order] = float((lu.L.nnz + lu.U.nnz - n) / a.nnz)
+        fill[order] = _lu_fill(lu, a)
         seconds[order] = float(np.median(times))
+        # Column i lands at perm_c[i] and row i at perm_r[i]: the pivot is A[i, i] when they agree.
+        pivots[order] = float(np.mean(lu.perm_r != lu.perm_c))
+        fill_no_pivoting[order] = _lu_fill(sla.splu(a, permc_spec=order, diag_pivot_thresh=0.0), a)
 
     rows, cols = x.nonzero()
 
@@ -721,4 +732,49 @@ def measure(
         factor_seconds=seconds,
         same_location_share=same_share(locations),
         same_sector_share=same_share(sectors),
+        **_fill_drivers(a, x),
+        lu_fill_no_pivoting=fill_no_pivoting or None,
+        off_diagonal_pivots=pivots or None,
     )
+
+
+def _lu_fill(lu: Any, a: sparse.csc_matrix) -> float:  # noqa: ANN401 - scipy's SuperLU object
+    """nnz(L + U) / nnz(A), counting the shared unit diagonal once."""
+    return float((lu.L.nnz + lu.U.nnz - a.shape[0]) / a.nnz)
+
+
+def _fill_drivers(a: sparse.csc_matrix, x: sparse.csc_matrix) -> dict[str, Any]:
+    """Structural statistics that bear on LU fill: aggregates only, like the rest of ``Stats``."""
+    n = a.shape[0]
+    pattern = (a != 0).astype(np.float64).tocsr()
+    row_counts = np.diff(pattern.indptr)
+    cutoff = max(16, int(10 * math.sqrt(n)))  # COLAMD's default dense-row cut-off, as SuperLU calls it
+    ata = (pattern.T @ pattern).nnz
+
+    p = (x != 0).astype(np.float64)
+    sym = ((p + p.T) != 0).astype(np.float64).tocsr()
+    degree = np.diff(sym.indptr)
+    triangles = 0.0
+    for start in range(0, n, 2_000):  # in blocks, so S @ S never sits in memory whole
+        block = sym[start : start + 2_000]
+        triangles += float((block @ sym).multiply(block).sum())
+    triples = float((degree * (degree - 1)).sum())
+
+    alive = np.ones(n, dtype=bool)
+    alive[np.argsort(degree)[::-1][: math.ceil(0.01 * n)]] = False
+    deg = sym @ alive.astype(np.float64)
+    while (low := alive & (deg < 2)).any():  # peel to the 2-core: no node with fewer than 2 neighbours
+        alive[low] = False
+        deg -= sym @ low.astype(np.float64)
+
+    return {
+        "dense_rows": {
+            "cutoff": cutoff,
+            "above": int((row_counts > cutoff).sum()),
+            "half_to_cutoff": int(((row_counts > cutoff // 2) & (row_counts <= cutoff)).sum()),
+        },
+        "ata_fill": float(ata / a.nnz),
+        "clustering": triangles / triples if triples else 0.0,
+        "reciprocity": float(p.multiply(p.T).nnz / p.nnz) if p.nnz else 0.0,
+        "core_after_hubs": float(alive.mean()),
+    }

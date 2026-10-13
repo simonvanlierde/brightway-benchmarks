@@ -18,7 +18,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   waste treatments and per-product units. `smoke`, `mc100k` and `regional` scale it to 200,
   100k and 250k products. `exiobase` and `stress-random` use a random structure.
 - `measure()`, the structural statistics of a technosphere matrix. It calibrates and checks
-  the generator.
+  the generator, and reports what drives LU fill: rows near COLAMD's dense cut-off,
+  nnz(AᵀA), clustering, reciprocity, the 2-core left without hubs, and fill and pivots without
+  partial pivoting.
 - `@bench`: write a benchmark once, as a setup that returns the timed call and its check,
   and run it under asv or pytest-codspeed. A setup that needs a teardown yields instead.
 - Next to each machine's results: a PEP 751 lock file per asv environment, and an RO-Crate

@@ -69,3 +69,27 @@ def test_ecoinvent_profile_matches_its_target():
     assert got.spectral_radius == pytest.approx(want.spectral_radius, abs=0.01)
     assert got.same_location_share == pytest.approx(want.same_location_share, abs=0.03)
     assert got.same_sector_share == pytest.approx(want.same_sector_share, abs=0.03)
+
+
+def test_fill_drivers_on_a_known_matrix():
+    # X has inputs 0 <- 1, 1 <- 0 (a reciprocated pair) and 0 <- 2; no triangle.
+    a = sparse.csc_matrix(np.array([[1.0, -0.5, -0.2], [-0.4, -1.0, 0.0], [0.0, 0.0, 1.0]]))
+    s = measure(a, repeats=1)
+    assert s.reciprocity == pytest.approx(2 / 3)
+    assert s.clustering == 0
+    assert s.ata_fill == pytest.approx(9 / 6)  # row 0 joins all three columns in A^T A
+    assert s.core_after_hubs == 0  # without product 0, nothing has two neighbours
+    assert s.dense_rows == {"cutoff": 17, "above": 0, "half_to_cutoff": 0}  # max(16, 10 sqrt(3))
+    assert s.off_diagonal_pivots == {"COLAMD": 0.0, "MMD_AT_PLUS_A": 0.0}  # diagonally dominant
+
+
+def test_a_triangle_is_clustered_and_a_small_diagonal_is_pivoted():
+    triangle = sparse.csc_matrix(np.array([[1.0, -0.1, -0.1], [-0.1, 1.0, -0.1], [-0.1, -0.1, 1.0]]))
+    assert measure(triangle, repeats=0).clustering == 1
+    # Column 0's diagonal (1) is smaller than its other entry (10): partial pivoting swaps them.
+    a = sparse.csc_matrix(np.array([[1.0, 1.0], [10.0, 1.0]]))
+    s = measure(a, repeats=1)
+    assert s.off_diagonal_pivots is not None
+    assert s.off_diagonal_pivots["COLAMD"] > 0
+    assert s.lu_fill_no_pivoting is not None
+    assert set(s.lu_fill_no_pivoting) == {"COLAMD", "MMD_AT_PLUS_A"}

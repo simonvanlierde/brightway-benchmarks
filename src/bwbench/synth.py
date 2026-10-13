@@ -96,11 +96,12 @@ class Profile:
     target: str | None = None  # file in profiles/ the profile was calibrated to
 
     def digest(self) -> str:
-        """Short hash of the profile and of its calibration file."""
-        key: list[Any] = [asdict(self)]
-        if self.target:
-            key.append(hashlib.sha256((PROFILES_DIR / self.target).read_bytes()).hexdigest())
-        return _short_hash(key)
+        """Short hash of the profile's fields: what shapes the arrays.
+
+        Not of the calibration file: the builders never read it, and new measurements in it
+        must not drop asv's results by changing their version.
+        """
+        return _short_hash(asdict(self))
 
 
 def _short_hash(key: object, length: int = 12) -> str:
@@ -785,7 +786,7 @@ def _fill_drivers(a: sparse.csc_matrix, x: sparse.csc_matrix) -> dict[str, Any]:
     p = (x != 0).astype(np.float64)
     sym = ((p + p.T) != 0).astype(np.float64).tocsr()
     degree = np.diff(sym.indptr)
-    top_rows = np.argsort(row_counts)[::-1]
+    top_rows = np.argsort(-row_counts, kind="stable")  # ties in id order, so the same 50 every run
     big = pattern[top_rows[:50]]
     shared = (big @ big.T).toarray()
     union = row_counts[top_rows[:50], None] + row_counts[None, top_rows[:50]] - shared
@@ -835,7 +836,7 @@ def _fill_drivers(a: sparse.csc_matrix, x: sparse.csc_matrix) -> dict[str, Any]:
         "row_pairs": float((row_counts.astype(np.float64) ** 2).sum() / a.nnz),
         "overlap_by_band": by_band,
         "copied_inputs": float(copied),
-        "hub_jaccard": float(np.mean(shared[upper] / union[upper])) if upper[0].size else 0.0,
+        "hub_jaccard": float(np.mean(shared[upper] / np.maximum(union[upper], 1))) if upper[0].size else 0.0,
         "overlap_without_hubs": float((rest.T @ rest).nnz / rest_pairs) if rest_pairs else 0.0,
         "clustering": triangles / triples if triples else 0.0,
         "reciprocity": float(p.multiply(p.T).nnz / p.nnz) if p.nnz else 0.0,

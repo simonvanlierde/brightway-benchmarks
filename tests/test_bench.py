@@ -1,4 +1,5 @@
 import ast
+import os
 import subprocess
 import sys
 import types
@@ -7,6 +8,7 @@ from typing import Any
 
 import pytest
 
+import bwbench
 from bwbench import asv, synth
 from bwbench import pytest as bw_pytest
 from bwbench.bench import UNCHECKED, bench
@@ -137,10 +139,17 @@ def test_pytest_adapter_parametrizes_and_marks():
 
 def test_numpy_before_bwbench_warns():
     code = "import numpy, bwbench"
-    run = subprocess.run([sys.executable, "-W", "error::RuntimeWarning", "-c", code], check=False, capture_output=True)
+    unpinned = {k: v for k, v in os.environ.items() if k not in bwbench.PINNED}
+    run = subprocess.run(
+        [sys.executable, "-W", "error::RuntimeWarning", "-c", code], check=False, capture_output=True, env=unpinned
+    )
     assert b"numpy was imported before bwbench" in run.stderr
     clean = subprocess.run([sys.executable, "-W", "error", "-c", "import bwbench, numpy"], check=False)
     assert clean.returncode == 0
+    # Already pinned in the environment, as in-box.sh does for asv: numpy first is fine then.
+    pinned = {**os.environ, "BWBENCH_THREADS": "1"} | dict.fromkeys(bwbench.PINNED, "1")
+    late = subprocess.run([sys.executable, "-W", "error", "-c", code], check=False, env=pinned)
+    assert late.returncode == 0
 
 
 def test_no_benchmark_module_has_a_name_asv_takes_for_setup():

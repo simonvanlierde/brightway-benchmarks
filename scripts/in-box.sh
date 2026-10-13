@@ -8,6 +8,10 @@ export HOME=/src/.asv/home UV_CACHE_DIR=/src/.asv/uv-cache
 cutoff=2026-10-06T00:00:00Z
 export UV_EXCLUDE_NEWER="${UV_EXCLUDE_NEWER:-$cutoff}" PIP_UPLOADED_PRIOR_TO="${PIP_UPLOADED_PRIOR_TO:-$cutoff}"
 mkdir -p "$HOME"
+# Pin the BLAS and OpenMP threads before asv starts: asv's runner loads numpy before any
+# benchmark module, so the pin in bwbench comes too late there.
+threads=${BWBENCH_THREADS:-1}
+export OPENBLAS_NUM_THREADS="$threads" MKL_NUM_THREADS="$threads" OMP_NUM_THREADS="$threads"
 # asv's clones are owned by the host uid, which has no passwd entry in the container.
 git config --global --get safe.directory >/dev/null || git config --global --add safe.directory "*"
 exec "$@"

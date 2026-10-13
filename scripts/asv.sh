@@ -59,7 +59,7 @@ if [ "$cmd" = run ]; then
         # The same as a PEP 751 lock file, with each package's index URL and hashes. The subject
         # is left out: asv built it from the commit its result names, which need not be a release.
         "$env/bin/python" -m pip freeze | grep -iv "^${subject}[ =@]" |
-            uv pip compile --quiet --python "$env/bin/python" --no-header -o "$out/pylock.${env##*/}.toml" - ||
+            uv pip compile --quiet --no-deps --python "$env/bin/python" --no-header -o "$out/pylock.${env##*/}.toml" - ||
             status=1
     done
     # What ran, as an RO-Crate next to the results.

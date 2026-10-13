@@ -22,9 +22,9 @@ and the image tag all behave as intended. Open:
 - [ ] Pins hold: run `just smoke` on another day and `diff` `.asv/smoke/*/smoke/versions-*.txt`
       against the copies in `.asv/versions-2026-10-13/`. Also check old releases in a full
       `just bench bw2calc`: a versions file showing another numpy means pip replaced the pin.
-- [ ] matrix_utils: the #113 environment holds bw_processing 1.6 from PyPI, not the fork at
-      `1a6f898`, so both environments time the same. Make the `git+` requirement stick, then
-      check that 0.8 and 0.9 differ in the #113 environment.
+- [ ] matrix_utils #48: no release has it, so every commit times the same in both
+      environments (about 720 ms at 1,000 groups on bw_processing 1.6, 420 ms with #113).
+      Add a column for the #48 head from the fork to show its effect.
 - [ ] Traversal: at smoke size the cutoff ends `max_calc=100` after 6 nodes, so that case does
       not test `max_calc`. Pick a size or cutoff where it binds.
 - [ ] CI: run `gh workflow run smoke.yml`. It should go green, and red with one check flipped

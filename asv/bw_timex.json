@@ -33,5 +33,9 @@
   },
   "build_command": [
     "python -m pip wheel --no-deps -w {build_cache_dir} {build_dir}"
+  ],
+  "install_command": [
+    "in-dir={env_dir} python -m pip install {wheel_file}",
+    "in-dir={env_dir} python -m pip install --force-reinstall --no-deps {wheel_file}"
   ]
 }

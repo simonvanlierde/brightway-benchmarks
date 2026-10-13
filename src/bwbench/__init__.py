@@ -1,4 +1,4 @@
-"""Continuous benchmarks for the Brightway LCA stack on seeded synthetic matrices.
+"""Benchmarks for the Brightway LCA stack on seeded synthetic matrices.
 
 Importing this package pins the BLAS and OpenMP thread pools to ``$BWBENCH_THREADS``
 (default 1) before numpy loads, so timings do not depend on how many cores are free.

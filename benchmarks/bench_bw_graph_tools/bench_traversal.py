@@ -16,6 +16,7 @@ class Traversal:
     version = GENERATOR_VERSION
     params = (knob("sizes", "smoke"), [2, 100])
     param_names = ["size", "max_calc"]
+    number = 1  # a second call in one sample would reuse the solver state of the first
     timeout = 900
 
     def setup(self, size: str, max_calc: int) -> None:

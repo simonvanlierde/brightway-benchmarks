@@ -26,6 +26,19 @@ def solver() -> str:
     return "umfpack" if getattr(bc, "UMFPACK", False) else "superlu"
 
 
+def forget_factorization() -> None:
+    """Drop the factorization PyPardiso keeps from the last solve.
+
+    PyPardiso's module-level solver skips factorizing a matrix it has just factorized, so
+    without this the timed call after a checking setup would skip the work that SuperLU
+    and UMFPACK pay for.
+    """
+    if bc.PYPARDISO:
+        from pypardiso.scipy_aliases import pypardiso_solver  # noqa: PLC0415
+
+        pypardiso_solver.free_memory(everything=True)
+
+
 def lca_class(name: str) -> type:
     """A bw2calc class by name; asv skips the case when this release lacks it."""
     if not hasattr(bc, name):
@@ -46,6 +59,7 @@ class SingleScore:
     version = GENERATOR_VERSION
     params = (knob("sizes", "smoke"), CLASSES)
     param_names = ["size", "cls"]
+    number = 1  # with setup before every sample, each timed call starts unfactorized
     timeout = 600
 
     def setup(self, size: str, cls: str) -> None:
@@ -54,6 +68,7 @@ class SingleScore:
         self.method, self.reference = methods[0], refs[0][0]
         self.rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
         self.err = check(self._score(), self.reference, self.rtol, f"score ({solver()})")
+        forget_factorization()
 
     def _score(self) -> float:
         lca = self.cls(demand={0: 1}, data_objs=[self.inventory, self.method])
@@ -110,6 +125,7 @@ class MultiScores:
     version = GENERATOR_VERSION
     params = (knob("sizes", "smoke"), [1, 3, 10, 30], ["MultiLCA", "forward", "adjoint"])
     param_names = ["size", "demands", "variant"]
+    number = 1  # as in SingleScore
     timeout = 900
 
     def setup(self, size: str, demands: int, variant: str) -> None:
@@ -131,6 +147,7 @@ class MultiScores:
         scores = self._scores()
         table = [[score_of(scores, method_name(m), f"d{d}") for m in range(len(methods))] for d in range(demands)]
         check_table(table, refs[:demands], DIRECT_RTOL, f"score ({solver()})")
+        forget_factorization()
 
     def _scores(self) -> dict:
         lca = self.cls(demands=self.demands, method_config=self.config, data_objs=self.data_objs, **self.kwargs)

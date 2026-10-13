@@ -21,14 +21,28 @@ import json, os
 conf = json.load(open("asv/bw2calc.json"))
 wanted = os.environ["BWBENCH_SOLVERS"].split(",")
 name = {"pypardiso": "pypardiso", "scikit-umfpack": "umfpack"}
-conf["include"] = [e for e in conf["include"] if all(name[k] in wanted for k in e["req"])]
+conf["include"] = [e for e in conf["include"] if all(name[k] in wanted for k in e["req"] if k in name)]
 json.dump(conf, open("asv/.bw2calc.local.json", "w"), indent=2)
 PY
 fi
 
 grep -qs "\"$machine\"" "$HOME/.asv-machine.json" ||
   asv machine --yes --machine "$machine" --config "$conf" >/dev/null
+status=0
 case $cmd in
-run | continuous | compare) asv "$cmd" --config "$conf" --machine "$machine" "$@" ;;
-*) asv "$cmd" --config "$conf" "$@" ;;
+run | continuous | compare) asv "$cmd" --config "$conf" --machine "$machine" "$@" || status=$? ;;
+*) asv "$cmd" --config "$conf" "$@" || status=$? ;;
 esac
+
+# Record what each environment holds next to the results. asv reinstalls only the
+# subject per commit, so this is the state after the last commit it installed.
+if [ "$cmd" = run ]; then
+  out=results/$subject/$machine
+  mkdir -p "$out"
+  for info in .asv/env/"$subject"/*/asv-env-info.json; do
+    [ -e "$info" ] || continue
+    env=$(dirname "$info")
+    { cat "$info" && echo && "$env/bin/python" -m pip freeze; } >"$out/versions-${env##*/}.txt"
+  done
+fi
+exit $status

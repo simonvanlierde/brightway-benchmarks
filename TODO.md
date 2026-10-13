@@ -4,8 +4,12 @@
       ecoinvent's 175 and 76. `measure()` traces it to consumer overlap among the smaller
       suppliers: with the top 1% of supplier rows removed, nnz(A^T A) is 0.37 of the summed
       squared row counts in ecoinvent and 0.88 in the generator, while the hubs overlap alike
-      (Jaccard 0.072 against 0.064). Regional hub bundles, consumer baskets, product families
-      and locality settings did not get below 0.70.
+      (Jaccard 0.072 against 0.064). Per band of supplier size, ecoinvent's overlap is lowest
+      at 17-256 consumers (0.38 to 0.44 against 0.90 to 0.95), and 39% of its products copy
+      another's input list (generator 11%). Regional hub bundles, consumer baskets, product
+      families, exact input-list copies (47% copied, overlap unchanged) and locality settings
+      did not move the mid bands. Next: measure how long the copied lists are, since short
+      lists that agree by chance would explain the 39% without explaining the overlap.
 - [ ] Run the six suites under pytest-codspeed: entry modules calling `bwbench.pytest.tests`,
       and the runner image from the `spike/bench-seam` branch.
 - [ ] Check bw2data's write and Monte Carlo's first draw once per parameter set, not after

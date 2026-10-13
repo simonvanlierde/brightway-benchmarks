@@ -43,3 +43,14 @@ def test_box_passes_bwbench_variables(box: tuple[Path, Path]):
     repo, log = box
     assert run_box(repo, BWBENCH_SIZES="smoke").returncode == 0
     assert "BWBENCH_SIZES=smoke" in log.read_text().split("\n")
+
+
+def test_box_mounts_the_repo_read_only_and_drops_privileges(box: tuple[Path, Path]):
+    repo, log = box
+    assert run_box(repo).returncode == 0
+    args = log.read_text().split("\n")
+    assert f"{repo}:/src:ro" in args
+    writable = {a for a in args if a.startswith(str(repo)) and not a.endswith(":ro")}
+    assert writable == {f"{repo}/{d}:/src/{d}" for d in (".asv", "results", "site", "asv")}
+    for flag in ("--init", "--cap-drop", "--security-opt", "--pids-limit"):
+        assert flag in args

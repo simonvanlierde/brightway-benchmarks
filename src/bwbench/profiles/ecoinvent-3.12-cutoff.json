@@ -64,8 +64,8 @@
       "MMD_AT_PLUS_A": 75.69411729919129
     },
     "factor_seconds": {
-      "COLAMD": 63.707405763998395,
-      "MMD_AT_PLUS_A": 13.206509296003787
+      "COLAMD": 62.94937641499564,
+      "MMD_AT_PLUS_A": 14.013259319006465
     },
     "same_location_share": 0.23482490646918777,
     "same_sector_share": 0.24395863298817436,
@@ -75,6 +75,7 @@
       "half_to_cutoff": 31
     },
     "ata_fill": 119.5241591389583,
+    "row_pairs": 305.608228980322,
     "clustering": 0.0013696649424561724,
     "reciprocity": 0.0009112435908131245,
     "core_after_hubs": 0.8658651490596615,

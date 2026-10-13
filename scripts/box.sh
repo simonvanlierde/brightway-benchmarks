@@ -6,9 +6,12 @@
 # elsewhere it is a plain `docker run`. BWBENCH_* variables are passed through.
 set -euo pipefail
 repo=$(cd "$(dirname "$0")/.." && pwd)
-image=${BWBENCH_IMAGE:-bwbench-box}
-[ "$image" != bwbench-box ] || docker image inspect bwbench-box >/dev/null 2>&1 ||
-    docker build -q -t bwbench-box "$repo/docker" >/dev/null
+# Tagged by the Dockerfile's checksum, so an edited Dockerfile gets a fresh build.
+image=bwbench-box:$(cksum <"$repo/docker/Dockerfile" | cut -d' ' -f1)
+if ! docker image inspect "$image" >/dev/null 2>&1; then
+    echo "box.sh: building the box image $image (a few minutes, once)" >&2
+    docker build -q -t "$image" "$repo/docker" >/dev/null
+fi
 # ${knobs[@]+...} below: bash 3.2 (macOS) treats an empty array as unset under `set -u`.
 knobs=()
 while IFS='=' read -r name value; do

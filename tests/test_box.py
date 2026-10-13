@@ -16,7 +16,10 @@ def box(tmp_path: Path) -> tuple[Path, Path]:
     stub = tmp_path / "stub"
     stub.mkdir()
     log = tmp_path / "docker.log"
-    (stub / "docker").write_text(f'#!/bin/sh\nprintf "%s\\n" "$@" >> {log}\necho --- >> {log}\n')
+    # `docker image inspect` fails when STUB_NO_IMAGE is set, as if the image were missing.
+    (stub / "docker").write_text(
+        f'#!/bin/sh\nprintf "%s\\n" "$@" >> {log}\necho --- >> {log}\n[ "$1 ${{STUB_NO_IMAGE:-}}" != "image 1" ]\n'
+    )
     (stub / "docker").chmod(0o755)
     return tmp_path, log
 
@@ -54,3 +57,22 @@ def test_box_mounts_the_repo_read_only_and_drops_privileges(box: tuple[Path, Pat
     assert writable == {f"{repo}/{d}:/src/{d}" for d in (".asv", "results", "site", "asv")}
     for flag in ("--init", "--cap-drop", "--security-opt", "--pids-limit"):
         assert flag in args
+
+
+def test_box_rebuilds_the_image_when_the_dockerfile_changes(box: tuple[Path, Path]):
+    repo, log = box
+
+    def built_tag() -> str:
+        log.write_text("")
+        out = run_box(repo, STUB_NO_IMAGE="1")
+        assert out.returncode == 0, out.stderr
+        assert "building the box image" in out.stderr
+        args = log.read_text().split("\n")
+        return args[args.index("build") + 3]  # build -q -t TAG
+
+    first = built_tag()
+    assert first.startswith("bwbench-box:")
+    assert built_tag() == first
+    with (repo / "docker" / "Dockerfile").open("a") as f:
+        f.write("# edited\n")
+    assert built_tag() != first

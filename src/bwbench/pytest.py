@@ -29,12 +29,12 @@ def _test(b: Bench) -> Any:
 
         try:
             benchmark.pedantic(target, setup=setup, rounds=1, iterations=1)
+            state["run"].verify(state["result"])
         except NotImplementedError as e:
             pytest.skip(str(e))
-        try:
-            state["run"].verify(state["result"])
         finally:
-            state["run"].teardown()
+            if "run" in state:
+                state["run"].teardown()
         # NOTE: track values are asv history only. Add them as benchmark extra info if a PR
         # gate ever needs one.
 

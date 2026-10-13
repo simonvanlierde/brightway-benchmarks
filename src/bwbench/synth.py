@@ -27,9 +27,9 @@ import functools
 import hashlib
 import json
 import math
-import os
 import shutil
 import time
+import uuid
 from dataclasses import asdict, dataclass, replace
 from importlib.metadata import version
 from pathlib import Path
@@ -207,7 +207,7 @@ class System:
         folder = cache_folder(self.name, self.profile, seed=self.seed, uncertain=self.uncertain)
         if folder.exists():
             return folder
-        tmp = folder.with_name(f"{folder.name}.tmp-{os.getpid()}")
+        tmp = folder.with_name(f"{folder.name}.tmp-{uuid.uuid4().hex}")  # PIDs repeat across containers
         shutil.rmtree(tmp, ignore_errors=True)
         write_datapackages(self, tmp)
         try:
@@ -227,14 +227,19 @@ class System:
         return as_bw2data(self, db=db, bio=bio)
 
 
-@functools.lru_cache(maxsize=4)  # benchmark setups ask for the same system before every sample
 def system(name: str, *, seed: int = 0, uncertain: bool = False, **overrides: object) -> System:
     """Build the system of profile ``name``. Same arguments, same arrays (and the same object).
 
     ``uncertain`` gives technosphere inputs a distribution in the datapackages, for Monte
-    Carlo. ``overrides`` change profile fields, such as ``products=8_000``.
+    Carlo. ``overrides`` change profile fields, such as ``products=8_000``. The arrays are
+    read-only, because repeated calls share them.
     """
-    p = profile(name, **overrides)
+    return _build(name, profile(name, **overrides), seed, uncertain)
+
+
+# Keyed on the resolved profile, not its name, so an edited profile never returns a stale system.
+@functools.lru_cache(maxsize=4)  # benchmark setups ask for the same system before every sample
+def _build(name: str, p: Profile, seed: int, uncertain: bool) -> System:  # noqa: FBT001
     rng = np.random.default_rng(seed)
     n = p.products
     region = sector = None
@@ -272,6 +277,8 @@ def system(name: str, *, seed: int = 0, uncertain: bool = False, **overrides: ob
         cf_flows.append(flows + n)
         cf_data.append(rng.lognormal(0.0, 1.0, size=flows.size))
 
+    for a in (tech_rows, tech_cols, tech_data, tech_flip, bio_rows, bio_cols, bio_data, scale, *cf_flows, *cf_data):
+        a.setflags(write=False)
     return System(
         name,
         p,
@@ -380,7 +387,10 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
     amounts = rng.lognormal(0.0, p.amount_sigma, rows.size)
     amounts /= np.bincount(cols, weights=amounts, minlength=n)[cols]
     # A small system whose loops are too weak stays below the radius rather than break that bound.
-    rho = spectral_radius(sparse.csc_matrix((amounts, (rows, cols)), shape=(n, n))) or 0.0
+    rho = spectral_radius(sparse.csc_matrix((amounts, (rows, cols)), shape=(n, n)))
+    if rho is None:
+        msg = f"ARPACK did not converge on {p}: the radius cannot be set"
+        raise ArithmeticError(msg)
     factor = MAX_COLUMN_SUM if rho * MAX_COLUMN_SUM <= p.radius else p.radius / rho
     # Rounded, so a last-bit difference in ARPACK between machines cannot change the arrays.
     amounts *= float(f"{factor:.9g}")
@@ -551,10 +561,13 @@ def cache_folder(name: str, p: Profile, *, seed: int, uncertain: bool, bwp_versi
     return data_root() / f"{name}-{_short_hash(key)}"
 
 
-def profile_version(names: list[str]) -> str:
-    """The asv ``version`` of a benchmark over these profiles: changes only when one of them does."""
-    digests = [profile(n).digest() if n in PROFILES else n for n in names]
-    return f"{GENERATOR_VERSION}-{_short_hash(digests, 8)}"
+def profile_version() -> str:
+    """The asv ``version`` of benchmarks on generated data: changes when any profile does.
+
+    It covers every registered profile, not the ones a run selects, so runs over different
+    sizes share one history. asv drops results whose version differs.
+    """
+    return f"{GENERATOR_VERSION}-{_short_hash(sorted((n, p.digest()) for n, p in PROFILES.items()), 8)}"
 
 
 def load(folder: Path) -> Packages:
@@ -696,7 +709,7 @@ def measure(
         consumers_per_supplier=_quantiles(np.bincount(rows, minlength=n)),
         log10_abs_input=_quantiles(np.log10(xa.data), extremes=False),
         negative_input_share=float(np.mean(x.data < 0)) if x.nnz else 0.0,
-        column_abs_sum=_quantiles(xa.sum(axis=0).A1, extremes=False),
+        column_abs_sum=_quantiles(np.ravel(xa.sum(axis=0)), extremes=False),
         loops={
             "components": int(loops.size),
             "largest": int(loops.max()) if loops.size else 0,

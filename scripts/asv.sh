@@ -58,11 +58,15 @@ if [ "$cmd" = run ]; then
         { cat "$info" && echo && "$env/bin/python" -m pip freeze; } >"$out/versions-${env##*/}.txt"
         # The same as a PEP 751 lock file, with each package's index URL and hashes. The subject
         # is left out: asv built it from the commit its result names, which need not be a release.
+        # PEP 751 allows no dots in the name between "pylock." and ".toml"; asv's env names have them.
+        lock=$out/pylock.$(printf %s "${env##*/}" | tr . _).toml
         "$env/bin/python" -m pip freeze | grep -iv "^${subject}[ =@]" |
-            uv pip compile --quiet --no-deps --python "$env/bin/python" --no-header -o "$out/pylock.${env##*/}.toml" - ||
+            uv pip compile --quiet --no-deps --python "$env/bin/python" --no-header -o "$lock" - ||
             status=1
     done
-    # What ran, as an RO-Crate next to the results.
-    uv run --quiet --no-project --with numpy==2.5.3 --with scipy==1.18.1 python scripts/run_crate.py "$out" || status=1
+    # What ran, as an RO-Crate over all machines. It sits above the machine folders, where asv
+    # reads no results.
+    uv run --quiet --no-project --with numpy==2.5.3 --with scipy==1.18.1 python scripts/run_crate.py "$results" ||
+        status=1
 fi
 exit $status

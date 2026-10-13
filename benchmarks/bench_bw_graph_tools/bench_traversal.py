@@ -5,6 +5,8 @@ transposed solve threw away the factorization ``lci()`` already had. Always time
 next to the large case, where ``max_calc=100`` binds (101 calculations at smoke size).
 """
 
+import math
+
 import bw2calc as bc
 from bw_graph_tools import GraphTraversalSettings, NewNodeEachVisitGraphTraversal
 
@@ -14,15 +16,14 @@ from bwbench.bench import UNCHECKED, BenchSetup, bench
 from bwbench.synth import packages
 
 
-def calculation_count(traversal: NewNodeEachVisitGraphTraversal) -> int:
+def calculation_count(traversal: NewNodeEachVisitGraphTraversal) -> float:
     """The traversal's counter: one per node above the cutoff; it stops once past ``max_calc``.
 
     A count well under ``max_calc`` means the cutoff ended the traversal first, so the
     case does not test the ``max_calc`` limit.
     """
-    if not hasattr(traversal, "calculation_count"):
-        raise NotImplementedError("this bw_graph_tools release has no calculation_count")
-    return traversal.calculation_count
+    # NaN, not a raise: asv skips only on NotImplementedError in setup, and fails it in a track.
+    return getattr(traversal, "calculation_count", math.nan)
 
 
 # fresh_solver=False: reusing the factorization lci() left behind is what #55 broke.

@@ -1,3 +1,4 @@
+import types
 from pathlib import Path
 
 import numpy as np
@@ -16,7 +17,10 @@ def small(name: str, **kw: object) -> synth.System:
 
 @pytest.mark.parametrize("name", SMALL)
 def test_same_seed_same_system(name: str):
-    a, b = small(name, seed=3), small(name, seed=3)
+    a = small(name, seed=3)
+    synth._build.cache_clear()  # noqa: SLF001 - otherwise b is the same cached object
+    b = small(name, seed=3)
+    assert a is not b
     for field in ("tech_rows", "tech_cols", "tech_data", "bio_data", "scale"):
         assert getattr(a, field).tobytes() == getattr(b, field).tobytes()
     assert a.reference == b.reference
@@ -81,7 +85,8 @@ def test_neumann_solves_with_units_and_refuses_to_diverge():
     demand = np.zeros(s.profile.products)
     demand[5] = 2.0
     x = neumann(sparse.identity(s.profile.products, format="csr") - a, demand, scale=s.scale)
-    assert np.allclose(a @ x, demand, rtol=0, atol=1e-12 * np.abs(x).max())
+    # Entries the demand cannot reach are 0 here and rounding noise (about 1e-19) in a dense solve.
+    assert np.allclose(x, np.linalg.solve(a.toarray(), demand), rtol=1e-12, atol=1e-15 * np.abs(x).max())
     with pytest.raises(ArithmeticError):
         neumann(sparse.csr_matrix([[0.0, 1.0], [1.0, 0.0]]), np.ones(2))
 
@@ -146,9 +151,38 @@ def test_datapackages_regenerate_when_the_profile_changes(monkeypatch: pytest.Mo
     assert not list(tmp_path.glob("*.tmp-*"))
 
 
-def test_profile_version_changes_only_with_its_profiles(monkeypatch: pytest.MonkeyPatch):
-    base = synth.profile_version(["smoke"])
+def test_profile_version_follows_every_profile_not_the_selection(monkeypatch: pytest.MonkeyPatch):
+    base = synth.profile_version()
+    assert synth.profile_version() == base
     monkeypatch.setitem(PROFILES, "ecoinvent", synth.profile("ecoinvent", back=0.2))
-    assert synth.profile_version(["smoke"]) == base
-    monkeypatch.setitem(PROFILES, "smoke", synth.profile("smoke", back=0.2))
-    assert synth.profile_version(["smoke"]) != base
+    assert synth.profile_version() != base
+
+
+def test_an_edited_profile_never_returns_a_stale_system(monkeypatch: pytest.MonkeyPatch):
+    assert system("smoke").profile.products == 200
+    monkeypatch.setitem(PROFILES, "smoke", synth.profile("smoke", products=150))
+    assert system("smoke").profile.products == 150
+
+
+def test_shared_arrays_are_read_only():
+    s = system("smoke")
+    with pytest.raises(ValueError, match="read-only"):
+        s.tech_data[0] = 2.0
+
+
+def test_neumann_score_matches_the_reference():
+    s = system("smoke")
+    n = s.profile.products
+    demand = np.zeros(n)
+    demand[0] = 1.0
+    characterization = sparse.diags(np.zeros(s.profile.flows))
+    characterization.setdiag(0)
+    cf = np.zeros(s.profile.flows)
+    cf[s.cf_flows[0] - s.flow_offset] = s.cf_data[0]
+    lca = types.SimpleNamespace(
+        technosphere_matrix=s.technosphere(),
+        demand_array=demand,
+        biosphere_matrix=s.biosphere(),
+        characterization_matrix=sparse.diags(cf),
+    )
+    assert synth.neumann_score(lca, s.scale) == pytest.approx(s.reference[0][0], rel=1e-12)

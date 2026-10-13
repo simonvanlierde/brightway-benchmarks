@@ -60,17 +60,21 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         "number": 1,  # one run per setup
         "warmup_time": 0,  # asv's warm-up calls the benchmark again without a new setup
         # asv's own version hashes this adapter, not the benchmark, so the profiles set it.
-        "version": profile_version(params["size"]) if "size" in params else GENERATOR_VERSION,
+        "version": profile_version() if "size" in params else GENERATOR_VERSION,
         "timeout": 900,
     }
+    methods: dict[str, Any] = {}
     for b in group:
         body.update(b.options)
-        body[f"time_{b.name}"] = _time(b.name)
-        for track_name, fn in b.track.items():
-            body[f"track_{track_name}"] = _track(b.name, fn)
+        new: dict[str, Any] = {f"time_{b.name}": _time(b.name)}
+        new |= {f"track_{t}": _track(b.name, fn) for t, fn in b.track.items()}
         if b.error:
-            body[f"track_{b.error}"] = _error(b.name)
-    return type(name, (), body)
+            new[f"track_{b.error}"] = _error(b.name)
+        if clash := methods.keys() & new.keys():
+            msg = f"asv class {name}: two benchmarks define {sorted(clash)}"
+            raise ValueError(msg)
+        methods |= new
+    return type(name, (), body | methods)
 
 
 def _time(bench_name: str) -> Callable[..., None]:

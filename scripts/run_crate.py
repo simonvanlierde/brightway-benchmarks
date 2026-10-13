@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Describe one machine's results folder as an RO-Crate: ``run_crate.py RESULTS_DIR/MACHINE``.
+"""Describe one subject's results as an RO-Crate: ``run_crate.py RESULTS_DIR``.
 
-Writes ``ro-crate-metadata.json`` next to asv's result files and the ``pylock.<env>.toml``
-files ``asv.sh`` leaves there: which files the folder holds, which bwbench commit and
-generator produced them, and the profiles they used. Rerun after every run; it replaces the
-file. RO-Crate 1.1: https://w3id.org/ro/crate/1.1
+Writes ``ro-crate-metadata.json`` into the results folder, above the machine folders that
+hold asv's result files and the ``pylock.*.toml`` files ``asv.sh`` leaves there. It names the
+files, the bwbench commit and generator version, and the digest of every registered profile.
+Rerun after every run; it replaces the file. RO-Crate 1.3: https://w3id.org/ro/crate/1.3
 """
 
 import json
@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from bwbench.synth import GENERATOR_VERSION, PROFILES  # noqa: E402
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
+LICENSE = "https://spdx.org/licenses/BSD-3-Clause"
 
 
 def commit() -> str | None:
@@ -28,8 +29,9 @@ def commit() -> str | None:
 
 
 def crate(folder: Path) -> dict:
-    """The RO-Crate metadata for ``folder``."""
-    files = sorted(p for p in folder.iterdir() if p.is_file() and p.name != "ro-crate-metadata.json")
+    """The RO-Crate metadata for one subject's results ``folder`` and every machine folder in it."""
+    files = sorted(p for p in folder.rglob("*") if p.is_file() and p.name != "ro-crate-metadata.json")
+    ids = [p.relative_to(folder).as_posix() for p in files]
     kinds = {".json": "asv result", ".toml": "PEP 751 lock file of one asv environment", ".txt": "pip freeze"}
     sha = commit()
     software = {
@@ -45,34 +47,39 @@ def crate(folder: Path) -> dict:
         for name, p in PROFILES.items()
     ]
     return {
-        "@context": "https://w3id.org/ro/crate/1.1/context",
+        "@context": "https://w3id.org/ro/crate/1.3/context",
         "@graph": [
             {
                 "@id": "ro-crate-metadata.json",
                 "@type": "CreativeWork",
-                "conformsTo": {"@id": "https://w3id.org/ro/crate/1.1"},
+                "conformsTo": {"@id": "https://w3id.org/ro/crate/1.3"},
                 "about": {"@id": "./"},
             },
             {
                 "@id": "./",
                 "@type": "Dataset",
-                "name": f"brightway-benchmarks results on {folder.name}",
+                "name": f"brightway-benchmarks results for {folder.name}",
+                "description": f"asv timings of {folder.name} on seeded synthetic LCA systems, with lock files.",
                 "datePublished": datetime.now(UTC).date().isoformat(),
-                "license": {"@id": "https://spdx.org/licenses/BSD-3-Clause"},
-                "hasPart": [{"@id": f.name} for f in files],
+                "license": {"@id": LICENSE},
+                "hasPart": [{"@id": i} for i in ids],
                 "mentions": {"@id": "#run"},
             },
+            {"@id": LICENSE, "@type": "CreativeWork", "name": "BSD 3-Clause License"},
             {
                 "@id": "#run",
                 "@type": "CreateAction",
                 "name": "asv run",
                 "instrument": {"@id": software["@id"]},
                 "object": [{"@id": p["@id"]} for p in profiles],
-                "result": [{"@id": f.name} for f in files],
+                "result": [{"@id": i} for i in ids],
             },
             software,
             *profiles,
-            *[{"@id": f.name, "@type": "File", "description": kinds.get(f.suffix, "")} for f in files],
+            *[
+                {"@id": i, "@type": "File", "description": kinds.get(f.suffix, "")}
+                for i, f in zip(ids, files, strict=True)
+            ],
         ],
     }
 

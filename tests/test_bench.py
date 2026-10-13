@@ -80,7 +80,7 @@ def test_asv_class_keeps_names_and_hides_runner_details():
     assert cls.number == 1
     assert cls.warmup_time == 0
     assert cls.timeout == 60
-    assert cls.version == synth.profile_version(["smoke"])
+    assert cls.version == synth.profile_version()
     obj = cls()
     obj.setup("smoke", 2)
     obj.time_double("smoke", 2)
@@ -162,3 +162,70 @@ def test_no_benchmark_module_has_a_name_asv_takes_for_setup():
         names |= {n.name for n in tree.body if isinstance(n, ast.FunctionDef | ast.ClassDef)}
         names |= {t.id for n in tree.body if isinstance(n, ast.Assign) for t in n.targets if isinstance(t, ast.Name)}
         assert not {n for n in names if n.lower() in reserved}, path
+
+
+def test_asv_track_and_teardown_paths():
+    log = []
+
+    @bench({"x": [1]}, rtol=1e-9, track={"double": lambda r: 2.0 * r})
+    def counted(x: int):
+        yield (lambda: x), 99  # a wrong result: the check fails in teardown
+        log.append("teardown")
+
+    (cls,) = asv.classes(module(counted=counted).__name__)
+    cls().teardown(1)  # after a setup that never ran: nothing to check or tear down
+    obj = cls()
+    obj.setup(1)
+    assert obj.track_double(1) == 2.0
+    obj.setup(1)
+    obj.time_counted(1)
+    with pytest.raises(AssertionError):
+        obj.teardown(1)
+    assert log == ["teardown"]
+
+
+def test_asv_refuses_two_benches_defining_one_method():
+    @bench({"x": [1]}, asv="Same", error="relative_error")
+    def first(x: int):
+        return lambda: x, UNCHECKED
+
+    @bench({"x": [1]}, asv="Same", error="relative_error")
+    def second(x: int):
+        return lambda: x, UNCHECKED
+
+    with pytest.raises(ValueError, match="track_relative_error"):
+        asv.classes(module(first=first, second=second).__name__)
+
+
+class FakeBenchmark:
+    def pedantic(self, target, setup, rounds, iterations):  # noqa: ANN001, ARG002
+        setup()
+        target()
+
+
+def test_pytest_adapter_skips_and_still_tears_down():
+    log = []
+
+    @bench()
+    def unsupported():
+        log.append("setup")
+        msg = "no such release"
+        raise NotImplementedError(msg)
+        yield  # a yield setup
+
+    @bench()
+    def crashing():
+        def run() -> None:
+            msg = "boom"
+            raise RuntimeError(msg)
+
+        yield run, UNCHECKED
+        log.append("teardown")
+
+    namespace: dict[str, Any] = {"unsupported": unsupported, "crashing": crashing}
+    bw_pytest.tests(namespace)
+    with pytest.raises(pytest.skip.Exception, match="no such release"):
+        namespace["test_unsupported"](FakeBenchmark())
+    with pytest.raises(RuntimeError, match="boom"):
+        namespace["test_crashing"](FakeBenchmark())
+    assert log == ["setup", "teardown"]

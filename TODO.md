@@ -7,6 +7,13 @@
 - [ ] Check bw2data's write and Monte Carlo's first draw once per parameter set, not after
       every timed sample: each check loads matrices and runs a Neumann solve. Measure what
       that costs at the ecoinvent size first.
+- [ ] Before publishing results, require a neutral `BWBENCH_MACHINE` in `asv.sh`: asv names
+      each machine folder after the container hostname, which includes the host's name.
+- [ ] Setups solve once before the timed call (a warm-up and early check), on the same
+      datapackage objects, so "first score" is warm. Time a cold `run()` on fresh packages
+      against it in the box and decide whether to drop the warm-up at 25k products and up.
+- [ ] Check that pytest-codspeed's `pedantic` calls the target once per setup under CPU
+      simulation; a warm-up call would trip the seam's "run called twice" guard.
 - [ ] Measure run-to-run noise (10 repeats of one commit) before publishing any number.
 - [ ] Backfill each package on the devbox in one `oss-bench` slot, with
       `BWBENCH_SIZES=ecoinvent,exiobase`. Include the PyPardiso environments there.

@@ -1,16 +1,24 @@
 #!/bin/sh
 # asv for one subject, inside the box: scripts/asv.sh SUBJECT ASV-COMMAND [ARGS...]
 #
-# BWBENCH_MACHINE labels the results: set it per host and CPU slot.
+# BWBENCH_MACHINE labels the results. It defaults to the container's hostname, which
+# oss-bench sets to <host>-<slot> and box.sh to <host>-box.
 # BWBENCH_SOLVERS (bw2calc only) adds environments with pypardiso and/or umfpack. The
 # base environment has neither, so bw2calc falls back to SuperLU there. The default leaves
 # out pypardiso off x86_64, where MKL has no wheels.
 set -eu
 subject=$1 cmd=$2
 shift 2
-machine=${BWBENCH_MACHINE:-local}
+machine=${BWBENCH_MACHINE:-$(uname -n)}
 conf=asv/$subject.json
 asv() { uvx --quiet --from asv==0.6.6 asv "$@"; }
+
+# One run per subject at a time: two would rebuild the same environments under each other.
+exec 9>".asv/$subject.lock"
+flock -n 9 || {
+  echo "asv.sh: another $subject run holds .asv/$subject.lock" >&2
+  exit 1
+}
 
 if [ "$subject" = bw2calc ]; then
   default=umfpack

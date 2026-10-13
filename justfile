@@ -27,8 +27,9 @@ hooks:
 subjects := "bw2calc bw2data bw_processing matrix_utils bw_graph_tools bw_timex"
 
 # Benchmark SUBJECT over its releases (asv/SUBJECT.hashes), or over RANGE (an asv range).
-bench subject range="":
-    scripts/box.sh scripts/asv.sh {{ subject }} run {{ if range == "" { "HASHFILE:/src/asv/" + subject + ".hashes" } else { quote(range) } }}
+# Extra arguments reach `asv run`, e.g. `just bench bw2calc "" -e` to show each check's message.
+bench subject range="" *args:
+    scripts/box.sh scripts/asv.sh {{ subject }} run {{ args }} {{ if range == "" { "HASHFILE:/src/asv/" + subject + ".hashes" } else { quote(range) } }}
 
 # One quick pass per subject at its latest release, smoke size: proves the harness, not the numbers.
 smoke:

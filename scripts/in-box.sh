@@ -3,7 +3,6 @@
 # datapackages inside the mounted repo (all under .asv/, which git ignores).
 set -eu
 export HOME=/src/.asv/home UV_CACHE_DIR=/src/.asv/uv-cache
-export BWBENCH_DATA="${BWBENCH_DATA:-/src/.asv/data}"
 # Install only what was on PyPI at this date: uv for asv itself and `uv run --with`,
 # pip for asv's environments. Move it on purpose, together with the pins in asv/*.json.
 cutoff=2026-10-06T00:00:00Z

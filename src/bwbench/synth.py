@@ -214,7 +214,7 @@ def write_datapackages(system: System, folder: Path, *, uncertain: bool = False)
     distributions = None
     if uncertain:
         distributions = np.zeros(system.tech_data.size, dtype=bwp.UNCERTAINTY_DTYPE)
-        for field in ("scale", "shape", "minimum", "maximum"):
+        for field in ("shape", "minimum", "maximum"):
             distributions[field] = np.nan
         distributions["loc"] = system.tech_data
         distributions["uncertainty_type"] = np.where(system.tech_flip, 3, 0)  # 3: normal
@@ -254,8 +254,8 @@ def write_datapackages(system: System, folder: Path, *, uncertain: bool = False)
 
 
 def data_root() -> Path:
-    """Where generated datapackages are cached: ``$BWBENCH_DATA`` or ``~/.cache/bwbench``."""
-    return Path(os.environ.get("BWBENCH_DATA", Path.home() / ".cache" / "bwbench"))
+    """Where generated datapackages are cached: ``~/.cache/bwbench`` (under ``.asv/`` in the box)."""
+    return Path.home() / ".cache" / "bwbench"
 
 
 def cache_folder(name: str, *, seed: int, uncertain: bool, bwp_version: str) -> Path:

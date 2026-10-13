@@ -24,8 +24,6 @@ hooks:
 # Everything below runs in a throwaway `tmp-bwbench-*` container (scripts/box.sh):
 # Brightway's code never runs on the host. BWBENCH_* variables set sizes and labels.
 
-subjects := "bw2calc bw2data bw_processing matrix_utils bw_graph_tools bw_timex"
-
 # Benchmark SUBJECT over its releases (asv/SUBJECT.hashes), or over RANGE (an asv range).
 # Extra arguments reach `asv run`, e.g. `just bench bw2calc "" -e` to show each check's message.
 bench subject range="" *args:
@@ -37,8 +35,9 @@ smoke:
     #!/usr/bin/env bash
     set -uo pipefail
     status=0
-    for s in {{ subjects }}; do
-      last=$(tail -n 1 asv/$s.hashes)
+    for conf in asv/*.json; do
+      s=$(basename "$conf" .json)
+      last=$(tail -n 1 "asv/$s.hashes")
       rm -rf ".asv/smoke/$s"
       BWBENCH_MACHINE=smoke scripts/box.sh scripts/asv.sh "$s" run --quick --show-stderr "$last^!" || { echo "$s: exit $?"; status=1; }
     done
@@ -49,7 +48,8 @@ smoke:
 site:
     #!/usr/bin/env bash
     set -euo pipefail
-    for s in {{ subjects }}; do
+    for conf in asv/*.json; do
+      s=$(basename "$conf" .json)
       if [ -d "results/$s" ]; then scripts/box.sh scripts/asv.sh "$s" publish; fi
     done
     scripts/site_index.py site

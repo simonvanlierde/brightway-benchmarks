@@ -101,4 +101,4 @@ exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
 include = ["src", "tests"]
 
 [tool.ty.analysis]
-allowed-unresolved-imports = ["bw_processing", "bw2calc", "bw2data", "matrix_utils"]
+allowed-unresolved-imports = ["bw_processing"]

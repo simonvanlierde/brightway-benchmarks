@@ -8,10 +8,12 @@ fast one.
 """
 
 import inspect
+import warnings
 
 import bw2calc as bc
 import numpy as np
 from scipy import sparse
+from scipy.sparse.linalg import cgs
 
 from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, knob
 from bwbench.synth import GENERATOR_VERSION, cached, load, method_name, neumann
@@ -44,6 +46,45 @@ def lca_class(name: str) -> type:
     if not hasattr(bc, name):
         raise NotImplementedError(f"bw2calc {bc.__version__} has no {name}")
     return getattr(bc, name)
+
+
+def _source_has(fn: object, text: str) -> bool:
+    try:
+        return text in inspect.getsource(fn)
+    except (OSError, TypeError):
+        return False
+
+
+def skip_known_crash(cls: str, *, calls_next: bool) -> None:
+    """Skip a case this release crashes on for a reason already reported upstream.
+
+    asv records a ``NotImplementedError`` in setup as skipped, so the history shows a gap with
+    the link instead of a failure. Each test looks at behaviour, not at the version number, so
+    a release with the fix runs the case again. ``calls_next``: the case calls ``next()``, the
+    only path that frees PyPardiso's factorization.
+    """
+    if cls == "IterativeLCA" and _source_has(bc.IterativeLCA.solve_linear_system, '"legacy"'):
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                cgs(sparse.identity(1, format="csr"), np.ones(1), atol="legacy")
+        except (TypeError, ValueError):
+            raise NotImplementedError(
+                f"bw2calc {bc.__version__} passes atol='legacy' to cgs, which this scipy rejects: "
+                "https://github.com/brightway-lca/brightway2-calc/pull/161#issuecomment-6140609983"
+            ) from None
+    free = getattr(bc.LCA, "_delete_solver_state", None)  # from bw2calc 2.3
+    if (
+        calls_next
+        and cls in {"JacobiGMRESLCA", "FastScoresOnlyMultiLCA"}
+        and bc.PYPARDISO
+        and _source_has(free, "free_memory")
+        and not _source_has(free, "PyPardisoError")
+    ):
+        raise NotImplementedError(
+            f"bw2calc {bc.__version__} frees a PyPardiso factorization that {cls} never made: "
+            "https://github.com/brightway-lca/brightway2-calc/issues/157"
+        )
 
 
 def score_of(scores: object, method: tuple, demand: str) -> float:
@@ -98,6 +139,7 @@ class NewDemand:
     timeout = 600
 
     def setup(self, size: str, cls: str) -> None:
+        skip_known_crash(cls, calls_next=False)
         inventory, methods, refs = load(cached(size))
         self.reference = refs[1][0]
         self.rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
@@ -138,6 +180,7 @@ class MultiScores:
             self.cls = bc.MultiLCA
         else:
             self.cls = lca_class("FastScoresOnlyMultiLCA")
+            skip_known_crash("FastScoresOnlyMultiLCA", calls_next=True)
             if not (bc.PYPARDISO or getattr(bc, "UMFPACK", False)):
                 raise NotImplementedError("FastScoresOnlyMultiLCA needs PARDISO or UMFPACK")
             if "direction" in inspect.signature(self.cls.__init__).parameters:
@@ -178,6 +221,7 @@ class MonteCarlo:
     repeat = (1, 5, 600)
 
     def setup(self, size: str, iterations: int, cls: str) -> None:
+        skip_known_crash(cls, calls_next=True)
         inventory, methods, refs = load(cached(size, uncertain=True))
         self.lca = lca_class(cls)(
             demand={0: 1}, data_objs=[inventory, methods[0]], use_distributions=True, seed_override=1

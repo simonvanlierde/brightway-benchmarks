@@ -54,28 +54,9 @@ site:
     done
     scripts/site_index.py site
 
-# Refuses machine folders named after this host: set BWBENCH_MACHINE to a neutral label when benchmarking.
-# Commit results/ to the local `results` branch, the data the site is built from. Pushes nothing.
+# Commit results/ to the local `results` branch for the site; refuses results that name this host.
 results-commit:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    host=$(hostname -s)
-    if leaked=$(find results -mindepth 2 -maxdepth 2 -type d -iname "*$host*" | grep .); then
-      echo "results-commit: machine folders named after this host, rerun with BWBENCH_MACHINE set:" >&2
-      echo "$leaked" >&2
-      exit 1
-    fi
-    if git rev-parse -q --verify results >/dev/null; then
-      git worktree add -q .asv/results-branch results
-    else
-      git worktree add -q --orphan -b results .asv/results-branch
-    fi
-    trap 'git worktree remove --force .asv/results-branch' EXIT
-    rsync -a --delete --exclude .git results/ .asv/results-branch/
-    git -C .asv/results-branch add -A
-    if git -C .asv/results-branch diff --cached --quiet; then echo "results-commit: nothing new"; exit 0; fi
-    git -C .asv/results-branch commit -q -m "results: $(date -u +%F) from $(git rev-parse --short HEAD)"
-    echo "Committed to the local results branch. To publish: git push origin results && gh workflow run site.yml"
+    scripts/results-commit.sh
 
 # bw2data #290: SQLite project against sentier-brightway's Parquet registry. size: smoke | ecoinvent.
 registry-vs-sqlite size="smoke":

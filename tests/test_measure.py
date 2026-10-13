@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from scipy import sparse
 
+from bwbench import synth
 from bwbench.synth import PROFILES_DIR, Stats, measure, system
 
 
@@ -81,6 +82,12 @@ def test_fill_drivers_on_a_known_matrix():
     assert s.row_pairs == pytest.approx((9 + 4 + 1) / 6)  # rows hold 3, 2 and 1 entries
     # Rows {0, 1, 2}, {0, 1} and {2} pairwise: Jaccard 2/3, 1/3 and 0.
     assert s.hub_jaccard == pytest.approx((2 / 3 + 1 / 3 + 0) / 3)
+    # Rows 0 and 1 (3 and 2 entries) fall in the 2-4 band; together they join 9 column pairs.
+    assert s.overlap_by_band == {"2-4": {"overlap": pytest.approx(9 / 13), "pairs_share": pytest.approx(13 / 14)}}
+    assert s.copied_inputs == pytest.approx(2 / 3)  # products 1 and 2 both take in product 0 only
+    # Without product 0's row (the top 1%), rows {0, 1} and {2} share no pair: no overlap.
+    assert s.overlap_without_hubs == pytest.approx(1.0)
+
     assert s.core_after_hubs == 0  # without product 0, nothing has two neighbours
     assert s.dense_rows == {"cutoff": 17, "above": 0, "half_to_cutoff": 0}  # max(16, 10 sqrt(3))
     assert s.off_diagonal_pivots == {"COLAMD": 0.0, "MMD_AT_PLUS_A": 0.0}  # diagonally dominant
@@ -96,3 +103,37 @@ def test_a_triangle_is_clustered_and_a_small_diagonal_is_pivoted():
     assert s.off_diagonal_pivots["COLAMD"] > 0
     assert s.lu_fill_no_pivoting is not None
     assert set(s.lu_fill_no_pivoting) == {"COLAMD", "MMD_AT_PLUS_A"}
+
+
+def test_overlap_without_hubs_drops_the_hub_rows():
+    # 200 products; product 0 supplies all of them, products 1-9 each supply the same 20.
+    n = 200
+    a = sparse.lil_matrix(np.eye(n))
+    a[0, 1:] = -0.001
+    for i in range(1, 10):
+        a[i, 100:120] = -0.001
+    s = measure(a.tocsc(), repeats=0)
+    # The two largest rows (1% of 200) go: product 0 and product 1. Rows 2-9 (their diagonal plus
+    # the same 20 consumers) share the 400 pairs among those 20; each adds 41 pairs of its own;
+    # the 190 diagonal-only rows add 170 pairs not already counted.
+    assert s.overlap_without_hubs == pytest.approx((400 + 8 * 41 + 170) / (8 * 21**2 + 190))
+
+
+def test_hub_jaccard_stays_finite_with_empty_rows():
+    a = sparse.csc_matrix(np.diag([1.0, 1.0, 1.0, 1.0]))  # every row holds only its diagonal
+    s = measure(a, repeats=0)
+    assert s.hub_jaccard is not None
+    assert np.isfinite(s.hub_jaccard)
+
+
+def test_overlap_bands_include_both_ends_and_label_the_last_one_open(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(synth, "OVERLAP_BANDS", ((2, 3), (4, 1 << 62)))
+    # Rows 0, 1 and 2 hold 4, 3 and 2 entries (their diagonal included); row 3 holds 1.
+    a = sparse.lil_matrix(np.eye(4))
+    a[0, 1:4] = -0.1
+    a[1, 2:4] = -0.1
+    a[2, 3] = -0.1
+    s = measure(a.tocsc(), repeats=0)
+    assert s.overlap_by_band is not None
+    assert set(s.overlap_by_band) == {"2-3", "4+"}
+    assert sum(b["pairs_share"] for b in s.overlap_by_band.values()) == pytest.approx(1 - 1 / (16 + 9 + 4 + 1))

@@ -121,15 +121,17 @@ def test_cache_folder_follows_everything_that_shapes_the_files(monkeypatch: pyte
     assert key() != base
 
 
-def test_cache_follows_the_calibration_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+def test_new_measurements_in_the_calibration_file_keep_the_digest(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     p = synth.profile("ecoinvent")
     assert p.target
     target = tmp_path / p.target
     target.write_bytes((synth.PROFILES_DIR / p.target).read_bytes())
     monkeypatch.setattr(synth, "PROFILES_DIR", tmp_path)
-    before = p.digest()
-    target.write_text(target.read_text() + " ")
-    assert p.digest() != before
+    before, version = p.digest(), synth.profile_version()
+    target.write_text(target.read_text().replace('"stats": {', '"stats": {"new_statistic": 1, ', 1))
+    assert p.digest() == before
+    assert synth.profile_version() == version
+    assert synth.profile("ecoinvent", back=0.2).digest() != before  # a recalibration does change it
 
 
 def test_datapackages_regenerate_when_the_profile_changes(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -210,3 +212,10 @@ def test_stale_tmp_folders_are_swept(monkeypatch: pytest.MonkeyPatch, tmp_path: 
     s.datapackages()
     assert not old.exists()
     assert fresh.exists()  # may still be another run's
+
+
+@pytest.mark.parametrize("field", ["products", "radius", "back", "units", "target"])
+def test_every_profile_field_changes_the_digest(field: str):
+    p = synth.profile("ecoinvent")
+    changed = {"products": 100, "radius": 0.5, "back": 0.3, "units": 1.0, "target": None}[field]
+    assert synth.profile("ecoinvent", **{field: changed}).digest() != p.digest()

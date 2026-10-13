@@ -18,7 +18,8 @@ jobs:
   build:
     name: build the site
     runs-on: ubuntu-latest
-    # Builds the box image (scikit-umfpack from source), then asv publish per subject.
+    # Builds the box image (it only needs asv here; see TODO.md), then asv publish per subject,
+    # which clones each upstream repository for its tags.
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -46,6 +47,8 @@ jobs:
   deploy:
     name: publish on GitHub Pages
     needs: build
+    # Only main's scripts may publish: a dispatch on another branch builds, but does not deploy.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

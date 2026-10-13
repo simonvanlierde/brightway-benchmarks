@@ -2,7 +2,7 @@
 # Run a command in a throwaway container that sees only this repo. Brightway's code
 # (installed by asv into its environments) never runs on the host.
 #
-# On a host with `oss-bench` (the devbox) the container gets a pinned CPU slot;
+# On a host with `oss-bench` (a CPU-slot runner from the author's dotfiles) the container gets a pinned CPU slot;
 # elsewhere it is a plain `docker run`. BWBENCH_* variables are passed through.
 set -euo pipefail
 repo=$(cd "$(dirname "$0")/.." && pwd)
@@ -18,15 +18,18 @@ while IFS='=' read -r name value; do
     knobs+=("$name=$value")
 done < <(env | grep '^BWBENCH_' || true)
 
-if command -v oss-bench >/dev/null; then
-    # NOTE: oss-bench mounts the whole repo read-write (it has no option for a read-only
-    # mount); it drops capabilities and caps processes itself.
-    OSS_BENCH_IMAGE=$image exec oss-bench "$repo" env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
+# The repo is read-only in the box, so code asv installs cannot change what the host later
+# runs (.git, .venv, justfile, scripts/, the asv/ configs). Only these folders are writable.
+writable=".asv results site"
+
+# An oss-bench without OSS_BENCH_RW would mount the repo read-write, so use it only if it has it.
+if command -v oss-bench >/dev/null && grep -q OSS_BENCH_RW "$(command -v oss-bench)"; then
+    # oss-bench drops capabilities and caps processes itself.
+    OSS_BENCH_IMAGE=$image OSS_BENCH_RW=$writable exec oss-bench "$repo" \
+        env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
 fi
-# The repo is read-only in the box, so code asv installs cannot change what the host
-# later runs (.git, .venv, justfile, scripts/). Only asv's working folders are writable.
 mounts=(-v "$repo":/src:ro)
-for d in .asv results site asv; do
+for d in $writable; do
     mkdir -p "$repo/$d"
     mounts+=(-v "$repo/$d":"/src/$d")
 done

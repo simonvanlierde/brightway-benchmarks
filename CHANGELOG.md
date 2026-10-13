@@ -20,7 +20,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `measure()`, the structural statistics of a technosphere matrix. It calibrates and checks
   the generator, and reports what drives LU fill: rows near COLAMD's dense cut-off,
   nnz(AᵀA), clustering, reciprocity, the 2-core left without hubs, and fill and pivots without
-  partial pivoting.
+  partial pivoting. It also locates the consumer overlap: per band of supplier size, among the
+  50 largest suppliers (`hub_jaccard`) and without them (`overlap_without_hubs`), and how
+  many products copy another's input list.
+- `measure_stats.py --structure-only` updates a profile's structure in about a minute and
+  keeps the fill figures it already holds, with the date they were measured.
+- matrix_utils #48 as its own line in the history (the asv branch `pull/48/head`), until a
+  release includes it.
 - `@bench`: write a benchmark once, as a setup that returns the timed call and its check,
   and run it under asv or pytest-codspeed. A setup that needs a teardown yields instead.
 - Next to each machine's results, a PEP 751 lock file per asv environment. At the results
@@ -32,7 +38,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A weekly smoke run in CI.
 - `just results-commit` keeps results as data on a local `results` branch, and a `site`
   workflow builds the history site from that branch and publishes it on GitHub Pages. The
-  recipe refuses machine folders named after the host, so set `BWBENCH_MACHINE`.
+  recipe adds and updates files but never deletes another machine's, and refuses results
+  whose folder names or file contents name the host, so set `BWBENCH_MACHINE` (and list
+  other private names in `BWBENCH_PRIVATE_NAMES`).
 - Skips, with the upstream link, for bw2calc cases that a release crashes on for a reported
   reason: `IterativeLCA`'s second solve where scipy rejects `atol="legacy"`, and
   `FastScoresOnlyMultiLCA` and `JacobiGMRESLCA` Monte Carlo with PyPardiso (bw2calc #157).

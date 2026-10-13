@@ -30,6 +30,7 @@ import math
 import shutil
 import time
 import uuid
+from collections import Counter
 from dataclasses import asdict, dataclass, replace
 from importlib.metadata import version
 from pathlib import Path
@@ -52,6 +53,15 @@ NEUMANN_TOL = 1e-17  # the series stops when the rest of it is below this, relat
 NEUMANN_MAX_TERMS = 5_000  # without a bound on the rest; radius 0.99 needs about 4,000
 FACTORIZE_BUDGET = 900.0  # seconds of SuperLU a benchmark case may spend, half asv's timeout
 MAX_COLUMN_SUM = 0.9  # tiered builder: the reference's series needs column sums below 1
+# Bands of entries per supplier row for overlap_by_band, both ends included. A row's entries
+# are its consumers plus its own production, so "17-64" means 16 to 63 consumers.
+OVERLAP_BANDS = (
+    (2, 4),
+    (5, 16),
+    (17, 64),
+    (65, 256),
+    (257, 1 << 62),
+)
 REFERENCE_PRODUCTS = 30  # reference scores are stored for products 0 to 29, the most MultiScores demands
 PROFILES_DIR = Path(__file__).parent / "profiles"
 
@@ -87,11 +97,12 @@ class Profile:
     target: str | None = None  # file in profiles/ the profile was calibrated to
 
     def digest(self) -> str:
-        """Short hash of the profile and of its calibration file."""
-        key: list[Any] = [asdict(self)]
-        if self.target:
-            key.append(hashlib.sha256((PROFILES_DIR / self.target).read_bytes()).hexdigest())
-        return _short_hash(key)
+        """Short hash of the profile's fields: what shapes the arrays.
+
+        Not of the calibration file: the builders never read it, and new measurements in it
+        must not drop asv's results by changing their version.
+        """
+        return _short_hash(asdict(self))
 
 
 def _short_hash(key: object, length: int = 12) -> str:
@@ -677,6 +688,8 @@ class Stats:
     # What drives LU fill beyond degrees and loops (see dense_rows and the fields below).
     dense_rows: dict[str, int] | None = None  # supplier rows above and just below COLAMD's dense cut-off
     ata_fill: float | None = None  # nnz(A^T A) / nnz(A): the pattern COLAMD orders
+    overlap_by_band: dict[str, dict[str, float]] | None = None  # per supplier size band, see OVERLAP_BANDS
+    copied_inputs: float | None = None  # share of products with inputs whose list another product has too
     hub_jaccard: float | None = None  # mean Jaccard overlap of the 50 largest suppliers' consumer sets
     overlap_without_hubs: float | None = None  # ata_fill / row_pairs with the top 1% of supplier rows removed
     row_pairs: float | None = None  # sum over rows of (entries per row)^2 / nnz(A): ata_fill if no two rows overlapped
@@ -774,13 +787,32 @@ def _fill_drivers(a: sparse.csc_matrix, x: sparse.csc_matrix) -> dict[str, Any]:
     p = (x != 0).astype(np.float64)
     sym = ((p + p.T) != 0).astype(np.float64).tocsr()
     degree = np.diff(sym.indptr)
-    top_rows = np.argsort(row_counts)[::-1]
+    top_rows = np.argsort(-row_counts, kind="stable")  # ties in id order, so the same 50 every run
     big = pattern[top_rows[:50]]
     shared = (big @ big.T).toarray()
     union = row_counts[top_rows[:50], None] + row_counts[None, top_rows[:50]] - shared
     upper = np.triu_indices(shared.shape[0], k=1)
     rest = pattern[np.sort(top_rows[math.ceil(0.01 * n) :])]
     rest_pairs = float((np.diff(rest.indptr).astype(np.float64) ** 2).sum())
+
+    # Which suppliers' consumers overlap: per band of consumer counts, nnz(Q^T Q) over the
+    # summed squared row counts (1: no shared pairs), and the band's share of all row pairs.
+    squares = row_counts.astype(np.float64) ** 2
+    by_band = {}
+    for low, high in OVERLAP_BANDS:
+        rows_in = np.flatnonzero((row_counts >= low) & (row_counts <= high))
+        pairs = float(squares[rows_in].sum())
+        if pairs:
+            band = pattern[rows_in]
+            by_band[f"{low}+" if high == OVERLAP_BANDS[-1][1] else f"{low}-{high}"] = {
+                "overlap": float((band.T @ band).nnz / pairs),
+                "pairs_share": pairs / float(squares.sum()),
+            }
+
+    # Products whose input list (off the diagonal) another product has exactly too.
+    lists = [x.indices[x.indptr[j] : x.indptr[j + 1]].tobytes() for j in range(n) if x.indptr[j + 1] > x.indptr[j]]
+    counts = Counter(lists)
+    copied = sum(c for c in counts.values() if c > 1) / len(lists) if lists else 0.0
 
     triangles = 0.0
     for start in range(0, n, 2_000):  # in blocks, so S @ S never sits in memory whole
@@ -803,7 +835,9 @@ def _fill_drivers(a: sparse.csc_matrix, x: sparse.csc_matrix) -> dict[str, Any]:
         },
         "ata_fill": float(ata / a.nnz),
         "row_pairs": float((row_counts.astype(np.float64) ** 2).sum() / a.nnz),
-        "hub_jaccard": float(np.mean(shared[upper] / union[upper])) if upper[0].size else 0.0,
+        "overlap_by_band": by_band,
+        "copied_inputs": float(copied),
+        "hub_jaccard": float(np.mean(shared[upper] / np.maximum(union[upper], 1))) if upper[0].size else 0.0,
         "overlap_without_hubs": float((rest.T @ rest).nnz / rest_pairs) if rest_pairs else 0.0,
         "clustering": triangles / triples if triples else 0.0,
         "reciprocity": float(p.multiply(p.T).nnz / p.nnz) if p.nnz else 0.0,

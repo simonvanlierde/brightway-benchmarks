@@ -52,8 +52,9 @@ share more of their consumers. [TODO.md](TODO.md) tracks the work on it.
 
 ## Running it
 
-You need Docker and [just](https://just.systems). Brightway's code only runs inside a
-throwaway container, never on your machine.
+You need Docker and [just](https://just.systems); `just results-commit` also needs rsync and
+git 2.42 or later. Brightway's code only runs inside a throwaway container, never on your
+machine.
 
 ```sh
 just smoke                       # each package's latest release, small database: a quick check
@@ -63,8 +64,12 @@ just site                        # build the history pages in site/
 just results-commit              # keep results/ on the local results branch, for publishing
 ```
 
-`BWBENCH_SIZES=ecoinvent` (or `smoke,ecoinvent`) picks the databases. The results are not
-published yet: I still have to measure the run-to-run noise first.
+Every benchmark runs on the 200-product `smoke` database unless you pick others. For
+example, `BWBENCH_SIZES=ecoinvent just bench bw2calc` times the ecoinvent-sized one.
+`BWBENCH_SIZES` sets the size for most cases, and three cases have their own variable:
+`BWBENCH_MC_SIZES` (Monte Carlo), `BWBENCH_WRITE_SIZES` (bw2data) and `BWBENCH_TIMEX_SIZES`
+(bw_timex). The results are not published yet: I still have to measure the run-to-run
+noise first.
 
 ## How the results stay reproducible
 

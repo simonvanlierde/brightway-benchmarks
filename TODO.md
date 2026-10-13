@@ -21,8 +21,10 @@
 - [ ] Measure run-to-run noise (10 repeats of one commit) before publishing any number.
 - [ ] Backfill each package on the devbox in one `oss-bench` slot, with
       `BWBENCH_SIZES=ecoinvent,exiobase`. Include the PyPardiso environments there.
-- [ ] Keep results as data on a `results` branch (asv JSON, lock files, RO-Crate per machine)
-      and build the site from it in CI, instead of from a local `results/`.
+- [ ] First publication: turn on GitHub Pages with "GitHub Actions" as the source, benchmark
+      with a neutral `BWBENCH_MACHINE` (for example `pinned-e0`), then `just results-commit`,
+      `git push origin results` and `gh workflow run site.yml`. Only after the noise is
+      measured (below).
 - [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
       hold the same versions.
 - [ ] Publish the site from a gh-pages branch. The benchmark job gets `contents: read` and

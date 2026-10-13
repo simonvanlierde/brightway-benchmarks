@@ -333,3 +333,108 @@ def as_bw2data(system: System, db: str = "synth", bio: str = "bio") -> tuple[dic
         for flows, factors in zip(system.cf_flows, system.cf_data, strict=True)
     ]
     return biosphere, technosphere, cfs
+
+
+QUANTILES = (0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99, 1.0)
+
+
+def _quantiles(values: NDArray) -> dict[str, float]:
+    """Mean and the ``QUANTILES`` of ``values``: a distribution, never the values themselves."""
+    v = np.asarray(values, dtype=np.float64)
+    if v.size == 0:
+        return {}
+    return {"mean": float(v.mean()), **{f"q{round(q * 100):02d}": float(np.quantile(v, q)) for q in QUANTILES}}
+
+
+@dataclass(frozen=True)
+class Stats:
+    """Structural statistics of a technosphere: aggregates only, safe to publish for licensed data.
+
+    ``X = I - A`` after scaling each column to a production amount of 1, so ``X[i, j]`` is how
+    much of product ``i`` one unit of product ``j`` takes in. Degrees count nonzero entries.
+    """
+
+    products: int
+    entries: int  # nonzero inputs (off-diagonal)
+    inputs_per_product: dict[str, float]  # nonzero entries per column
+    consumers_per_supplier: dict[str, float]  # nonzero entries per row
+    log10_abs_input: dict[str, float]  # distribution of log10 |X[i, j]|
+    negative_input_share: float  # inputs with X < 0 (wastes sent to treatment)
+    column_abs_sum: dict[str, float]  # sum over i of |X[i, j]|
+    loops: dict[str, float]  # strongly connected components of more than one product
+    spectral_radius: float  # largest |eigenvalue| of X
+    spectral_radius_abs: float  # largest eigenvalue of |X|, an upper bound on the above
+    lu_fill: dict[str, float]  # nnz(L + U) / nnz(A) per SuperLU column ordering
+    factor_seconds: dict[str, float]  # median of 3 SuperLU factorizations, per ordering
+    same_location_share: float | None = None  # inputs whose supplier has the consumer's location
+    same_sector_share: float | None = None  # the same for the sector
+
+
+def measure(
+    technosphere: sparse.spmatrix,
+    locations: list[str] | None = None,
+    sectors: list[str] | None = None,
+) -> Stats:
+    """Structural statistics of a technosphere matrix ``A`` (production on the diagonal)."""
+    import time  # noqa: PLC0415
+
+    from scipy.sparse import csgraph  # noqa: PLC0415
+    from scipy.sparse import linalg as sla  # noqa: PLC0415
+
+    a = sparse.csc_matrix(technosphere, dtype=np.float64)
+    n = a.shape[0]
+    a = a @ sparse.diags(1.0 / a.diagonal())  # production amount 1 in every column
+    x = (sparse.identity(n, format="csc") - a).tocsc()
+    x.setdiag(0.0)
+    x.eliminate_zeros()
+    xa = abs(x)
+
+    _, labels = csgraph.connected_components(x, directed=True, connection="strong")
+    sizes = np.bincount(labels)
+    loops = sizes[sizes > 1]
+
+    def radius(m: sparse.csc_matrix) -> float:
+        if m.nnz == 0:
+            return 0.0
+        if n < 3:  # eigs needs k < n - 1
+            return float(np.abs(np.linalg.eigvals(m.toarray())).max())
+        return float(np.abs(sla.eigs(m, k=1, which="LM", return_eigenvectors=False, tol=1e-8, maxiter=n * 10)).max())
+
+    fill, seconds = {}, {}
+    for order in ("COLAMD", "MMD_AT_PLUS_A"):
+        times = []
+        for _ in range(3):
+            t0 = time.perf_counter()
+            lu = sla.splu(a, permc_spec=order)
+            times.append(time.perf_counter() - t0)
+        fill[order] = float((lu.L.nnz + lu.U.nnz - n) / a.nnz)
+        seconds[order] = float(np.median(times))
+
+    rows, cols = x.nonzero()
+
+    def same_share(labels_: list[str] | None) -> float | None:
+        if labels_ is None:
+            return None
+        lab = np.asarray(labels_)
+        return float(np.mean(lab[rows] == lab[cols])) if rows.size else None
+
+    return Stats(
+        products=n,
+        entries=int(x.nnz),
+        inputs_per_product=_quantiles(np.diff(x.indptr)),
+        consumers_per_supplier=_quantiles(np.bincount(rows, minlength=n)),
+        log10_abs_input=_quantiles(np.log10(xa.data)),
+        negative_input_share=float(np.mean(x.data < 0)) if x.nnz else 0.0,
+        column_abs_sum=_quantiles(xa.sum(axis=0).A1),
+        loops={
+            "components": int(loops.size),
+            "largest": int(loops.max()) if loops.size else 0,
+            "products_in_loops": int(loops.sum()),
+        },
+        spectral_radius=radius(x),
+        spectral_radius_abs=radius(xa),
+        lu_fill=fill,
+        factor_seconds=seconds,
+        same_location_share=same_share(locations),
+        same_sector_share=same_share(sectors),
+    )

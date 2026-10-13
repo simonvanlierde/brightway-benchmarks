@@ -70,9 +70,22 @@ def test_measure_stats_builds_the_technosphere(tmp_path: Path, monkeypatch: pyte
     assert "q100" not in amounts
     assert stats["lu_fill"]
 
-    # A structure-only rerun updates the structure and keeps the measured fill.
+    # A structure-only rerun recomputes the structure and keeps only the fill, with its date.
     fill = stats["lu_fill"]
+    before = json.loads(out.read_text())
+    before["stats"]["gone"] = 1  # a field measure() no longer reports
+    before["stats"]["clustering"] = 0.5  # a stale structural value
+    out.write_text(json.dumps(before))
     script.main(tmp_path / "3.12-cutoff", out, structure_only=True)
-    again = json.loads(out.read_text())["stats"]
-    assert again["lu_fill"] == fill
-    assert again["entries"] == 2
+    again = json.loads(out.read_text())
+    assert again["stats"]["lu_fill"] == fill
+    assert again["fill_measured"] == before["measured"]
+    assert "gone" not in again["stats"]
+    assert again["stats"]["clustering"] == stats["clustering"]
+
+    with pytest.raises(SystemExit, match="does not exist"):
+        script.main(tmp_path / "3.12-cutoff", tmp_path / "missing.json", structure_only=True)
+    again["stats"]["entries"] = 99
+    out.write_text(json.dumps(again))
+    with pytest.raises(SystemExit, match="another matrix"):
+        script.main(tmp_path / "3.12-cutoff", out, structure_only=True)

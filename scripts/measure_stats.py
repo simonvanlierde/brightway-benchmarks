@@ -14,9 +14,9 @@ machine that holds the licence.
 
 # First, so the BLAS thread pin lands before numpy loads (bwbench warns otherwise).
 import bwbench  # noqa: F401, I001
+import argparse
 import json
 import os
-import sys
 import xml.etree.ElementTree as ET
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict
@@ -29,6 +29,7 @@ from scipy import sparse
 
 from bwbench.synth import measure
 
+FILL_KEYS = ("lu_fill", "factor_seconds", "lu_fill_no_pivoting", "off_diagonal_pivots")  # need factorizations
 NS = "{http://www.EcoInvent.org/EcoSpold02}"
 REFERENCE_PRODUCT = "0"  # ecospold2 outputGroup of the reference product
 
@@ -59,8 +60,15 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
     """Parse every dataset in ``folder/datasets`` and write the statistics to ``out``.
 
     ``structure_only`` skips the SuperLU factorizations (minutes) and keeps the fill and
-    timing figures already in ``out``.
+    timing figures already in ``out``, with the date and versions they were measured with.
+    It refuses when ``out`` is missing or describes another matrix.
     """
+    old = None
+    if structure_only:
+        if not out.exists():
+            msg = f"--structure-only keeps the fill figures in {out}, which does not exist: run without it first"
+            raise SystemExit(msg)
+        old = json.loads(out.read_text())
     files = sorted((folder / "datasets").glob("*.spold"))
     with ProcessPoolExecutor(max_workers=min(8, os.cpu_count() or 1)) as pool:
         records = list(pool.map(read, files, chunksize=200))
@@ -93,9 +101,6 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
             a, locations=[r[2] for r in records], sectors=[r[3] for r in records], repeats=0 if structure_only else 3
         )
     )
-    if structure_only and out.exists():
-        kept = json.loads(out.read_text())["stats"]
-        stats |= {k: v for k, v in kept.items() if stats.get(k) in ({}, None)}
     result = {
         "source": f"ecoinvent {folder.name} (ecospold2), aggregates only",
         "measured": datetime.now(UTC).date().isoformat(),
@@ -105,11 +110,22 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
         "versions": {"numpy": version("numpy"), "scipy": version("scipy")},
         "stats": stats,
     }
+    if old is not None:
+        if (old["stats"]["products"], old["stats"]["entries"]) != (stats["products"], stats["entries"]):
+            msg = f"{out} describes another matrix: run without --structure-only"
+            raise SystemExit(msg)
+        stats |= {k: old["stats"][k] for k in FILL_KEYS if k in old["stats"]}
+        result["fill_measured"] = old.get("fill_measured", old["measured"])
+        result["fill_versions"] = old.get("fill_versions", old["versions"])
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
-    args = [a for a in sys.argv[1:] if a != "--structure-only"]
-    main(Path(args[0]).expanduser(), Path(args[1]), structure_only="--structure-only" in sys.argv)
+    parser = argparse.ArgumentParser(description="Structural statistics of a licensed ecoinvent release.")
+    parser.add_argument("folder", type=Path, help="the release folder, holding datasets/*.spold")
+    parser.add_argument("out", type=Path, help="the JSON file to write")
+    parser.add_argument("--structure-only", action="store_true", help="skip the factorizations, keep the fill in OUT")
+    args = parser.parse_args()
+    main(args.folder.expanduser(), args.out, structure_only=args.structure_only)

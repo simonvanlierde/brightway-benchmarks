@@ -15,8 +15,8 @@ from bwbench.asv import classes
 from bwbench.bench import UNCHECKED, BenchSetup, bench
 from bwbench.synth import many_groups
 
-GROUPS = {"groups": [int(x) for x in knob("groups", "100,1000")]}
-ENTRIES = {"entries": [int(x) for x in knob("entries", "10000,100000")]}
+GROUPS = {"groups": knob("groups", "100,1000", int)}
+ENTRIES = {"entries": knob("entries", "10000,100000", int)}
 
 
 @bench(GROUPS, asv="Groups", timeout=600)

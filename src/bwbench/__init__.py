@@ -7,6 +7,8 @@ Importing this package pins the BLAS and OpenMP thread pools to ``$BWBENCH_THREA
 import os
 import sys
 import warnings
+from collections.abc import Callable
+from typing import Any
 
 if "numpy" in sys.modules:
     # The BLAS libraries read their thread count when numpy loads them, so the pin below is too late.
@@ -51,13 +53,13 @@ def check_table(scores: list[list[float]], references: list[list[float]], rtol: 
     )
 
 
-def knob(name: str, default: str) -> list[str]:
-    """A comma-separated benchmark parameter from ``$BWBENCH_<NAME>``.
+def knob(name: str, default: str, cast: Callable[[str], Any] = str) -> list[Any]:
+    """A comma-separated benchmark parameter from ``$BWBENCH_<NAME>``, each value through ``cast``.
 
     asv reads parameters at import, so a smoke run and a full run differ only in the
     environment: ``BWBENCH_SIZES=smoke`` here, ``ecoinvent,exiobase`` on a quiet machine.
     """
-    return os.environ.get(f"BWBENCH_{name.upper()}", default).split(",")
+    return [cast(v) for v in os.environ.get(f"BWBENCH_{name.upper()}", default).split(",")]
 
 
 def temporary_brightway_dir() -> str:

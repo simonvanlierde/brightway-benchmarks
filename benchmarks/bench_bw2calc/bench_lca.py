@@ -19,7 +19,7 @@ from scipy.sparse.linalg import cgs
 from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, knob
 from bwbench.asv import classes
 from bwbench.bench import BenchSetup, bench
-from bwbench.synth import method_name, neumann, packages
+from bwbench.synth import method_name, neumann_score, packages
 
 CLASSES = ["LCA", "IterativeLCA", "JacobiGMRESLCA"]
 SIZES = knob("sizes", "smoke")
@@ -31,6 +31,11 @@ def solver() -> str:
     if bc.PYPARDISO:
         return "pypardiso"
     return "umfpack" if getattr(bc, "UMFPACK", False) else "superlu"
+
+
+def rtol_for(cls: str) -> float:
+    """The check's tolerance: direct solves for ``LCA``, iterative ones for the others."""
+    return DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
 
 
 def lca_class(name: str) -> type:
@@ -95,7 +100,7 @@ def first_score(size: str, cls: str) -> BenchSetup:
     """One demand, one method: build the matrices, factorize, solve, characterize."""
     lca_cls = lca_class(cls)
     inventory, methods, refs, _ = packages(size)
-    rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
+    rtol = rtol_for(cls)
 
     def run() -> float:
         lca = lca_cls(demand={0: 1}, data_objs=[inventory, methods[0]])
@@ -119,7 +124,7 @@ def redo_lci(size: str, cls: str) -> BenchSetup:
     """
     skip_known_crash(cls, calls_next=False)
     inventory, methods, refs, _ = packages(size)
-    rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
+    rtol = rtol_for(cls)
     lca = lca_class(cls)(demand={0: 1}, data_objs=[inventory, methods[0]])
     lca.lci(factorize=True)
     lca.lcia()
@@ -176,7 +181,7 @@ def scores(size: str, demands: int, variant: str) -> BenchSetup:
 
 
 @bench(
-    {"size": MC_SIZES, "iterations": [int(x) for x in knob("iterations", "10")], "cls": CLASSES},
+    {"size": MC_SIZES, "iterations": knob("iterations", "10", int), "cls": CLASSES},
     asv="MonteCarlo",
     fresh_solver=False,
     timeout=1800,
@@ -195,12 +200,8 @@ def iterations(size: str, iterations: int, cls: str) -> BenchSetup:
     lca.lci()
     lca.lcia()
     next(lca)
-    a = lca.technosphere_matrix
     # Product ids are 0 to n - 1, so bw2calc's matrix order is the id order of `scale`.
-    supply = neumann(sparse.identity(a.shape[0], format="csr") - a, lca.demand_array, scale=scale)
-    expected = float((lca.characterization_matrix @ lca.biosphere_matrix @ supply).sum())
-    rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
-    check(float(lca.score), expected, rtol, f"Monte Carlo score ({solver()})")
+    check(float(lca.score), neumann_score(lca, scale), rtol_for(cls), f"Monte Carlo score ({solver()})")
     if abs(lca.score - refs[0][0]) <= ITERATIVE_RTOL * abs(refs[0][0]):
         raise AssertionError("the Monte Carlo draw equals the static score: distributions were ignored")
 

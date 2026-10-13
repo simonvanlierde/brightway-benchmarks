@@ -61,7 +61,7 @@ def build_project(size: str, steps: int) -> None:
 
 
 @bench(
-    {"size": TIMEX_SIZES, "steps": [int(x) for x in knob("steps", "5,20")]},
+    {"size": TIMEX_SIZES, "steps": knob("steps", "5,20", int)},
     error="static_score_error",
     asv="TimelineLCI",
     timeout=1800,

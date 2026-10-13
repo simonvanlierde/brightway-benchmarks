@@ -15,7 +15,7 @@ from bwbench.bench import UNCHECKED, BenchSetup, bench
 from bwbench.synth import many_groups
 
 
-@bench({"groups": [int(x) for x in knob("groups", "100,1000")]}, asv="MappedMatrixBuild", timeout=600)
+@bench({"groups": knob("groups", "100,1000", int)}, asv="MappedMatrixBuild", timeout=600)
 def mapped_matrix(groups: int) -> BenchSetup:
     dp = many_groups(groups)
     m = mu.MappedMatrix(packages=[dp], matrix="technosphere_matrix").matrix

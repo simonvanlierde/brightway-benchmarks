@@ -17,11 +17,10 @@ temporary_brightway_dir()
 import bw2calc as bc  # noqa: E402
 import bw2data as bd  # noqa: E402
 import numpy as np  # noqa: E402
-from scipy import sparse  # noqa: E402
 
 from bwbench.asv import classes  # noqa: E402
 from bwbench.bench import BenchSetup, bench  # noqa: E402
-from bwbench.synth import System, method_name, neumann, system  # noqa: E402
+from bwbench.synth import System, method_name, neumann_score, system  # noqa: E402
 
 WRITE_SIZES = knob("write_sizes", "smoke")
 
@@ -49,15 +48,12 @@ def score_error(synthetic: System) -> float:
     lca.load_lci_data()
     lca.build_demand_array()
     lca.load_lcia_data()
-    a = lca.technosphere_matrix
     # bw2data numbers products by database id, so put the units in the matrix's order.
     ids = {n["code"]: n.id for n in bd.Database("synth")}
-    scale = np.empty(a.shape[0])
-    for i, unit in enumerate(synthetic.scale):
-        scale[lca.dicts.product[ids[f"p{i}"]]] = unit
-    supply = neumann(sparse.identity(a.shape[0], format="csr") - a, lca.demand_array, scale=scale)
-    score = float((lca.characterization_matrix @ lca.biosphere_matrix @ supply).sum())
-    return check(score, synthetic.reference[0][0], BW2DATA_RTOL, f"bw2data {bd.__version__} score")
+    order = [lca.dicts.product[ids[f"p{i}"]] for i in range(synthetic.profile.products)]
+    scale = np.empty(len(order))
+    scale[order] = synthetic.scale
+    return check(neumann_score(lca, scale), synthetic.reference[0][0], BW2DATA_RTOL, f"bw2data {bd.__version__} score")
 
 
 @bench({"size": WRITE_SIZES}, error="score_error", asv="DatabaseWrite", timeout=1800, repeat=(1, 5, 1200))

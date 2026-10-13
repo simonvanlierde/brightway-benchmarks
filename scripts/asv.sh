@@ -57,8 +57,8 @@ if [ "$cmd" = run ]; then
         env=$(dirname "$info")
         { cat "$info" && echo && "$env/bin/python" -m pip freeze; } >"$out/versions-${env##*/}.txt"
         # The same as a PEP 751 lock file, with each package's index URL and hashes. The subject
-        # is left out: asv built it from the commit its result names, as a local wheel.
-        "$env/bin/python" -m pip freeze | grep -v ' @ file:' |
+        # is left out: asv built it from the commit its result names, which need not be a release.
+        "$env/bin/python" -m pip freeze | grep -iv "^${subject}[ =@]" |
             uv pip compile --quiet --python "$env/bin/python" --no-header -o "$out/pylock.${env##*/}.toml" - ||
             status=1
     done

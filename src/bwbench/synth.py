@@ -27,13 +27,14 @@ bw_processing and runs in the benchmark container.
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import math
 import os
 import shutil
 import time
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import asdict, dataclass, replace
 from importlib.metadata import version
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple
@@ -93,7 +94,12 @@ class Profile:
         key: list[Any] = [asdict(self)]
         if self.target:
             key.append(hashlib.sha256((PROFILES_DIR / self.target).read_bytes()).hexdigest())
-        return hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()[:12]
+        return _short_hash(key)
+
+
+def _short_hash(key: object, length: int = 12) -> str:
+    """Hex digest of ``key`` as sorted JSON, cut to ``length``: the form of every cache and version key."""
+    return hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()[:length]
 
 
 # Calibrated 2026-10-13 with measure() against the target file. Degrees, the giant loop,
@@ -161,7 +167,6 @@ class System:
     uncertain: bool = False
     region: NDArray[np.int64] | None = None  # tiered builder: each product's region and sector
     sector: NDArray[np.int64] | None = None
-    _reference: list = field(default_factory=list, repr=False, compare=False)
 
     @property
     def flow_offset(self) -> int:
@@ -179,15 +184,13 @@ class System:
         shape = (self.profile.flows, self.profile.products)
         return sparse.csc_matrix((self.bio_data, (self.bio_rows - self.flow_offset, self.bio_cols)), shape=shape)
 
-    @property
+    @functools.cached_property
     def reference(self) -> list[list[float]]:
         """Score of one unit of each of products 0 to 29, per method: ``reference[p][m]``.
 
         This is what every Brightway result is checked against. Computed once.
         """
-        if not self._reference:
-            self._reference.extend(self.reference_scores())
-        return self._reference
+        return self.reference_scores()
 
     def reference_scores(self, products: int = REFERENCE_PRODUCTS) -> list[list[float]]:
         """Score of one unit of each of the first ``products`` products, per method."""
@@ -211,7 +214,7 @@ class System:
             return folder
         tmp = folder.with_name(f"{folder.name}.tmp-{os.getpid()}")
         shutil.rmtree(tmp, ignore_errors=True)
-        write_datapackages(self, tmp, uncertain=self.uncertain)
+        write_datapackages(self, tmp)
         try:
             tmp.rename(folder)
         except OSError:
@@ -229,8 +232,9 @@ class System:
         return as_bw2data(self, db=db, bio=bio)
 
 
+@functools.lru_cache(maxsize=4)  # benchmark setups ask for the same system before every sample
 def system(name: str, *, seed: int = 0, uncertain: bool = False, **overrides: object) -> System:
-    """Build the system of profile ``name``. Same arguments, same arrays.
+    """Build the system of profile ``name``. Same arguments, same arrays (and the same object).
 
     ``uncertain`` gives technosphere inputs a distribution in the datapackages, for Monte
     Carlo. ``overrides`` change profile fields, such as ``products=8_000``.
@@ -306,10 +310,15 @@ def _random(p: Profile, rng: np.random.Generator) -> tuple[NDArray, NDArray, NDA
     n, k = p.products, p.inputs
     cols = np.repeat(np.arange(n, dtype=np.int64), k)
     rows = rng.integers(0, n, size=n * k, dtype=np.int64)
-    keep = rows != cols  # no self-loops: the diagonal holds production only
-    _, first = np.unique(rows[keep] * n + cols[keep], return_index=True)  # drop repeated cells
-    rows, cols = rows[keep][first], cols[keep][first]
+    rows, cols = _off_diagonal_once(rows, cols, n)
     return rows, cols, rng.uniform(0.0, INPUTS_SHARE / k, size=rows.size)
+
+
+def _off_diagonal_once(rows: NDArray, cols: NDArray, n: int) -> tuple[NDArray, NDArray]:
+    """Drop self-loops (the diagonal holds production only) and repeated cells, keeping the first."""
+    keep = rows != cols
+    _, first = np.unique(rows[keep] * n + cols[keep], return_index=True)
+    return rows[keep][first], cols[keep][first]
 
 
 def _draw(
@@ -370,9 +379,7 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
 
     rows = np.concatenate([suppliers, rows[found]])
     cols = np.concatenate([consumers, cols[found]])
-    keep = rows != cols
-    _, first = np.unique(rows[keep] * n + cols[keep], return_index=True)
-    rows, cols = rows[keep][first], cols[keep][first]
+    rows, cols = _off_diagonal_once(rows, cols, n)
 
     # Amounts free of units: lognormal, each column summing to 1, then all scaled to the radius.
     amounts = rng.lognormal(0.0, p.amount_sigma, rows.size)
@@ -441,6 +448,16 @@ def neumann(
     raise ArithmeticError(msg)
 
 
+def neumann_score(lca: Any, scale: NDArray[np.float64] | None = None) -> float:  # noqa: ANN401 - a bw2calc LCA
+    """The score of the matrices ``lca`` has loaded, solved by ``neumann`` instead of its solver.
+
+    ``scale`` is the system's unit per product in ``lca``'s matrix order.
+    """
+    a = lca.technosphere_matrix
+    supply = neumann(sparse.identity(a.shape[0], format="csr") - a, lca.demand_array, scale=scale)
+    return float((lca.characterization_matrix @ lca.biosphere_matrix @ supply).sum())
+
+
 def many_groups(n: int) -> object:
     """An in-memory bw_processing datapackage with ``n`` one-entry resource groups on the diagonal."""
     import bw_processing as bwp  # noqa: PLC0415 - only the container has it
@@ -457,12 +474,12 @@ def method_name(i: int) -> tuple[str, str]:
     return ("synthetic", f"method {i}")
 
 
-def write_datapackages(system: System, folder: Path, *, uncertain: bool = False) -> Path:
+def write_datapackages(system: System, folder: Path) -> Path:
     """Write ``system`` as bw_processing datapackages under ``folder``.
 
     ``inventory/`` holds the technosphere and biosphere, and ``method-<i>/`` one
     characterization each, with the ``identifier`` MultiLCA filters on. They are separate
-    because a plain ``LCA`` sums every characterization it is given. With ``uncertain``,
+    because a plain ``LCA`` sums every characterization it is given. With ``system.uncertain``,
     technosphere inputs get a normal distribution with a 10% standard deviation, for
     Monte Carlo. ``reference.json`` holds the reference scores and ``scale.npy`` the units.
     """
@@ -479,7 +496,7 @@ def write_datapackages(system: System, folder: Path, *, uncertain: bool = False)
         return arr
 
     distributions = None
-    if uncertain:
+    if system.uncertain:
         distributions = np.zeros(system.tech_data.size, dtype=bwp.UNCERTAINTY_DTYPE)
         for name in ("shape", "minimum", "maximum"):
             distributions[name] = np.nan
@@ -535,14 +552,13 @@ def cache_folder(name: str, p: Profile, *, seed: int, uncertain: bool, bwp_versi
     """Cache folder for one system: a new one whenever anything that shapes the files changes."""
     bwp_version = bwp_version or version("bw_processing")
     key = [p.digest(), seed, uncertain, GENERATOR_VERSION, bwp_version]
-    digest = hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()[:12]
-    return data_root() / f"{name}-{digest}"
+    return data_root() / f"{name}-{_short_hash(key)}"
 
 
 def profile_version(names: list[str]) -> str:
     """The asv ``version`` of a benchmark over these profiles: changes only when one of them does."""
     digests = [profile(n).digest() if n in PROFILES else n for n in names]
-    return f"{GENERATOR_VERSION}-" + hashlib.sha256(json.dumps(digests).encode()).hexdigest()[:8]
+    return f"{GENERATOR_VERSION}-{_short_hash(digests, 8)}"
 
 
 def load(folder: Path) -> Packages:

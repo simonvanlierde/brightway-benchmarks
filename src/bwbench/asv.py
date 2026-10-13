@@ -69,7 +69,7 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         for track_name, fn in b.track.items():
             body[f"track_{track_name}"] = _track(b.name, fn)
         if b.error:
-            body[f"track_{b.error}"] = _track(b.name, None)
+            body[f"track_{b.error}"] = _error(b.name)
     return type(name, (), body)
 
 
@@ -80,12 +80,18 @@ def _time(bench_name: str) -> Callable[..., None]:
     return time
 
 
-def _track(bench_name: str, fn: Callable[[Any], float] | None) -> Callable[..., float | None]:
-    """A ``track_`` method: ``fn`` of the result, or the check's relative error when ``fn`` is None."""
-
-    def track(self: Any, *args: Any) -> float | None:
-        prepared = self.prepared[bench_name]
-        result = prepared()
-        return prepared.verify(result) if fn is None else fn(result)
+def _track(bench_name: str, fn: Callable[[Any], float]) -> Callable[..., float]:
+    def track(self: Any, *args: Any) -> float:
+        return fn(self.prepared[bench_name]())
 
     return track
+
+
+def _error(bench_name: str) -> Callable[..., float | None]:
+    """A ``track_`` method recording the check's relative error."""
+
+    def error(self: Any, *args: Any) -> float | None:
+        prepared = self.prepared[bench_name]
+        return prepared.verify(prepared())
+
+    return error

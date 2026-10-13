@@ -51,7 +51,14 @@ class Prepared:
 
     def verify(self, result: Any) -> float | None:
         """Check ``result``; returns its relative error, or None when it is not checked."""
-        return self.bench.verify(result, self.expect)
+        if self.expect is UNCHECKED:
+            return None
+        if callable(self.expect):
+            return self.expect(result)
+        if self.bench.rtol is None:
+            msg = f"{self.bench.name}: an expected value needs an rtol"
+            raise ValueError(msg)
+        return check(result, self.expect, self.bench.rtol, self.bench.name)
 
     def teardown(self) -> None:
         """Run the code after the setup's ``yield``, once."""
@@ -89,17 +96,6 @@ class Bench:
         if self.fresh_solver:
             free_pardiso()
         return Prepared(self, run, expect, rest)
-
-    def verify(self, result: Any, expect: Any) -> float | None:
-        """Check ``result`` against ``expect``; returns its relative error, or None if unchecked."""
-        if expect is UNCHECKED:
-            return None
-        if callable(expect):
-            return expect(result)
-        if self.rtol is None:
-            msg = f"{self.name}: an expected value needs an rtol"
-            raise ValueError(msg)
-        return check(result, expect, self.rtol, self.name)
 
 
 def bench(

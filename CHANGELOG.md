@@ -38,7 +38,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A weekly smoke run in CI.
 - `just results-commit` keeps results as data on a local `results` branch, and a `site`
   workflow builds the history site from that branch and publishes it on GitHub Pages. The
-  recipe refuses machine folders named after the host, so set `BWBENCH_MACHINE`.
+  recipe adds and updates files but never deletes another machine's, and refuses results
+  whose folder names or file contents name the host, so set `BWBENCH_MACHINE` (and list
+  other private names in `BWBENCH_PRIVATE_NAMES`).
 - Skips, with the upstream link, for bw2calc cases that a release crashes on for a reported
   reason: `IterativeLCA`'s second solve where scipy rejects `atol="legacy"`, and
   `FastScoresOnlyMultiLCA` and `JacobiGMRESLCA` Monte Carlo with PyPardiso (bw2calc #157).

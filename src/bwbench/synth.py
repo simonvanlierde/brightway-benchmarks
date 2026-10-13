@@ -53,7 +53,8 @@ NEUMANN_TOL = 1e-17  # the series stops when the rest of it is below this, relat
 NEUMANN_MAX_TERMS = 5_000  # without a bound on the rest; radius 0.99 needs about 4,000
 FACTORIZE_BUDGET = 900.0  # seconds of SuperLU a benchmark case may spend, half asv's timeout
 MAX_COLUMN_SUM = 0.9  # tiered builder: the reference's series needs column sums below 1
-# Bands of consumers per supplier for overlap_by_band, both ends included.
+# Bands of entries per supplier row for overlap_by_band, both ends included. A row's entries
+# are its consumers plus its own production, so "17-64" means 16 to 63 consumers.
 OVERLAP_BANDS = (
     (2, 4),
     (5, 16),

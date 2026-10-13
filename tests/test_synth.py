@@ -212,3 +212,10 @@ def test_stale_tmp_folders_are_swept(monkeypatch: pytest.MonkeyPatch, tmp_path: 
     s.datapackages()
     assert not old.exists()
     assert fresh.exists()  # may still be another run's
+
+
+@pytest.mark.parametrize("field", ["products", "radius", "back", "units", "target"])
+def test_every_profile_field_changes_the_digest(field: str):
+    p = synth.profile("ecoinvent")
+    changed = {"products": 100, "radius": 0.5, "back": 0.3, "units": 1.0, "target": None}[field]
+    assert synth.profile("ecoinvent", **{field: changed}).digest() != p.digest()

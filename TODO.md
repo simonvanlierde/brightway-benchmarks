@@ -5,7 +5,7 @@
       suppliers: with the top 1% of supplier rows removed, nnz(A^T A) is 0.37 of the summed
       squared row counts in ecoinvent and 0.88 in the generator, while the hubs overlap alike
       (Jaccard 0.072 against 0.064). Per band of supplier size, ecoinvent's overlap is lowest
-      at 17-256 consumers (0.38 to 0.44 against 0.90 to 0.95), and 39% of its products copy
+      for suppliers with 16 to 255 consumers (0.38 to 0.44 against 0.90 to 0.95), and 39% of its products copy
       another's input list (generator 11%). Regional hub bundles, consumer baskets, product
       families, exact input-list copies (47% copied, overlap unchanged) and locality settings
       did not move the mid bands. Next: measure how long the copied lists are, since short
@@ -32,6 +32,8 @@
       measured (above).
 - [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
       hold the same versions.
+- [ ] When turning on Pages, limit the `github-pages` environment's deployment branches to
+      `main`: the workflow's own `if:` guard lives in the dispatched branch's copy.
 - [ ] The site job builds the box image and clones six upstream repos on every run, though
       `asv publish` only reads results. Run asv there directly, or cache `.asv/`, once the
       first runs show how long it takes. CodSpeed, if added, runs on `pull_request` only.

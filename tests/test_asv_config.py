@@ -25,5 +25,12 @@ def test_hashes_are_tags_or_full_commits_ending_on_a_release(subject: str):
 def test_configs_point_at_their_own_folders(subject: str):
     conf = json.loads((ASV / f"{subject}.json").read_text())
     assert conf["project"] == subject
-    for key in ("results_dir", "env_dir", "html_dir"):
-        assert conf[key].endswith(subject)
+    assert conf["results_dir"] == f"../results/{subject}"
+    assert conf["env_dir"] == f"../.asv/env/{subject}"
+    assert conf["html_dir"] == f"../site/{subject}"
+
+
+def test_the_site_deploys_from_main_only():
+    workflow = (ASV.parent / ".github" / "workflows" / "site.yml").read_text()
+    deploy = workflow[workflow.index("\n  deploy:") :]
+    assert "if: github.ref == 'refs/heads/main'" in deploy

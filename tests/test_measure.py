@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from scipy import sparse
 
+from bwbench import synth
 from bwbench.synth import PROFILES_DIR, Stats, measure, system
 
 
@@ -123,3 +124,16 @@ def test_hub_jaccard_stays_finite_with_empty_rows():
     s = measure(a, repeats=0)
     assert s.hub_jaccard is not None
     assert np.isfinite(s.hub_jaccard)
+
+
+def test_overlap_bands_include_both_ends_and_label_the_last_one_open(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(synth, "OVERLAP_BANDS", ((2, 3), (4, 1 << 62)))
+    # Rows 0, 1 and 2 hold 4, 3 and 2 entries (their diagonal included); row 3 holds 1.
+    a = sparse.lil_matrix(np.eye(4))
+    a[0, 1:4] = -0.1
+    a[1, 2:4] = -0.1
+    a[2, 3] = -0.1
+    s = measure(a.tocsc(), repeats=0)
+    assert s.overlap_by_band is not None
+    assert set(s.overlap_by_band) == {"2-3", "4+"}
+    assert sum(b["pairs_share"] for b in s.overlap_by_band.values()) == pytest.approx(1 - 1 / (16 + 9 + 4 + 1))

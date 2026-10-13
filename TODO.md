@@ -4,9 +4,9 @@
       ecoinvent's 175 and 76 (see the comment on `ECOINVENT` in `synth.py` for what was tried).
 - [ ] Run the six suites under pytest-codspeed: entry modules calling `bwbench.pytest.tests`,
       and the runner image from the `spike/bench-seam` branch.
-- [ ] Checks run after every timed sample. For bw2data's write (a matrix load and a Neumann
-      solve) and Monte Carlo's setup check, once per parameter set would do; measure what it
-      costs at the ecoinvent size first.
+- [ ] Check bw2data's write and Monte Carlo's first draw once per parameter set, not after
+      every timed sample: each check loads matrices and runs a Neumann solve. Measure what
+      that costs at the ecoinvent size first.
 - [ ] Measure run-to-run noise (10 repeats of one commit) before publishing any number.
 - [ ] Backfill each package on the devbox in one `oss-bench` slot, with
       `BWBENCH_SIZES=ecoinvent,exiobase`. Include the PyPardiso environments there.

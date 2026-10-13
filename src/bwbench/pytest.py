@@ -35,8 +35,8 @@ def _test(b: Bench) -> Any:
             state["run"].verify(state["result"])
         finally:
             state["run"].teardown()
-        # shortcut: track values are asv history only and are not recorded here; add them as
-        # benchmark extra info if a PR gate ever needs one.
+        # NOTE: track values are asv history only. Add them as benchmark extra info if a PR
+        # gate ever needs one.
 
     test.__name__ = f"test_{b.name}"
     # pytest reads fixture and parameter names from the signature, not from **params.

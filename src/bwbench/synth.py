@@ -102,13 +102,12 @@ def _short_hash(key: object, length: int = 12) -> str:
     return hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()[:length]
 
 
-# Calibrated 2026-10-13 with measure() against the target file. Degrees, the giant loop,
-# negative share, radius and locality land within a few percent (tests/test_measure.py).
-# Not matched: LU fill is COLAMD 323 and MMD_AT_PLUS_A 99 against 175 and 76. Fill follows
-# the size of the giant loop, and no hub or locality setting tried lowered it at 64%. The
-# top of log10 |x| is narrower (q99 0.3 against 4.8): wider units raise fill further.
-# Nested locality (regions in macro-regions, sectors in sections) was tried too: at full
-# size it gave COLAMD 395 and MMD 107, with a larger giant loop.
+# Calibrated to the target file with measure(). Degrees, the giant loop, the negative share,
+# the radius and locality land within a few percent; tests/test_measure.py checks them.
+# Two gaps remain:
+# - LU fill is COLAMD 323 and MMD_AT_PLUS_A 99, against 175 and 76. Fill follows the size of
+#   the giant loop. At 64%, no hub, locality or nested-locality setting lowered it.
+# - The top of log10 |x| is narrower: q99 0.3 against 4.8. Wider units raise fill further.
 ECOINVENT = Profile(products=26_533, flows=4_000, target="ecoinvent-3.12-cutoff.json")
 
 # NOTE: only `ecoinvent` is calibrated (to its file in profiles/). The others scale it, or

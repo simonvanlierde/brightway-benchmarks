@@ -13,9 +13,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   order with loops, hub suppliers, region and sector locality, waste treatments (negative
   inputs) and per-product units. `system(profile, seed=..., **overrides)` builds one;
   `measure()` checks it against the measured statistics.
-- `@bench`: each benchmark is one setup function returning the timed call and its check, run
-  under asv (`bwbench.asv.classes`) or pytest-codspeed (`bwbench.pytest.tests`). A setup that
-  needs a teardown yields instead of returning. asv names stay as they were.
+- `@bench`: you write each benchmark once, as a setup function that returns the timed call
+  and its check. It runs under asv (`bwbench.asv.classes`) or pytest-codspeed
+  (`bwbench.pytest.tests`). A setup that needs a teardown yields instead of returning. The asv
+  names stay as they were.
 - Next to each machine's results: a PEP 751 `pylock.<env>.toml` per asv environment, with
   every package's index URL and hashes, and an RO-Crate `ro-crate-metadata.json` naming the
   bwbench commit, the generator version and the profiles.

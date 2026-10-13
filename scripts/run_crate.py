@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Describe one subject's results as an RO-Crate: ``run_crate.py RESULTS_DIR``.
+"""Describe benchmark results as an RO-Crate: ``run_crate.py RESULTS_ROOT``.
 
-Writes ``ro-crate-metadata.json`` into the results folder, above the machine folders that
-hold asv's result files and the ``pylock.*.toml`` files ``asv.sh`` leaves there. It names the
+Writes ``ro-crate-metadata.json`` into the results root (``results/`` or ``.asv/smoke/``),
+above each subject's asv folder and its machine folders, which hold asv's result files and
+the ``pylock.*.toml`` files ``asv.sh`` leaves there. It names the
 files, the bwbench commit and generator version, and the digest of every registered profile.
 Rerun after every run; it replaces the file. RO-Crate 1.3: https://w3id.org/ro/crate/1.3
 """
@@ -29,10 +30,11 @@ def commit() -> str | None:
 
 
 def crate(folder: Path) -> dict:
-    """The RO-Crate metadata for one subject's results ``folder`` and every machine folder in it."""
+    """The RO-Crate metadata for every file under the results root ``folder``."""
     files = sorted(p for p in folder.rglob("*") if p.is_file() and p.name != "ro-crate-metadata.json")
     ids = [p.relative_to(folder).as_posix() for p in files]
     kinds = {".json": "asv result", ".toml": "PEP 751 lock file of one asv environment", ".txt": "pip freeze"}
+    named = {"machine.json": "asv machine description", "benchmarks.json": "asv benchmark list"}
     sha = commit()
     software = {
         "@id": f"{REPO}/tree/{sha}" if sha else REPO,
@@ -58,8 +60,8 @@ def crate(folder: Path) -> dict:
             {
                 "@id": "./",
                 "@type": "Dataset",
-                "name": f"brightway-benchmarks results for {folder.name}",
-                "description": f"asv timings of {folder.name} on seeded synthetic LCA systems, with lock files.",
+                "name": "brightway-benchmarks results",
+                "description": "asv timings of the Brightway stack on seeded synthetic LCA systems, with lock files.",
                 "datePublished": datetime.now(UTC).date().isoformat(),
                 "license": {"@id": LICENSE},
                 "hasPart": [{"@id": i} for i in ids],
@@ -77,7 +79,7 @@ def crate(folder: Path) -> dict:
             software,
             *profiles,
             *[
-                {"@id": i, "@type": "File", "description": kinds.get(f.suffix, "")}
+                {"@id": i, "@type": "File", "description": named.get(f.name, kinds.get(f.suffix, ""))}
                 for i, f in zip(ids, files, strict=True)
             ],
         ],

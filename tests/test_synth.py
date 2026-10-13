@@ -1,3 +1,4 @@
+import os
 import types
 from pathlib import Path
 
@@ -175,8 +176,6 @@ def test_neumann_score_matches_the_reference():
     n = s.profile.products
     demand = np.zeros(n)
     demand[0] = 1.0
-    characterization = sparse.diags(np.zeros(s.profile.flows))
-    characterization.setdiag(0)
     cf = np.zeros(s.profile.flows)
     cf[s.cf_flows[0] - s.flow_offset] = s.cf_data[0]
     lca = types.SimpleNamespace(
@@ -186,3 +185,28 @@ def test_neumann_score_matches_the_reference():
         characterization_matrix=sparse.diags(cf),
     )
     assert synth.neumann_score(lca, s.scale) == pytest.approx(s.reference[0][0], rel=1e-12)
+
+
+def test_skip_unless_factorizable():
+    synth.skip_unless_factorizable("smoke", pardiso=False, factorizations=1_000)
+    synth.skip_unless_factorizable("regional", pardiso=True, factorizations=10)
+    with pytest.raises(NotImplementedError, match="without PyPardiso"):
+        synth.skip_unless_factorizable("mc100k", pardiso=False)
+    synth.skip_unless_factorizable("ecoinvent", pardiso=False, factorizations=2)  # about 6 min
+    with pytest.raises(NotImplementedError):
+        synth.skip_unless_factorizable("ecoinvent", pardiso=False, factorizations=12)  # Monte Carlo with LCA
+
+
+def test_stale_tmp_folders_are_swept(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    monkeypatch.setattr(synth, "write_datapackages", lambda _, folder: folder.mkdir(parents=True))
+    monkeypatch.setattr(synth, "version", lambda _: "1.6")
+    monkeypatch.setattr(synth, "data_root", lambda: tmp_path)
+    s = system("smoke")
+    folder = synth.cache_folder(s.name, s.profile, seed=0, uncertain=False)
+    old, fresh = folder.with_name(f"{folder.name}.tmp-old"), folder.with_name(f"{folder.name}.tmp-new")
+    old.mkdir(parents=True)
+    fresh.mkdir()
+    os.utime(old, (0, 0))
+    s.datapackages()
+    assert not old.exists()
+    assert fresh.exists()  # may still be another run's

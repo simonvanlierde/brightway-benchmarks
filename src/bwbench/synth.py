@@ -50,6 +50,7 @@ GENERATOR_VERSION = "3"
 INPUTS_SHARE = 0.5  # random builder: upper bound on the sum of input amounts per column
 NEUMANN_TOL = 1e-17  # the series stops when the rest of it is below this, relative to the demand
 NEUMANN_MAX_TERMS = 5_000  # without a bound on the rest; radius 0.99 needs about 4,000
+FACTORIZE_BUDGET = 900.0  # seconds of SuperLU a benchmark case may spend, half asv's timeout
 MAX_COLUMN_SUM = 0.9  # tiered builder: the reference's series needs column sums below 1
 REFERENCE_PRODUCTS = 30  # reference scores are stored for products 0 to 29, the most MultiScores demands
 PROFILES_DIR = Path(__file__).parent / "profiles"
@@ -207,8 +208,11 @@ class System:
         folder = cache_folder(self.name, self.profile, seed=self.seed, uncertain=self.uncertain)
         if folder.exists():
             return folder
+        # A run that died half-way left its folder; one older than a day is no live run's.
+        for stale in folder.parent.glob(f"{folder.name}.tmp-*"):
+            if time.time() - stale.stat().st_mtime > 86_400:
+                shutil.rmtree(stale, ignore_errors=True)
         tmp = folder.with_name(f"{folder.name}.tmp-{uuid.uuid4().hex}")  # PIDs repeat across containers
-        shutil.rmtree(tmp, ignore_errors=True)
         write_datapackages(self, tmp)
         try:
             tmp.rename(folder)
@@ -297,6 +301,19 @@ def _build(name: str, p: Profile, seed: int, uncertain: bool) -> System:  # noqa
         region,
         sector,
     )
+
+
+def skip_unless_factorizable(name: str, *, pardiso: bool, factorizations: int = 1) -> None:
+    """Skip a case whose SuperLU or UMFPACK factorizations of profile ``name`` would overrun.
+
+    The estimate: 43 s per factorization at 18k products of the tiered structure, growing
+    about as n^3.6 (one thread, measured 2026-10-13); half the 30-minute asv timeout is the
+    budget. PyPardiso is far faster, so it is never skipped. asv records the skip as a gap.
+    """
+    seconds = factorizations * 43.0 * (profile(name).products / 18_000) ** 3.6
+    if not pardiso and seconds > FACTORIZE_BUDGET:
+        msg = f"{name}: {factorizations} factorizations would take about {seconds / 60:.0f} min without PyPardiso"
+        raise NotImplementedError(msg)
 
 
 def packages(name: str, *, seed: int = 0, uncertain: bool = False, **overrides: object) -> Packages:

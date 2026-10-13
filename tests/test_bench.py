@@ -229,3 +229,22 @@ def test_pytest_adapter_skips_and_still_tears_down():
     with pytest.raises(RuntimeError, match="boom"):
         namespace["test_crashing"](FakeBenchmark())
     assert log == ["setup", "teardown"]
+
+
+def test_pytest_adapter_tears_down_after_a_skip_in_run():
+    log = []
+
+    @bench()
+    def late_skip():
+        def run() -> None:
+            msg = "found out while running"
+            raise NotImplementedError(msg)
+
+        yield run, UNCHECKED
+        log.append("teardown")
+
+    namespace: dict[str, Any] = {"late_skip": late_skip}
+    bw_pytest.tests(namespace)
+    with pytest.raises(pytest.skip.Exception, match="while running"):
+        namespace["test_late_skip"](FakeBenchmark())
+    assert log == ["teardown"]

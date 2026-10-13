@@ -19,10 +19,9 @@ from scipy.sparse.linalg import cgs
 from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, knob
 from bwbench.asv import classes
 from bwbench.bench import BenchSetup, bench
-from bwbench.synth import method_name, neumann_score, packages, profile
+from bwbench.synth import method_name, neumann_score, packages, skip_unless_factorizable
 
 CLASSES = ["LCA", "IterativeLCA", "JacobiGMRESLCA"]
-DIRECT_LIMIT = 50_000  # products; above this only PyPardiso factorizes in time
 SIZES = knob("sizes", "smoke")
 MC_SIZES = knob("mc_sizes", "smoke")
 
@@ -51,16 +50,6 @@ def _source_has(fn: object, text: str) -> bool:
         return text in inspect.getsource(fn)
     except (OSError, TypeError):
         return False
-
-
-def skip_without_pardiso(size: str) -> None:
-    """Skip sizes that SuperLU and UMFPACK cannot factorize in the timeout.
-
-    At the tiered profiles' fill, one SuperLU factorization took 43 s at 18k products and
-    grows about as n^3.6, so hours at 100k. Every class here starts with a direct solve.
-    """
-    if profile(size).products >= DIRECT_LIMIT and not bc.PYPARDISO:
-        raise NotImplementedError(f"{size}: too large to factorize without PyPardiso")
 
 
 def skip_known_crash(cls: str, *, calls_next: bool) -> None:
@@ -109,7 +98,8 @@ def score_of(scores: object, method: tuple, demand: str) -> float:
 @bench({"size": SIZES, "cls": CLASSES}, error="relative_error", asv="SingleScore", timeout=600)
 def first_score(size: str, cls: str) -> BenchSetup:
     """One demand, one method: build the matrices, factorize, solve, characterize."""
-    skip_without_pardiso(size)
+    # The setup solves once before the timed call; JacobiGMRESLCA solves by GMRES, not LU.
+    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=0 if cls == "JacobiGMRESLCA" else 2)
     lca_cls = lca_class(cls)
     inventory, methods, refs, _ = packages(size)
     rtol = rtol_for(cls)
@@ -134,7 +124,7 @@ def redo_lci(size: str, cls: str) -> BenchSetup:
     For ``IterativeLCA`` this is the first CGS solve, warm-started from the first
     demand's supply; its first solve is a direct one.
     """
-    skip_without_pardiso(size)
+    skip_unless_factorizable(size, pardiso=bc.PYPARDISO)  # lci(factorize=True), for every class
     skip_known_crash(cls, calls_next=False)
     inventory, methods, refs, _ = packages(size)
     rtol = rtol_for(cls)
@@ -160,7 +150,7 @@ def scores(size: str, demands: int, variant: str) -> BenchSetup:
     picks adjoint when there are more demands than impact categories (3 here), so the
     demand counts straddle that threshold.
     """
-    skip_without_pardiso(size)
+    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=2)
     inventory, methods, refs, _ = packages(size)
     config = {"impact_categories": [method_name(i) for i in range(len(methods))]}
     wanted = {f"d{i}": {i: 1} for i in range(demands)}
@@ -208,7 +198,9 @@ def iterations(size: str, iterations: int, cls: str) -> BenchSetup:
     case worth benchmarking. BenchSetup checks one draw against a Neumann solve of that draw's
     matrix, and that the draw differs from the static score.
     """
-    skip_without_pardiso(size)
+    # LCA refactorizes on every draw; IterativeLCA factorizes once; JacobiGMRESLCA never.
+    draws = {"LCA": iterations + 2, "IterativeLCA": 1}.get(cls, 0)
+    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=draws)
     skip_known_crash(cls, calls_next=True)
     inventory, methods, refs, scale = packages(size, uncertain=True)
     lca = lca_class(cls)(demand={0: 1}, data_objs=[inventory, methods[0]], use_distributions=True, seed_override=1)

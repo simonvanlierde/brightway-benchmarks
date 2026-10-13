@@ -13,7 +13,7 @@ from bw_graph_tools import GraphTraversalSettings, NewNodeEachVisitGraphTraversa
 from bwbench import DIRECT_RTOL, check, knob
 from bwbench.asv import classes
 from bwbench.bench import UNCHECKED, BenchSetup, bench
-from bwbench.synth import packages
+from bwbench.synth import packages, skip_unless_factorizable
 
 
 def calculation_count(traversal: NewNodeEachVisitGraphTraversal) -> float:
@@ -34,6 +34,7 @@ def calculation_count(traversal: NewNodeEachVisitGraphTraversal) -> float:
     fresh_solver=False,
 )
 def traverse(size: str, max_calc: int) -> BenchSetup:
+    skip_unless_factorizable(size, pardiso=bc.PYPARDISO)
     inventory, methods, refs, _ = packages(size)
     lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]])
     lca.lci()

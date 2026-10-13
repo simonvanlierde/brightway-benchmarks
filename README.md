@@ -24,8 +24,10 @@ just site                        # history site in site/
 Test conditions: each config in `asv/` pins numpy, scipy, asv_runner and the Brightway
 packages around its subject, installs only releases from before 2026-10-06, and records
 what it installed next to its results.
-`BWBENCH_SIZES` sets the sizes. At `ecoinvent` size, the generator's random structure needs
-about 3 GB per SuperLU factorization, so timings at that size and above are provisional.
+`BWBENCH_SIZES` sets the profiles: `smoke`, `ecoinvent` (calibrated to the structure of
+ecoinvent 3.12 cut-off, see `src/bwbench/profiles/`), `mc100k` and `regional` at 100k and 250k
+products, and `exiobase` and `stress-random` on the earlier random structure, whose LU factors
+fill several times more than a real database's.
 
 For development: `uv sync`, then `just check` (lint, types, tests; runs no Brightway code).
 

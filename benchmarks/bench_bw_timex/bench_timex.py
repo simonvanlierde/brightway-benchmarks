@@ -19,20 +19,21 @@ import numpy as np  # noqa: E402
 from bw_temporalis import TemporalDistribution  # noqa: E402
 from bw_timex import TimexLCA  # noqa: E402
 
-from bwbench.synth import GENERATOR_VERSION, SIZES, as_bw2data, generate, method_name  # noqa: E402
+from bwbench.synth import method_name, profile_version, system  # noqa: E402
 
 DATES = {"bg_2020": datetime(2020, 1, 1), "bg_2030": datetime(2030, 1, 1), "foreground": "dynamic"}
 CONSUMERS = 10
+TIMEX_SIZES = knob("timex_sizes", "smoke")
 
 
 def build_project(size: str, steps: int) -> None:
     bd.projects.set_current(f"timex-{size}-{steps}")
-    system = generate(SIZES[size])
-    bio, _, cfs = as_bw2data(system)
+    synthetic = system(size)
+    bio, _, cfs = synthetic.bw2data()
     bd.Database("bio").write(bio)
     bd.Method(method_name(0)).write(cfs[0])
     for db in ("bg_2020", "bg_2030"):
-        bd.Database(db).write(as_bw2data(system, db=db)[1])
+        bd.Database(db).write(synthetic.bw2data(db=db)[1])
     td = TemporalDistribution(date=np.arange(-steps, 0).astype("timedelta64[Y]"), amount=np.full(steps, 1 / steps))
     fg = {
         ("foreground", "fu"): {
@@ -57,8 +58,8 @@ def build_project(size: str, steps: int) -> None:
 
 
 class TimelineLCI:
-    version = GENERATOR_VERSION
-    params = (knob("timex_sizes", "smoke"), [int(x) for x in knob("steps", "5,20")])
+    version = profile_version(TIMEX_SIZES)
+    params = (TIMEX_SIZES, [int(x) for x in knob("steps", "5,20")])
     param_names = ["size", "steps"]
     number = 1
     repeat = (1, 5, 600)

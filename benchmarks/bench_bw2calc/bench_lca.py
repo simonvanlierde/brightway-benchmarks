@@ -16,9 +16,11 @@ from scipy import sparse
 from scipy.sparse.linalg import cgs
 
 from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, knob
-from bwbench.synth import GENERATOR_VERSION, cached, load, method_name, neumann
+from bwbench.synth import method_name, neumann, packages, profile_version
 
 CLASSES = ["LCA", "IterativeLCA", "JacobiGMRESLCA"]
+SIZES = knob("sizes", "smoke")
+MC_SIZES = knob("mc_sizes", "smoke")
 
 
 def solver() -> str:
@@ -97,15 +99,15 @@ def score_of(scores: object, method: tuple, demand: str) -> float:
 class SingleScore:
     """One demand, one method: build the matrices, factorize, solve, characterize."""
 
-    version = GENERATOR_VERSION
-    params = (knob("sizes", "smoke"), CLASSES)
+    version = profile_version(SIZES)
+    params = (SIZES, CLASSES)
     param_names = ["size", "cls"]
     number = 1  # with setup before every sample, each timed call starts unfactorized
     timeout = 600
 
     def setup(self, size: str, cls: str) -> None:
         self.cls = lca_class(cls)
-        self.inventory, methods, refs = load(cached(size))
+        self.inventory, methods, refs, _ = packages(size)
         self.method, self.reference = methods[0], refs[0][0]
         self.rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
         self.err = check(self._score(), self.reference, self.rtol, f"score ({solver()})")
@@ -132,15 +134,15 @@ class NewDemand:
     per sample keep the iterative classes from starting at the answer of the last call.
     """
 
-    version = GENERATOR_VERSION
-    params = (knob("sizes", "smoke"), CLASSES)
+    version = profile_version(SIZES)
+    params = (SIZES, CLASSES)
     param_names = ["size", "cls"]
     number = 1
     timeout = 600
 
     def setup(self, size: str, cls: str) -> None:
         skip_known_crash(cls, calls_next=False)
-        inventory, methods, refs = load(cached(size))
+        inventory, methods, refs, _ = packages(size)
         self.reference = refs[1][0]
         self.rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
         self.lca = lca_class(cls)(demand={0: 1}, data_objs=[inventory, methods[0]])
@@ -164,14 +166,14 @@ class MultiScores:
     demand counts straddle that threshold.
     """
 
-    version = GENERATOR_VERSION
-    params = (knob("sizes", "smoke"), [1, 3, 10, 30], ["MultiLCA", "forward", "adjoint"])
+    version = profile_version(SIZES)
+    params = (SIZES, [1, 3, 10, 30], ["MultiLCA", "forward", "adjoint"])
     param_names = ["size", "demands", "variant"]
     number = 1  # as in SingleScore
     timeout = 900
 
     def setup(self, size: str, demands: int, variant: str) -> None:
-        inventory, methods, refs = load(cached(size))
+        inventory, methods, refs, _ = packages(size)
         self.data_objs = [inventory, *methods]
         self.config = {"impact_categories": [method_name(i) for i in range(len(methods))]}
         self.demands = {f"d{i}": {i: 1} for i in range(demands)}
@@ -213,8 +215,8 @@ class MonteCarlo:
     matrix, and that the draw differs from the static score.
     """
 
-    version = GENERATOR_VERSION
-    params = (knob("mc_sizes", "smoke"), [int(x) for x in knob("iterations", "10")], CLASSES)
+    version = profile_version(MC_SIZES)
+    params = (MC_SIZES, [int(x) for x in knob("iterations", "10")], CLASSES)
     param_names = ["size", "iterations", "cls"]
     timeout = 1800
     number = 1
@@ -222,7 +224,7 @@ class MonteCarlo:
 
     def setup(self, size: str, iterations: int, cls: str) -> None:
         skip_known_crash(cls, calls_next=True)
-        inventory, methods, refs = load(cached(size, uncertain=True))
+        inventory, methods, refs, scale = packages(size, uncertain=True)
         self.lca = lca_class(cls)(
             demand={0: 1}, data_objs=[inventory, methods[0]], use_distributions=True, seed_override=1
         )
@@ -230,7 +232,8 @@ class MonteCarlo:
         self.lca.lcia()
         next(self.lca)
         a = self.lca.technosphere_matrix
-        supply = neumann(sparse.identity(a.shape[0], format="csr") - a, self.lca.demand_array)
+        # Product ids are 0 to n - 1, so bw2calc's matrix order is the id order of `scale`.
+        supply = neumann(sparse.identity(a.shape[0], format="csr") - a, self.lca.demand_array, scale=scale)
         expected = float((self.lca.characterization_matrix @ self.lca.biosphere_matrix @ supply).sum())
         rtol = DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
         check(float(self.lca.score), expected, rtol, f"Monte Carlo score ({solver()})")

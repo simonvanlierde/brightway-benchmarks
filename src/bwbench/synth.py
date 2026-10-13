@@ -1,9 +1,25 @@
 """Seeded synthetic LCA systems, written as bw_processing datapackages.
 
-The technosphere is ``A = I - X``: one production exchange of 1 per product on the
-diagonal, and ``inputs`` random upstream inputs per column whose amounts sum to less
-than 0.5. So ``A`` is column diagonally dominant: always invertible, and every
-iterative solver converges on it. The same seed gives the same system on every machine.
+``system(profile)`` builds one. The technosphere is ``A = I - X``: one production exchange
+of 1 per product on the diagonal and the inputs ``X`` off it. A profile picks one of two
+builders:
+
+- ``tiered`` imitates the structure of a real database (the ``ecoinvent`` profile is
+  calibrated to ecoinvent 3.12 cut-off, see ``profiles/``). Products sit in a supply-chain
+  order and mostly buy from products earlier in it; a share of inputs may come from
+  anywhere, which closes the loops. Suppliers are heavy-tailed hubs, and some inputs stay in
+  the consumer's region or sector. Some products are waste treatments, so inputs between a
+  treatment and a normal product are negative. Each product has its own unit, so amounts
+  span many orders of magnitude and solvers pivot as they do on real data.
+- ``random`` is the earlier generator: ``inputs`` inputs per column on random rows, summing
+  to less than 0.5. Its LU factors fill far more than a real database's (the ``stress-random``
+  profile), so it is a worst case, not a model.
+
+Both builders keep ``X = T X0 T^-1`` with ``X0`` free of units and signs and every column of
+``X0`` summing to less than 1. ``T`` is the signed unit scale of each product (``scale``).
+So the series ``I + X + X^2 + ...`` converges, and the reference scores come from it
+(``neumann``), sharing no code with any solver under test. The same profile, overrides and
+seed give the same arrays on every machine.
 
 Only numpy and scipy are needed to build the arrays. ``write_datapackages`` also needs
 bw_processing and runs in the benchmark container.
@@ -13,13 +29,14 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import shutil
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field, replace
 from importlib.metadata import version
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 import numpy as np
 from scipy import sparse
@@ -29,51 +46,105 @@ from scipy.sparse import linalg as sla
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-# Bump when generate() or the stored reference changes. It is part of the cache key, and
-# benchmarks on generated data use it as their asv `version`, so old results are dropped.
+# Bump when a builder or the stored reference changes. It is part of the cache key and of
+# the asv `version` of benchmarks on generated data, so their old results are dropped.
 # That replaces asv's hash of the benchmark code: bump it when their timed code changes too.
-GENERATOR_VERSION = "2"
-INPUTS_SHARE = 0.5  # upper bound on the sum of input amounts per column
-NEUMANN_TOL = 1e-17  # column norm of the last series term at which the reference stops
+GENERATOR_VERSION = "3"
+INPUTS_SHARE = 0.5  # random builder: upper bound on the sum of input amounts per column
+NEUMANN_TOL = 1e-17  # the series stops when the rest of it is below this, relative to the demand
+NEUMANN_MAX_TERMS = 5_000  # without a bound on the rest; radius 0.99 needs about 4,000
+MAX_COLUMN_SUM = 0.9  # tiered builder: the reference's series needs column sums below 1
 REFERENCE_PRODUCTS = 30  # reference scores are stored for products 0 to 29, the most MultiScores demands
+PROFILES_DIR = Path(__file__).parent / "profiles"
 
 
 @dataclass(frozen=True)
-class Size:
-    """Shape of one synthetic system."""
+class Profile:
+    """The shape of one synthetic system. Fields after ``builder`` apply to its builder only."""
 
     products: int
-    inputs: int  # upstream inputs per product, before duplicates are dropped
     flows: int  # biosphere flows
+    builder: str = "tiered"
     flows_per_product: int = 3
     methods: int = 3
+    # random builder
+    inputs: int = 8  # upstream inputs per product, before repeated cells are dropped
+    # tiered builder
+    inputs_median: float = 5.0  # inputs per product are lognormal, rounded
+    inputs_sigma: float = 1.34
+    inputs_max: int = 410
+    inputs_extra: float = 1.15  # more draws than inputs, for the repeated cells that are dropped
+    terminal: float = 0.12  # share of products nothing buys
+    hub_sigma: float = 2.75  # spread of supplier weights: higher, fewer and bigger hubs
+    hub_cap: int = 1100  # most draws one supplier is expected to get
+    back: float = 0.15  # share of drawn inputs from anywhere in the order: they close the loops
+    same_region: float = 0.23  # share of drawn inputs from the consumer's region
+    same_sector: float = 0.28  # the same for its sector
+    regions: int = 20
+    sectors: int = 40
+    treatment: float = 0.126  # share of products that are waste treatments
+    amount_sigma: float = 3.5  # lognormal spread of input amounts within a column, before units
+    units: float = 0.3  # standard deviation of log10 of each product's unit
+    radius: float = 0.78  # spectral radius of X
+    target: str | None = None  # file in profiles/ the profile was calibrated to
+
+    def digest(self) -> str:
+        """Short hash of the profile and of its calibration file."""
+        key: list[Any] = [asdict(self)]
+        if self.target:
+            key.append(hashlib.sha256((PROFILES_DIR / self.target).read_bytes()).hexdigest())
+        return hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()[:12]
 
 
-# NOTE: only `products` is sourced. `inputs` and `flows` are guesses until the generator
-# is calibrated against public summary statistics of each database.
-SIZES: dict[str, Size] = {
-    "smoke": Size(products=200, inputs=4, flows=30),
-    # ecoinvent cut-off: about 20k to 25k products. 20k x 8 inputs gives about 180k
-    # technosphere entries, the size bw_synth.py was built for.
-    "ecoinvent": Size(products=20_000, inputs=8, flows=4_000),
+# Calibrated 2026-10-13 with measure() against the target file. Degrees, the giant loop,
+# negative share, radius and locality land within a few percent (tests/test_measure.py).
+# Not matched: LU fill is COLAMD 323 and MMD_AT_PLUS_A 99 against 175 and 76. Fill follows
+# the size of the giant loop, and no hub or locality setting tried lowered it at 64%. The
+# top of log10 |x| is narrower (q99 0.3 against 4.8): wider units raise fill further.
+ECOINVENT = Profile(products=26_533, flows=4_000, target="ecoinvent-3.12-cutoff.json")
+
+# NOTE: only `ecoinvent` is calibrated (to its file in profiles/). The others scale it, or
+# keep the random builder where no structure is known.
+PROFILES: dict[str, Profile] = {
+    # More loops, so 200 products get close to ecoinvent's radius (see MAX_COLUMN_SUM).
+    "smoke": replace(ECOINVENT, products=200, flows=30, regions=4, sectors=8, back=0.3, target=None),
+    "ecoinvent": ECOINVENT,
     # EXIOBASE 3 product by product: 9,800 sectors (49 regions x 200 products), much denser.
-    "exiobase": Size(products=9_800, inputs=400, flows=1_100),
+    "exiobase": Profile(products=9_800, flows=1_100, builder="random", inputs=400),
     # #131's large Monte Carlo case is 100k products (at 2% fill there, far denser than this).
-    "mc100k": Size(products=100_000, inputs=8, flows=4_000),
+    "mc100k": replace(ECOINVENT, products=100_000),
     # The regionalised system from Brightcon 2026 contribution 59: 250k x 250k.
-    "regional": Size(products=250_000, inputs=8, flows=4_000),
+    "regional": replace(ECOINVENT, products=250_000),
+    # The earlier generator at about ecoinvent's size: L+U fills to about 60% of a dense matrix.
+    "stress-random": Profile(products=20_000, flows=4_000, builder="random", inputs=8),
 }
+
+
+def profile(name: str, **overrides: object) -> Profile:
+    """A registered profile, with ``overrides`` (such as ``products=8_000``) applied."""
+    return replace(PROFILES[name], **overrides)
+
+
+class Packages(NamedTuple):
+    """What a benchmark loads: the datapackages, the reference scores and the unit scale."""
+
+    inventory: Any
+    methods: list[Any]
+    reference: list[list[float]]
+    scale: NDArray[np.float64]
 
 
 @dataclass(frozen=True)
 class System:
     """One synthetic system as coordinate arrays, with bw2calc's sign convention.
 
-    Technosphere inputs are stored as positive amounts with ``flip`` set, as bw2data
-    writes them, so the matrix bw2calc builds is ``A = I - X``.
+    Technosphere inputs are stored as ``X[i, j]`` with ``flip`` set, as bw2data writes
+    them, so the matrix bw2calc builds is ``A = I - X``. ``scale`` is each product's signed
+    unit: ``X = T X0 T^-1`` with ``X0 >= 0`` and ``T = diag(scale)``.
     """
 
-    size: Size
+    name: str
+    profile: Profile
     seed: int
     tech_rows: NDArray[np.int64]
     tech_cols: NDArray[np.int64]
@@ -84,73 +155,97 @@ class System:
     bio_data: NDArray[np.float64]
     cf_flows: list[NDArray[np.int64]]  # per method: flow ids
     cf_data: list[NDArray[np.float64]]  # per method: factors
+    scale: NDArray[np.float64]
+    uncertain: bool = False
+    region: NDArray[np.int64] | None = None  # tiered builder: each product's region and sector
+    sector: NDArray[np.int64] | None = None
+    _reference: list = field(default_factory=list, repr=False, compare=False)
 
     @property
     def flow_offset(self) -> int:
         """Biosphere flow ids start here, so they never collide with product ids."""
-        return self.size.products
+        return self.profile.products
 
     def technosphere(self) -> sparse.csc_matrix:
         """The technosphere matrix bw2calc builds from this system."""
-        n = self.size.products
+        n = self.profile.products
         signed = np.where(self.tech_flip, -self.tech_data, self.tech_data)
         return sparse.csc_matrix((signed, (self.tech_rows, self.tech_cols)), shape=(n, n))
 
     def biosphere(self) -> sparse.csc_matrix:
         """Biosphere matrix with flows renumbered from 0."""
-        shape = (self.size.flows, self.size.products)
+        shape = (self.profile.flows, self.profile.products)
         return sparse.csc_matrix((self.bio_data, (self.bio_rows - self.flow_offset, self.bio_cols)), shape=shape)
 
-    def reference_scores(self, products: int = REFERENCE_PRODUCTS) -> list[list[float]]:
-        """Score of one unit of each of the first ``products`` products, per method.
+    @property
+    def reference(self) -> list[list[float]]:
+        """Score of one unit of each of products 0 to 29, per method: ``reference[p][m]``.
 
-        ``reference_scores()[p][m]`` is product ``p`` under method ``m``. This is the
-        reference every Brightway result is checked against.
+        This is what every Brightway result is checked against. Computed once.
         """
-        n = self.size.products
+        if not self._reference:
+            self._reference.extend(self.reference_scores())
+        return self._reference
+
+    def reference_scores(self, products: int = REFERENCE_PRODUCTS) -> list[list[float]]:
+        """Score of one unit of each of the first ``products`` products, per method."""
+        n = self.profile.products
         inputs = sparse.identity(n, format="csr") - self.technosphere().tocsr()
-        supply = neumann(inputs, np.eye(n, min(products, n)))
+        supply = neumann(inputs, np.eye(n, min(products, n)), scale=self.scale)
         inventory = self.biosphere() @ supply
         return [
             [float(inventory[f - self.flow_offset, p] @ c) for f, c in zip(self.cf_flows, self.cf_data, strict=True)]
             for p in range(supply.shape[1])
         ]
 
+    def datapackages(self) -> Path:
+        """Folder of this system's datapackages in the cache, written on first use.
 
-def neumann(inputs: sparse.csr_matrix, demand: NDArray[np.float64]) -> NDArray[np.float64]:
-    """Solve ``(I - inputs) x = demand`` as the series ``demand + inputs @ demand + ...``.
+        Written to a temporary folder and renamed, so a run that dies half-way, or two runs
+        at once, never leave a folder that looks complete.
+        """
+        folder = cache_folder(self.name, self.profile, seed=self.seed, uncertain=self.uncertain)
+        if folder.exists():
+            return folder
+        tmp = folder.with_name(f"{folder.name}.tmp-{os.getpid()}")
+        shutil.rmtree(tmp, ignore_errors=True)
+        write_datapackages(self, tmp, uncertain=self.uncertain)
+        try:
+            tmp.rename(folder)
+        except OSError:
+            if not folder.exists():
+                raise
+            shutil.rmtree(tmp)  # another run finished first
+        return folder
 
-    Shares no code with any solver under test and needs no factorization, so it stays
-    cheap at every size. It converges when every column of ``abs(inputs)`` sums to less
-    than 1; at ``INPUTS_SHARE`` (0.5) about 57 terms bring the next one below 1e-17.
+    def packages(self) -> Packages:
+        """The datapackages loaded with bw_processing, generated on first use."""
+        return load(self.datapackages())
+
+    def bw2data(self, db: str = "synth", bio: str = "bio") -> tuple[dict, dict, list[list]]:
+        """This system as the dicts ``bw2data.Database.write`` and ``Method.write`` take."""
+        return as_bw2data(self, db=db, bio=bio)
+
+
+def system(name: str, *, seed: int = 0, uncertain: bool = False, **overrides: object) -> System:
+    """Build the system of profile ``name``. Same arguments, same arrays.
+
+    ``uncertain`` gives technosphere inputs a distribution in the datapackages, for Monte
+    Carlo. ``overrides`` change profile fields, such as ``products=8_000``.
     """
-    x = demand.copy()
-    term = demand
-    for _ in range(500):
-        term = inputs @ term
-        x += term
-        # With column sums at most 0.5, the rest of the series is no larger than this term.
-        if np.abs(term).sum(axis=0).max() < NEUMANN_TOL:
-            return x
-    msg = "Neumann series did not converge: an input column sums to 1 or more"
-    raise ArithmeticError(msg)
-
-
-def generate(size: Size, seed: int = 0) -> System:
-    """Build a synthetic system. Same ``size`` and ``seed``, same arrays."""
+    p = profile(name, **overrides)
     rng = np.random.default_rng(seed)
-    n, k = size.products, size.inputs
-
-    # TODO: inputs on uniformly random rows fill SuperLU's L+U to about 60% of a dense  # noqa: FIX002
-    # matrix, so timings at "ecoinvent" size and up measure that fill, not a real
-    # database. Giving the graph structure is the author's call: review 2026-10-13, row 1.
-
-    cols = np.repeat(np.arange(n, dtype=np.int64), k)
-    rows = rng.integers(0, n, size=n * k, dtype=np.int64)
-    keep = rows != cols  # no self-loops: the diagonal holds production only
-    _, first = np.unique(rows[keep] * n + cols[keep], return_index=True)  # drop repeated cells
-    rows, cols = rows[keep][first], cols[keep][first]
-    amounts = rng.uniform(0.0, INPUTS_SHARE / k, size=rows.size)
+    n = p.products
+    region = sector = None
+    match p.builder:
+        case "tiered":
+            rows, cols, amounts, scale, region, sector = _tiered(p, rng)
+        case "random":
+            rows, cols, amounts = _random(p, rng)
+            scale = np.ones(n)
+        case _:
+            msg = f"unknown builder {p.builder!r}"
+            raise ValueError(msg)
 
     diag = np.arange(n, dtype=np.int64)
     tech_rows = np.concatenate([diag, rows])
@@ -158,23 +253,190 @@ def generate(size: Size, seed: int = 0) -> System:
     tech_data = np.concatenate([np.ones(n), amounts])
     tech_flip = np.concatenate([np.zeros(n, dtype=bool), np.ones(rows.size, dtype=bool)])
 
-    m = size.flows_per_product
-    bio_cols = np.repeat(np.arange(n, dtype=np.int64), m)
-    bio_flows = rng.integers(0, size.flows, size=n * m, dtype=np.int64)
+    m = p.flows_per_product
+    bio_cols = np.repeat(diag, m)
+    bio_flows = rng.integers(0, p.flows, size=n * m, dtype=np.int64)
+    # Every product emits flow 0 and every method counts it, so every score is above 0.
+    bio_flows[::m] = 0
     _, first = np.unique(bio_flows * n + bio_cols, return_index=True)
     bio_rows = bio_flows[first] + n
     bio_cols = bio_cols[first]
-    bio_data = rng.lognormal(0.0, 1.0, size=bio_rows.size)
+    # Emissions per unit of product: in the product's own unit, and negative for a treatment.
+    bio_data = rng.lognormal(0.0, 1.0, size=bio_rows.size) / scale[bio_cols]
 
     cf_flows, cf_data = [], []
-    for _ in range(size.methods):
-        flows = np.sort(rng.choice(size.flows, size=max(1, size.flows // 10), replace=False)).astype(np.int64)
+    for _ in range(p.methods):
+        flows = np.sort(rng.choice(np.arange(1, p.flows), size=max(1, p.flows // 10) - 1, replace=False))
+        flows = np.concatenate([[0], flows]).astype(np.int64)
         cf_flows.append(flows + n)
         cf_data.append(rng.lognormal(0.0, 1.0, size=flows.size))
 
     return System(
-        size, seed, tech_rows, tech_cols, tech_data, tech_flip, bio_rows, bio_cols, bio_data, cf_flows, cf_data
+        name,
+        p,
+        seed,
+        tech_rows,
+        tech_cols,
+        tech_data,
+        tech_flip,
+        bio_rows,
+        bio_cols,
+        bio_data,
+        cf_flows,
+        cf_data,
+        scale,
+        uncertain,
+        region,
+        sector,
     )
+
+
+def packages(name: str, *, seed: int = 0, uncertain: bool = False, **overrides: object) -> Packages:
+    """``system(...).packages()``, without building the arrays when the cache has them."""
+    folder = cache_folder(name, profile(name, **overrides), seed=seed, uncertain=uncertain)
+    if not folder.exists():
+        folder = system(name, seed=seed, uncertain=uncertain, **overrides).datapackages()
+    return load(folder)
+
+
+def _random(p: Profile, rng: np.random.Generator) -> tuple[NDArray, NDArray, NDArray]:
+    """``p.inputs`` inputs per column on uniformly random rows, summing to less than 0.5."""
+    n, k = p.products, p.inputs
+    cols = np.repeat(np.arange(n, dtype=np.int64), k)
+    rows = rng.integers(0, n, size=n * k, dtype=np.int64)
+    keep = rows != cols  # no self-loops: the diagonal holds production only
+    _, first = np.unique(rows[keep] * n + cols[keep], return_index=True)  # drop repeated cells
+    rows, cols = rows[keep][first], cols[keep][first]
+    return rows, cols, rng.uniform(0.0, INPUTS_SHARE / k, size=rows.size)
+
+
+def _draw(
+    rng: np.random.Generator, consumers: NDArray, weight: NDArray, group: NDArray, back: float
+) -> tuple[NDArray, NDArray]:
+    """One supplier per consumer, weighted by ``weight``, from the consumer's ``group``.
+
+    A ``back`` share may come from anywhere in the group; the rest from earlier in the
+    order. Returns the suppliers and whether each draw found one (the first product of a
+    group has nobody before it).
+    """
+    n = weight.size
+    order = np.lexsort((np.arange(n), group))  # by group, then by position
+    pos = np.empty(n, dtype=np.int64)
+    pos[order] = np.arange(n)
+    starts = np.searchsorted(group[order], np.arange(group.max() + 2))
+    cum = np.concatenate([[0.0], np.cumsum(weight[order])])
+    g = group[consumers]
+    lo = cum[starts[g]]
+    hi = np.where(rng.random(consumers.size) < back, cum[starts[g + 1]], cum[pos[consumers]])
+    at = lo + rng.random(consumers.size) * (hi - lo)
+    pick = np.clip(np.searchsorted(cum, at, side="right") - 1, 0, n - 1)
+    return order[pick], hi > lo
+
+
+def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
+    """The supply-chain structure the module docstring describes, scaled to ``p.radius`` at most.
+
+    Position 0 is the most basic product and position n - 1 the most finished one; product
+    ids run the other way, so the reference products 0 to 29 have the deepest chains.
+    """
+    n = p.products
+    k = np.minimum(np.rint(rng.lognormal(np.log(p.inputs_median), p.inputs_sigma, n)), p.inputs_max)
+    sells = rng.random(n) >= p.terminal
+    sells[n - min(n, REFERENCE_PRODUCTS) :] = True
+
+    # Every product that sells has at least one consumer later in the order, weighted by
+    # that consumer's inputs: most products feed one or two others.
+    suppliers = np.flatnonzero(sells[:-1])
+    cum_k = np.concatenate([[0.0], np.cumsum(k)])
+    at = cum_k[suppliers + 1] + rng.random(suppliers.size) * (cum_k[-1] - cum_k[suppliers + 1])
+    consumers = np.clip(np.searchsorted(cum_k, at, side="right") - 1, 0, n - 1)
+    left = np.rint(np.maximum(k - np.bincount(consumers, minlength=n), 0) * p.inputs_extra).astype(np.int64)
+
+    # The other inputs go to heavy-tailed hubs, capped so no supplier expects more than hub_cap.
+    cols = np.repeat(np.arange(n, dtype=np.int64), left)
+    weight = rng.lognormal(0.0, p.hub_sigma, n) * sells
+    for _ in range(5):
+        weight = np.minimum(weight, p.hub_cap * weight.sum() / max(cols.size, 1))
+    pool = rng.random(cols.size)
+    pool = np.where(pool < p.same_region, 1, np.where(pool < p.same_region + p.same_sector, 2, 0))
+    groups = (np.zeros(n, dtype=np.int64), rng.integers(0, p.regions, n), rng.integers(0, p.sectors, n))
+    rows = np.empty(cols.size, dtype=np.int64)
+    found = np.empty(cols.size, dtype=bool)
+    for i, group in enumerate(groups):
+        m = pool == i
+        rows[m], found[m] = _draw(rng, cols[m], weight, group, p.back)
+
+    rows = np.concatenate([suppliers, rows[found]])
+    cols = np.concatenate([consumers, cols[found]])
+    keep = rows != cols
+    _, first = np.unique(rows[keep] * n + cols[keep], return_index=True)
+    rows, cols = rows[keep][first], cols[keep][first]
+
+    # Amounts free of units: lognormal, each column summing to 1, then all scaled to the radius.
+    amounts = rng.lognormal(0.0, p.amount_sigma, rows.size)
+    amounts /= np.bincount(cols, weights=amounts, minlength=n)[cols]
+    # A small system whose loops are too weak stays below the radius rather than break that bound.
+    rho = spectral_radius(sparse.csc_matrix((amounts, (rows, cols)), shape=(n, n))) or 0.0
+    factor = MAX_COLUMN_SUM if rho * MAX_COLUMN_SUM <= p.radius else p.radius / rho
+    # Rounded, so a last-bit difference in ARPACK between machines cannot change the arrays.
+    amounts *= float(f"{factor:.9g}")
+
+    sign = np.where(rng.random(n) < p.treatment, -1.0, 1.0)
+    sign[n - min(n, REFERENCE_PRODUCTS) :] = 1.0  # reference products are not treatments
+    scale = sign * 10.0 ** rng.normal(0.0, p.units, n)
+    ids = n - 1 - np.arange(n)  # position to product id
+    order = np.argsort(ids)
+    region, sector = groups[1][order], groups[2][order]
+    return ids[rows], ids[cols], scale[rows] * amounts / scale[cols], scale[order], region, sector
+
+
+def spectral_radius(m: sparse.csc_matrix | sparse.csr_matrix) -> float | None:
+    """Largest ``|eigenvalue|`` of ``m``; None if ARPACK did not converge."""
+    n = m.shape[0]
+    if m.nnz == 0:
+        return 0.0
+    if n < 3:  # eigs needs k < n - 1
+        return float(np.abs(np.linalg.eigvals(m.toarray())).max())
+    try:
+        eig = sla.eigs(m, k=1, which="LM", return_eigenvectors=False, tol=1e-8, maxiter=n * 10, v0=np.ones(n))
+    except sla.ArpackNoConvergence:
+        return None
+    return float(np.abs(eig).max())
+
+
+def neumann(
+    inputs: sparse.spmatrix, demand: NDArray[np.float64], scale: NDArray[np.float64] | None = None
+) -> NDArray[np.float64]:
+    """Solve ``(I - inputs) x = demand`` as the series ``demand + inputs @ demand + ...``.
+
+    Shares no code with any solver under test and needs no factorization, so it stays
+    cheap at every size. ``scale`` is the system's signed unit per product (in the matrix's
+    order); the series runs on the matrix without units. When its largest column sum ``s``
+    is below 1, the rest of the series is at most ``|term| s / (1 - s)`` per column, and
+    the series stops once that is below ``NEUMANN_TOL`` of the demand: about 150 terms at
+    ``s = 0.78``. Otherwise (a Monte Carlo draw can push a column past 1) it stops once a
+    term alone is below that, which leaves about ``|term| r / (1 - r)`` at a spectral radius
+    ``r``; a series that does not get there in ``NEUMANN_MAX_TERMS`` terms raises.
+    """
+    t = np.ones(inputs.shape[0]) if scale is None else np.asarray(scale, dtype=np.float64)
+    shape = (-1,) + (1,) * (np.ndim(demand) - 1)
+    x0 = sparse.diags(1 / t) @ sparse.csr_matrix(inputs) @ sparse.diags(t)
+    s = float(abs(x0).sum(axis=0).max())
+    term = demand / t.reshape(shape)
+    x = term.copy()
+    if s < 1:
+        stop = NEUMANN_TOL * np.abs(term).sum(axis=0) * (1 - s) / max(s, 1e-300)
+        terms = 1 + math.ceil(math.log(NEUMANN_TOL * (1 - s) / s) / math.log(s)) if s > 0 else 0
+    else:
+        stop = NEUMANN_TOL * np.abs(term).sum(axis=0)
+        terms = NEUMANN_MAX_TERMS
+    for _ in range(terms + 1):
+        if np.all(np.abs(term).sum(axis=0) <= stop):
+            return x * t.reshape(shape)
+        term = x0 @ term
+        x += term
+    msg = "Neumann series did not reach its tolerance"
+    raise ArithmeticError(msg)
 
 
 def many_groups(n: int) -> object:
@@ -200,7 +462,7 @@ def write_datapackages(system: System, folder: Path, *, uncertain: bool = False)
     characterization each, with the ``identifier`` MultiLCA filters on. They are separate
     because a plain ``LCA`` sums every characterization it is given. With ``uncertain``,
     technosphere inputs get a normal distribution with a 10% standard deviation, for
-    Monte Carlo. ``reference.json`` holds ``reference_scores()``.
+    Monte Carlo. ``reference.json`` holds the reference scores and ``scale.npy`` the units.
     """
     import bw_processing as bwp  # noqa: PLC0415 - only the container has it
 
@@ -217,11 +479,11 @@ def write_datapackages(system: System, folder: Path, *, uncertain: bool = False)
     distributions = None
     if uncertain:
         distributions = np.zeros(system.tech_data.size, dtype=bwp.UNCERTAINTY_DTYPE)
-        for field in ("shape", "minimum", "maximum"):
-            distributions[field] = np.nan
+        for name in ("shape", "minimum", "maximum"):
+            distributions[name] = np.nan
         distributions["loc"] = system.tech_data
         distributions["uncertainty_type"] = np.where(system.tech_flip, 3, 0)  # 3: normal
-        distributions["scale"] = np.where(system.tech_flip, 0.1 * system.tech_data, np.nan)
+        distributions["scale"] = np.where(system.tech_flip, 0.1 * np.abs(system.tech_data), np.nan)
 
     dp = new("inventory")
     dp.add_persistent_vector(
@@ -251,8 +513,14 @@ def write_datapackages(system: System, folder: Path, *, uncertain: bool = False)
         )
         dp.finalize_serialization()
 
-    meta = {"size": asdict(system.size), "seed": system.seed, "reference_scores": system.reference_scores()}
+    meta = {
+        "profile": system.name,
+        "shape": asdict(system.profile),
+        "seed": system.seed,
+        "reference_scores": system.reference,
+    }
     (folder / "reference.json").write_text(json.dumps(meta, indent=2))
+    np.save(folder / "scale.npy", system.scale)
     return folder
 
 
@@ -261,44 +529,30 @@ def data_root() -> Path:
     return Path.home() / ".cache" / "bwbench"
 
 
-def cache_folder(name: str, *, seed: int, uncertain: bool, bwp_version: str) -> Path:
+def cache_folder(name: str, p: Profile, *, seed: int, uncertain: bool, bwp_version: str | None = None) -> Path:
     """Cache folder for one system: a new one whenever anything that shapes the files changes."""
-    key = [asdict(SIZES[name]), seed, uncertain, GENERATOR_VERSION, bwp_version]
+    bwp_version = bwp_version or version("bw_processing")
+    key = [p.digest(), seed, uncertain, GENERATOR_VERSION, bwp_version]
     digest = hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()[:12]
     return data_root() / f"{name}-{digest}"
 
 
-def cached(name: str, *, seed: int = 0, uncertain: bool = False) -> Path:
-    """Folder of the datapackages for ``SIZES[name]``, generated on first use.
-
-    Written to a temporary folder and renamed, so a run that dies half-way, or two runs at
-    once, never leave a folder that looks complete.
-    """
-    folder = cache_folder(name, seed=seed, uncertain=uncertain, bwp_version=version("bw_processing"))
-    if folder.exists():
-        return folder
-    tmp = folder.with_name(f"{folder.name}.tmp-{os.getpid()}")
-    shutil.rmtree(tmp, ignore_errors=True)
-    write_datapackages(generate(SIZES[name], seed), tmp, uncertain=uncertain)
-    try:
-        tmp.rename(folder)
-    except OSError:
-        if not folder.exists():
-            raise
-        shutil.rmtree(tmp)  # another run finished first
-    return folder
+def profile_version(names: list[str]) -> str:
+    """The asv ``version`` of a benchmark over these profiles: changes only when one of them does."""
+    digests = [profile(n).digest() if n in PROFILES else n for n in names]
+    return f"{GENERATOR_VERSION}-" + hashlib.sha256(json.dumps(digests).encode()).hexdigest()[:8]
 
 
-def load(folder: Path) -> tuple[object, list[object], list[float]]:
-    """The inventory datapackage, the method datapackages and the reference scores."""
+def load(folder: Path) -> Packages:
+    """The inventory and method datapackages, the reference scores and the units in ``folder``."""
     import bw_processing as bwp  # noqa: PLC0415
 
     def read(name: str) -> object:
         return bwp.load_datapackage(bwp.generic_directory_filesystem(dirpath=folder / name))
 
     meta = json.loads((folder / "reference.json").read_text())
-    methods = [read(f"method-{i}") for i in range(meta["size"]["methods"])]
-    return read("inventory"), methods, meta["reference_scores"]
+    methods = [read(f"method-{i}") for i in range(meta["shape"]["methods"])]
+    return Packages(read("inventory"), methods, meta["reference_scores"], np.load(folder / "scale.npy"))
 
 
 def as_bw2data(system: System, db: str = "synth", bio: str = "bio") -> tuple[dict, dict, list[list]]:
@@ -310,9 +564,9 @@ def as_bw2data(system: System, db: str = "synth", bio: str = "bio") -> tuple[dic
     off = system.flow_offset
     biosphere = {
         (bio, f"f{j}"): {"name": f"flow {j}", "unit": "kilogram", "type": "emission", "categories": ("air",)}
-        for j in range(system.size.flows)
+        for j in range(system.profile.flows)
     }
-    exchanges: list[list[dict]] = [[] for _ in range(system.size.products)]
+    exchanges: list[list[dict]] = [[] for _ in range(system.profile.products)]
     for r, c, a, f in zip(system.tech_rows, system.tech_cols, system.tech_data, system.tech_flip, strict=True):
         kind = "technosphere" if f else "production"
         exchanges[c].append({"input": (db, f"p{r}"), "amount": float(a), "type": kind, "unit": "kilogram"})
@@ -373,7 +627,7 @@ class Stats:
     spectral_radius: float | None  # largest |eigenvalue| of X; None if ARPACK did not converge
     spectral_radius_abs: float | None  # largest eigenvalue of |X|, an upper bound on the above
     lu_fill: dict[str, float]  # nnz(L + U) / nnz(A) per SuperLU column ordering
-    factor_seconds: dict[str, float]  # median of 3 SuperLU factorizations, per ordering
+    factor_seconds: dict[str, float]  # median of the SuperLU factorizations, per ordering
     same_location_share: float | None = None  # inputs whose supplier has the consumer's location
     same_sector_share: float | None = None  # the same for the sector; "" (unknown) is left out
 
@@ -382,8 +636,14 @@ def measure(
     technosphere: sparse.spmatrix,
     locations: list[str] | None = None,
     sectors: list[str] | None = None,
+    *,
+    repeats: int = 3,
 ) -> Stats:
-    """Structural statistics of a technosphere matrix ``A`` (production on the diagonal)."""
+    """Structural statistics of a technosphere matrix ``A`` (production on the diagonal).
+
+    ``repeats`` SuperLU factorizations per ordering give the median time; 0 skips them, and
+    the fill with them.
+    """
     a = sparse.csc_matrix(technosphere, dtype=np.float64)
     n = a.shape[0]
     a = a @ sparse.diags(1.0 / a.diagonal())  # production amount 1 in every column
@@ -396,21 +656,10 @@ def measure(
     sizes = np.bincount(labels)
     loops = sizes[sizes > 1]
 
-    def radius(m: sparse.csc_matrix) -> float | None:
-        if m.nnz == 0:
-            return 0.0
-        if n < 3:  # eigs needs k < n - 1
-            return float(np.abs(np.linalg.eigvals(m.toarray())).max())
-        try:
-            eig = sla.eigs(m, k=1, which="LM", return_eigenvectors=False, tol=1e-8, maxiter=n * 10)
-        except sla.ArpackNoConvergence:
-            return None  # keep the other statistics of a long run
-        return float(np.abs(eig).max())
-
     fill, seconds = {}, {}
-    for order in ("COLAMD", "MMD_AT_PLUS_A"):
+    for order in ("COLAMD", "MMD_AT_PLUS_A") if repeats else ():
         times = []
-        for _ in range(3):
+        for _ in range(repeats):
             t0 = time.perf_counter()
             lu = sla.splu(a, permc_spec=order)
             times.append(time.perf_counter() - t0)
@@ -439,8 +688,8 @@ def measure(
             "largest": int(loops.max()) if loops.size else 0,
             "products_in_loops": int(loops.sum()),
         },
-        spectral_radius=radius(x),
-        spectral_radius_abs=radius(xa),
+        spectral_radius=spectral_radius(x),
+        spectral_radius_abs=spectral_radius(xa),
         lu_fill=fill,
         factor_seconds=seconds,
         same_location_share=same_share(locations),

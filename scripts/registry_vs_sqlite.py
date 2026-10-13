@@ -16,7 +16,7 @@ import time
 from pathlib import Path
 
 from bwbench import BW2DATA_RTOL, check, temporary_brightway_dir
-from bwbench.synth import SIZES, as_bw2data, generate
+from bwbench.synth import system
 
 METHOD_KEY = ("synthetic", "method 0")
 METHOD_ID = "synthetic:method-0"
@@ -50,8 +50,8 @@ def build_result(size: str) -> tuple[object, float]:
     from sentier_brightway.constants import BIOSPHERE_DB  # noqa: PLC0415
     from sentier_brightway.report import Coverage  # noqa: PLC0415
 
-    system = generate(SIZES[size])
-    bio, tech, cfs = as_bw2data(system, db="synthetic", bio=BIOSPHERE_DB)
+    synthetic = system(size)
+    bio, tech, cfs = synthetic.bw2data(db="synthetic", bio=BIOSPHERE_DB)
     method = BoundMethod(
         key=METHOD_KEY,
         unit="kg",
@@ -78,7 +78,7 @@ def build_result(size: str) -> tuple[object, float]:
         inventory_db="synthetic",
         residual_db="synthetic-residual",
     )
-    return result, system.reference_scores(1)[0][0]
+    return result, synthetic.reference_scores(1)[0][0]
 
 
 def disk_bytes(path: Path) -> int:

@@ -9,18 +9,20 @@ import bw2calc as bc
 from bw_graph_tools import GraphTraversalSettings, NewNodeEachVisitGraphTraversal
 
 from bwbench import DIRECT_RTOL, check, knob
-from bwbench.synth import GENERATOR_VERSION, cached, load
+from bwbench.synth import packages, profile_version
+
+SIZES = knob("sizes", "smoke")
 
 
 class Traversal:
-    version = GENERATOR_VERSION
-    params = (knob("sizes", "smoke"), [2, 100])
+    version = profile_version(SIZES)
+    params = (SIZES, [2, 100])
     param_names = ["size", "max_calc"]
     number = 1  # a second call in one sample would reuse the solver state of the first
     timeout = 900
 
     def setup(self, size: str, max_calc: int) -> None:
-        inventory, methods, refs = load(cached(size))
+        inventory, methods, refs, _ = packages(size)
         self.lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]])
         self.lca.lci()
         self.lca.lcia()

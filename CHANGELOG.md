@@ -9,6 +9,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A tiered generator calibrated to the structure of ecoinvent 3.12 cut-off: supply-chain
+  order with loops, hub suppliers, region and sector locality, waste treatments (negative
+  inputs) and per-product units. `system(profile, seed=..., **overrides)` builds one;
+  `measure()` checks it against the measured statistics.
+
 - A seeded generator of synthetic LCA systems, written as bw_processing datapackages or
   as bw2data databases, at smoke, ecoinvent, EXIOBASE, 100k and 250k-product sizes.
 - asv suites for bw2calc, bw2data, bw_processing, matrix_utils, bw_graph_tools and
@@ -24,6 +29,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   A release with the fix runs them again.
 
 ### Changed
+
+- **Breaking:** profiles replace sizes. `smoke`, `ecoinvent`, `mc100k` and `regional` use the
+  tiered generator; `exiobase` and the new `stress-random` keep the random one. The generator
+  version is 3, so earlier results and cached systems are not reused.
+- The Neumann reference stops on a bound of the rest of the series, valid up to column sums
+  near 1, instead of a rule that held only up to 0.5.
 
 - asv installs each benchmarked commit without touching its dependencies, so the pins in
   `matrix.req` and the bw_processing #113 build in the matrix_utils config stay installed.

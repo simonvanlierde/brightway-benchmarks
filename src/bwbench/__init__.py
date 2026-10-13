@@ -10,8 +10,10 @@ THREADS = os.environ.get("BWBENCH_THREADS", "1")
 for _var in ("OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "OMP_NUM_THREADS"):
     os.environ[_var] = THREADS
 
-# Relative tolerances. Every generated matrix has a condition number of at most 3, so a
-# real defect lands orders of magnitude above each of these.
+# Relative tolerances. Without its units, every generated matrix has columns summing to at
+# most 0.9, so a condition number of at most 19, and a real defect lands orders of magnitude
+# above each of these. The units of the tiered profiles make solvers pivot, which costs
+# digits; the checks then report it, as they would on real data.
 DIRECT_RTOL = 1e-9  # direct solvers in float64 (measured: about 2e-16 to 4e-16)
 ITERATIVE_RTOL = 1e-6  # bw2calc's iterative classes stop at a relative residual near 1e-8
 # bw2data's processed arrays give about 3e-8 against the float64 reference

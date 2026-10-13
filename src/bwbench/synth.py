@@ -11,9 +11,12 @@ bw_processing and runs in the benchmark container.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
+import shutil
 from dataclasses import asdict, dataclass
+from importlib.metadata import version
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -23,6 +26,10 @@ from scipy import sparse
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
+# Bump when generate() or the stored reference changes. It is part of the cache key, and
+# benchmarks on generated data use it as their asv `version`, so old results are dropped.
+# That replaces asv's hash of the benchmark code: bump it when their timed code changes too.
+GENERATOR_VERSION = "2"
 INPUTS_SHARE = 0.5  # upper bound on the sum of input amounts per column
 NEUMANN_TOL = 1e-17  # column norm of the last series term at which the reference stops
 REFERENCE_PRODUCTS = 30  # reference scores are stored for products 0 to 29, the most MultiScores demands
@@ -240,11 +247,31 @@ def data_root() -> Path:
     return Path(os.environ.get("BWBENCH_DATA", Path.home() / ".cache" / "bwbench"))
 
 
+def cache_folder(name: str, *, seed: int, uncertain: bool, bwp_version: str) -> Path:
+    """Cache folder for one system: a new one whenever anything that shapes the files changes."""
+    key = [asdict(SIZES[name]), seed, uncertain, GENERATOR_VERSION, bwp_version]
+    digest = hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()[:12]
+    return data_root() / f"{name}-{digest}"
+
+
 def cached(name: str, *, seed: int = 0, uncertain: bool = False) -> Path:
-    """Folder of the datapackages for ``SIZES[name]``, generated on first use."""
-    folder = data_root() / f"{name}-seed{seed}{'-mc' if uncertain else ''}"
-    if not (folder / "reference.json").exists():
-        write_datapackages(generate(SIZES[name], seed), folder, uncertain=uncertain)
+    """Folder of the datapackages for ``SIZES[name]``, generated on first use.
+
+    Written to a temporary folder and renamed, so a run that dies half-way, or two runs at
+    once, never leave a folder that looks complete.
+    """
+    folder = cache_folder(name, seed=seed, uncertain=uncertain, bwp_version=version("bw_processing"))
+    if folder.exists():
+        return folder
+    tmp = folder.with_name(f"{folder.name}.tmp-{os.getpid()}")
+    shutil.rmtree(tmp, ignore_errors=True)
+    write_datapackages(generate(SIZES[name], seed), tmp, uncertain=uncertain)
+    try:
+        tmp.rename(folder)
+    except OSError:
+        if not folder.exists():
+            raise
+        shutil.rmtree(tmp)  # another run finished first
     return folder
 
 

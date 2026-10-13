@@ -13,7 +13,7 @@ import numpy as np
 from scipy import sparse
 
 from bwbench import knob
-from bwbench.synth import cached, load, method_name, neumann
+from bwbench.synth import GENERATOR_VERSION, cached, load, method_name, neumann
 
 DIRECT_RTOL = 1e-9
 ITERATIVE_RTOL = 1e-6  # bw2calc's iterative classes stop at a relative residual near 1e-8
@@ -53,6 +53,7 @@ def score_of(scores: object, method: tuple, demand: str) -> float:
 class SingleScore:
     """One demand, one method: build the matrices, factorize, solve, characterize."""
 
+    version = GENERATOR_VERSION
     params = (knob("sizes", "smoke"), CLASSES)
     param_names = ["size", "cls"]
     timeout = 600
@@ -80,6 +81,7 @@ class SingleScore:
 class NewDemand:
     """A second demand on a system already factorized: the solve alone."""
 
+    version = GENERATOR_VERSION
     params = (knob("sizes", "smoke"),)
     param_names = ["size"]
     timeout = 600
@@ -102,6 +104,7 @@ class MultiScores:
     demand counts straddle that threshold.
     """
 
+    version = GENERATOR_VERSION
     params = (knob("sizes", "smoke"), [1, 3, 10, 30], ["MultiLCA", "forward", "adjoint"])
     param_names = ["size", "demands", "variant"]
     timeout = 900
@@ -146,6 +149,7 @@ class MonteCarlo:
     case worth benchmarking. Setup checks one draw against a Neumann solve of that draw's matrix.
     """
 
+    version = GENERATOR_VERSION
     params = (knob("mc_sizes", "smoke"), [int(x) for x in knob("iterations", "10")], CLASSES)
     param_names = ["size", "iterations", "cls"]
     timeout = 1800

@@ -16,7 +16,7 @@ temporary_brightway_dir()
 import bw2calc as bc  # noqa: E402
 import bw2data as bd  # noqa: E402
 
-from bwbench.synth import SIZES, System, as_bw2data, generate, method_name  # noqa: E402
+from bwbench.synth import GENERATOR_VERSION, SIZES, System, as_bw2data, generate, method_name  # noqa: E402
 
 
 def fresh_project(size: str) -> tuple[dict, System]:
@@ -31,6 +31,7 @@ def fresh_project(size: str) -> tuple[dict, System]:
 
 
 class DatabaseWrite:
+    version = GENERATOR_VERSION
     params = (knob("write_sizes", "smoke"),)
     param_names = ["size"]
     number = 1

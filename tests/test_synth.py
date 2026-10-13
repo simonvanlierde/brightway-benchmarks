@@ -1,8 +1,11 @@
+from pathlib import Path
+
 import numpy as np
 import pytest
 from scipy import sparse
 
-from bwbench.synth import SIZES, as_bw2data, generate, neumann
+from bwbench import synth
+from bwbench.synth import SIZES, Size, as_bw2data, cached, generate, neumann
 
 
 def test_same_seed_same_system():
@@ -50,3 +53,37 @@ def test_neumann_solves_one_demand_and_refuses_to_diverge():
     assert np.allclose(a @ x, demand, rtol=0, atol=1e-14)
     with pytest.raises(ArithmeticError):
         neumann(sparse.csr_matrix([[0.0, 1.0], [1.0, 0.0]]), np.ones(2))
+
+
+def test_cache_folder_follows_everything_that_shapes_the_files(monkeypatch: pytest.MonkeyPatch):
+    def key(seed: int = 0, *, uncertain: bool = False, bwp_version: str = "1.6") -> Path:
+        return synth.cache_folder("smoke", seed=seed, uncertain=uncertain, bwp_version=bwp_version)
+
+    base = key()
+    assert base == key()
+    assert len({base, key(seed=1), key(uncertain=True), key(bwp_version="1.5")}) == 4
+    monkeypatch.setattr(synth, "GENERATOR_VERSION", "test")
+    assert key() != base
+    monkeypatch.setitem(SIZES, "smoke", Size(products=201, inputs=4, flows=30))
+    assert key() != base
+
+
+def test_cached_regenerates_when_the_size_changes(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    written = []
+
+    def fake_write(system: synth.System, folder: Path, **_: object) -> Path:
+        folder.mkdir(parents=True)
+        (folder / "reference.json").write_text("{}")
+        written.append(system.size)
+        return folder
+
+    monkeypatch.setattr(synth, "write_datapackages", fake_write)
+    monkeypatch.setattr(synth, "version", lambda _: "1.6")
+    monkeypatch.setattr(synth, "data_root", lambda: tmp_path)
+    first = cached("smoke")
+    assert cached("smoke") == first
+    assert len(written) == 1
+    monkeypatch.setitem(SIZES, "smoke", Size(products=201, inputs=4, flows=30))
+    assert cached("smoke") != first
+    assert [s.products for s in written] == [200, 201]
+    assert not list(tmp_path.glob("*.tmp-*"))

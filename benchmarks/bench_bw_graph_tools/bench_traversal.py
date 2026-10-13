@@ -9,10 +9,11 @@ import bw2calc as bc
 from bw_graph_tools import GraphTraversalSettings, NewNodeEachVisitGraphTraversal
 
 from bwbench import knob
-from bwbench.synth import cached, load
+from bwbench.synth import GENERATOR_VERSION, cached, load
 
 
 class Traversal:
+    version = GENERATOR_VERSION
     params = (knob("sizes", "smoke"), [2, 100])
     param_names = ["size", "max_calc"]
     timeout = 900

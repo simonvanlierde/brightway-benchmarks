@@ -9,7 +9,7 @@ bw-processing==1.6
 bw2calc==2.5.0
 bw2parameters==1.1.0
 colorama==0.4.6 ; sys_platform == 'win32'
-deepdiff==7.0.1
+deepdiff==9.1.0
 deprecated==3.0.0
 flexcache==0.3
 flexparser==0.4

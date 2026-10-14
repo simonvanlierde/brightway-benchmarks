@@ -7,7 +7,14 @@
 # updates ignore it. github-actions and pre-commit take default-days only.
 #
 # No docker ecosystem: it reads FROM lines only, and those tags are copier answers,
-# so its PRs would fight the next `copier update`.
+# so its PRs would fight the next `copier update`. Here the box image's digest in
+# docker/Dockerfile is also a benchmark pin: it fixes the Python every result ran on.
+#
+# Benchmark pins are moved by hand, never by a bot: asv/*.json, asv/*.stack.txt, the
+# cutoff in scripts/in-box.sh, the asv and asv_runner versions in scripts/asv.sh, and the
+# box image. Moving any of them changes every result (README, "How the results stay
+# reproducible"). Only the stack files sit where an ecosystem below looks: uv reads them
+# as requirements files, so its entry excludes asv/.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -30,6 +37,7 @@ updates:
   # is not buried in lint-tool churn.
   - package-ecosystem: uv
     directory: /
+    exclude-paths: ["asv/**"]
     schedule: {interval: weekly}
     cooldown: {default-days: 7, semver-major-days: 30}
     groups:

@@ -1,4 +1,4 @@
-asv-runner==0.2.5
+asv-runner==0.3.1
 attrs==26.1.0
 fsspec==2026.9.0
 jsonschema==4.26.0

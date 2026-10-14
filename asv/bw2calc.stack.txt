@@ -1,7 +1,7 @@
 annotated-types==0.8.0
 asteval==1.0.10
 astunparse==1.6.3
-asv-runner==0.2.5
+asv-runner==0.3.1
 attrs==26.1.0
 blinker==1.9.0
 bw-graph-tools==0.10

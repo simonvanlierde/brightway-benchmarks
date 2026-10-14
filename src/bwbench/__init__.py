@@ -64,6 +64,22 @@ def knob(name: str, default: str, cast: Callable[[str], Any] = str) -> list[Any]
     return [cast(v) for v in os.environ.get(f"BWBENCH_{name.upper()}", default).split(",")]
 
 
+_SEEN: set[tuple[object, ...]] = set()
+
+
+def first_time(*key: object) -> bool:
+    """True the first time this process sees ``key``, then False.
+
+    asv runs a setup before every sample, and the checks behind a sample (a full solve, a
+    Neumann series) can cost more than the timed call. Their result cannot change between
+    samples of one parameter set, so a check guarded by this runs once per process.
+    """
+    if key in _SEEN:
+        return False
+    _SEEN.add(key)
+    return True
+
+
 def temporary_brightway_dir() -> str:
     """Point bw2data at a fresh directory, removed at exit. Call before importing bw2data."""
     import atexit  # noqa: PLC0415

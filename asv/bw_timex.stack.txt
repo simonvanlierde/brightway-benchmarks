@@ -15,7 +15,7 @@ colorama==0.4.6 ; sys_platform == 'win32'
 comm==0.2.3
 contourpy==1.4.0
 cycler==0.12.1
-deepdiff==9.1.0
+deepdiff==7.0.1
 deprecated==3.0.0
 dynamic-characterization==1.4.3
 et-xmlfile==2.0.0

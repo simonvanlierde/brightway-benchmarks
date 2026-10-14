@@ -16,7 +16,7 @@ import numpy as np
 from scipy import sparse
 from scipy.sparse.linalg import cgs
 
-from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, knob
+from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, first_time, knob
 from bwbench.asv import classes
 from bwbench.bench import BenchSetup, bench
 from bwbench.synth import method_name, neumann_score, packages, skip_unless_factorizable
@@ -115,7 +115,8 @@ def first_score(size: str, cls: str) -> BenchSetup:
     def against_reference(score: float) -> float:
         return check(score, refs[0][0], rtol, f"score ({solver()})")
 
-    against_reference(run())
+    if first_time("first_score", size, cls):  # also the warm-up before the first timed call
+        against_reference(run())
     return run, against_reference
 
 
@@ -182,7 +183,8 @@ def scores(size: str, demands: int, variant: str) -> BenchSetup:
         table = [[score_of(result, method_name(m), f"d{d}") for m in range(len(methods))] for d in range(demands)]
         return check_table(table, refs[:demands], DIRECT_RTOL, f"score ({solver()})")
 
-    against_reference(run())
+    if first_time("scores", size, demands, variant):  # also the warm-up before the first timed call
+        against_reference(run())
     return run, against_reference
 
 
@@ -209,10 +211,11 @@ def iterations(size: str, iterations: int, cls: str) -> BenchSetup:
     lca.lci()
     lca.lcia()
     next(lca)
-    # Product ids are 0 to n - 1, so bw2calc's matrix order is the id order of `scale`.
-    check(float(lca.score), neumann_score(lca, scale), rtol_for(cls), f"Monte Carlo score ({solver()})")
-    if abs(lca.score - refs[0][0]) <= ITERATIVE_RTOL * abs(refs[0][0]):
-        raise AssertionError("the Monte Carlo draw equals the static score: distributions were ignored")
+    if first_time("iterations", size, iterations, cls):  # the same draw (seed_override) every sample
+        # Product ids are 0 to n - 1, so bw2calc's matrix order is the id order of `scale`.
+        check(float(lca.score), neumann_score(lca, scale), rtol_for(cls), f"Monte Carlo score ({solver()})")
+        if abs(lca.score - refs[0][0]) <= ITERATIVE_RTOL * abs(refs[0][0]):
+            raise AssertionError("the Monte Carlo draw equals the static score: distributions were ignored")
 
     def run() -> float:
         for _ in range(iterations):

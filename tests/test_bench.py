@@ -102,6 +102,35 @@ def test_asv_teardown_fails_a_wrong_result():
         obj.teardown(1)
 
 
+def test_first_time_is_once_per_key():
+    assert bwbench.first_time("a", 1)
+    assert not bwbench.first_time("a", 1)
+    assert bwbench.first_time("a", 2)
+
+
+def test_asv_checks_once_per_parameter_set():
+    checked = []
+
+    @bench({"x": [1, 2]})
+    def counted(x: int):
+        return lambda: x, lambda result: checked.append(result) or 0.0
+
+    (cls,) = asv.classes(module(counted=counted).__name__)
+    obj = cls()
+    for x in (1, 1, 2):  # asv sets up and tears down around every sample
+        obj.setup(x)
+        obj.time_counted(x)
+        obj.teardown(x)
+    assert checked == [1, 2]
+
+
+def test_asv_rounds_follow_bwbench_rounds(monkeypatch: pytest.MonkeyPatch):
+    (default,) = asv.classes(module(double=double).__name__)
+    monkeypatch.setenv("BWBENCH_ROUNDS", "1")
+    (one,) = asv.classes(module(double=double).__name__)
+    assert (vars(default)["rounds"], vars(one)["rounds"]) == (2, 1)
+
+
 def test_asv_merges_benches_that_share_a_class():
     @bench({"x": [1]}, asv="Pair")
     def first(x: int):

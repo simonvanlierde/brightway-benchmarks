@@ -74,6 +74,8 @@ example, `BWBENCH_SIZES=ecoinvent just bench bw2calc` times the ecoinvent-sized 
 `pypardiso` and `umfpack`, all three by default. PyPardiso needs Intel's MKL, so off x86_64
 (an Apple Silicon Mac, say) the default is `superlu,umfpack`. A full-size bw2calc run takes
 about 24 minutes with the SuperLU environment and 6 with `BWBENCH_SOLVERS=pypardiso`.
+asv times each case in 2 rounds by default; `BWBENCH_ROUNDS=1` halves a full-size run.
+Each result is checked once per parameter set, not after every sample.
 
 When a package publishes a new release, `just stack` and `just stack-check` move its fixed
 set of dependencies (below) forward; the steps are in the [justfile](justfile).

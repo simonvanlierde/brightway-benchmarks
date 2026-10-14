@@ -6,9 +6,11 @@ them before each method, so give them the same ``params``.
 
 from __future__ import annotations
 
+import os
 import sys
 from typing import TYPE_CHECKING, Any
 
+from bwbench import first_time
 from bwbench.bench import Bench, Prepared, benches
 from bwbench.synth import GENERATOR_VERSION, profile_version
 
@@ -46,8 +48,7 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         # The check runs here, outside the timed call; asv reports a raise as a failed benchmark.
         prepared: dict[str, Prepared] = getattr(self, "prepared", {})
         try:
-            for bench_name, result in getattr(self, "results", {}).items():
-                prepared[bench_name].verify(result)
+            _verify_once(name, prepared, getattr(self, "results", {}), args)
         finally:
             for p in prepared.values():
                 p.teardown()
@@ -62,6 +63,9 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         # asv's own version hashes this adapter, not the benchmark, so the profiles set it.
         "version": profile_version() if "size" in params else GENERATOR_VERSION,
         "timeout": 900,
+        # asv's default is 2, each round in a new process. One halves a run whose samples
+        # each take tens of seconds (SuperLU at ecoinvent size) and adds noise to short ones.
+        "rounds": int(os.environ.get("BWBENCH_ROUNDS", "2")),
     }
     methods: dict[str, Any] = {}
     for b in group:
@@ -75,6 +79,13 @@ def _asv_class(name: str, group: list[Bench]) -> type:
             raise ValueError(msg)
         methods |= new
     return type(name, (), body | methods)
+
+
+def _verify_once(cls_name: str, prepared: dict[str, Prepared], results: dict[str, Any], args: tuple) -> None:
+    """Check each timed result once per parameter set: later samples run the same code on the same data."""
+    for bench_name, result in results.items():
+        if first_time("verify", cls_name, bench_name, *args):
+            prepared[bench_name].verify(result)
 
 
 def _time(bench_name: str) -> Callable[..., None]:

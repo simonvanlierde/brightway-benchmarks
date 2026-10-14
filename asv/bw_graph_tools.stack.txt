@@ -22,7 +22,7 @@ numpy==2.5.3
 ordered-set==4.1.0
 packaging==26.3
 pandas==3.0.6
-peewee==4.5.2
+peewee==4.5.3
 pint==0.26.1
 platformdirs==4.12.3
 pydantic==2.13.5

@@ -1,5 +1,9 @@
 # TODO
 
+- [ ] Calibrate the `ecoinvent` profile over several seeds, not seed 0 only: one realization
+      to the next moves the giant loop's share by about ten points (0.62 against 0.72 when a
+      small parameter change shifted every later random draw), so the oracle test's 0.03
+      band holds for seed 0 alone.
 - [ ] Lower the `ecoinvent` profile's LU fill: COLAMD 323 and MMD_AT_PLUS_A 99, against
       ecoinvent's 175 and 76. `measure()` traces it to consumer overlap among the smaller
       suppliers: with the top 1% of supplier rows removed, nnz(A^T A) is 0.37 of the summed
@@ -23,13 +27,14 @@
       against it in the box and decide whether to drop the warm-up at 25k products and up.
 - [ ] Check that pytest-codspeed's `pedantic` calls the target once per setup under CPU
       simulation; a warm-up call would trip the seam's "run called twice" guard.
-- [ ] Measure run-to-run noise (10 repeats of one commit) before publishing any number.
+- [ ] Measure the noise of SuperLU and UMFPACK at the ecoinvent size (only PyPardiso's is
+      measured), once per release in the backfill rather than as repeats.
 - [ ] Backfill each package on a pinned benchmark machine, in one fixed CPU slot, with
       `BWBENCH_SIZES=ecoinvent,exiobase`. Include the PyPardiso environments there.
 - [ ] First publication: turn on GitHub Pages with "GitHub Actions" as the source, benchmark
       with a neutral `BWBENCH_MACHINE` (for example `pinned-e0`), then `just results-commit`,
-      `git push origin results` and `gh workflow run site.yml`. Only after the noise is
-      measured (above).
+      `git push origin results` and `gh workflow run site.yml`. Benchmark with the CPU
+      on its performance power profile.
 - [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
       hold the same versions.
 - [ ] When turning on Pages, limit the `github-pages` environment's deployment branches to

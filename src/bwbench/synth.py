@@ -80,7 +80,7 @@ class Profile:
     # tiered builder
     inputs_median: float = 5.0  # inputs per product are lognormal, rounded
     inputs_sigma: float = 1.34
-    inputs_max: int = 410
+    inputs_max: int = 410  # caps the longest input lists
     inputs_extra: float = 1.15  # more draws than inputs, for the repeated cells that are dropped
     terminal: float = 0.12  # share of products nothing buys
     hub_sigma: float = 2.75  # spread of supplier weights: higher, fewer and bigger hubs
@@ -651,16 +651,19 @@ QUANTILES = (0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99, 1.0)
 
 
 def _quantiles(values: NDArray, *, extremes: bool = True) -> dict[str, float]:
-    """Mean and the ``QUANTILES`` of ``values``: a distribution, never the values themselves.
+    """The ``QUANTILES`` of ``values``, and their mean: a distribution, never the values themselves.
 
-    ``extremes=False`` leaves out the minimum and maximum, which are each one value: for amounts
-    from a licensed database that would publish a single exchange.
+    ``extremes=False`` leaves out the minimum, the maximum and the mean. The first two are each
+    one value, and a heavy tail makes the mean one too: for amounts from a licensed database,
+    each would publish a single dataset's figure.
     """
     v = np.asarray(values, dtype=np.float64)
     if v.size == 0:
         return {}
     qs = QUANTILES if extremes else [q for q in QUANTILES if 0 < q < 1]
-    return {"mean": float(v.mean()), **{f"q{round(q * 100):02d}": float(np.quantile(v, q)) for q in qs}}
+    return ({"mean": float(v.mean())} if extremes else {}) | {
+        f"q{round(q * 100):02d}": float(np.quantile(v, q)) for q in qs
+    }
 
 
 @dataclass(frozen=True)
@@ -675,9 +678,9 @@ class Stats:
     entries: int  # nonzero inputs (off-diagonal)
     inputs_per_product: dict[str, float]  # nonzero entries per column
     consumers_per_supplier: dict[str, float]  # nonzero entries per row
-    log10_abs_input: dict[str, float]  # distribution of log10 |X[i, j]|, without min and max
-    negative_input_share: float  # inputs with X < 0 (wastes sent to treatment)
-    column_abs_sum: dict[str, float]  # sum over i of |X[i, j]|, without min and max
+    log10_abs_input: dict[str, float]  # distribution of log10 |X[i, j]|, quantiles only
+    negative_input_share: float  # inputs with X < 0: wastes sent to treatment, and a treatment's own inputs
+    column_abs_sum: dict[str, float]  # sum over i of |X[i, j]|, quantiles only
     loops: dict[str, float]  # strongly connected components of more than one product
     spectral_radius: float | None  # largest |eigenvalue| of X; None if ARPACK did not converge
     spectral_radius_abs: float | None  # largest eigenvalue of |X|, an upper bound on the above
@@ -714,6 +717,9 @@ def measure(
     """
     a = sparse.csc_matrix(technosphere, dtype=np.float64)
     n = a.shape[0]
+    if n == 0 or not np.all(a.diagonal()):
+        msg = "every product needs a nonzero net production on the diagonal"  # names no dataset
+        raise ValueError(msg)
     a = a @ sparse.diags(1.0 / a.diagonal())  # production amount 1 in every column
     x = (sparse.identity(n, format="csc") - a).tocsc()
     x.setdiag(0.0)
@@ -749,8 +755,9 @@ def measure(
     return Stats(
         products=n,
         entries=int(x.nnz),
-        inputs_per_product=_quantiles(np.diff(x.indptr)),
-        consumers_per_supplier=_quantiles(np.bincount(rows, minlength=n)),
+        # The largest count describes one dataset, so degrees leave out their extremes too.
+        inputs_per_product=_quantiles(np.diff(x.indptr), extremes=False),
+        consumers_per_supplier=_quantiles(np.bincount(rows, minlength=n), extremes=False),
         log10_abs_input=_quantiles(np.log10(xa.data), extremes=False),
         negative_input_share=float(np.mean(x.data < 0)) if x.nnz else 0.0,
         column_abs_sum=_quantiles(np.ravel(xa.sum(axis=0)), extremes=False),
@@ -765,10 +772,30 @@ def measure(
         factor_seconds=seconds,
         same_location_share=same_share(locations),
         same_sector_share=same_share(sectors),
-        **_fill_drivers(a, x),
+        **_fill_drivers(a, x, locations, sectors),
         lu_fill_no_pivoting=fill_no_pivoting or None,
         off_diagonal_pivots=pivots or None,
     )
+
+
+def _shared_pairs(
+    joined: sparse.coo_matrix, locations: list[str] | None, sectors: list[str] | None
+) -> dict[str, float]:
+    """For consumer pairs that share a supplier: how many they share, and how alike they are.
+
+    ``joined`` is Q^T Q for one band of supplier rows Q. Same-sector pairs in different
+    locations point at regional copies of one technology; same-location pairs at regional
+    markets. Aggregates only.
+    """
+    upper = joined.row < joined.col
+    i, j = joined.row[upper], joined.col[upper]
+    out = {"suppliers_shared": float(joined.data[upper].mean()) if i.size else 0.0}
+    for key, labels in (("same_location", locations), ("same_sector", sectors)):
+        if labels is not None and i.size:
+            lab = np.asarray(labels)
+            known = (lab[i] != "") & (lab[j] != "")
+            out[key] = float(np.mean(lab[i][known] == lab[j][known])) if known.any() else 0.0
+    return out
 
 
 def _lu_fill(lu: Any, a: sparse.csc_matrix) -> float:  # noqa: ANN401 - scipy's SuperLU object
@@ -776,7 +803,9 @@ def _lu_fill(lu: Any, a: sparse.csc_matrix) -> float:  # noqa: ANN401 - scipy's 
     return float((lu.L.nnz + lu.U.nnz - a.shape[0]) / a.nnz)
 
 
-def _fill_drivers(a: sparse.csc_matrix, x: sparse.csc_matrix) -> dict[str, Any]:
+def _fill_drivers(
+    a: sparse.csc_matrix, x: sparse.csc_matrix, locations: list[str] | None, sectors: list[str] | None
+) -> dict[str, Any]:
     """Structural statistics that bear on LU fill: aggregates only, like the rest of ``Stats``."""
     n = a.shape[0]
     pattern = (a != 0).astype(np.float64).tocsr()
@@ -804,9 +833,11 @@ def _fill_drivers(a: sparse.csc_matrix, x: sparse.csc_matrix) -> dict[str, Any]:
         pairs = float(squares[rows_in].sum())
         if pairs:
             band = pattern[rows_in]
+            joined = (band.T @ band).tocoo()
             by_band[f"{low}+" if high == OVERLAP_BANDS[-1][1] else f"{low}-{high}"] = {
-                "overlap": float((band.T @ band).nnz / pairs),
+                "overlap": float(joined.nnz / pairs),
                 "pairs_share": pairs / float(squares.sum()),
+                **_shared_pairs(joined, locations, sectors),
             }
 
     # Products whose input list (off the diagonal) another product has exactly too.
@@ -821,7 +852,7 @@ def _fill_drivers(a: sparse.csc_matrix, x: sparse.csc_matrix) -> dict[str, Any]:
     triples = float((degree * (degree - 1)).sum())
 
     alive = np.ones(n, dtype=bool)
-    alive[np.argsort(degree)[::-1][: math.ceil(0.01 * n)]] = False
+    alive[np.argsort(-degree, kind="stable")[: math.ceil(0.01 * n)]] = False  # ties in id order
     deg = sym @ alive.astype(np.float64)
     while (low := alive & (deg < 2)).any():  # peel to the 2-core: no node with fewer than 2 neighbours
         alive[low] = False

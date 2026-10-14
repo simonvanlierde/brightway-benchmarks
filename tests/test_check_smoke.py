@@ -32,3 +32,19 @@ def test_fails_on_a_null_result(tmp_path: Path):
 
 def test_fails_when_nothing_ran(tmp_path: Path):
     assert run(tmp_path).returncode == 1
+
+
+def test_fails_on_an_empty_results_object(tmp_path: Path):
+    write(tmp_path, {})
+    out = run(tmp_path)
+    assert out.returncode == 1
+    assert "abc-uv-py3.12.json" in out.stdout
+
+
+def test_fails_when_a_subject_has_no_result_file(tmp_path: Path):
+    write(tmp_path, {"a.time": [[0.1]]})
+    (tmp_path / "bw2data" / "smoke").mkdir(parents=True)
+    out = run(tmp_path)
+    assert out.returncode == 1
+    assert "bw2data" in out.stdout
+    assert "bw2calc" not in out.stdout

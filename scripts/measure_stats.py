@@ -33,6 +33,11 @@ from scipy import sparse
 
 from bwbench.synth import measure
 
+# ecoinvent's licence (EULA 6.3) asks for this credit wherever Calculated Data appears.
+CREDIT = (
+    "Calculated from the ecoinvent 3.12 cut-off database (ecoinvent Association, https://ecoinvent.org). "
+    "Aggregate statistics only: no dataset, name, amount or single-dataset figure."
+)
 FILL_KEYS = ("lu_fill", "factor_seconds", "lu_fill_no_pivoting", "off_diagonal_pivots")  # need factorizations
 NS = "{http://www.EcoInvent.org/EcoSpold02}"
 REFERENCE_PRODUCT = "0"  # ecospold2 outputGroup of the reference product
@@ -118,6 +123,7 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
             }
     result = {
         "source": f"ecoinvent {folder.name} (ecospold2), aggregates only",
+        "credit": CREDIT,
         "measured": datetime.now(UTC).date().isoformat(),
         "datasets": n,
         "unlinked_inputs": unlinked,
@@ -127,8 +133,9 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
         **fill,
     }
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(result, indent=2) + "\n")
-    print(json.dumps(result, indent=2))
+    text = json.dumps(result, indent=2, allow_nan=False)  # NaN or inf is a bug, not a statistic
+    out.write_text(text + "\n")
+    print(text)
 
 
 if __name__ == "__main__":

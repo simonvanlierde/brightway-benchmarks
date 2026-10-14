@@ -23,6 +23,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   partial pivoting. It also locates the consumer overlap: per band of supplier size, among the
   50 largest suppliers (`hub_jaccard`) and without them (`overlap_without_hubs`), and how
   many products copy another's input list.
+- Profiles publish quantiles only: no minimum, maximum or mean, each of which can be one
+  dataset's figure. The `ecoinvent` profile credits ecoinvent.
 - `measure_stats.py --structure-only` updates a profile's structure in about a minute and
   keeps the fill figures it already holds, with the date they were measured.
 - matrix_utils #48 as its own line in the history (the asv branch `pull/48/head`), until a
@@ -35,7 +37,15 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A comparison of a bw2data SQLite project with the Parquet registry of bw2data #290.
 - `just smoke`, `just bench`, `just site` and `just registry-vs-sqlite`. Each runs in a
   throwaway container.
-- A weekly smoke run in CI.
+- A weekly smoke run in CI, over each package's oldest and latest release.
+- One fixed set of dependencies per package (`asv/<package>.stack.txt`): every release is
+  benchmarked on its latest release's dependencies, so only the package changes along the
+  history. `just stack` resolves the set, `just stack-check` shows which releases still run
+  on it. bw2data's history starts at 4.6 and bw_timex's at 1.1.0 for that reason.
+- `just noise`, the run-to-run spread per case. It is about 1% at the ecoinvent size.
+- `BWBENCH_SOLVERS` picks the solver environments (`superlu`, `pypardiso`, `umfpack`), and
+  bw_graph_tools gets a PyPardiso environment.
+- `just bench` skips what already succeeded, so a stopped backfill resumes.
 - `just results-commit` keeps results as data on a local `results` branch, and a `site`
   workflow builds the history site from that branch and publishes it on GitHub Pages. The
   recipe adds and updates files but never deletes another machine's, and refuses results

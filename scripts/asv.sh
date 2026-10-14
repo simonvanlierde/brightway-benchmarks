@@ -3,14 +3,15 @@
 #
 # BWBENCH_MACHINE labels the results. It defaults to the container's hostname, which
 # oss-bench sets to <host>-<slot> and box.sh to <host>-box.
-# BWBENCH_SOLVERS (bw2calc only) adds environments with pypardiso and/or umfpack. The
-# base environment has neither, so bw2calc falls back to SuperLU there. The default leaves
-# out pypardiso off x86_64, where MKL has no wheels.
+# BWBENCH_SOLVERS picks the solver environments of bw2calc and bw_graph_tools: superlu (the
+# base environment, with neither pypardiso nor umfpack), pypardiso and umfpack. The default
+# is all three, without pypardiso off x86_64, where MKL has no wheels.
 set -eu
 subject=$1 cmd=$2
 shift 2
 machine=${BWBENCH_MACHINE:-$(uname -n)}
-asv() { uvx --quiet --from asv==0.6.6 asv "$@"; }
+# The same asv_runner as the configs install into each environment.
+asv() { uvx --quiet --from asv==0.6.6 --with asv-runner==0.2.5 asv "$@"; }
 
 # One run per subject at a time: two would rebuild the same environments under each other.
 exec 9>".asv/$subject.lock"
@@ -19,22 +20,37 @@ flock -n 9 || {
     exit 1
 }
 
-# The config asv reads: bw2calc's solver environments filtered by BWBENCH_SOLVERS, and
-# smoke results kept under .asv/smoke/, out of results/ and so out of the site.
-default=umfpack
-[ "$(uname -m)" = x86_64 ] && default=pypardiso,$default
+# The config asv reads: the solver environments filtered by BWBENCH_SOLVERS, and
+# smoke, noise and stack results kept under .asv/<machine>/, out of results/ and so out of the site.
+default=superlu,umfpack
+[ "$(uname -m)" = x86_64 ] && default=superlu,pypardiso,umfpack
 # Written to .asv/ (writable in the box), so asv/ with the tracked configs can stay read-only.
 conf=.asv/.$subject.local.json
 results=$(
     BWBENCH_SOLVERS=${BWBENCH_SOLVERS:-$default} python3 - "$subject" "$machine" <<'PY'
-import json, os, sys
+import hashlib, json, os, platform, sys
 subject, machine = sys.argv[1:]
 conf = json.load(open(f"asv/{subject}.json"))
 wanted = os.environ["BWBENCH_SOLVERS"].split(",")
+unknown = set(wanted) - {"superlu", "pypardiso", "umfpack"}
+if unknown or not wanted:
+    sys.exit(f"asv.sh: BWBENCH_SOLVERS takes superlu, pypardiso and umfpack, not {','.join(sorted(unknown))}")
+if "pypardiso" in wanted and platform.machine() != "x86_64":
+    sys.exit("asv.sh: pypardiso needs MKL, which has wheels for x86_64 only")
+# asv names an environment after its matrix, not after the stack file it installs. A hash
+# of the stack in the name rebuilds the environments when the stack changes, and keeps a
+# resumed run from counting results made on the old stack as done.
+stack = hashlib.sha256(open(f"asv/{subject}.stack.txt", "rb").read()).hexdigest()[:8]
+conf["matrix"]["env"] = {"BWBENCH_STACK": [stack]}
+for e in conf.get("include", []):
+    e["env"] = {"BWBENCH_STACK": stack}
 name = {"pypardiso": "pypardiso", "scikit-umfpack": "umfpack"}
-conf["include"] = [e for e in conf.get("include", []) if all(name[k] in wanted for k in e["req"] if k in name)]
-if machine == "smoke":
-    conf["results_dir"] = f"../.asv/smoke/{subject}"
+if conf.get("include"):
+    conf["include"] = [e for e in conf["include"] if all(name[k] in wanted for k in e["req"] if k in name)]
+    if "superlu" not in wanted:
+        conf["exclude"] = [{"python": ".*"}]  # asv excludes from the matrix only, never an include
+if machine in ("smoke", "noise", "stack"):
+    conf["results_dir"] = f"../.asv/{machine}/{subject}"
 json.dump(conf, open(f".asv/.{subject}.local.json", "w"), indent=2)
 print(f".asv/{conf['results_dir']}")
 PY

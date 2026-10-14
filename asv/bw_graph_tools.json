@@ -35,7 +35,20 @@
     "python -m pip wheel --no-deps -w {build_cache_dir} {build_dir}"
   ],
   "install_command": [
-    "in-dir={env_dir} python -m pip install {wheel_file}",
+    "in-dir={env_dir} python -m pip install --no-deps -r /src/asv/bw_graph_tools.stack.txt",
     "in-dir={env_dir} python -m pip install --force-reinstall --no-deps {wheel_file}"
+  ],
+  "include": [
+    {
+      "python": "3.12",
+      "environment_type": "uv",
+      "req": {
+        "numpy": "2.5.3",
+        "scipy": "1.18.1",
+        "pip+asv_runner": "0.2.5",
+        "bw2calc": "2.5.0",
+        "pypardiso": ""
+      }
+    }
   ]
 }

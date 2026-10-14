@@ -39,7 +39,8 @@ machine. Its shape comes from a profile:
   has; one large loop that holds 64% of the products; waste treatments with negative
   inputs; units that span many orders of magnitude; and a spectral radius of 0.78, which
   sets how fast the supply-chain series converges. Only aggregate statistics of ecoinvent
-  went into it, never a dataset. They are in [`src/bwbench/profiles/`](src/bwbench/profiles).
+  went into it, calculated from the ecoinvent database (ecoinvent Association), never a
+  dataset or a figure of a single dataset. They are in [`src/bwbench/profiles/`](src/bwbench/profiles).
 - `smoke` is the same structure at 200 products, for quick checks.
 - `mc100k` and `regional` scale it to 100,000 and 250,000 products, the sizes of a large
   Monte Carlo study and a regionalised database.
@@ -57,7 +58,7 @@ git 2.42 or later. Brightway's code only runs inside a throwaway container, neve
 machine.
 
 ```sh
-just smoke                       # each package's latest release, small database: a quick check
+just smoke                       # each package's oldest and latest release, small database
 just bench bw2calc               # every bw2calc release listed in asv/bw2calc.hashes
 just bench bw2data "4.7^!" -e    # one release; extra arguments go to asv
 just site                        # build the history pages in site/
@@ -68,15 +69,32 @@ Every benchmark runs on the 200-product `smoke` database unless you pick others.
 example, `BWBENCH_SIZES=ecoinvent just bench bw2calc` times the ecoinvent-sized one.
 `BWBENCH_SIZES` sets the size for most cases, and three cases have their own variable:
 `BWBENCH_MC_SIZES` (Monte Carlo), `BWBENCH_WRITE_SIZES` (bw2data) and `BWBENCH_TIMEX_SIZES`
-(bw_timex). The results are not published yet: I still have to measure the run-to-run
-noise first.
+(bw_timex). The results are not published yet.
+`BWBENCH_SOLVERS` picks the solver environments of bw2calc and bw_graph_tools: `superlu`,
+`pypardiso` and `umfpack`, all three by default. PyPardiso needs Intel's MKL, so off x86_64
+(an Apple Silicon Mac, say) the default is `superlu,umfpack`. A full-size bw2calc run takes
+about 24 minutes with the SuperLU environment and 6 with `BWBENCH_SOLVERS=pypardiso`.
+
+When a package publishes a new release, `just stack` and `just stack-check` move its fixed
+set of dependencies (below) forward; the steps are in the [justfile](justfile).
 
 ## How the results stay reproducible
 
-- [asv](https://asv.readthedocs.io) runs each package's benchmarks against pinned versions
-  of numpy, scipy and the other Brightway packages, using only releases from before
-  2026-10-06.
+- [asv](https://asv.readthedocs.io) runs every release of a package on one fixed set of
+  dependencies: those of its latest release, from before 2026-10-06, listed in
+  `asv/<package>.stack.txt`. Only the package itself changes from one point in the history
+  to the next, so a step in a graph is that package's change.
+- Each history starts at the oldest release that runs on that set. bw2data starts at 4.6,
+  the first release on peewee 4, which older ones cannot import. bw_timex starts at 1.1.0,
+  since 1.0.0 fails a check that bw_processing 1.6 added later. Every release of bw2calc,
+  bw_processing, matrix_utils and bw_graph_tools runs.
 - The solvers run on one thread, so a timing does not depend on how many cores were free.
+- Between runs, a case's time varies by at most 1% at the ecoinvent size (median 0.1%,
+  PyPardiso, 5 runs) and by up to 4% at the smoke size (median 0.9%, 10 runs), apart from
+  cases of a few milliseconds (`just noise`). So a step of 5% or more at the ecoinvent size
+  is a real change. Short cases need the CPU on its performance power profile (on Linux,
+  `powerprofilesctl set performance`): under a power-saving one, an idle core starts slow
+  and they vary up to five-fold.
 - Each run records exactly what was installed (a `pylock.toml` lock file per environment)
   and an RO-Crate that names the code and settings that produced it.
 

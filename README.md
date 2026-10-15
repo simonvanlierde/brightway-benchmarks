@@ -70,7 +70,7 @@ Every benchmark runs on the 200-product `smoke` database unless you pick others.
 example, `BWBENCH_SIZES=ecoinvent just bench bw2calc` times the ecoinvent-sized one.
 `BWBENCH_SIZES` sets the size for most cases, and three cases have their own variable:
 `BWBENCH_MC_SIZES` (Monte Carlo), `BWBENCH_WRITE_SIZES` (bw2data) and `BWBENCH_TIMEX_SIZES`
-(bw_timex). The results are not published yet.
+(bw_timex).
 `BWBENCH_SOLVERS` picks the solver environments of bw2calc and bw_graph_tools: `superlu`,
 `pypardiso` and `umfpack`, all three by default. PyPardiso needs Intel's MKL, so off x86_64
 (an Apple Silicon Mac, say) the default is `superlu,umfpack`. A full-size bw2calc run takes
@@ -80,6 +80,27 @@ Each result is checked once per parameter set, not after every sample.
 
 When a package publishes a new release, `just stack` and `just stack-check` move its fixed
 set of dependencies (below) forward; the steps are in the [justfile](justfile).
+
+## Results so far
+
+The history pages are at <https://simonvanlierde.github.io/brightway-benchmarks/>. The
+first full history is bw2calc 2.0 to 2.5.0, all 13 releases, on the ecoinvent-sized
+database, one thread on an efficiency core of an Intel i9-14900KF:
+
+| Solver | First score, every release |
+| --- | --- |
+| SuperLU (SciPy) | 27.7 s |
+| PyPardiso | 10.0 s |
+| UMFPACK | 9.05 s |
+
+- **No release made a first score faster or slower.** Two single-round outliers wait for
+  a recheck before they count: 2.0.2 with SuperLU (34.4 s) and a commit just before 2.2
+  with PyPardiso (11.6 s).
+- **Almost all the time is the LU factorization.** Profiled under PyPardiso, factorizing
+  is 98% of a first score and 99% of a Monte Carlo draw, so speeding up anything else in
+  bw2calc cannot help much. Reusing PARDISO's reordering between draws saves about 2%.
+- **`JacobiGMRESLCA`** (2.4.0 on) scores in 150 ms with a relative error of 1.4e-9. That
+  is on this synthetic matrix only, which converges quickly; it is not checked on ecoinvent.
 
 ## How the results stay reproducible
 

@@ -15,6 +15,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `measure()` also factorizes Aᵀ, under both column orderings: bw2calc's
   `decompose_technosphere` factorizes A, while scipy's `spsolve` on a CSR matrix factorizes Aᵀ.
   Their keys end in `(A^T)`.
+- The history site's front page says what each history times and how to read the graphs,
+  in light and dark mode, and links bw2calc's time for one score as the place to start.
+- The first results in the README: bw2calc 2.0 to 2.5.0 at the ecoinvent size.
 - asv suites for bw2calc, bw2data, bw_processing, matrix_utils, bw_graph_tools and bw_timex,
   run over their released versions. Every case except bw_processing's two `EntriesPath`
   cases checks its result against a float64 reference.

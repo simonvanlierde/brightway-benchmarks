@@ -684,7 +684,7 @@ class Stats:
     loops: dict[str, float]  # strongly connected components of more than one product
     spectral_radius: float | None  # largest |eigenvalue| of X; None if ARPACK did not converge
     spectral_radius_abs: float | None  # largest eigenvalue of |X|, an upper bound on the above
-    lu_fill: dict[str, float]  # nnz(L + U) / nnz(A) per SuperLU column ordering
+    lu_fill: dict[str, float]  # nnz(L + U) / nnz(A) per SuperLU column ordering, of A and of A^T
     factor_seconds: dict[str, float]  # median of the SuperLU factorizations, per ordering
     same_location_share: float | None = None  # inputs whose supplier has the consumer's location
     same_sector_share: float | None = None  # the same for the sector; "" (unknown) is left out
@@ -731,17 +731,20 @@ def measure(
     loops = sizes[sizes > 1]
 
     fill, seconds, fill_no_pivoting, pivots = {}, {}, {}, {}
-    for order in ("COLAMD", "MMD_AT_PLUS_A") if repeats else ():
-        times = []
-        for _ in range(repeats):
-            t0 = time.perf_counter()
-            lu = sla.splu(a, permc_spec=order)
-            times.append(time.perf_counter() - t0)
-        fill[order] = _lu_fill(lu, a)
-        seconds[order] = float(np.median(times))
-        # Column i lands at perm_c[i] and row i at perm_r[i]: the pivot is A[i, i] when they agree.
-        pivots[order] = float(np.mean(lu.perm_r != lu.perm_c))
-        fill_no_pivoting[order] = _lu_fill(sla.splu(a, permc_spec=order, diag_pivot_thresh=0.0), a)
+    # A^T too: bw2calc's decompose_technosphere factorizes A, scipy's spsolve on CSR input A^T.
+    for m, suffix in ((a, ""), (a.T.tocsc(), " (A^T)")) if repeats else ():
+        for order in ("COLAMD", "MMD_AT_PLUS_A"):
+            times = []
+            for _ in range(repeats):
+                t0 = time.perf_counter()
+                lu = sla.splu(m, permc_spec=order)
+                times.append(time.perf_counter() - t0)
+            fill[order + suffix] = _lu_fill(lu, m)
+            seconds[order + suffix] = float(np.median(times))
+            if not suffix:
+                # Column i lands at perm_c[i] and row i at perm_r[i]: the pivot is A[i, i] when they agree.
+                pivots[order] = float(np.mean(lu.perm_r != lu.perm_c))
+                fill_no_pivoting[order] = _lu_fill(sla.splu(a, permc_spec=order, diag_pivot_thresh=0.0), a)
 
     rows, cols = x.nonzero()
 

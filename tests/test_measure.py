@@ -46,7 +46,8 @@ def test_measure_matches_the_generator_bounds():
     assert stats.spectral_radius is not None
     assert stats.spectral_radius <= s.profile.radius + 1e-6
     assert stats.negative_input_share > 0
-    assert set(stats.lu_fill) == {"COLAMD", "MMD_AT_PLUS_A"}
+    assert set(stats.lu_fill) == {"COLAMD", "MMD_AT_PLUS_A", "COLAMD (A^T)", "MMD_AT_PLUS_A (A^T)"}
+    assert set(stats.factor_seconds) == set(stats.lu_fill)
     assert measure(s.technosphere(), repeats=0).lu_fill == {}
 
 
@@ -152,7 +153,7 @@ def test_overlap_bands_include_both_ends_and_label_the_last_one_open(monkeypatch
 
 def test_lu_fill_of_the_identity_is_one():
     # L and U are both the identity: 4 + 4 entries, the diagonal counted once, over nnz(A) = 4.
-    assert measure(sparse.csc_matrix(np.eye(4)), repeats=1).lu_fill == {"COLAMD": 1.0, "MMD_AT_PLUS_A": 1.0}
+    assert set(measure(sparse.csc_matrix(np.eye(4)), repeats=1).lu_fill.values()) == {1.0}
 
 
 def test_column_sums_are_over_columns_not_rows():

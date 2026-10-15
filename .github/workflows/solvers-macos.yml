@@ -1,0 +1,57 @@
+name: solvers-macos
+
+# `scripts/solver_lci.py` on an Apple Silicon runner, where PyPardiso cannot install and
+# bw2calc falls back to SuperLU. Run it by hand. Hosted runners share their machines, so
+# the times are a rough column next to the benchmark machine's, not results.
+
+on:
+  workflow_dispatch:
+    inputs:
+      size:
+        description: profile (smoke, ecoinvent)
+        default: ecoinvent
+
+permissions:
+  contents: read
+
+jobs:
+  solvers:
+    name: ${{ matrix.solver }} on macos-14
+    runs-on: macos-14
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        solver: [superlu, klu, umfpack, umfpack-T]
+    env:
+      BWBENCH_THREADS: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: false
+          version: "0.12.19"
+
+      # scikit-umfpack has no wheels: it builds against Homebrew's SuiteSparse.
+      - if: startsWith(matrix.solver, 'umfpack')
+        run: brew install suite-sparse swig
+
+      - shell: bash # pipefail, so the tee below keeps the script's exit code
+        env:
+          SOLVER: ${{ matrix.solver }}
+          SIZE: ${{ inputs.size }}
+        run: |-
+          extra=()
+          case "$SOLVER" in
+            klu) extra=(--with pyklu==0.2.0) ;;
+            umfpack*) extra=(--with scikit-umfpack==0.4.2) ;;
+          esac
+          echo '```' >>"$GITHUB_STEP_SUMMARY"
+          PYTHONPATH=src uv run -q --no-project --python 3.12 \
+            --exclude-newer-package bw2calc=2026-10-15 --with bw2calc==3.0.0 --with threadpoolctl==3.7.0 \
+            --with numpy==2.5.3 --with scipy==1.18.1 "${extra[@]}" \
+            python scripts/solver_lci.py "$SOLVER" "$SIZE" | tee -a "$GITHUB_STEP_SUMMARY"
+          echo '```' >>"$GITHUB_STEP_SUMMARY"

@@ -91,6 +91,10 @@ site:
 results-commit:
     scripts/results-commit.sh
 
+# bw2calc's own lci() with one sparse solver: superlu, umfpack, pypardiso, umfpack-T or klu.
+solver-lci solver size="smoke":
+    scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --exclude-newer-package bw2calc=2026-10-15 --with bw2calc==3.0.0 --with threadpoolctl==3.7.0 --with pypardiso==0.4.7 --with scikit-umfpack==0.4.2 --with pyklu==0.2.0 python scripts/solver_lci.py {{ solver }} {{ size }}'
+
 # bw2data #290: SQLite project against sentier-brightway's Parquet registry. size: smoke | ecoinvent.
 registry-vs-sqlite size="smoke":
     scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --with "sentier-brightway @ git+https://github.com/sentier-dev/sentier-brightway@adacaf9" --with bw2data --with bw2calc python scripts/registry_vs_sqlite.py {{ size }}'

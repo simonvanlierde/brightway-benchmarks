@@ -63,6 +63,7 @@ just bench bw2calc               # every bw2calc release listed in asv/bw2calc.h
 just bench bw2data "4.7^!" -e    # one release; extra arguments go to asv
 just site                        # build the history pages in site/
 just results-commit              # keep results/ on the local results branch, for publishing
+just solver-lci klu ecoinvent     # bw2calc 3.0.0's own lci() with one solver, KLU here
 ```
 
 Every benchmark runs on the 200-product `smoke` database unless you pick others. For

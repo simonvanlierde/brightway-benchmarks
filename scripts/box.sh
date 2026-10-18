@@ -7,10 +7,12 @@
 set -euo pipefail
 repo=$(cd "$(dirname "$0")/.." && pwd)
 # Tagged by the Dockerfile's checksum, so an edited Dockerfile gets a fresh build.
-image=bwbench-box:$(cksum <"$repo/docker/Dockerfile" | cut -d' ' -f1)
+# BWBENCH_TARGET picks the Dockerfile stage: box (the default) or codspeed.
+target=${BWBENCH_TARGET:-box}
+image=bwbench-$target:$(cksum <"$repo/docker/Dockerfile" | cut -d' ' -f1)
 if ! docker image inspect "$image" >/dev/null 2>&1; then
-    echo "box.sh: building the box image $image (a few minutes, once)" >&2
-    docker build -q -t "$image" "$repo/docker" >/dev/null
+    echo "box.sh: building the $target image $image (a few minutes, once)" >&2
+    docker build -q --target "$target" -t "$image" "$repo/docker" >/dev/null
 fi
 # ${knobs[@]+...} below: bash 3.2 (macOS) treats an empty array as unset under `set -u`.
 knobs=()

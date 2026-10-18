@@ -14,16 +14,17 @@
       families, exact input-list copies (47% copied, overlap unchanged) and locality settings
       did not move the mid bands. Next: measure how long the copied lists are, since short
       lists that agree by chance would explain the 39% without explaining the overlap.
-- [ ] Run the six suites under pytest-codspeed: entry modules calling `bwbench.pytest.tests`,
-      and a runner image (a spike ran traversal under CPU simulation; not in the repo yet).
+- [ ] A CodSpeed PR job (`CodSpeedHQ/action`, `pull_request` only) running `just codspeed`'s
+      pytest command, once the repo has a CodSpeed token. All six suites
+      pass under CPU simulation locally; counts repeat to within 0.02% with ASLR on.
+- [ ] Let `just codspeed` take a subject version (today: the latest before in-box.sh's cutoff),
+      so bw2calc 3.0.0 runs the cases 2.5.0 skips for its `atol="legacy"` and #157 bugs.
 - [ ] `asv.sh` still names machines after the container hostname by default, which includes
       the host's name. `just results-commit` refuses such results; a neutral default
       (for example the slot name) would save a rerun.
 - [ ] Setups solve once before the timed call (a warm-up and early check), on the same
       datapackage objects, so "first score" is warm. Time a cold `run()` on fresh packages
       against it in the box and decide whether to drop the warm-up at 25k products and up.
-- [ ] Check that pytest-codspeed's `pedantic` calls the target once per setup under CPU
-      simulation; a warm-up call would trip the seam's "run called twice" guard.
 - [ ] Measure the noise of SuperLU and UMFPACK at the ecoinvent size (only PyPardiso's is
       measured), once per release in the backfill rather than as repeats.
 - [ ] Backfill the other packages on the pinned benchmark machine, in one fixed CPU slot,

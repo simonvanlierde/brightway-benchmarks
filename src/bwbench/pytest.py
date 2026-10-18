@@ -21,6 +21,9 @@ def _test(b: Bench) -> Any:
         state: dict[str, Any] = {}
 
         def setup() -> tuple[tuple, dict]:
+            # pytest-codspeed's simulation runs one warm-up setup and call before the measured one.
+            if "run" in state:
+                state["run"].teardown()
             state["run"] = b.prepare(**params)
             return (), {}
 

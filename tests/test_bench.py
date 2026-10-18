@@ -166,6 +166,29 @@ def test_pytest_adapter_parametrizes_and_marks():
     test(FakeBenchmark(), size="smoke", n=2)
 
 
+def test_pytest_adapter_tears_down_the_warmup_setup():
+    log = []
+
+    @bench()
+    def with_teardown():
+        log.append("setup")
+        yield lambda: log.append("run"), UNCHECKED
+        log.append("teardown")
+
+    namespace: dict[str, Any] = {"with_teardown": with_teardown}
+    bw_pytest.tests(namespace)
+
+    class WarmupBenchmark:  # pytest-codspeed's simulation: one warm-up round, then the measured one
+        def pedantic(self, target, setup, rounds, iterations):  # noqa: ANN001, ARG002
+            setup()
+            target()
+            setup()
+            target()
+
+    namespace["test_with_teardown"](WarmupBenchmark())
+    assert log == ["setup", "run", "teardown", "setup", "run", "teardown"]
+
+
 def test_numpy_before_bwbench_warns():
     code = "import numpy, bwbench"
     unpinned = {k: v for k, v in os.environ.items() if k not in bwbench.PINNED}

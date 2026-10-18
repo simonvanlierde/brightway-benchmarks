@@ -4,12 +4,23 @@
 #
 # Installs what asv installs for SUBJECT's latest release: the fixed stack, the matrix
 # requirements from asv/SUBJECT.json, and SUBJECT itself as on PyPI at in-box.sh's cutoff.
-# PACKAGEs come on top, e.g. a solver (pypardiso, scikit-umfpack). CodSpeed counts
-# instructions, not seconds, so the result does not depend on the machine's load. The
-# profile goes to .asv/codspeed/SUBJECT[-PACKAGE...]/; nothing is uploaded.
+# PACKAGEs come on top, e.g. a solver (pypardiso, scikit-umfpack). A PACKAGE that pins
+# SUBJECT (bw2calc==3.0.0) replaces the latest release and may be newer than the cutoff; its
+# own new dependencies come with it. CodSpeed counts instructions, not seconds, so the result
+# does not depend on the machine's load. The profile goes to
+# .asv/codspeed/SUBJECT[-PACKAGE...]/; nothing is uploaded.
 set -eu
 subject=$1
 shift
+spec=$subject
+newer=
+for p in "$@"; do
+    case $p in "$subject=="*)
+        spec=$p
+        newer="--exclude-newer-package $subject=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        ;;
+    esac
+done
 venv=/tmp/codspeed-venv
 uv venv -q "$venv" --python 3.12
 py=$venv/bin/python
@@ -18,9 +29,10 @@ import json, sys
 req = json.load(open(f"asv/{sys.argv[1]}.json"))["matrix"]["req"]
 print(" ".join(f"{k}=={v[0]}" for k, v in req.items() if not k.startswith("pip+")))
 ' "$subject")
-# shellcheck disable=SC2086 # $reqs is a list of requirements
-uv pip install -q --python "$py" --no-deps -r "asv/$subject.stack.txt" $reqs "$subject"
-uv pip install -q --python "$py" -c "asv/$subject.stack.txt" pytest pytest-codspeed==5.0.3 "$@"
+# shellcheck disable=SC2086 # $reqs and $newer are lists of words
+uv pip install -q --python "$py" $newer --no-deps -r "asv/$subject.stack.txt" $reqs "$spec"
+# shellcheck disable=SC2086
+uv pip install -q --python "$py" $newer -c "asv/$subject.stack.txt" pytest pytest-codspeed==5.0.3 "$@"
 
 # The runner calls whoami, and the container's uid has no passwd entry.
 shim=/tmp/codspeed-shim

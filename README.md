@@ -99,6 +99,14 @@ Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
   to a neighbouring release, both came back in line: 2.0.2 at 27.8 s against 27.7 s for
   2.0.1, and 2.1.1 at 10.0 s against 10.9 ± 1 s for 2.2. So both were noise, not
   regressions. A single PyPardiso round can come out about 10% slow, as 2.2 did here.
+  Across all the releases the times vary by 0.3% (the middle half of the points, relative to
+  the median) with every solver, so that's about the smallest step the history can show.
+- **Warming up before the timed call changes nothing.** Each case solves once before it's
+  timed, as an early check. A first score in a fresh process takes the same time as one
+  after that warm-up: 19.2 against 19.1 s with SuperLU, 5.46 against 5.47 s with UMFPACK,
+  timed on a faster core than the history. PyPardiso would score in 0.09 s instead of 5.2 s
+  if its factorization of the same matrix were kept, so the harness drops it before every
+  timed call.
 - **Almost all the time goes into the LU factorization.** Under PyPardiso it's 98% of one
   score and 99% of a Monte Carlo draw. Speeding up anything else in bw2calc can't help
   much. Reusing PARDISO's reordering from one draw to the next saves about 2%.

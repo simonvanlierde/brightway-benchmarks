@@ -19,13 +19,8 @@
 - [ ] `asv.sh` still names machines after the container hostname by default, which includes
       the host's name. `just results-commit` refuses such results; a neutral default
       (for example the slot name) would save a rerun.
-- [ ] Setups solve once before the timed call (a warm-up and early check), on the same
-      datapackage objects, so "first score" is warm. Time a cold `run()` on fresh packages
-      against it in the box and decide whether to drop the warm-up at 25k products and up.
 - [ ] Check that pytest-codspeed's `pedantic` calls the target once per setup under CPU
       simulation; a warm-up call would trip the seam's "run called twice" guard.
-- [ ] Measure the noise of SuperLU and UMFPACK at the ecoinvent size (only PyPardiso's is
-      measured), once per release in the backfill rather than as repeats.
 - [ ] Backfill the other packages on the pinned benchmark machine, in one fixed CPU slot,
       with `BWBENCH_SIZES=ecoinvent,exiobase` (bw2calc is done at `ecoinvent`).
 - [ ] Recheck the last single-round bw2calc outlier with `BWBENCH_ROUNDS=2`: 2.2 with SuperLU

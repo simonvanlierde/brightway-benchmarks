@@ -16,7 +16,7 @@ asv_runner==0.2.5
 attrs==26.1.0
 blinker==1.9.0
 build==1.6.1
-bw2calc @ file:///src/.asv/env/bw2calc/c7741cf55906a33ec58cfdeeb5b04d91/asv-build-cache/1e93fdbd8f349bc1d2c24a782509275ef39d9d41/bw2calc-2.5.0-py3-none-any.whl#sha256=f890c9b08257ea958aca3a52a29b71f0075780d0dbb980594cf8b6f112c545be
+bw2calc @ file:///src/.asv/env/bw2calc/c7741cf55906a33ec58cfdeeb5b04d91/asv-build-cache/8b3faa2e8d715cab685a0bc49f985d488a64588e/bw2calc-3.0.0-py3-none-any.whl#sha256=f8e7e170156454269f89fc790d0a2670a8049a39e7924112930b3be6d5a63d81
 bw2parameters==1.1.0
 bw_graph_tools==0.10
 bw_processing==1.6
@@ -52,6 +52,7 @@ six==1.17.0
 snowflake-id==1.0.2
 stats_arrays==3.0
 structlog==26.1.0
+threadpoolctl==3.7.0
 tqdm==4.70.1
 typing-inspection==0.4.4
 typing_extensions==4.16.0

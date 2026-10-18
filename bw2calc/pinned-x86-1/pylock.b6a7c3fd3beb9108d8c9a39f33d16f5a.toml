@@ -262,6 +262,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/5e/89/b4a0bcfdf4f71a3de
 wheels = [{ url = "https://files.pythonhosted.org/packages/a9/18/489c97b834dfff9cf2fc2507cede4bcd4b11e67f84bc462acd1992496f86/structlog-26.1.0-py3-none-any.whl", upload-time = 2026-06-06T07:33:38Z, size = 73764, hashes = { sha256 = "e081a26d6c373e6d201eca24eede26d8ffab07f88f477822e679183428d3d91e" } }]
 
 [[packages]]
+name = "threadpoolctl"
+version = "3.7.0"
+sdist = { url = "https://files.pythonhosted.org/packages/00/dc/6c58154c1c65f758ea979e7139cb76993a9cfc662d14e9be3c4a667cfb77/threadpoolctl-3.7.0.tar.gz", upload-time = 2026-09-15T15:46:20Z, size = 31961, hashes = { sha256 = "61348cfb77d53b9242e0017029244b559b810c142ced65b4e21eeca1843959a7" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/43/3f/f88a53f60a472b46f4023f56d204dd7de33d34c5d2acbfa0d70a674e639e/threadpoolctl-3.7.0-py3-none-any.whl", upload-time = 2026-09-15T15:46:19Z, size = 26362, hashes = { sha256 = "cd8b60b5641b45c67bbf73c64c843235fc2d8a480c87389f52f5dbee893b86be" } }]
+
+[[packages]]
 name = "tqdm"
 version = "4.70.1"
 sdist = { url = "https://files.pythonhosted.org/packages/0d/ea/b2a5bd54b28a324dae8211928b2d730b6547500342c7e6c6dea08bd0a485/tqdm-4.70.1.tar.gz", upload-time = 2026-09-11T07:25:16Z, size = 171846, hashes = { sha256 = "cefd0eca11b2a37a3aee776544d4f4ae913f02688135b5556b8788dfa474afc4" } }

@@ -88,6 +88,15 @@
           "@id": "bw2calc/pinned-x86-1/7a551410-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
+          "@id": "bw2calc/pinned-x86-1/8b3faa2e-uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/8b3faa2e-uv-py3.12-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/8b3faa2e-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
           "@id": "bw2calc/pinned-x86-1/9cdf5657-uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
@@ -195,7 +204,7 @@
       "@type": "CreateAction",
       "name": "asv run",
       "instrument": {
-        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/2cd3d1b1aae6ddcfba153f8b3540e24271b22b44"
+        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/8397d5e3e17f2358e52e7c4e321f7f3e715dd76c"
       },
       "object": [
         {
@@ -283,6 +292,15 @@
         },
         {
           "@id": "bw2calc/pinned-x86-1/7a551410-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/8b3faa2e-uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/8b3faa2e-uv-py3.12-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/8b3faa2e-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
           "@id": "bw2calc/pinned-x86-1/9cdf5657-uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK75149e5a.json"
@@ -380,11 +398,11 @@
       ]
     },
     {
-      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/2cd3d1b1aae6ddcfba153f8b3540e24271b22b44",
+      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/8397d5e3e17f2358e52e7c4e321f7f3e715dd76c",
       "@type": "SoftwareSourceCode",
       "name": "bwbench",
       "codeRepository": "https://github.com/simonvanlierde/brightway-benchmarks",
-      "version": "2cd3d1b1aae6ddcfba153f8b3540e24271b22b44",
+      "version": "8397d5e3e17f2358e52e7c4e321f7f3e715dd76c",
       "description": "generator version 3"
     },
     {
@@ -530,6 +548,21 @@
     },
     {
       "@id": "bw2calc/pinned-x86-1/7a551410-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/8b3faa2e-uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK75149e5a.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/8b3faa2e-uv-py3.12-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACK75149e5a.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/8b3faa2e-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json",
       "@type": "File",
       "description": "asv result"
     },

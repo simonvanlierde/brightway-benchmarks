@@ -293,6 +293,12 @@ version = "1.5.0"
 wheels = [{ url = "https://files.pythonhosted.org/packages/60/24/aa409bb20703acc70cf4d3bc620a55c789639c2995b2667fb44ae7236ec9/tcmlib-1.5.0-py2.py3-none-manylinux_2_28_x86_64.whl", upload-time = 2026-04-24T14:14:18Z, size = 2812669, hashes = { sha256 = "9d7c01cff35aae9bf5390b620680ebdf10a7d211c22d6488a27a029502e7d0aa" } }]
 
 [[packages]]
+name = "threadpoolctl"
+version = "3.7.0"
+sdist = { url = "https://files.pythonhosted.org/packages/00/dc/6c58154c1c65f758ea979e7139cb76993a9cfc662d14e9be3c4a667cfb77/threadpoolctl-3.7.0.tar.gz", upload-time = 2026-09-15T15:46:20Z, size = 31961, hashes = { sha256 = "61348cfb77d53b9242e0017029244b559b810c142ced65b4e21eeca1843959a7" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/43/3f/f88a53f60a472b46f4023f56d204dd7de33d34c5d2acbfa0d70a674e639e/threadpoolctl-3.7.0-py3-none-any.whl", upload-time = 2026-09-15T15:46:19Z, size = 26362, hashes = { sha256 = "cd8b60b5641b45c67bbf73c64c843235fc2d8a480c87389f52f5dbee893b86be" } }]
+
+[[packages]]
 name = "tqdm"
 version = "4.70.1"
 sdist = { url = "https://files.pythonhosted.org/packages/0d/ea/b2a5bd54b28a324dae8211928b2d730b6547500342c7e6c6dea08bd0a485/tqdm-4.70.1.tar.gz", upload-time = 2026-09-11T07:25:16Z, size = 171846, hashes = { sha256 = "cefd0eca11b2a37a3aee776544d4f4ae913f02688135b5556b8788dfa474afc4" } }

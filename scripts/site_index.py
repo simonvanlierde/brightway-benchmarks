@@ -3,6 +3,7 @@
 
 import html
 import sys
+import urllib.parse
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -21,7 +22,8 @@ ABOUT = {
 site = Path(sys.argv[1])
 subjects = sorted(p.name for p in site.iterdir() if (p / "index.html").exists())
 items = "\n".join(
-    f'<li><a href="{html.escape(s)}/index.html">{html.escape(s)}</a><p>{html.escape(ABOUT.get(s, ""))}</p></li>'
+    f'<li><a href="{html.escape(urllib.parse.quote(s))}/index.html">{html.escape(s)}</a>'
+    f"<p>{html.escape(ABOUT.get(s, ''))}</p></li>"
     for s in subjects
 )
 (site / "index.html").write_text(f"""<!doctype html>

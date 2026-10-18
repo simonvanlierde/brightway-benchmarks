@@ -17,7 +17,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Their keys end in `(A^T)`.
 - The history site's front page says what each history times and how to read the graphs,
   in light and dark mode, and links bw2calc's time for one score as the place to start.
-- The first results in the README: bw2calc 2.0 to 2.5.0 at the ecoinvent size.
+- The first results in the README: bw2calc 2.0 to 3.0.0 at the ecoinvent size, with 3.0.0's
+  `IterativeLCA` slowdown without PyPardiso.
 - asv suites for bw2calc, bw2data, bw_processing, matrix_utils, bw_graph_tools and bw_timex,
   run over their released versions. Every case except bw_processing's two `EntriesPath`
   cases checks its result against a float64 reference.

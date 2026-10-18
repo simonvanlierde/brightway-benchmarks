@@ -84,7 +84,8 @@ set of dependencies (below) forward; the steps are in the [justfile](justfile).
 ## Results so far
 
 The history pages are at <https://simonvanlierde.github.io/brightway-benchmarks/>.
-So far they hold bw2calc 2.0 to 3.0.0, all 14 releases, on the ecoinvent-sized database.
+So far they hold bw2calc 2.0 to 3.0.0 on the ecoinvent-sized database: 13 releases, plus one
+commit just before 2.2.
 Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
 
 | Solver | Time for one score with `LCA`, in every release |
@@ -107,8 +108,9 @@ Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
   45.0 s with UMFPACK, against 9.04 s in 2.5.0, and over 10 minutes with SuperLU, where
   asv gives up, against 27.7 s. `LCA` didn't change. Without PyPardiso, 3.0.0's
   `IterativeLCA` calls `factorized(matrix.tocsc())`, which factorizes A, the slow way
-  round for both solvers. `LCA.lci(factorize=True)` does the same and takes 45.0 s and
-  237 s, so the times match.
+  round for both solvers ([`iterative_lca.py`](https://github.com/brightway-lca/brightway2-calc/blob/3.0.0/src/bw2calc/iterative_lca.py#L388)).
+  `LCA.lci(factorize=True)` makes the same call and takes 45.0 s with UMFPACK, the same
+  time as `IterativeLCA`, and 237 s with SuperLU.
 - **The UMFPACK line uses reference BLAS.** scikit-umfpack has no wheels, so it builds
   against the SuiteSparse in the benchmark image, which links Debian's reference BLAS.
   With OpenBLAS in its place, one score takes 2.6 s instead of 9.0 s. scikit-umfpack from

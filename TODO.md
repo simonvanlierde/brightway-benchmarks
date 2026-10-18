@@ -1,9 +1,5 @@
 # TODO
 
-- [ ] Calibrate the `ecoinvent` profile over several seeds, not seed 0 only: one realization
-      to the next moves the giant loop's share by about ten points (0.62 against 0.72 when a
-      small parameter change shifted every later random draw), so the oracle test's 0.03
-      band holds for seed 0 alone.
 - [ ] Lower the `ecoinvent` profile's LU fill: COLAMD 323 and MMD_AT_PLUS_A 99, against
       ecoinvent's 175 and 76. `measure()` traces it to consumer overlap among the smaller
       suppliers: with the top 1% of supplier rows removed, nnz(A^T A) is 0.37 of the summed
@@ -14,6 +10,9 @@
       families, exact input-list copies (47% copied, overlap unchanged) and locality settings
       did not move the mid bands. Next: measure how long the copied lists are, since short
       lists that agree by chance would explain the 39% without explaining the overlap.
+      The gap is not one seed's: over 8 seeds COLAMD fill is 342 +- 15 and MMD 98 +- 3 (A^T:
+      86 +- 4 and 25 +- 1, against ecoinvent's 26 and 17), and the overlap without hubs
+      0.882 +- 0.005 over 64 seeds. Seed 0 sits within 1.3 SD of the mean on every one.
 - [ ] Run the six suites under pytest-codspeed: entry modules calling `bwbench.pytest.tests`,
       and a runner image (a spike ran traversal under CPU simulation; not in the repo yet).
 - [ ] `asv.sh` still names machines after the container hostname by default, which includes

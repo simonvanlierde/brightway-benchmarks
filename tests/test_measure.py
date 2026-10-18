@@ -78,6 +78,8 @@ def test_ecoinvent_profile_matches_its_target():
     for q in ("q90", "q99"):
         assert got.consumers_per_supplier[q] == pytest.approx(want.consumers_per_supplier[q], rel=0.3)
     share = got.loops["largest"] / got.products
+    # Seed 0 only: over 64 seeds the giant loop's share is 0.664 +- 0.042 (0.57 to 0.74), so this
+    # band is tighter than one realization; seed 0 is typical (z -1.1). Other seeds need +-0.1.
     assert share == pytest.approx(want.loops["largest"] / want.products, abs=0.03)
     assert got.negative_input_share == pytest.approx(want.negative_input_share, abs=0.02)
     assert got.spectral_radius == pytest.approx(want.spectral_radius, abs=0.01)

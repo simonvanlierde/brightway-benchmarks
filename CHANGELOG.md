@@ -60,7 +60,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Skips, with the upstream link, for bw2calc cases that a release crashes on for a reported
   reason: `IterativeLCA`'s second solve where scipy rejects `atol="legacy"`, and
   `FastScoresOnlyMultiLCA` and `JacobiGMRESLCA` Monte Carlo with PyPardiso (bw2calc #157).
-  A release with the fix runs them again.
+  A release with the fix runs them again. bw2calc 3.0.0 fixes both and runs those cases.
+- bw2calc 3.0.0 in the history. Its new dependency, threadpoolctl 3.7.0, is installed beside
+  the fixed set rather than in it, so the older releases' history does not restart.
 - Skips for cases whose SuperLU or UMFPACK factorizations would overrun the timeout without
   PyPardiso, estimated from the profile's size: the 100k and 250k profiles, and `LCA` Monte
   Carlo from the ecoinvent size up. `JacobiGMRESLCA` solves by GMRES and is never skipped.

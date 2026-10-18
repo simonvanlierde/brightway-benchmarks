@@ -124,8 +124,9 @@ def first_score(size: str, cls: str) -> BenchSetup:
 def redo_lci(size: str, cls: str) -> BenchSetup:
     """A second demand on a system already solved once: the solve alone.
 
-    For ``IterativeLCA`` this is the first CGS solve, warm-started from the first
-    demand's supply; its first solve is a direct one.
+    For ``IterativeLCA`` before bw2calc 3.0 this is the first CGS solve, warm-started from
+    the first demand's supply; its first solve is a direct one. From 3.0 it solves a new
+    demand on an unchanged matrix directly, with the factorization of that first solve.
     """
     skip_unless_factorizable(size, pardiso=bc.PYPARDISO)  # lci(factorize=True), for every class
     skip_known_crash(cls, calls_next=False)

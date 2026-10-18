@@ -55,6 +55,7 @@
   ],
   "install_command": [
     "in-dir={env_dir} python -m pip install --no-deps -r /src/asv/bw2calc.stack.txt",
+    "in-dir={env_dir} python -m pip install --no-deps threadpoolctl==3.7.0",
     "in-dir={env_dir} python -m pip install --force-reinstall --no-deps {wheel_file}"
   ]
 }

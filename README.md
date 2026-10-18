@@ -86,7 +86,9 @@ set of dependencies (below) forward; the steps are in the [justfile](justfile).
 - [asv](https://asv.readthedocs.io) runs every release of a package on one fixed set of
   dependencies: those of its latest release, from before 2026-10-06, listed in
   `asv/<package>.stack.txt`. Only the package itself changes from one point in the history
-  to the next, so a step in a graph is that package's change.
+  to the next, so a step in a graph is that package's change. One exception: bw2calc 3.0.0
+  needs threadpoolctl, which its asv config installs beside the set, so that the older
+  releases keep their history. They never import it.
 - Each history starts at the oldest release that runs on that set. bw2data starts at 4.6,
   the first release on peewee 4, which older ones cannot import. bw_timex starts at 1.1.0,
   since 1.0.0 fails a check that bw_processing 1.6 added later. Every release of bw2calc,

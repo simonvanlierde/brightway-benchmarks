@@ -69,7 +69,7 @@ def test_box_rebuilds_the_image_when_the_dockerfile_changes(box: tuple[Path, Pat
         assert out.returncode == 0, out.stderr
         assert "building the box image" in out.stderr
         args = log.read_text().split("\n")
-        return args[args.index("build") + 3]  # build -q -t TAG
+        return args[args.index("-t") + 1]
 
     first = built_tag()
     assert first.startswith("bwbench-box:")

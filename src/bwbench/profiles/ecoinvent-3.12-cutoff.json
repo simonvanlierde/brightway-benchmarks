@@ -1,7 +1,7 @@
 {
   "source": "ecoinvent 3.12-cutoff (ecospold2), aggregates only",
   "credit": "Calculated from the ecoinvent 3.12 cut-off database (ecoinvent Association, https://ecoinvent.org). Aggregate statistics only: no dataset, name, amount or single-dataset figure.",
-  "measured": "2026-10-13",
+  "measured": "2026-10-18",
   "datasets": 26533,
   "unlinked_inputs": 0,
   "self_inputs": 856,
@@ -54,11 +54,15 @@
     "spectral_radius_abs": 0.7818681880313029,
     "lu_fill": {
       "COLAMD": 175.4225875604311,
-      "MMD_AT_PLUS_A": 75.69411729919129
+      "MMD_AT_PLUS_A": 75.69411729919129,
+      "COLAMD (A^T)": 25.984449799671786,
+      "MMD_AT_PLUS_A (A^T)": 16.64113603098804
     },
     "factor_seconds": {
-      "COLAMD": 62.94937641499564,
-      "MMD_AT_PLUS_A": 14.013259319006465
+      "COLAMD": 62.70417714002542,
+      "MMD_AT_PLUS_A": 13.786320498969872,
+      "COLAMD (A^T)": 2.2917949680122547,
+      "MMD_AT_PLUS_A (A^T)": 3.5799526419723406
     },
     "same_location_share": 0.23482490646918777,
     "same_sector_share": 0.24395863298817436,
@@ -120,10 +124,5 @@
       "COLAMD": 0.22236460257038404,
       "MMD_AT_PLUS_A": 0.2243998040176384
     }
-  },
-  "fill_measured": "2026-10-13",
-  "fill_versions": {
-    "numpy": "2.5.3",
-    "scipy": "1.18.1"
   }
 }

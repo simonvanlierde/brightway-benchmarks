@@ -105,9 +105,9 @@ Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
   1.4e-9. That's on this synthetic matrix only; I haven't checked it on
   ecoinvent.
 - **bw2calc 3.0.0 made `IterativeLCA` much slower without PyPardiso.** One score takes
-  45.0 s with UMFPACK, against 9.04 s in 2.5.0, and over 10 minutes with SuperLU, where
-  asv gives up, against 27.7 s. `LCA` didn't change. Without PyPardiso, 3.0.0's
-  `IterativeLCA` calls `factorized(matrix.tocsc())`, which factorizes A, the slow way
+  45.0 s with UMFPACK, against 9.04 s in 2.5.0, and about 4 minutes with SuperLU, against
+  27.7 s. asv's 600 s limit covers a warm-up run too, so it cut the SuperLU case off.
+  `LCA` didn't change. Without PyPardiso, 3.0.0's `IterativeLCA` calls `factorized(matrix.tocsc())`, which factorizes A, the slow way
   round for both solvers ([`iterative_lca.py`](https://github.com/brightway-lca/brightway2-calc/blob/3.0.0/src/bw2calc/iterative_lca.py#L388)).
   `LCA.lci(factorize=True)` makes the same call and takes 45.0 s with UMFPACK, the same
   time as `IterativeLCA`, and 237 s with SuperLU.

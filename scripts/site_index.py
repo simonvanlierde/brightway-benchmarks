@@ -3,6 +3,7 @@
 
 import html
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
@@ -29,6 +30,8 @@ items = "\n".join(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Brightway benchmarks</title>
+<meta name="description" content="How long Brightway's LCA calculations take in each released version,
+on synthetic ecoinvent-sized databases.">
 <style>
 :root {{ color-scheme: light dark; --fg: #1d1d1f; --bg: #fff; --muted: #5f6368; --line: #dadce0; --link: #0b57d0; }}
 @media (prefers-color-scheme: dark) {{
@@ -43,7 +46,7 @@ a {{ color: var(--link); }}
 ul.subjects {{ list-style: none; padding: 0; margin: 0; }}
 ul.subjects li {{ border-top: 1px solid var(--line); padding: .75rem 0; }}
 ul.subjects li:last-child {{ border-bottom: 1px solid var(--line); }}
-ul.subjects a {{ font-weight: 600; font-family: ui-monospace, monospace; }}
+ul.subjects a {{ display: inline-block; padding: .25rem 0; font-weight: 600; font-family: ui-monospace, monospace; }}
 ul.subjects p {{ margin: .2rem 0 0; color: var(--muted); }}
 footer {{ margin-top: 2.5rem; color: var(--muted); font-size: .9rem; }}
 </style>
@@ -56,7 +59,8 @@ they still give the right score. Every case runs on a synthetic database with th
 of ecoinvent, so no licensed data is involved.</p>
 
 <p>Start with <a href="bw2calc/index.html#bench_lca.SingleScore.time_first_score">bw2calc's
-time for one score</a> on the ecoinvent-sized database, per solver, across every 2.x release.</p>
+time for one score</a> on the ecoinvent-sized database, per solver, across every release since 2.0.
+What the histories show so far is in the <a href="{REPO}#results-so-far">README</a>.</p>
 
 <h2>Histories</h2>
 <ul class="subjects">
@@ -74,7 +78,8 @@ package's own change.</li>
 line, not times between machines.</li>
 </ul>
 </main>
-<footer>Code, method and caveats: <a href="{REPO}">{REPO.removeprefix("https://")}</a>.</footer>
+<footer>Code, method and caveats: <a href="{REPO}">{REPO.removeprefix("https://")}</a>.
+Built {datetime.now(UTC):%Y-%m-%d}.</footer>
 </body>
 </html>
 """)

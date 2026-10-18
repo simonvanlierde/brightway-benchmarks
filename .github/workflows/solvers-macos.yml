@@ -8,11 +8,17 @@ on:
   workflow_dispatch:
     inputs:
       size:
-        description: profile (smoke, ecoinvent)
+        description: profile
+        type: choice
+        options: [ecoinvent, smoke]
         default: ecoinvent
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
   solvers:
@@ -50,8 +56,9 @@ jobs:
             umfpack*) extra=(--with scikit-umfpack==0.4.2) ;;
           esac
           echo '```' >>"$GITHUB_STEP_SUMMARY"
+          trap 'echo "\`\`\`" >>"$GITHUB_STEP_SUMMARY"' EXIT # close the block even on failure
+          if [[ $SOLVER == umfpack* ]]; then brew list --versions suite-sparse | tee -a "$GITHUB_STEP_SUMMARY"; fi
           PYTHONPATH=src uv run -q --no-project --python 3.12 \
             --exclude-newer-package bw2calc=2026-10-15 --with bw2calc==3.0.0 --with threadpoolctl==3.7.0 \
             --with numpy==2.5.3 --with scipy==1.18.1 "${extra[@]}" \
             python scripts/solver_lci.py "$SOLVER" "$SIZE" | tee -a "$GITHUB_STEP_SUMMARY"
-          echo '```' >>"$GITHUB_STEP_SUMMARY"

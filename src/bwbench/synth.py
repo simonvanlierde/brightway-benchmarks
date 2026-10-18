@@ -685,7 +685,7 @@ class Stats:
     spectral_radius: float | None  # largest |eigenvalue| of X; None if ARPACK did not converge
     spectral_radius_abs: float | None  # largest eigenvalue of |X|, an upper bound on the above
     lu_fill: dict[str, float]  # nnz(L + U) / nnz(A) per SuperLU column ordering, of A and of A^T
-    factor_seconds: dict[str, float]  # median of the SuperLU factorizations, per ordering
+    factor_seconds: dict[str, float]  # median of the SuperLU factorizations, per ordering, of A and of A^T
     same_location_share: float | None = None  # inputs whose supplier has the consumer's location
     same_sector_share: float | None = None  # the same for the sector; "" (unknown) is left out
     # What drives LU fill beyond degrees and loops (see dense_rows and the fields below).
@@ -712,8 +712,8 @@ def measure(
 ) -> Stats:
     """Structural statistics of a technosphere matrix ``A`` (production on the diagonal).
 
-    ``repeats`` SuperLU factorizations per ordering give the median time; 0 skips them, and
-    the fill with them.
+    ``repeats`` SuperLU factorizations per ordering give the median time, for A and for A^T
+    (keys ending in ``(A^T)``); 0 skips them, and the fill with them.
     """
     a = sparse.csc_matrix(technosphere, dtype=np.float64)
     n = a.shape[0]

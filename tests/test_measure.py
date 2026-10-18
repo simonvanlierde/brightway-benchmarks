@@ -48,6 +48,12 @@ def test_measure_matches_the_generator_bounds():
     assert stats.negative_input_share > 0
     assert set(stats.lu_fill) == {"COLAMD", "MMD_AT_PLUS_A", "COLAMD (A^T)", "MMD_AT_PLUS_A (A^T)"}
     assert set(stats.factor_seconds) == set(stats.lu_fill)
+    # The (A^T) keys really factorize the transpose of the column-normalized matrix.
+    a = sparse.csc_matrix(s.technosphere(), dtype=np.float64)
+    at = (a @ sparse.diags(1.0 / a.diagonal())).T.tocsc()
+    lu = sla.splu(at, permc_spec="COLAMD")
+    assert stats.lu_fill["COLAMD (A^T)"] == pytest.approx((lu.L.nnz + lu.U.nnz - at.shape[0]) / at.nnz)
+    assert stats.lu_fill["COLAMD (A^T)"] != pytest.approx(stats.lu_fill["COLAMD"])
     assert measure(s.technosphere(), repeats=0).lu_fill == {}
 
 

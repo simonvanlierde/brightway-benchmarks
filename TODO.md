@@ -29,7 +29,7 @@
 - [ ] Backfill the other packages on the pinned benchmark machine, in one fixed CPU slot,
       with `BWBENCH_SIZES=ecoinvent,exiobase` (bw2calc is done at `ecoinvent`).
 - [ ] Recheck three single-round bw2calc outliers with `BWBENCH_ROUNDS=2`: 2.0.2 with SuperLU
-      (34.4 s against 27.7 s) and `a71ede78` with PyPardiso (11.6 against 10.0 s), and 2.2
+      (34.4 s against 27.7 s) and 2.1.1 (`a71ede78`) with PyPardiso `LCA` (11.6 against 10.0 s), and 2.2
       with SuperLU `IterativeLCA` (29.3 against 27.7 s).
 - [ ] First publication: `git push origin results` and `gh workflow run site.yml` (Pages is
       on, deploying from `main` only).

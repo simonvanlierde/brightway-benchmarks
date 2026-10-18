@@ -84,8 +84,8 @@ set of dependencies (below) forward; the steps are in the [justfile](justfile).
 ## Results so far
 
 The history pages are at <https://simonvanlierde.github.io/brightway-benchmarks/>.
-So far they hold bw2calc 2.0 to 3.0.0 on the ecoinvent-sized database: 13 releases, plus one
-commit just before 2.2.
+So far they hold all 14 bw2calc releases from 2.0 to 3.0.0 on the ecoinvent-sized database.
+2.1.1 has no git tag, so it shows up under its commit, `a71ede78`.
 Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
 
 | Solver | Time for one score with `LCA`, in every release |
@@ -94,10 +94,10 @@ Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
 | PyPardiso | 10.0 s |
 | UMFPACK | 9.05 s |
 
-- **No release got faster or slower at one score.** Two points stand out, but each was
+- **No release changed `LCA`'s time for one score.** Two points stand out, but each was
   timed in one round only, so I'll recheck them before calling them regressions: 2.0.2
-  with SuperLU (34.4 s, in both `LCA` and `IterativeLCA`), and a commit just before 2.2
-  with PyPardiso (11.6 s).
+  with SuperLU (34.4 s with `LCA` and 34.2 s with `IterativeLCA`), and 2.1.1
+  with PyPardiso (11.6 s with `LCA`).
 - **Almost all the time goes into the LU factorization.** Under PyPardiso it's 98% of one
   score and 99% of a Monte Carlo draw. Speeding up anything else in bw2calc can't help
   much. Reusing PARDISO's reordering from one draw to the next saves about 2%.

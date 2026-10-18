@@ -98,4 +98,4 @@ solver-lci solver size="smoke":
 
 # bw2data #290: SQLite project against sentier-brightway's Parquet registry. size: smoke | ecoinvent.
 registry-vs-sqlite size="smoke":
-    scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --with "sentier-brightway @ git+https://github.com/sentier-dev/sentier-brightway@adacaf9" --with bw2data --with bw2calc python scripts/registry_vs_sqlite.py {{ size }}'
+    scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --with "sentier-brightway @ git+https://github.com/sentier-dev/sentier-brightway@adacaf9" --with bw2data --with bw2calc --with duckdb==1.5.6 python scripts/registry_vs_sqlite.py {{ size }}'

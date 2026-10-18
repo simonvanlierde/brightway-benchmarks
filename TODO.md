@@ -16,9 +16,6 @@
       lists that agree by chance would explain the 39% without explaining the overlap.
 - [ ] Run the six suites under pytest-codspeed: entry modules calling `bwbench.pytest.tests`,
       and a runner image (a spike ran traversal under CPU simulation; not in the repo yet).
-- [ ] Check bw2data's write and Monte Carlo's first draw once per parameter set, not after
-      every timed sample: each check loads matrices and runs a Neumann solve. Measure what
-      that costs at the ecoinvent size first.
 - [ ] `asv.sh` still names machines after the container hostname by default, which includes
       the host's name. `just results-commit` refuses such results; a neutral default
       (for example the slot name) would save a rerun.
@@ -29,16 +26,15 @@
       simulation; a warm-up call would trip the seam's "run called twice" guard.
 - [ ] Measure the noise of SuperLU and UMFPACK at the ecoinvent size (only PyPardiso's is
       measured), once per release in the backfill rather than as repeats.
-- [ ] Backfill each package on a pinned benchmark machine, in one fixed CPU slot, with
-      `BWBENCH_SIZES=ecoinvent,exiobase`. Include the PyPardiso environments there.
-- [ ] First publication: turn on GitHub Pages with "GitHub Actions" as the source, benchmark
-      with a neutral `BWBENCH_MACHINE` (for example `pinned-e0`), then `just results-commit`,
-      `git push origin results` and `gh workflow run site.yml`. Benchmark with the CPU
-      on its performance power profile.
+- [ ] Backfill the other packages on the pinned benchmark machine, in one fixed CPU slot,
+      with `BWBENCH_SIZES=ecoinvent,exiobase` (bw2calc is done at `ecoinvent`).
+- [ ] Recheck three single-round bw2calc outliers with `BWBENCH_ROUNDS=2`: 2.0.2 with SuperLU
+      (34.4 s against 27.7 s) and 2.1.1 (`a71ede78`) with PyPardiso `LCA` (11.6 against 10.0 s), and 2.2
+      with SuperLU `IterativeLCA` (29.3 against 27.7 s).
+- [ ] First publication: `git push origin results` and `gh workflow run site.yml` (Pages is
+      on, deploying from `main` only).
 - [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
       hold the same versions.
-- [ ] When turning on Pages, limit the `github-pages` environment's deployment branches to
-      `main`: the workflow's own `if:` guard lives in the dispatched branch's copy.
 - [ ] The site job builds the box image and clones six upstream repos on every run, though
       `asv publish` only reads results. Run asv there directly, or cache `.asv/`, once the
       first runs show how long it takes. CodSpeed, if added, runs on `pull_request` only.

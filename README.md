@@ -70,7 +70,7 @@ Every benchmark runs on the 200-product `smoke` database unless you pick others.
 example, `BWBENCH_SIZES=ecoinvent just bench bw2calc` times the ecoinvent-sized one.
 `BWBENCH_SIZES` sets the size for most cases, and three cases have their own variable:
 `BWBENCH_MC_SIZES` (Monte Carlo), `BWBENCH_WRITE_SIZES` (bw2data) and `BWBENCH_TIMEX_SIZES`
-(bw_timex). The results are not published yet.
+(bw_timex).
 `BWBENCH_SOLVERS` picks the solver environments of bw2calc and bw_graph_tools: `superlu`,
 `pypardiso` and `umfpack`, all three by default. PyPardiso needs Intel's MKL, so off x86_64
 (an Apple Silicon Mac, say) the default is `superlu,umfpack`. A full-size bw2calc run takes
@@ -80,6 +80,42 @@ Each result is checked once per parameter set, not after every sample.
 
 When a package publishes a new release, `just stack` and `just stack-check` move its fixed
 set of dependencies (below) forward; the steps are in the [justfile](justfile).
+
+## Results so far
+
+The history pages are at <https://simonvanlierde.github.io/brightway-benchmarks/>.
+So far they hold all 14 bw2calc releases from 2.0 to 3.0.0 on the ecoinvent-sized database.
+2.1.1 has no git tag, so it shows up under its commit, `a71ede78`.
+Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
+
+| Solver | Time for one score with `LCA`, in every release |
+| --- | --- |
+| SuperLU (SciPy) | 27.7 s |
+| PyPardiso | 10.0 s |
+| UMFPACK | 9.05 s |
+
+- **No release changed `LCA`'s time for one score.** Two points stand out, but each was
+  timed in one round only, so I'll recheck them before calling them regressions: 2.0.2
+  with SuperLU (34.4 s with `LCA` and 34.2 s with `IterativeLCA`), and 2.1.1
+  with PyPardiso (11.6 s with `LCA`).
+- **Almost all the time goes into the LU factorization.** Under PyPardiso it's 98% of one
+  score and 99% of a Monte Carlo draw. Speeding up anything else in bw2calc can't help
+  much. Reusing PARDISO's reordering from one draw to the next saves about 2%.
+- **`JacobiGMRESLCA`** (from 2.4.0) gives a score in 150 ms, with a relative error of
+  1.4e-9. That's on this synthetic matrix only; I haven't checked it on
+  ecoinvent.
+- **bw2calc 3.0.0 made `IterativeLCA` much slower without PyPardiso.** One score takes
+  45.0 s with UMFPACK, against 9.04 s in 2.5.0, and over 10 minutes with SuperLU, where
+  asv gives up, against 27.7 s. `LCA` didn't change. Without PyPardiso, 3.0.0's
+  `IterativeLCA` calls `factorized(matrix.tocsc())`, which factorizes A, the slow way
+  round for both solvers ([`iterative_lca.py`](https://github.com/brightway-lca/brightway2-calc/blob/3.0.0/src/bw2calc/iterative_lca.py#L388)).
+  `LCA.lci(factorize=True)` makes the same call and takes 45.0 s with UMFPACK, the same
+  time as `IterativeLCA`, and 237 s with SuperLU.
+- **The UMFPACK line uses reference BLAS.** scikit-umfpack has no wheels, so it builds
+  against the SuiteSparse in the benchmark image, which links Debian's reference BLAS.
+  With OpenBLAS in its place, one score takes 2.6 s instead of 9.0 s. scikit-umfpack from
+  conda-forge comes with an optimized BLAS, so for those users this line probably
+  overstates the time by about 3.5x.
 
 ## How the results stay reproducible
 

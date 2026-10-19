@@ -1,14 +1,15 @@
 """bw2calc's own ``lci()`` and ``lcia()`` with one sparse solver, on a synthetic system.
 
-    PYTHONPATH=src uv run --no-project --with bw2calc==3.0.0 python scripts/solver_lci.py SOLVER [SIZE]
+    PYTHONPATH=src uv run --no-project --with bw2calc==3.1.0 python scripts/solver_lci.py SOLVER [SIZE]
 
 SOLVER is one of:
 
 - ``superlu``, ``umfpack``, ``pypardiso``: bw2calc picks the solver itself. The faster
   ones are hidden from it, so ``superlu`` runs with scikit-umfpack and pypardiso installed.
 - ``umfpack-T``: scikit-umfpack factorizing the CSR arrays as Aᵀ, patched into bw2calc. For one
-  score it matches ``umfpack``, since scipy's ``spsolve`` already does this with CSR input;
-  it differs only for ``lci(factorize=True)``, which bw2calc converts to CSC.
+  score it matches ``umfpack``, since scipy's ``spsolve`` already does this with CSR input.
+  Before 3.1.0 it differs for ``lci(factorize=True)``, which bw2calc then converted to CSC;
+  from 3.1.0, bw2calc's own ``lu_solver`` factorizes Aᵀ too.
 - ``klu``: KLU through pyklu, patched into bw2calc.
 
 SIZE is a profile name, ``ecoinvent`` by default. Prints the time of one score (a new
@@ -103,6 +104,9 @@ def patch(bw2calc: object, factorize: Callable) -> None:
     # lca_base binds both names at import; LCA.lci and decompose_technosphere use its copies.
     for module in (bw2calc, lca_base):
         module.spsolve, module.factorized = spsolve, factorized
+    # From 3.1.0, decompose_technosphere calls lu_solver (bound in lca_base) instead of factorized.
+    if hasattr(lca_base, "lu_solver"):
+        lca_base.lu_solver = lambda a, copy=True: factorized(a)  # noqa: ARG005 - our solvers copy anyway
 
 
 def timed(run: Callable[[], float]) -> tuple[list[float], float]:

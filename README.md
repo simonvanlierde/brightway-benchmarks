@@ -63,7 +63,7 @@ just bench bw2calc               # every bw2calc release listed in asv/bw2calc.h
 just bench bw2data "4.7^!" -e    # one release; extra arguments go to asv
 just site                        # build the history pages in site/
 just results-commit              # keep results/ on the local results branch, for publishing
-just solver-lci klu ecoinvent     # bw2calc 3.0.0's own lci() with one solver, KLU here
+just solver-lci klu ecoinvent    # bw2calc 3.1.0's own lci() with one solver, KLU here
 just codspeed bw2calc pypardiso  # one suite under CodSpeed's CPU simulation (instruction counts)
 ```
 
@@ -85,7 +85,7 @@ set of dependencies (below) forward; the steps are in the [justfile](justfile).
 ## Results so far
 
 The history pages are at <https://simonvanlierde.github.io/brightway-benchmarks/>.
-So far they hold all 14 bw2calc releases from 2.0 to 3.0.0 on the ecoinvent-sized database.
+So far they hold all 15 bw2calc releases from 2.0 to 3.1.0 on the ecoinvent-sized database.
 2.1.1 has no git tag, so it shows up under its commit, `a71ede78`.
 Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
 
@@ -115,7 +115,11 @@ Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
 - **`JacobiGMRESLCA`** (from 2.4.0) gives a score in 150 ms, with a relative error of
   1.4e-9. That's on this synthetic matrix only; I haven't checked it on
   ecoinvent.
-- **bw2calc 3.0.0 made `IterativeLCA` much slower without PyPardiso.** One score takes
+- **bw2calc 3.0.0 made `IterativeLCA` much slower without PyPardiso, and 3.1.0 fixed it.**
+  In 3.1.0 one score takes 27.9 s with SuperLU and 9.05 s with UMFPACK again, as in 2.5.0,
+  and `LCA.lci(factorize=True)` takes 27.7 s and 9.05 s. 3.1.0 factorizes Aᵀ wherever it
+  factorizes once and solves many times
+  ([brightway2-calc#180](https://github.com/brightway-lca/brightway2-calc/pull/180)). In 3.0.0, one score took
   45.0 s with UMFPACK, against 9.04 s in 2.5.0, and about 4 minutes with SuperLU, against
   27.7 s. asv's 600 s limit covers a warm-up run too, so it cut the SuperLU case off.
   `LCA` didn't change. Without PyPardiso, 3.0.0's `IterativeLCA` calls `factorized(matrix.tocsc())`, which factorizes A, the slow way
@@ -170,8 +174,8 @@ sizes, the others at the ecoinvent size.
 - [asv](https://asv.readthedocs.io) runs every release of a package on one fixed set of
   dependencies: those of its latest release, from before 2026-10-06, listed in
   `asv/<package>.stack.txt`. Only the package itself changes from one point in the history
-  to the next, so a step in a graph is that package's change. One exception: bw2calc 3.0.0
-  needs threadpoolctl, which its asv config installs beside the set, so that the older
+  to the next, so a step in a graph is that package's change. One exception: bw2calc 3.0.0 and later
+  need threadpoolctl, which its asv config installs beside the set, so that the older
   releases keep their history. They never import it.
 - Each history starts at the oldest release that runs on that set. bw2data starts at 4.6,
   the first release on peewee 4, which older ones cannot import. bw_timex starts at 1.1.0,

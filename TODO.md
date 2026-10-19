@@ -21,6 +21,9 @@
       `PyPardisoSolver()` searches the Python prefix for MKL with a recursive glob. Setting
       `PYPARDISO_MKL_RT` takes a smoke-size first score from 37 to 2.7 ms. Decide whether the
       box sets it (it would hide the cost users pay) or the history keeps showing it.
+      Still there in 3.1.0 by wall time (2026-10-19). A fix that caches the lookup in
+      pypardiso itself is ready to propose upstream; if it is released, the history shows it
+      only once the fixed stack moves to that pypardiso.
 - [ ] `asv.sh` still names machines after the container hostname by default, which includes
       the host's name. `just results-commit` refuses such results; a neutral default
       (for example the slot name) would save a rerun.

@@ -9,9 +9,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- `just solver-lci SOLVER SIZE` times bw2calc 3.0.0's own `lci()` with SuperLU, UMFPACK,
-  PyPardiso, or, patched in, UMFPACK on Aᵀ and KLU (pyklu), and checks each score. The
-  `solvers-macos` workflow runs it on an Apple Silicon runner, where PyPardiso cannot install.
+- bw2calc 3.1.0 joins the bw2calc releases. Its new minimum versions of bw_processing and
+  matrix_utils are already in the fixed stack, so the older releases keep their history.
+- `just solver-lci SOLVER SIZE [BW2CALC]` times bw2calc's own `lci()` (3.1.0 unless you name
+  another release) with SuperLU, UMFPACK, PyPardiso, or, patched in, UMFPACK on Aᵀ and KLU
+  (pyklu), and checks each score. The `solvers-macos` workflow runs it on an Apple Silicon
+  runner, where PyPardiso cannot install, for the release you pick.
 - `measure()` also factorizes Aᵀ, under both column orderings: bw2calc's
   `decompose_technosphere` factorizes A, while scipy's `spsolve` on a CSR matrix factorizes Aᵀ.
   Their keys end in `(A^T)`.

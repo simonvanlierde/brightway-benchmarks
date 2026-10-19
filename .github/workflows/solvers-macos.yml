@@ -12,6 +12,11 @@ on:
         type: choice
         options: [ecoinvent, smoke]
         default: ecoinvent
+      bw2calc:
+        description: bw2calc release
+        type: choice
+        options: ["3.1.0", "3.0.0"]
+        default: "3.1.0"
 
 permissions:
   contents: read
@@ -49,6 +54,7 @@ jobs:
         env:
           SOLVER: ${{ matrix.solver }}
           SIZE: ${{ inputs.size }}
+          BW2CALC: ${{ inputs.bw2calc }}
         run: |-
           extra=()
           case "$SOLVER" in
@@ -59,6 +65,6 @@ jobs:
           trap 'echo "\`\`\`" >>"$GITHUB_STEP_SUMMARY"' EXIT # close the block even on failure
           if [[ $SOLVER == umfpack* ]]; then brew list --versions suite-sparse | tee -a "$GITHUB_STEP_SUMMARY"; fi
           PYTHONPATH=src uv run -q --no-project --python 3.12 \
-            --exclude-newer-package bw2calc=2026-10-15 --with bw2calc==3.0.0 --with threadpoolctl==3.7.0 \
+            --exclude-newer-package bw2calc=2026-10-19 --with "bw2calc==$BW2CALC" --with threadpoolctl==3.7.0 \
             --with numpy==2.5.3 --with scipy==1.18.1 "${extra[@]}" \
             python scripts/solver_lci.py "$SOLVER" "$SIZE" | tee -a "$GITHUB_STEP_SUMMARY"

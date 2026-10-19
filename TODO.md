@@ -33,8 +33,6 @@
 - [ ] bw_graph_tools 0.5 to 0.8 time out (900 s, warm-up included) on 6 of their 8 SuperLU
       cells and on EXIOBASE `max_calc=100` with PyPardiso. Decide: keep them as gaps, or raise
       the timeout for one night (about 7 hours of the slot).
-- [ ] First publication: `git push origin results` and `gh workflow run site.yml` (Pages is
-      on, deploying from `main` only).
 - [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
       hold the same versions.
 - [ ] The site job builds the box image and clones six upstream repos on every run, though

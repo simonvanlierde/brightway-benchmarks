@@ -22,7 +22,7 @@
                 "'JacobiGMRESLCA'"
             ]
         ],
-        "rounds": 2,
+        "rounds": 1,
         "sample_time": 0.01,
         "timeout": 1800,
         "type": "time",
@@ -57,7 +57,7 @@
             ]
         ],
         "repeat": 0,
-        "rounds": 2,
+        "rounds": 1,
         "sample_time": 0.01,
         "timeout": 900,
         "type": "time",
@@ -85,7 +85,7 @@
             ]
         ],
         "repeat": 0,
-        "rounds": 2,
+        "rounds": 1,
         "sample_time": 0.01,
         "timeout": 600,
         "type": "time",
@@ -135,7 +135,7 @@
             ]
         ],
         "repeat": 0,
-        "rounds": 2,
+        "rounds": 1,
         "sample_time": 0.01,
         "timeout": 600,
         "type": "time",

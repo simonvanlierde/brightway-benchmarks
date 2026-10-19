@@ -16,7 +16,7 @@
       "@type": "Dataset",
       "name": "brightway-benchmarks results",
       "description": "asv timings of the Brightway stack on seeded synthetic LCA systems, with lock files.",
-      "datePublished": "2026-10-18",
+      "datePublished": "2026-10-19",
       "license": {
         "@id": "https://spdx.org/licenses/BSD-3-Clause"
       },
@@ -149,6 +149,15 @@
         },
         {
           "@id": "bw2calc/pinned-x86-1/fb9d6561-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
           "@id": "bw2calc/pinned-x86-1/machine.json"
@@ -465,7 +474,7 @@
       "@type": "CreateAction",
       "name": "asv run",
       "instrument": {
-        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/a077f6e40476f49975447fdd6c675c7b46800f5c"
+        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/a4c6de267c301311ea7c2405cdfc4f8888ace497"
       },
       "object": [
         {
@@ -616,6 +625,15 @@
         },
         {
           "@id": "bw2calc/pinned-x86-1/fb9d6561-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
           "@id": "bw2calc/pinned-x86-1/machine.json"
@@ -920,11 +938,11 @@
       ]
     },
     {
-      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/a077f6e40476f49975447fdd6c675c7b46800f5c",
+      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/a4c6de267c301311ea7c2405cdfc4f8888ace497",
       "@type": "SoftwareSourceCode",
       "name": "bwbench",
       "codeRepository": "https://github.com/simonvanlierde/brightway-benchmarks",
-      "version": "a077f6e40476f49975447fdd6c675c7b46800f5c",
+      "version": "a4c6de267c301311ea7c2405cdfc4f8888ace497",
       "description": "generator version 3"
     },
     {
@@ -1175,6 +1193,21 @@
     },
     {
       "@id": "bw2calc/pinned-x86-1/fb9d6561-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK75149e5a.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACK75149e5a.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json",
       "@type": "File",
       "description": "asv result"
     },

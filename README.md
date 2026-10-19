@@ -142,23 +142,30 @@ sizes, the others at the ecoinvent size.
 - **bw2data 4.7 lost the faster database write it gained two commits earlier.** Writing
   the database takes 15.4 s in 4.6 and 4.6.2. #268 (raw SQLite `executemany`) brings it to
   10.5 s, and the next commit, #270 ("Fix unclosed sqlite3 connections"), takes that code
-  path out again, so 4.7 and `main` write in 15.6 s. From #268 on, single writes also
-  scatter (a quarter of the five rounds over 26 s, against 15.4 to 15.5 s in 4.6), which
-  needs more rounds before it means anything. The score after the write is off by 5.7e-8
-  in every release.
+  path out again, so 4.7 writes in 15.3 s. A rerun with asv's `--interleave-rounds` (six
+  rounds, each round going through all four commits) gives 15.3, 10.4, 15.4 and 15.3 s, with
+  every 75th percentile within 0.1 s of its median. Runs that time one commit after
+  another drift between commits instead: one put 4.6.2 at 21.2 s. 4.8 still writes with
+  peewee's batches and isn't timed yet. The score after the write is off by 5.7e-8 in
+  every release.
 - **bw_timex 1.3.0 made the time-explicit LCI about 19 times slower.** With 5 time steps
   it takes 25.9 s in 1.2.0, 8.4 minutes in 1.3.0, 13.4 s in 1.3.2 and 3.3 s in 1.4.0 (which
   solves technosphere blocks by a Neumann series); with 20 steps 34.1 s, 7.9 minutes,
-  19.3 s and 9.3 s. 1.3.2 replaces PARDISO thrashing in grouped block solves with a
-  per-block LU, which is probably the fix, but I haven't bisected it.
+  19.3 s and 9.3 s. It isn't c3af060 in 1.3.2 (per-block LU instead of PARDISO
+  thrashing): its parent already takes 13.3 s. 46c272a, which solves background unit
+  LCIs per database block, doesn't import on its own, so the bisect goes on from the
+  commits after it.
 - **bw_graph_tools 0.9's batched scoring (#46) makes traversal 1.6 to 6 times faster.**
   With PyPardiso and `max_calc=2`, ecoinvent goes from 623 to 383 ms and EXIOBASE from
   1.14 minutes to 11.3 s. With `max_calc=100`, ecoinvent goes from 19.1 to 8.53 s, and
   EXIOBASE from over asv's 15-minute limit to 2.25 minutes. 0.10 doesn't change it.
 - **Without PyPardiso, traversal is hundreds of times slower.** At the ecoinvent size with
-  `max_calc=2` it takes 4.6 minutes with SuperLU (3.95 from 0.9), against 0.62 s. That's 9
-  calculations, close to nine of SuperLU's 27.7 s factorizations, so each calculation
-  probably factorizes again. EXIOBASE finishes only from 0.9 (1.5 minutes), and only at
+  `max_calc=2` it takes 4.6 minutes with SuperLU (3.95 from 0.9), against 0.62 s. It
+  factorizes only once: a profile of 0.10 spends 234 of its 235 s in that one `splu`
+  call and 1.4 s in the 10 solves. That call is bw2calc 2.5.0's `decompose_technosphere`,
+  which factorizes A, the slow way round (see the bw2calc 3.0.0 bullet above). bw2calc
+  3.1.0 factorizes Aᵀ there, which should bring it near SuperLU's 27.7 s; not timed yet.
+  EXIOBASE finishes only from 0.9 (1.5 minutes), and only at
   `max_calc=2`: asv's 900 s limit covers a warm-up run too, and one run at `max_calc=100`
   alone takes 8.0 minutes.
   Before 0.9, ecoinvent at `max_calc=100` doesn't finish within the limit either, so the

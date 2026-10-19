@@ -33,9 +33,6 @@
       calculations take 4.6 minutes, about nine SuperLU factorizations). And why EXIOBASE
       with `max_calc` 2 and 100 counts 16 calculations in both, yet takes 11.3 s against
       2.25 minutes.
-- [ ] bw_graph_tools 0.5 to 0.8 time out (900 s, warm-up included) on 6 of their 8 SuperLU
-      cells and on EXIOBASE `max_calc=100` with PyPardiso. Decide: keep them as gaps, or raise
-      the timeout for one night (about 7 hours of the slot).
 - [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
       hold the same versions.
 - [ ] The site job builds the box image and clones six upstream repos on every run, though

@@ -12,6 +12,9 @@ mkdir -p "$HOME"
 # benchmark module, so the pin in bwbench comes too late there.
 threads=${BWBENCH_THREADS:-1}
 export OPENBLAS_NUM_THREADS="$threads" MKL_NUM_THREADS="$threads" OMP_NUM_THREADS="$threads"
+# A fixed hash seed keeps set and dict order of str keys the same from run to run (bw2data and
+# bw_processing iterate such sets). Faulthandler prints a traceback when MKL or UMFPACK crash.
+export PYTHONHASHSEED=0 PYTHONFAULTHANDLER=1
 # asv's clones are owned by the host uid, which has no passwd entry in the container.
 git config --global --get safe.directory >/dev/null || git config --global --add safe.directory "*"
 exec "$@"

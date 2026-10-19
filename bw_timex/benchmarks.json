@@ -17,7 +17,7 @@
                 "20"
             ]
         ],
-        "rounds": 1,
+        "rounds": 2,
         "sample_time": 0.01,
         "timeout": 1800,
         "type": "time",

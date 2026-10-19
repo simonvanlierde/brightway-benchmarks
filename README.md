@@ -87,6 +87,7 @@ set of dependencies (below) forward; the steps are in the [justfile](justfile).
 The history pages are at <https://simonvanlierde.github.io/brightway-benchmarks/>.
 So far they hold all 15 bw2calc releases from 2.0 to 3.1.0 on the ecoinvent-sized database.
 2.1.1 has no git tag, so it shows up under its commit, `a71ede78`.
+The other five packages are there too; [The other packages](#the-other-packages) has what they show.
 Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
 
 | Solver | Time for one score with `LCA`, in every release |
@@ -160,6 +161,8 @@ sizes, the others at the ecoinvent size.
   probably factorizes again. EXIOBASE finishes only from 0.9 (1.5 minutes), and only at
   `max_calc=2`: asv's 900 s limit covers a warm-up run too, and one run at `max_calc=100`
   alone takes 8.0 minutes.
+  Before 0.9, ecoinvent at `max_calc=100` doesn't finish within the limit either, so the
+  history has no SuperLU points there.
 - **bw_processing #113 cuts building a matrix from 1,000 groups by 42%.** matrix_utils
   0.9 takes 724 ms on bw_processing 1.6 and 423 ms on #113, and every release from 0.5 shows
   about the same share. matrix_utils #48 saves another 4% (695 and 404 ms). Since 0.6,

@@ -12,7 +12,7 @@
                 "'ecoinvent'"
             ]
         ],
-        "rounds": 1,
+        "rounds": 4,
         "sample_time": 0.01,
         "timeout": 1800,
         "type": "time",

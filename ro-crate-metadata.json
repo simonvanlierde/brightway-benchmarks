@@ -474,7 +474,7 @@
       "@type": "CreateAction",
       "name": "asv run",
       "instrument": {
-        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/a4c6de267c301311ea7c2405cdfc4f8888ace497"
+        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/a077f6e40476f49975447fdd6c675c7b46800f5c"
       },
       "object": [
         {
@@ -938,11 +938,11 @@
       ]
     },
     {
-      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/a4c6de267c301311ea7c2405cdfc4f8888ace497",
+      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/a077f6e40476f49975447fdd6c675c7b46800f5c",
       "@type": "SoftwareSourceCode",
       "name": "bwbench",
       "codeRepository": "https://github.com/simonvanlierde/brightway-benchmarks",
-      "version": "a4c6de267c301311ea7c2405cdfc4f8888ace497",
+      "version": "a077f6e40476f49975447fdd6c675c7b46800f5c",
       "description": "generator version 3"
     },
     {

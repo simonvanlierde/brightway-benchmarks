@@ -99,7 +99,16 @@ Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
   2.0.2 with SuperLU (34.4 s) and 2.1.1 with PyPardiso (11.6 s). Rerun with two rounds next
   to a neighbouring release, both came back in line: 2.0.2 at 27.8 s against 27.7 s for
   2.0.1, and 2.1.1 at 10.0 s against 10.9 ± 1 s for 2.2. So both were noise, not
-  regressions. A single PyPardiso round can come out about 10% slow, as 2.2 did here.
+  regressions. A single PyPardiso round can come out about 10% slow, as 2.2 did here. The
+  third, 2.2's SuperLU `IterativeLCA` at 29.3 s, came back at 27.6 s.
+  Across all the releases the times vary by 0.3% (the middle half of the points, relative to
+  the median) with every solver, so that's about the smallest step the history can show.
+- **Warming up before the timed call changes nothing.** Each case solves once before it's
+  timed, as an early check. A first score in a fresh process takes the same time as one
+  after that warm-up: 19.2 against 19.1 s with SuperLU, 5.46 against 5.47 s with UMFPACK,
+  timed on a faster core than the history. PyPardiso would score in 0.09 s instead of 5.2 s
+  if its factorization of the same matrix were kept, so the harness drops it before every
+  timed call.
 - **Almost all the time goes into the LU factorization.** Under PyPardiso it's 98% of one
   score and 99% of a Monte Carlo draw. Speeding up anything else in bw2calc can't help
   much. Reusing PARDISO's reordering from one draw to the next saves about 2%.
@@ -118,6 +127,43 @@ Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
   With OpenBLAS in its place, one score takes 2.6 s instead of 9.0 s. scikit-umfpack from
   conda-forge comes with an optimized BLAS, so for those users this line probably
   overstates the time by about 3.5x.
+
+### The other packages
+
+Every release of bw_processing, matrix_utils and bw_graph_tools, bw2data from 4.6 and
+bw_timex from 1.1.0, on the same core. bw_graph_tools ran at the ecoinvent and EXIOBASE
+sizes, the others at the ecoinvent size.
+
+- **bw2data 4.7 lost the faster database write it gained two commits earlier.** Writing
+  the database takes 15.4 s in 4.6 and 4.6.2. #268 (raw SQLite `executemany`) brings it to
+  10.5 s, and the next commit, #270 ("Fix unclosed sqlite3 connections"), takes that code
+  path out again, so 4.7 and `main` write in 15.6 s. From #268 on, single writes also
+  scatter (a quarter of the five rounds over 26 s, against 15.4 to 15.5 s in 4.6), which
+  needs more rounds before it means anything. The score after the write is off by 5.7e-8
+  in every release.
+- **bw_timex 1.3.0 made the time-explicit LCI about 19 times slower.** With 5 time steps
+  it takes 25.9 s in 1.2.0, 8.4 minutes in 1.3.0, 13.4 s in 1.3.2 and 3.3 s in 1.4.0 (which
+  solves technosphere blocks by a Neumann series); with 20 steps 34.1 s, 7.9 minutes,
+  19.3 s and 9.3 s. 1.3.2 replaces PARDISO thrashing in grouped block solves with a
+  per-block LU, which is probably the fix, but I haven't bisected it.
+- **bw_graph_tools 0.9's batched scoring (#46) makes traversal 1.6 to 6 times faster.**
+  With PyPardiso and `max_calc=2`, ecoinvent goes from 623 to 383 ms and EXIOBASE from
+  1.14 minutes to 11.3 s. With `max_calc=100`, ecoinvent goes from 19.1 to 8.53 s, and
+  EXIOBASE from over asv's 15-minute limit to 2.25 minutes. 0.10 doesn't change it.
+- **Without PyPardiso, traversal is hundreds of times slower.** At the ecoinvent size with
+  `max_calc=2` it takes 4.6 minutes with SuperLU (3.95 from 0.9), against 0.62 s. That's 9
+  calculations, close to nine of SuperLU's 27.7 s factorizations, so each calculation
+  probably factorizes again. EXIOBASE finishes only from 0.9 (1.5 minutes), and only at
+  `max_calc=2`: asv's 900 s limit covers a warm-up run too, and one run at `max_calc=100`
+  alone takes 8.0 minutes.
+- **bw_processing #113 cuts building a matrix from 1,000 groups by 42%.** matrix_utils
+  0.9 takes 724 ms on bw_processing 1.6 and 423 ms on #113, and every release from 0.5 shows
+  about the same share. matrix_utils #48 saves another 4% (695 and 404 ms). Since 0.6,
+  matrix_utils itself builds 11% slower at 1,000 groups (643 to 716 ms) and 22% slower at
+  100.
+- **bw_processing 1.6 iterates over 100,000 entries 24% faster** (309 to 234 ms). Adding
+  1,000 resource groups takes 273 ms in every release, 120 times the 2.27 ms for 100: the
+  cost grows with the square of the number of groups, which is what #113 removes.
 
 ## How the results stay reproducible
 

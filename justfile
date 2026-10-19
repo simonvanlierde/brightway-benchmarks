@@ -93,8 +93,8 @@ results-commit:
 
 # bw2calc's own lci() with one sparse solver: superlu, umfpack, pypardiso, umfpack-T or klu.
 # 12 GB by default on plain docker: SuperLU on A at the ecoinvent size needs several.
-solver-lci solver size="smoke":
-    BWBENCH_MEM="${BWBENCH_MEM:-12g}" scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --exclude-newer-package bw2calc=2026-10-15 --with bw2calc==3.0.0 --with threadpoolctl==3.7.0 --with pypardiso==0.4.7 --with scikit-umfpack==0.4.2 --with pyklu==0.2.0 python scripts/solver_lci.py {{ solver }} {{ size }}'
+solver-lci solver size="smoke" bw2calc="3.1.0":
+    BWBENCH_MEM="${BWBENCH_MEM:-12g}" scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --exclude-newer-package bw2calc=2026-10-19 --with bw2calc=={{ bw2calc }} --with threadpoolctl==3.7.0 --with pypardiso==0.4.7 --with scikit-umfpack==0.4.2 --with pyklu==0.2.0 python scripts/solver_lci.py {{ solver }} {{ size }}'
 
 # bw2data #290: SQLite project against sentier-brightway's Parquet registry. size: smoke | ecoinvent.
 registry-vs-sqlite size="smoke":

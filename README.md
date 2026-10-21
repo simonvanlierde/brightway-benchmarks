@@ -146,15 +146,21 @@ sizes, the others at the ecoinvent size.
   rounds, each round going through all four commits) gives 15.3, 10.4, 15.4 and 15.3 s, with
   every 75th percentile within 0.1 s of its median. Runs that time one commit after
   another drift between commits instead: one put 4.6.2 at 21.2 s. 4.8 still writes with
-  peewee's batches and isn't timed yet. The score after the write is off by 5.7e-8 in
+  peewee's batches: interleaved the same way, 4.7 takes 15.4 s, #298's parent 15.6 s, #298
+  (which skips VACUUM when the database was empty) 15.1 s and 4.8 15.1 s. The finding is
+  reported upstream as brightway2-data#306. The score after the write is off by 5.7e-8 in
   every release.
 - **bw_timex 1.3.0 made the time-explicit LCI about 19 times slower.** With 5 time steps
   it takes 25.9 s in 1.2.0, 8.4 minutes in 1.3.0, 13.4 s in 1.3.2 and 3.3 s in 1.4.0 (which
   solves technosphere blocks by a Neumann series); with 20 steps 34.1 s, 7.9 minutes,
   19.3 s and 9.3 s. It isn't c3af060 in 1.3.2 (per-block LU instead of PARDISO
-  thrashing): its parent already takes 13.3 s. 46c272a, which solves background unit
-  LCIs per database block, doesn't import on its own, so the bisect goes on from the
-  commits after it.
+  thrashing): its parent already takes 13.3 s. The slowdown comes in with 46c272a and
+  894a4dd, which solve background unit LCIs per database block: 107b047 before them takes
+  25.7 s, 894a4dd 7.9 minutes (46c272a doesn't import on its own), and every commit up to
+  1.3.1 stays slow. It goes away with 0756037 in #234 (14.1 s), which factorizes each block
+  once and keeps the solver. Before it, a block without a cached LU ran a fresh `spsolve`
+  on every solve. The three commits before 0756037 only add the solver module, which
+  nothing calls yet.
 - **bw_graph_tools 0.9's batched scoring (#46) makes traversal 1.6 to 6 times faster.**
   With PyPardiso and `max_calc=2`, ecoinvent goes from 623 to 383 ms and EXIOBASE from
   1.14 minutes to 11.3 s. With `max_calc=100`, ecoinvent goes from 19.1 to 8.53 s, and
@@ -164,7 +170,8 @@ sizes, the others at the ecoinvent size.
   factorizes only once: a profile of 0.10 spends 234 of its 235 s in that one `splu`
   call and 1.4 s in the 10 solves. That call is bw2calc 2.5.0's `decompose_technosphere`,
   which factorizes A, the slow way round (see the bw2calc 3.0.0 bullet above). bw2calc
-  3.1.0 factorizes Aᵀ there, which should bring it near SuperLU's 27.7 s; not timed yet.
+  3.1.0 factorizes Aᵀ there: a profile on 3.1.0 takes 27.8 s, 27.5 s of it in that one
+  factorization, close to `LCA`'s 27.7 s with SuperLU.
   EXIOBASE finishes only from 0.9 (1.5 minutes), and only at
   `max_calc=2`: asv's 900 s limit covers a warm-up run too, and one run at `max_calc=100`
   alone takes 8.0 minutes.

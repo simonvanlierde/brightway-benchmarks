@@ -25,7 +25,7 @@ hooks:
 # Brightway's code never runs on the host. BWBENCH_* variables set sizes and labels.
 
 # A rerun skips what already succeeded, so a backfill that stopped partway picks up where it
-# was, if BWBENCH_MACHINE (or the CPU slot that names the machine) is the same.
+# was, if BWBENCH_MACHINE (or the CPU slot that names the machine, as box-e0) is the same.
 # Extra arguments reach `asv run`, e.g. `just bench bw2calc "" -e` to show each check's message.
 # Benchmark SUBJECT over its releases (asv/SUBJECT.hashes), or over RANGE (an asv range).
 bench subject range="" *args:

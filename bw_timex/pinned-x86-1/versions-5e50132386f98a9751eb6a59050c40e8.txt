@@ -24,7 +24,7 @@ bw2parameters==1.1.0
 bw_graph_tools==0.10
 bw_processing==1.6
 bw_temporalis==1.2.0
-bw_timex @ file:///src/.asv/env/bw_timex/5e50132386f98a9751eb6a59050c40e8/asv-build-cache/1f4283d68e7ffb4d3c481770f5161396587c6267/bw_timex-1.3.0-py3-none-any.whl#sha256=76b2fdb1246539d5d91c3410ecf99eb05b8c5e419125de8a533fc27427ec2356
+bw_timex @ file:///src/.asv/env/bw_timex/5e50132386f98a9751eb6a59050c40e8/asv-build-cache/40b03c861970e2edbf40805bee1b1a01f263480f/bw_timex-1.3.1-py3-none-any.whl#sha256=d4fa6b5c8d87feee79dc1747ad918d5acef3f92f04be643f4a8c5d6eeb00c5bf
 comm==0.2.3
 contourpy==1.4.0
 cycler==0.12.1

@@ -27,13 +27,8 @@
 - [ ] `asv.sh` still names machines after the container hostname by default, which includes
       the host's name. `just results-commit` refuses such results; a neutral default
       (for example the slot name) would save a rerun.
-- [ ] Time bw_graph_tools traversal without PyPardiso on bw2calc 3.1.0 (from 2026-10-20):
-      2.5.0's one factorization of A takes 234 s, 3.1.0 factorizes Aᵀ. And why EXIOBASE
-      with `max_calc` 2 and 100 counts 16 calculations in both, yet takes 11.3 s against
-      2.25 minutes.
-- [ ] Time bw2data 4.8 (from 2026-10-20): #298 skips VACUUM when the database was empty,
-      which the write case does. Then finish the bw_timex bisect over the commits after
-      46c272a, and name the cause in the README.
+- [ ] Find why bw_graph_tools traversal on EXIOBASE with `max_calc` 2 and 100 counts 16
+      calculations in both, yet takes 11.3 s against 2.25 minutes.
 - [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
       hold the same versions.
 - [ ] The site job builds the box image and clones six upstream repos on every run, though

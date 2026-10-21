@@ -21,6 +21,7 @@ Issues = "https://github.com/simonvanlierde/brightway-benchmarks/issues"
 
 [dependency-groups]
 dev = [
+  "hypothesis>=6.169.1",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
   "ruff>=0.16.9",

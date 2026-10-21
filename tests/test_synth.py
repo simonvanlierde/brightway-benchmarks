@@ -4,6 +4,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 from scipy import sparse
 
 from bwbench import synth
@@ -219,3 +221,65 @@ def test_every_profile_field_changes_the_digest(field: str):
     p = synth.profile("ecoinvent")
     changed = {"products": 100, "radius": 0.5, "back": 0.3, "units": 1.0, "target": None}[field]
     assert synth.profile("ecoinvent", **{field: changed}).digest() != p.digest()
+
+
+# Properties of the tiered builder over the size and shape knobs, not two fixed seeds.
+# Every example builds a system, so the cases are small: 20 to 400 products.
+PROPERTY = settings(max_examples=200, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+
+
+@st.composite
+def tiered(draw: st.DrawFn) -> synth.System:
+    return system(
+        "smoke",
+        seed=draw(st.integers(0, 2**32 - 1)),
+        products=draw(st.integers(20, 400)),
+        radius=draw(st.floats(0.1, 0.9)),
+        back=draw(st.floats(0.0, 0.5)),
+        units=draw(st.floats(0.0, 1.5)),
+    )
+
+
+@PROPERTY
+@given(tiered())
+def test_property_unit_diagonal_and_no_repeated_cells(s: synth.System):
+    assert np.allclose(s.technosphere().diagonal(), 1.0)
+    cells = s.tech_rows * s.profile.products + s.tech_cols
+    assert np.unique(cells).size == cells.size
+
+
+@PROPERTY
+@given(tiered())
+def test_property_columns_sum_at_most_the_maximum_without_units(s: synth.System):
+    x = sparse.identity(s.profile.products) - s.technosphere()
+    x0 = sparse.diags(1 / s.scale) @ x @ sparse.diags(s.scale)
+    assert x0.min() >= 0
+    assert abs(x0).sum(axis=0).max() <= MAX_COLUMN_SUM + 1e-12
+
+
+@PROPERTY
+@given(tiered())
+def test_property_reference_scores_equal_a_dense_solve(s: synth.System):
+    n = s.profile.products
+    k = min(n, 30)
+    supply = np.linalg.solve(s.technosphere().toarray(), np.eye(n, k))
+    g = s.biosphere().toarray() @ supply
+    dense = [[g[f - s.flow_offset, p] @ c for f, c in zip(s.cf_flows, s.cf_data, strict=True)] for p in range(k)]
+    assert np.allclose(np.asarray(s.reference)[:k], dense, rtol=1e-9)
+    assert np.min(dense) > 0
+
+
+@PROPERTY
+@given(tiered(), st.integers(0, 19))
+def test_property_neumann_agrees_with_the_reference(s: synth.System, product: int):
+    demand = np.zeros(s.profile.products)
+    demand[product] = 1.0
+    cf = np.zeros(s.profile.flows)
+    cf[s.cf_flows[0] - s.flow_offset] = s.cf_data[0]
+    lca = types.SimpleNamespace(
+        technosphere_matrix=s.technosphere(),
+        demand_array=demand,
+        biosphere_matrix=s.biosphere(),
+        characterization_matrix=sparse.diags(cf),
+    )
+    assert synth.neumann_score(lca, s.scale) == pytest.approx(s.reference[product][0], rel=1e-9)

@@ -394,6 +394,9 @@
           "@id": "bw_timex/pinned-x86-1/7a342efe-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json"
         },
         {
+          "@id": "bw_timex/pinned-x86-1/7eca8830-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json"
+        },
+        {
           "@id": "bw_timex/pinned-x86-1/894a4dd7-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json"
         },
         {
@@ -528,7 +531,7 @@
       "@type": "CreateAction",
       "name": "asv run",
       "instrument": {
-        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/a077f6e40476f49975447fdd6c675c7b46800f5c"
+        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/ffee8c60a5ab471c0c51eebcde93ba976bd69d3c"
       },
       "object": [
         {
@@ -924,6 +927,9 @@
           "@id": "bw_timex/pinned-x86-1/7a342efe-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json"
         },
         {
+          "@id": "bw_timex/pinned-x86-1/7eca8830-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json"
+        },
+        {
           "@id": "bw_timex/pinned-x86-1/894a4dd7-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json"
         },
         {
@@ -1046,11 +1052,11 @@
       ]
     },
     {
-      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/a077f6e40476f49975447fdd6c675c7b46800f5c",
+      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/ffee8c60a5ab471c0c51eebcde93ba976bd69d3c",
       "@type": "SoftwareSourceCode",
       "name": "bwbench",
       "codeRepository": "https://github.com/simonvanlierde/brightway-benchmarks",
-      "version": "a077f6e40476f49975447fdd6c675c7b46800f5c",
+      "version": "ffee8c60a5ab471c0c51eebcde93ba976bd69d3c",
       "description": "generator version 3"
     },
     {
@@ -1706,6 +1712,11 @@
     },
     {
       "@id": "bw_timex/pinned-x86-1/7a342efe-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw_timex/pinned-x86-1/7eca8830-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json",
       "@type": "File",
       "description": "asv result"
     },

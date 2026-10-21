@@ -6,8 +6,9 @@
 # clones end up in one history. Files are added and updated, never deleted: another
 # machine's folders stay. Only asv's JSON, the lock files and pip freezes are copied, and no
 # symlinks. It refuses results that name this host, because they become public once pushed:
-# asv names a machine after the container hostname unless BWBENCH_MACHINE is set. Other names
-# to refuse (an ssh alias, say) go in BWBENCH_PRIVATE_NAMES, separated by spaces.
+# asv.sh's default (box-<slot>) never does, but a BWBENCH_MACHINE set by hand or results from
+# before that default can. Other names to refuse (an ssh alias, say) go in
+# BWBENCH_PRIVATE_NAMES, separated by spaces.
 set -euo pipefail
 
 [ -d results ] || {

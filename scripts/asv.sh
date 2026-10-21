@@ -1,15 +1,19 @@
 #!/bin/sh
 # asv for one subject, inside the box: scripts/asv.sh SUBJECT ASV-COMMAND [ARGS...]
 #
-# BWBENCH_MACHINE labels the results. It defaults to the container's hostname, which
-# oss-bench sets to <host>-<slot> and box.sh to <host>-box.
+# BWBENCH_MACHINE labels the results. It defaults to box-<slot> (box-e0, box-p1-quiet), or
+# box without a slot. The container's hostname is <host>-<slot> under oss-bench and <host>-box
+# under box.sh, so only its slot is kept: results-commit refuses a name with the host in it.
 # BWBENCH_SOLVERS picks the solver environments of bw2calc and bw_graph_tools: superlu (the
 # base environment, with neither pypardiso nor umfpack), pypardiso and umfpack. The default
 # is all three, without pypardiso off x86_64, where MKL has no wheels.
 set -eu
 subject=$1 cmd=$2
 shift 2
-machine=${BWBENCH_MACHINE:-$(uname -n)}
+host=$(uname -n) quiet=
+case $host in *-quiet) host=${host%-quiet} quiet=-quiet ;; esac
+case $host in *-[pe][0-9]) slot=-${host##*-}$quiet ;; *) slot= ;; esac
+machine=${BWBENCH_MACHINE:-box$slot}
 # The same asv_runner as the configs install into each environment.
 asv() { uvx --quiet --from asv==0.6.6 --with asv-runner==0.2.5 asv "$@"; }
 

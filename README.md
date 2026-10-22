@@ -161,8 +161,8 @@ sizes, the others at the ecoinvent size.
   25.7 s, 894a4dd 7.9 minutes (46c272a doesn't import on its own), and every commit up to
   1.3.1 stays slow. It goes away with 0756037 in #234 (14.1 s), which factorizes each block
   once and keeps the solver. Before it, a block without a cached LU ran a fresh `spsolve`
-  on every solve. The three commits before 0756037 only add the solver module, which
-  nothing calls yet.
+  on every solve. Its parent 7eca883, which adds the solver module but doesn't call it
+  yet, still takes 7.9 minutes.
 - **bw_graph_tools 0.9's batched scoring (#46) makes traversal 1.6 to 6 times faster.**
   With PyPardiso and `max_calc=2`, ecoinvent goes from 623 to 383 ms and EXIOBASE from
   1.14 minutes to 11.3 s. With `max_calc=100`, ecoinvent goes from 19.1 to 8.53 s, and

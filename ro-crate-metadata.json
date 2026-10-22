@@ -16,7 +16,7 @@
       "@type": "Dataset",
       "name": "brightway-benchmarks results",
       "description": "asv timings of the Brightway stack on seeded synthetic LCA systems, with lock files.",
-      "datePublished": "2026-10-21",
+      "datePublished": "2026-10-22",
       "license": {
         "@id": "https://spdx.org/licenses/BSD-3-Clause"
       },
@@ -212,6 +212,9 @@
         },
         {
           "@id": "bw2data/pinned-x86-1/646849c2-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json"
+        },
+        {
+          "@id": "bw2data/pinned-x86-1/736a28f7-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json"
         },
         {
           "@id": "bw2data/pinned-x86-1/81a0b454-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json"
@@ -531,7 +534,7 @@
       "@type": "CreateAction",
       "name": "asv run",
       "instrument": {
-        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/ffee8c60a5ab471c0c51eebcde93ba976bd69d3c"
+        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/7ef64a0f4d98c360d6215b564e053695697285fd"
       },
       "object": [
         {
@@ -745,6 +748,9 @@
         },
         {
           "@id": "bw2data/pinned-x86-1/646849c2-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json"
+        },
+        {
+          "@id": "bw2data/pinned-x86-1/736a28f7-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json"
         },
         {
           "@id": "bw2data/pinned-x86-1/81a0b454-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json"
@@ -1052,11 +1058,11 @@
       ]
     },
     {
-      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/ffee8c60a5ab471c0c51eebcde93ba976bd69d3c",
+      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/7ef64a0f4d98c360d6215b564e053695697285fd",
       "@type": "SoftwareSourceCode",
       "name": "bwbench",
       "codeRepository": "https://github.com/simonvanlierde/brightway-benchmarks",
-      "version": "ffee8c60a5ab471c0c51eebcde93ba976bd69d3c",
+      "version": "7ef64a0f4d98c360d6215b564e053695697285fd",
       "description": "generator version 3"
     },
     {
@@ -1412,6 +1418,11 @@
     },
     {
       "@id": "bw2data/pinned-x86-1/646849c2-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2data/pinned-x86-1/736a28f7-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json",
       "@type": "File",
       "description": "asv result"
     },

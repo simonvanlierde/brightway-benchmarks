@@ -33,7 +33,7 @@ Brightway code at all. So a fast but wrong release fails instead of looking good
 bw_processing cases that build datapackages from entries have nothing to check.
 
 bw2calc's first score and bw2data's write also record peak memory (`peakmem_` in asv). The box
-has 2 GB by default and no swap, so a job over the limit ends with exit 137, which `box.sh`
+has 2 GB by default and no swap, so a job over the limit ends with exit 137, which `in-box.sh`
 reports as an out-of-memory kill. Set `BWBENCH_MEM` to give it more.
 
 ## The synthetic databases

@@ -79,17 +79,27 @@ def test_box_rebuilds_the_image_when_the_dockerfile_changes(box: tuple[Path, Pat
     assert built_tag() != first
 
 
-def test_box_labels_exit_137_as_out_of_memory(box: tuple[Path, Path]):
-    repo, _ = box
-    (repo / "stub" / "docker").write_text('#!/bin/sh\n[ "$1" = image ] && exit 0\nexit 137\n')
-    out = run_box(repo)
+
+def run_in_box(tmp_path: Path, command: str) -> subprocess.CompletedProcess:
+    """in-box.sh with /src moved into a scratch folder, running a shell command."""
+    script = tmp_path / "in-box.sh"
+    script.write_text((REPO / "scripts" / "in-box.sh").read_text().replace("/src", str(tmp_path)))
+    return subprocess.run(
+        ["/bin/sh", str(script), "sh", "-c", command],
+        env={"PATH": "/usr/bin:/bin", "HOME": str(tmp_path)},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def test_in_box_labels_exit_137_as_out_of_memory(tmp_path: Path):
+    out = run_in_box(tmp_path, "kill -KILL $$")
     assert out.returncode == 137
     assert "OOM" in out.stderr
 
 
-def test_box_stays_quiet_on_other_failures(box: tuple[Path, Path]):
-    repo, _ = box
-    (repo / "stub" / "docker").write_text('#!/bin/sh\n[ "$1" = image ] && exit 0\nexit 3\n')
-    out = run_box(repo)
+def test_in_box_keeps_other_exit_codes_quiet(tmp_path: Path):
+    out = run_in_box(tmp_path, "exit 3")
     assert out.returncode == 3
     assert "137" not in out.stderr

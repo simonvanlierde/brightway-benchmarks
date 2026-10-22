@@ -12,7 +12,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `peakmem_first_score` (bw2calc) and `peakmem_write` (bw2data) record the process's peak
   resident memory beside the time of the same case, through `@bench(peakmem=True)`.
 - `scripts/registry_vs_sqlite.py` prints `peak_rss` (bytes) for each cold read of #290.
-- `scripts/box.sh` says so when the box exits with 137, which at its memory limit is the
+- `scripts/in-box.sh` says so when the box exits with 137, which at its memory limit is the
   kernel's OOM kill: swap equals the limit, so a job that needs more dies instead of slowing down.
 - `BWBENCH_MACHINE=peakmem` keeps results in `.asv/peakmem/`, out of `results/` and the site.
 - bw2calc 3.1.0 joins the bw2calc releases. Its new minimum versions of bw_processing and

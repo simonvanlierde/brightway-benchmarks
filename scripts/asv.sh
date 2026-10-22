@@ -25,7 +25,7 @@ flock -n 9 || {
 }
 
 # The config asv reads: the solver environments filtered by BWBENCH_SOLVERS, and
-# smoke, noise and stack results kept under .asv/<machine>/, out of results/ and so out of the site.
+# smoke, noise, stack and peakmem results kept under .asv/<machine>/, out of results/ and so out of the site.
 default=superlu,umfpack
 [ "$(uname -m)" = x86_64 ] && default=superlu,pypardiso,umfpack
 # Written to .asv/ (writable in the box), so asv/ with the tracked configs can stay read-only.
@@ -53,7 +53,7 @@ if conf.get("include"):
     conf["include"] = [e for e in conf["include"] if all(name[k] in wanted for k in e["req"] if k in name)]
     if "superlu" not in wanted:
         conf["exclude"] = [{"python": ".*"}]  # asv excludes from the matrix only, never an include
-if machine in ("smoke", "noise", "stack"):
+if machine in ("smoke", "noise", "stack", "peakmem"):
     conf["results_dir"] = f"../.asv/{machine}/{subject}"
 json.dump(conf, open(f".asv/.{subject}.local.json", "w"), indent=2)
 print(f".asv/{conf['results_dir']}")

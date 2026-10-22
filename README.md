@@ -32,6 +32,10 @@ Each benchmark checks its score next to the timing, against a reference that use
 Brightway code at all. So a fast but wrong release fails instead of looking good. Only the
 bw_processing cases that build datapackages from entries have nothing to check.
 
+bw2calc's first score and bw2data's write also record peak memory (`peakmem_` in asv). The box
+has 2 GB by default and no swap, so a job over the limit ends with exit 137, which `box.sh`
+reports as an out-of-memory kill. Set `BWBENCH_MEM` to give it more.
+
 ## The synthetic databases
 
 A database is generated from a seed, so the same settings give the same matrices on every

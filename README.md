@@ -19,8 +19,8 @@ of ecoinvent, so anyone can rerun them and the results can be published.
 
 | Package | What is timed, in LCA terms |
 | --- | --- |
-| bw2calc | One score (build the matrices, solve, characterize); a second functional unit on a solved system; many functional units against three impact categories; Monte Carlo draws |
-| bw2data | Writing a database, up to the size of ecoinvent |
+| bw2calc | One score (build the matrices, solve, characterize); a second functional unit on a solved system; many functional units against three impact categories; Monte Carlo draws; a cold `import bw2calc` and `import stats_arrays` |
+| bw2data | Writing a database, up to the size of ecoinvent; a cold `import bw2data` |
 | bw_processing, matrix_utils | Building datapackages and matrices from many resource groups |
 | bw_graph_tools | Supply-chain graph traversal, small and large |
 | bw_timex | The time-explicit LCI as the timeline grows |
@@ -30,7 +30,8 @@ iterative solvers.
 
 Each benchmark checks its score next to the timing, against a reference that uses no
 Brightway code at all. So a fast but wrong release fails instead of looking good. Only the
-bw_processing cases that build datapackages from entries have nothing to check.
+bw_processing cases that build datapackages from entries have nothing to check, and neither do
+the import cells.
 
 bw2calc's first score and bw2data's write also record peak memory (`peakmem_` in asv). The box
 has 2 GB by default and no swap, so a job over the limit ends with exit 137, which `in-box.sh`

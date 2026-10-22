@@ -15,6 +15,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `scripts/in-box.sh` says so when the box exits with 137, which at its memory limit is the
   kernel's OOM kill: swap equals the limit, so a job that needs more dies instead of slowing down.
 - `BWBENCH_MACHINE=peakmem` keeps results in `.asv/peakmem/`, out of `results/` and the site.
+- `timeraw` cells that time a cold `import bw2calc`, `import stats_arrays` (in the bw2calc suite,
+  on bw2calc's fixed stack) and `import bw2data`, each in a fresh interpreter.
+- The box runs from a git worktree: `scripts/in-box.sh` runs `git config` from `/`, because from
+  `/src` git stops when `/src/.git` points outside the mount.
 - bw2calc 3.1.0 joins the bw2calc releases. Its new minimum versions of bw_processing and
   matrix_utils are already in the fixed stack, so the older releases keep their history.
 - `just solver-lci SOLVER SIZE [BW2CALC]` times bw2calc's own `lci()` (3.1.0 unless you name

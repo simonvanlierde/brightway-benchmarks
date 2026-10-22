@@ -300,3 +300,21 @@ def test_pytest_adapter_tears_down_after_a_skip_in_run():
     with pytest.raises(pytest.skip.Exception, match="while running"):
         namespace["test_late_skip"](FakeBenchmark())
     assert log == ["teardown"]
+
+
+def test_asv_peakmem_method_only_when_asked():
+    @bench({"size": ["smoke"]}, asv="Memory", peakmem=True)
+    def with_mem(size: str):
+        return lambda: 1, UNCHECKED
+
+    @bench({"size": ["smoke"]}, asv="Plain")
+    def without(size: str):
+        return lambda: 1, UNCHECKED
+
+    mem, plain = asv.classes(module(with_mem=with_mem, without=without).__name__)
+    assert hasattr(mem, "peakmem_with_mem")
+    assert not hasattr(plain, "peakmem_without")
+    obj = mem()
+    obj.setup("smoke")
+    obj.peakmem_with_mem("smoke")
+    obj.teardown("smoke")

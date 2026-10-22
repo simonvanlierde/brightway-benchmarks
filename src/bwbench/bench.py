@@ -81,6 +81,7 @@ class Bench:
     asv: str | None = None  # asv class name; keeps a history's names when the function is renamed
     options: dict[str, Any] = field(default_factory=dict)  # more asv attributes, e.g. ``timeout``
     fresh_solver: bool = True
+    peakmem: bool = False  # also record asv ``peakmem_<name>``
 
     @property
     def name(self) -> str:
@@ -108,6 +109,7 @@ def bench(
     error: str | None = None,
     asv: str | None = None,
     fresh_solver: bool = True,
+    peakmem: bool = False,
     **options: Any,
 ) -> Callable[[Callable[..., Any]], Bench]:
     """Mark a setup function as a benchmark.
@@ -121,9 +123,11 @@ def bench(
             Benchmarks that share one are methods of one class.
         fresh_solver: drop PyPardiso's factorization after the setup, so the timed call
             pays for its own. Turn it off where reusing the setup's factorization is the point.
+        peakmem: also record asv's ``peakmem_<name>``, the process's peak resident memory. asv
+            measures the setup too, so it covers building the inputs as well as the call.
         **options: further asv class attributes, such as ``timeout`` or ``repeat``.
     """
-    return lambda fn: Bench(fn, params or {}, rtol, track or {}, error, asv, options, fresh_solver)
+    return lambda fn: Bench(fn, params or {}, rtol, track or {}, error, asv, options, fresh_solver, peakmem)
 
 
 def free_pardiso() -> None:

@@ -71,6 +71,8 @@ def _asv_class(name: str, group: list[Bench]) -> type:
     for b in group:
         body.update(b.options)
         new: dict[str, Any] = {f"time_{b.name}": _time(b.name)}
+        if b.peakmem:
+            new[f"peakmem_{b.name}"] = _time(b.name)  # asv reads the process's peak RSS, not a time
         new |= {f"track_{t}": _track(b.name, fn) for t, fn in b.track.items()}
         if b.error:
             new[f"track_{b.error}"] = _error(b.name)

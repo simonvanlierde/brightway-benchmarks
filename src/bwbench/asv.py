@@ -6,8 +6,12 @@ them before each method, so give them the same ``params``.
 
 from __future__ import annotations
 
+import json
 import os
+import resource
 import sys
+import time
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from bwbench import first_time
@@ -43,10 +47,13 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         self.results = {}
         for b in group:
             self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))
+        self.usage = _usage()  # last, so the setup's own work is not counted
 
     def teardown(self: Any, *args: Any) -> None:
         # The check runs here, outside the timed call; asv reports a raise as a failed benchmark.
         prepared: dict[str, Prepared] = getattr(self, "prepared", {})
+        if (log := os.environ.get("BWBENCH_ROUNDLOG")) and hasattr(self, "usage"):
+            _log_usage(Path(log), type(self), getattr(self, "results", {}), args, self.usage)
         try:
             _verify_once(name, prepared, getattr(self, "results", {}), args)
         finally:
@@ -81,6 +88,38 @@ def _asv_class(name: str, group: list[Bench]) -> type:
             raise ValueError(msg)
         methods |= new
     return type(name, (), body | methods)
+
+
+def _usage() -> tuple[float, float, int]:
+    """(wall seconds, CPU seconds of this process's threads, involuntary context switches so far)."""
+    ru = resource.getrusage(resource.RUSAGE_SELF)
+    return time.perf_counter(), ru.ru_utime + ru.ru_stime, ru.ru_nivcsw
+
+
+def _log_usage(log: Path, cls: type, results: dict[str, Any], args: tuple, start: tuple[float, float, int]) -> None:
+    """Append one JSON line per timed sample: its wall and CPU time and involuntary context switches.
+
+    In a CPU-bound case on one thread, CPU time well below wall time means the process waited
+    for its core, so the sample was preempted rather than slow. A case that waits on disk
+    (bw2data's write) has a low ratio anyway; there the involuntary context switches tell.
+    Only time_ methods fill ``results``, so track_ calls are not logged. The span runs from
+    the end of setup to teardown, so it includes asv's timer.
+    """
+    wall, cpu, nivcsw = (b - a for a, b in zip(start, _usage(), strict=True))
+    log.parent.mkdir(parents=True, exist_ok=True)
+    env = os.environ.get("ASV_ENV_NAME") or Path(sys.prefix).name
+    with log.open("a") as f:
+        for bench_name in results:
+            entry = {
+                "case": f"{cls.__module__.rsplit('.', 1)[-1]}.{cls.__name__}.time_{bench_name}",  # as asv names it
+                "params": ", ".join(map(repr, args)),
+                "env": env,
+                "pid": os.getpid(),
+                "wall": wall,
+                "cpu": cpu,
+                "nivcsw": nivcsw,
+            }
+            f.write(json.dumps(entry) + "\n")
 
 
 def _verify_once(cls_name: str, prepared: dict[str, Prepared], results: dict[str, Any], args: tuple) -> None:

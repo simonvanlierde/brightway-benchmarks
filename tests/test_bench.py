@@ -1,4 +1,5 @@
 import ast
+import json
 import os
 import subprocess
 import sys
@@ -318,3 +319,24 @@ def test_asv_peakmem_method_only_when_asked():
     obj.setup("smoke")
     obj.peakmem_with_mem("smoke")
     obj.teardown("smoke")
+
+
+def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    log = tmp_path / "noise" / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    obj.setup("smoke", 2)
+    obj.time_double("smoke", 2)
+    obj.teardown("smoke", 2)
+    obj.setup("smoke", 2)
+    obj.track_relative_error("smoke", 2)  # not a timed sample, so not logged
+    obj.teardown("smoke", 2)
+    (line,) = log.read_text().splitlines()
+    entry = json.loads(line)
+    assert entry["case"] == "fake_bench.Doubling.time_double"
+    assert entry["params"] == "'smoke', 2"
+    assert entry["pid"] == os.getpid()
+    assert entry["wall"] >= 0
+    assert entry["cpu"] >= 0
+    assert entry["nivcsw"] >= 0

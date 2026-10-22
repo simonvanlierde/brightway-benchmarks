@@ -1,3 +1,4 @@
+import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -79,7 +80,6 @@ def test_box_rebuilds_the_image_when_the_dockerfile_changes(box: tuple[Path, Pat
     assert built_tag() != first
 
 
-
 def run_in_box(tmp_path: Path, command: str) -> subprocess.CompletedProcess:
     """in-box.sh with /src moved into a scratch folder, running a shell command."""
     script = tmp_path / "in-box.sh"
@@ -103,3 +103,27 @@ def test_in_box_keeps_other_exit_codes_quiet(tmp_path: Path):
     out = run_in_box(tmp_path, "exit 3")
     assert out.returncode == 3
     assert "137" not in out.stderr
+
+
+def test_box_lets_codspeed_turn_aslr_off_with_seccomp_on(box: tuple[Path, Path]):
+    repo, log = box
+    assert run_box(repo).returncode == 0
+    assert not any(a.startswith("seccomp=") for a in log.read_text().split("\n"))
+    log.write_text("")
+    assert run_box(repo, BWBENCH_TARGET="codspeed").returncode == 0
+    args = log.read_text().split("\n")
+    assert f"seccomp={repo}/docker/seccomp-noaslr.json" in args
+    assert "BWBENCH_NOASLR=1" in args
+    assert not any("unconfined" in a for a in args)
+    for flag in ("--cap-drop", "no-new-privileges"):
+        assert flag in args
+
+
+def test_seccomp_profile_is_dockers_default_plus_addr_no_randomize():
+    profile = json.loads((REPO / "docker" / "seccomp-noaslr.json").read_text())
+    assert profile["defaultAction"] == "SCMP_ACT_ERRNO"
+    personality = [r for r in profile["syscalls"] if r["names"] == ["personality"]]
+    allowed = {r["args"][0]["value"] for r in personality}
+    # Docker's default allows 0, 8, 0x20000, 0x20008 and 0xffffffff; 0x40000 is ADDR_NO_RANDOMIZE.
+    assert allowed == {0, 8, 0x20000, 0x20008, 0xFFFFFFFF, 0x40000}
+    assert all(r["action"] == "SCMP_ACT_ALLOW" and r["args"][0]["op"] == "SCMP_CMP_EQ" for r in personality)

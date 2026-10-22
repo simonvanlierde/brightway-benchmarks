@@ -18,6 +18,8 @@ export PYTHONHASHSEED=0 PYTHONFAULTHANDLER=1
 # asv's clones are owned by the host uid, which has no passwd entry in the container.
 # -C /: a worktree's .git file points outside the mount, and git would die on it from /src.
 git -C / config --global --get safe.directory >/dev/null || git -C / config --global --add safe.directory "*"
+# box.sh gives a BWBENCH_NOASLR run a seccomp profile that lets setarch turn ASLR off.
+[ -z "${BWBENCH_NOASLR:-}" ] || set -- setarch "$(uname -m)" -R "$@"
 # Not `exec`, to read the status. Swap equals the memory limit, so a job over it is killed
 # (137, SIGKILL) instead of slowed down.
 status=0

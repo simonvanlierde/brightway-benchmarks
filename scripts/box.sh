@@ -14,6 +14,11 @@ if ! docker image inspect "$image" >/dev/null 2>&1; then
     echo "box.sh: building the $target image $image (a few minutes, once)" >&2
     docker build -q --target "$target" -t "$image" "$repo/docker" >/dev/null
 fi
+# CodSpeed's runner turns address randomization (ASLR) off with `setarch -R`, which Docker's
+# default seccomp profile refuses. BWBENCH_NOASLR=1 turns it off for any run. Both use
+# docker/seccomp-noaslr.json (`just seccomp-profile`): the default profile plus one rule that
+# allows personality(ADDR_NO_RANDOMIZE). Seccomp itself stays on.
+[ "$target" != codspeed ] || export BWBENCH_NOASLR=1
 # ${knobs[@]+...} below: bash 3.2 (macOS) treats an empty array as unset under `set -u`.
 knobs=()
 while IFS='=' read -r name value; do
@@ -26,16 +31,26 @@ writable=".asv results site"
 
 # An oss-bench without OSS_BENCH_RW would mount the repo read-write, so use it only if it has it.
 if command -v oss-bench >/dev/null && grep -q OSS_BENCH_RW "$(command -v oss-bench)"; then
-    # oss-bench drops capabilities and caps processes itself.
+    # oss-bench drops capabilities and caps processes itself. OSS_BENCH_NOASLR swaps in its own
+    # copy of the same profile (moby/profiles seccomp/v0.2.4 plus the personality rule).
+    if [ -n "${BWBENCH_NOASLR:-}" ]; then
+        grep -q OSS_BENCH_NOASLR "$(command -v oss-bench)" || {
+            echo "box.sh: this oss-bench cannot turn ASLR off (no OSS_BENCH_NOASLR)" >&2
+            exit 2
+        }
+        export OSS_BENCH_NOASLR=1
+    fi
     OSS_BENCH_IMAGE=$image OSS_BENCH_RW=$writable exec oss-bench "$repo" \
         env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
 fi
 mounts=(-v "$repo":/src:ro)
+noaslr=()
+[ -z "${BWBENCH_NOASLR:-}" ] || noaslr=(--security-opt "seccomp=$repo/docker/seccomp-noaslr.json")
 for d in $writable; do
     mkdir -p "$repo/$d"
     mounts+=(-v "$repo/$d":"/src/$d")
 done
 exec docker run --rm -i --init --name "tmp-bwbench-$$" --hostname "$(hostname -s)-box" --user "$(id -u):$(id -g)" \
-    --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
+    --cap-drop ALL --security-opt no-new-privileges ${noaslr[@]+"${noaslr[@]}"} --pids-limit 4096 \
     --memory "${BWBENCH_MEM:-2g}" --memory-swap "${BWBENCH_MEM:-2g}" --cpus "${BWBENCH_CPUS:-2}" \
     "${mounts[@]}" -w /src "$image" env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"

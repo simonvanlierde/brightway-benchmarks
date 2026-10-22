@@ -214,7 +214,16 @@ sizes, the others at the ecoinvent size.
   cases of a few milliseconds (`just noise`). So a step of 5% or more at the ecoinvent size
   is a real change. Short cases need the CPU on its performance power profile (on Linux,
   `powerprofilesctl set performance`): under a power-saving one, an idle core starts slow
-  and they vary up to five-fold.
+  and they vary up to five-fold. `just noise` also writes each sample's CPU time, wall time
+  and involuntary context switches to `rounds.jsonl`, and counts the samples whose CPU time
+  was under 95% of their wall time: in a case that only computes, those waited for their
+  core, so another process slowed them. A case that waits on disk, like bw2data's write,
+  always falls under 95%; for those, the context switches tell.
+- CodSpeed's runner turns address randomization (ASLR) off with `setarch -R`. Docker's
+  default seccomp profile refuses that, so the CodSpeed box runs under
+  [`docker/seccomp-noaslr.json`](docker/seccomp-noaslr.json): Docker's default profile with one
+  more rule, which allows only `personality(ADDR_NO_RANDOMIZE)` (`just seccomp-profile`
+  rebuilds it). `BWBENCH_NOASLR=1` runs any box command that way.
 - Each run records exactly what was installed (a `pylock.toml` lock file per environment)
   and an RO-Crate that names the code and settings that produced it.
 

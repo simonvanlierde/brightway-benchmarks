@@ -8,6 +8,8 @@ This repository times the calculations an LCA practitioner runs every day, acros
 Brightway's released versions: an LCI and LCIA, many functional units at once, Monte Carlo.
 It also checks every result against an independent reference score. A release that makes a
 calculation slower, or quietly changes a score, shows up here.
+The results so far are on the
+[benchmark history pages](https://simonvanlierde.github.io/brightway-benchmarks/).
 
 No licensed data is used. The benchmarks run on synthetic databases that copy the structure
 of ecoinvent, so anyone can rerun them and the results can be published.

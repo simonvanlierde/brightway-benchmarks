@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Write site/index.html linking each subject's asv site. Usage: site_index.py SITE_DIR."""
+"""Write site/index.html linking each subject's asv site, and link each asv site back to it.
+
+Usage: site_index.py SITE_DIR.
+"""
 
 import html
 import sys
@@ -21,6 +24,17 @@ ABOUT = {
 
 site = Path(sys.argv[1])
 subjects = sorted(p.name for p in site.iterdir() if (p / "index.html").exists())
+# asv's navbar has no link out of a subject's site, so add one as its first tab.
+NAV = '<li id="nav-li-" class="active">'
+BACK = '<li><a href="../index.html">All benchmarks</a></li>'
+for s in subjects:
+    page = site / s / "index.html"
+    text = page.read_text()
+    if BACK not in text:
+        if NAV not in text:
+            msg = f"{page}: no asv navbar to add the back link to"
+            raise SystemExit(msg)
+        page.write_text(text.replace(NAV, BACK + NAV, 1))
 items = "\n".join(
     f'<li><a href="{html.escape(urllib.parse.quote(s))}/index.html">{html.escape(s)}</a>'
     f"<p>{html.escape(ABOUT.get(s, ''))}</p></li>"

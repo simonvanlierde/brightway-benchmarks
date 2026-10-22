@@ -24,18 +24,33 @@ done < <(env | grep '^BWBENCH_' || true)
 # runs (.git, .venv, justfile, scripts/, the asv/ configs). Only these folders are writable.
 writable=".asv results site"
 
-# An oss-bench without OSS_BENCH_RW would mount the repo read-write, so use it only if it has it.
-if command -v oss-bench >/dev/null && grep -q OSS_BENCH_RW "$(command -v oss-bench)"; then
-    # oss-bench drops capabilities and caps processes itself.
-    OSS_BENCH_IMAGE=$image OSS_BENCH_RW=$writable exec oss-bench "$repo" \
-        env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
+# Not `exec`, so the exit status can be read below. The container runs in the background with
+# the signals forwarded, and keeps stdin, so stopping box.sh still stops the container.
+run() {
+    # An oss-bench without OSS_BENCH_RW would mount the repo read-write, so use it only if it has it.
+    if command -v oss-bench >/dev/null && grep -q OSS_BENCH_RW "$(command -v oss-bench)"; then
+        # oss-bench drops capabilities and caps processes itself.
+        OSS_BENCH_IMAGE=$image OSS_BENCH_RW=$writable oss-bench "$repo" \
+            env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
+    else
+        mounts=(-v "$repo":/src:ro)
+        for d in $writable; do
+            mkdir -p "$repo/$d"
+            mounts+=(-v "$repo/$d":"/src/$d")
+        done
+        docker run --rm -i --init --name "tmp-bwbench-$$" --hostname "$(hostname -s)-box" --user "$(id -u):$(id -g)" \
+            --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
+            --memory "${BWBENCH_MEM:-2g}" --memory-swap "${BWBENCH_MEM:-2g}" --cpus "${BWBENCH_CPUS:-2}" \
+            "${mounts[@]}" -w /src "$image" env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
+    fi
+}
+run "$@" <&0 &
+pid=$!
+trap 'kill -TERM "$pid" 2>/dev/null' INT TERM
+status=0
+wait "$pid" || status=$?
+# Swap equals the memory limit, so a job over it is killed, not slowed down.
+if [ "$status" -eq 137 ]; then
+    echo "box.sh: exit 137, usually the kernel's OOM kill at the memory limit (BWBENCH_MEM, 2g by default)" >&2
 fi
-mounts=(-v "$repo":/src:ro)
-for d in $writable; do
-    mkdir -p "$repo/$d"
-    mounts+=(-v "$repo/$d":"/src/$d")
-done
-exec docker run --rm -i --init --name "tmp-bwbench-$$" --hostname "$(hostname -s)-box" --user "$(id -u):$(id -g)" \
-    --cap-drop ALL --security-opt no-new-privileges --pids-limit 4096 \
-    --memory "${BWBENCH_MEM:-2g}" --memory-swap "${BWBENCH_MEM:-2g}" --cpus "${BWBENCH_CPUS:-2}" \
-    "${mounts[@]}" -w /src "$image" env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
+exit "$status"

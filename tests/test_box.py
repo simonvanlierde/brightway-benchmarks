@@ -77,3 +77,19 @@ def test_box_rebuilds_the_image_when_the_dockerfile_changes(box: tuple[Path, Pat
     with (repo / "docker" / "Dockerfile").open("a") as f:
         f.write("# edited\n")
     assert built_tag() != first
+
+
+def test_box_labels_exit_137_as_out_of_memory(box: tuple[Path, Path]):
+    repo, _ = box
+    (repo / "stub" / "docker").write_text('#!/bin/sh\n[ "$1" = image ] && exit 0\nexit 137\n')
+    out = run_box(repo)
+    assert out.returncode == 137
+    assert "OOM" in out.stderr
+
+
+def test_box_stays_quiet_on_other_failures(box: tuple[Path, Path]):
+    repo, _ = box
+    (repo / "stub" / "docker").write_text('#!/bin/sh\n[ "$1" = image ] && exit 0\nexit 3\n')
+    out = run_box(repo)
+    assert out.returncode == 3
+    assert "137" not in out.stderr

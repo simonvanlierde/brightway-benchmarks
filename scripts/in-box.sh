@@ -16,5 +16,6 @@ export OPENBLAS_NUM_THREADS="$threads" MKL_NUM_THREADS="$threads" OMP_NUM_THREAD
 # bw_processing iterate such sets). Faulthandler prints a traceback when MKL or UMFPACK crash.
 export PYTHONHASHSEED=0 PYTHONFAULTHANDLER=1
 # asv's clones are owned by the host uid, which has no passwd entry in the container.
-git config --global --get safe.directory >/dev/null || git config --global --add safe.directory "*"
+# -C /: a worktree's .git file points outside the mount, and git would die on it from /src.
+git -C / config --global --get safe.directory >/dev/null || git -C / config --global --add safe.directory "*"
 exec "$@"

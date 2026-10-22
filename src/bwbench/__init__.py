@@ -34,6 +34,14 @@ ITERATIVE_RTOL = 1e-6  # bw2calc's iterative classes stop at a relative residual
 BW2DATA_RTOL = 1e-6
 
 
+def peak_rss_bytes() -> int:
+    """This process's peak resident memory in bytes; ``ru_maxrss`` is KiB on Linux, bytes on macOS."""
+    import resource  # noqa: PLC0415 - Unix only
+
+    peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    return peak if sys.platform == "darwin" else peak * 1024
+
+
 def check(score: float, reference: float, rtol: float, what: str = "score") -> float:
     """Relative error of ``score`` against ``reference``; raises ``AssertionError`` above ``rtol``."""
     err = abs(score - reference) / abs(reference)

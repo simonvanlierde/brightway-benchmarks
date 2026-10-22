@@ -2,8 +2,8 @@
 
 Writes one synthetic system both ways from the same ``BuildResult`` and prints one JSON
 line per format: write time, bytes on disk, the first score in a fresh Python process
-(imports timed apart from the work), and the score against the float64 reference. The
-registry is read three ways: sentier's ``score()`` (pandas loads every table, then its
+(imports timed apart from the work), that process's peak resident memory, and the score against
+the float64 reference. The registry is read three ways: sentier's ``score()`` (pandas loads every table, then its
 ``bw_package/`` datapackages), the same datapackages with the process looked up by DuckDB's
 ``read_parquet``, and the matrices built by DuckDB from the Parquet tables alone, without
 ``bw_package/``. It exits non-zero when any score is off by more than ``BW2DATA_RTOL``.
@@ -26,6 +26,7 @@ METHOD_ID = "synthetic:method-0"
 
 COLD = r"""
 import json, sys, time
+from bwbench import peak_rss_bytes
 t0 = time.perf_counter()
 fmt, where = sys.argv[1], sys.argv[2]
 if fmt == "sqlite":
@@ -74,7 +75,7 @@ else:
     lca.lcia()
     score = lca.score
 t2 = time.perf_counter()
-print(json.dumps({"import_s": t1 - t0, "first_score_s": t2 - t1, "score": float(score)}))
+print(json.dumps({"import_s": t1 - t0, "first_score_s": t2 - t1, "score": float(score), "peak_rss": peak_rss_bytes()}))
 """
 
 

@@ -15,6 +15,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   another release) with SuperLU, UMFPACK, PyPardiso, or, patched in, UMFPACK on Aᵀ and KLU
   (pyklu), and checks each score. The `solvers-macos` workflow runs it on an Apple Silicon
   runner, where PyPardiso cannot install, for the release you pick.
+- `scripts/solver_factorize.py` times one factorization and one solve of the real ecoinvent
+  matrix with SuperLU, UMFPACK, KLU and PyPardiso, for anyone with an ecoinvent licence.
+- Each package's history page links back to the front page, from a first tab in asv's menu.
 - `measure()` also factorizes Aᵀ, under both column orderings: bw2calc's
   `decompose_technosphere` factorizes A, while scipy's `spsolve` on a CSR matrix factorizes Aᵀ.
   Their keys end in `(A^T)`.

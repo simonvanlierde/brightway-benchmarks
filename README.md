@@ -52,6 +52,8 @@ One known difference: a direct solver needs more memory and time for the `ecoinv
 profile than for the real ecoinvent. SuperLU's factors hold 323 times as many entries as
 the matrix, against 175 for ecoinvent. The likely cause: the real database's suppliers
 share more of their consumers. [TODO.md](TODO.md) tracks the work on it.
+With a licence of your own, [`scripts/solver_factorize.py`](scripts/solver_factorize.py) times
+each direct solver on the real ecoinvent matrix instead, and prints timings only.
 
 ## Running it
 

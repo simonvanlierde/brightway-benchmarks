@@ -25,6 +25,11 @@ of ecoinvent, so anyone can rerun them and the results can be published.
 | bw_graph_tools | Supply-chain graph traversal, small and large |
 | bw_timex | The time-explicit LCI as the timeline grows |
 
+The two group-count cases, `Groups` and `MappedMatrixBuild`, take 100 and 1,000 groups by default.
+`BWBENCH_GROUPS=1000,2000,4000,8000,16000` extends them to 16k, where the quadratic paths in
+bw_processing and matrix_utils main take seconds to minutes and the PR branches take milliseconds.
+`tests/test_group_scaling.py` checks the same scaling without timing, by counting resource reads.
+
 bw2calc runs each case with the direct solvers (PyPardiso, UMFPACK, SuperLU) and with its
 iterative solvers.
 

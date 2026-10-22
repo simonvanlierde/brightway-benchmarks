@@ -7,8 +7,19 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- `scripts/box.sh` works in a git worktree, whose `.git` file points outside the mounted folder.
+
 ### Added
 
+- `tests/test_group_scaling.py` fails when the resource fields read by `Datapackage.groups` or by
+  matrix_utils' `has_relevant_data` grow faster than the group count, from 1k to 10k groups. It
+  fails on bw_processing and matrix_utils main and passes with bw_processing #113 and
+  matrix_utils #48. It skips where Brightway is missing; the `scaling` job in the python
+  workflow installs the two PR heads and runs it.
+- bw_processing's history also benchmarks #113, as the asv branch `pull/113/head`. Set
+  `BWBENCH_GROUPS=1000,2000,4000,8000,16000` to time both group-count paths up to 16k groups.
 - bw2calc 3.1.0 joins the bw2calc releases. Its new minimum versions of bw_processing and
   matrix_utils are already in the fixed stack, so the older releases keep their history.
 - `just solver-lci SOLVER SIZE [BW2CALC]` times bw2calc's own `lci()` (3.1.0 unless you name

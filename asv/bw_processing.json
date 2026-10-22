@@ -4,7 +4,8 @@
   "project_url": "https://github.com/brightway-lca/bw_processing",
   "repo": "https://github.com/brightway-lca/bw_processing.git",
   "branches": [
-    "main"
+    "main",
+    "pull/113/head"
   ],
   "environment_type": "uv",
   "pythons": [

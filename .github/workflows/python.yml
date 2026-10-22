@@ -38,3 +38,27 @@ jobs:
       - run: uv run ruff format --check
       - run: uv run ty check
       - run: uv run pytest
+
+  # The scaling guard needs Brightway, which the job above does not install. This runner is
+  # thrown away after the job, so the packages may run on it. The pins are the PR heads that
+  # asv/bw_processing.json and asv/matrix_utils.json also benchmark: the guard fails on
+  # upstream main by design. Move them when the PRs merge.
+  scaling:
+    name: group-count scaling guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          version: "0.12.19"
+
+      - run: >-
+          uv run --locked
+          --with git+https://github.com/simonvanlierde/bw_processing@1a6f8982adc6ad9197a3b154a82bb747d6c0a374
+          --with git+https://github.com/simonvanlierde/matrix_utils@7335e8a76ae6bd769175bbc650e221e038899afb
+          pytest tests/test_group_scaling.py

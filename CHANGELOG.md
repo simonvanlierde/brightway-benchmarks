@@ -13,8 +13,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   resident memory beside the time of the same case, through `@bench(peakmem=True)`.
 - `scripts/registry_vs_sqlite.py` prints `peak_rss` (bytes) for each cold read of #290.
 - `BWBENCH_MACHINE=peakmem` keeps results in `.asv/peakmem/`, out of `results/` and the site.
-- `timeraw` cells that time a cold `import bw2calc`, `import stats_arrays` (in the bw2calc suite,
-  on bw2calc's fixed stack) and `import bw2data`, each in a fresh interpreter.
+- `timeraw` cells that time a cold `import bw2calc` and `import bw2data`, each in a fresh
+  interpreter.
 - `just noise` logs each sample's CPU time, wall time and involuntary context switches, and
   its summary counts the samples another process preempted (CPU time under 95% of wall time).
 - bw2calc 3.1.0 joins the bw2calc releases. Its new minimum versions of bw_processing and

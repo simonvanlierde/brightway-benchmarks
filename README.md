@@ -19,7 +19,7 @@ of ecoinvent, so anyone can rerun them and the results can be published.
 
 | Package | What is timed, in LCA terms |
 | --- | --- |
-| bw2calc | One score (build the matrices, solve, characterize); a second functional unit on a solved system; many functional units against three impact categories; Monte Carlo draws; a cold `import bw2calc` and `import stats_arrays` |
+| bw2calc | One score (build the matrices, solve, characterize); a second functional unit on a solved system; many functional units against three impact categories; Monte Carlo draws; a cold `import bw2calc` |
 | bw2data | Writing a database, up to the size of ecoinvent; a cold `import bw2data` |
 | bw_processing, matrix_utils | Building datapackages and matrices from many resource groups |
 | bw_graph_tools | Supply-chain graph traversal, small and large |

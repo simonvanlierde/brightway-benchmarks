@@ -57,7 +57,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Next to each machine's results, a PEP 751 lock file per asv environment. At the results
   root, an RO-Crate `ro-crate-metadata.json` over all of them that names the bwbench commit,
   the generator version and the profiles.
-- A comparison of a bw2data SQLite project with the Parquet registry of bw2data #290.
+- A comparison of a bw2data SQLite project with the Parquet registry of bw2data #290. At the
+  ecoinvent size (2026-10-18, single runs, no PyPardiso): write 10.6 s and 123 MB for SQLite,
+  1.04 s and 16.7 MB for the registry with `bw_package/`, 0.96 s and 6.5 MB for its Parquet
+  tables alone; first scores 18.0 to 20.0 s, all of it SuperLU's factorization. DuckDB's
+  narrower lookup saves 0.27 s at smoke size and nothing visible there.
 - `just smoke`, `just bench`, `just site` and `just registry-vs-sqlite`. Each runs in a
   throwaway container.
 - A weekly smoke run in CI, over each package's oldest and latest release.
@@ -85,6 +89,16 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Carlo from the ecoinvent size up. `JacobiGMRESLCA` solves by GMRES and is never skipped.
 - A warning when numpy is imported before `bwbench`, because the BLAS thread pin then comes
   too late.
+
+### Changed
+
+- bw2data's score check (`DatabaseWrite.track_score_error` and the SQLite row of
+  `just registry-vs-sqlite`) compares against a reference built from amounts rounded to
+  float32, since bw_processing 1.6 stores them that way
+  ([bw_processing#112](https://github.com/brightway-lca/bw_processing/issues/112)), and
+  `BW2DATA_RTOL` drops from 1e-6 to 1e-12. From this version on, `track_score_error` falls
+  from about 3e-9 (smoke) and 5.7e-8 (ecoinvent size) to about 1e-15: a step in the published
+  history, not a change in bw2data.
 
 ### Fixed
 

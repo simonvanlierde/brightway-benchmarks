@@ -65,6 +65,12 @@ def test_reference_scores_match_a_dense_solve(name: str):
     assert np.min(dense) > 0
 
 
+def test_float32_reference_rounds_the_amounts():
+    s = system("smoke")
+    err = abs(s.float32_reference() - s.reference[0][0]) / abs(s.reference[0][0])
+    assert 1e-12 < err < 1e-6
+
+
 def test_profiles_take_overrides():
     s = system("smoke", products=150)
     assert s.profile.products == 150

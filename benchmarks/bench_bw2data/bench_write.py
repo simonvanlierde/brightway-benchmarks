@@ -53,7 +53,9 @@ def score_error(synthetic: System) -> float:
     order = [lca.dicts.product[ids[f"p{i}"]] for i in range(synthetic.profile.products)]
     scale = np.empty(len(order))
     scale[order] = synthetic.scale
-    return check(neumann_score(lca, scale), synthetic.reference[0][0], BW2DATA_RTOL, f"bw2data {bd.__version__} score")
+    return check(
+        neumann_score(lca, scale), synthetic.float32_reference(), BW2DATA_RTOL, f"bw2data {bd.__version__} score"
+    )
 
 
 @bench({"size": WRITE_SIZES}, error="score_error", asv="DatabaseWrite", peakmem=True, timeout=1800, repeat=(1, 5, 1200))

@@ -3,7 +3,8 @@
 Writes one synthetic system both ways from the same ``BuildResult`` and prints one JSON
 line per format: write time, bytes on disk, the first score in a fresh Python process
 (imports timed apart from the work), that process's peak resident memory, and the score against
-the float64 reference. The registry is read three ways: sentier's ``score()`` (pandas loads every table, then its
+the float64 reference (for SQLite, against ``System.float32_reference``: bw2data stores amounts
+as float32). The registry is read three ways: sentier's ``score()`` (pandas loads every table, then its
 ``bw_package/`` datapackages), the same datapackages with the process looked up by DuckDB's
 ``read_parquet``, and the matrices built by DuckDB from the Parquet tables alone, without
 ``bw_package/``. It exits non-zero when any score is off by more than ``BW2DATA_RTOL``.
@@ -79,8 +80,8 @@ print(json.dumps({"import_s": t1 - t0, "first_score_s": t2 - t1, "score": float(
 """
 
 
-def build_result(size: str) -> tuple[object, float]:
-    """The synthetic system as a sentier-brightway ``BuildResult``, plus its reference score."""
+def build_result(size: str) -> tuple[object, float, float]:
+    """The synthetic system as a sentier-brightway ``BuildResult``, plus its float64 and float32 reference scores."""
     from sentier_brightway.build import BoundMethod, BuildResult  # noqa: PLC0415
     from sentier_brightway.constants import BIOSPHERE_DB  # noqa: PLC0415
     from sentier_brightway.report import Coverage  # noqa: PLC0415
@@ -113,7 +114,7 @@ def build_result(size: str) -> tuple[object, float]:
         inventory_db="synthetic",
         residual_db="synthetic-residual",
     )
-    return result, synthetic.reference_scores(1)[0][0]
+    return result, synthetic.reference_scores(1)[0][0], synthetic.float32_reference()
 
 
 def disk_bytes(path: Path) -> int:
@@ -138,7 +139,7 @@ def main() -> None:  # noqa: D103 - the module docstring is the usage
     from sentier_brightway.registry import build_registry, write_registry  # noqa: PLC0415
     from sentier_brightway.writer import write  # noqa: PLC0415
 
-    result, ref = build_result(size)
+    result, ref, ref32 = build_result(size)
     rows = []
 
     t = time.perf_counter()
@@ -169,10 +170,11 @@ def main() -> None:  # noqa: D103 - the module docstring is the usage
     modules = ("bw2data", "bw2calc", "bw_processing", "sentier_brightway", "duckdb")
     versions = {m: __import__(m).__version__ for m in modules}
     for row in rows:
-        row |= {"size": size, "reference": ref, "relative_error": abs(row["score"] - ref) / abs(ref), **versions}
+        r = ref32 if row["format"] == "sqlite" else ref
+        row |= {"size": size, "reference": r, "relative_error": abs(row["score"] - r) / abs(r), **versions}
         print(json.dumps(row))
     for row in rows:  # after printing them all, so a failure still shows the numbers
-        check(row["score"], ref, BW2DATA_RTOL, f"{row['format']} score")
+        check(row["score"], row["reference"], BW2DATA_RTOL, f"{row['format']} score")
 
 
 if __name__ == "__main__":

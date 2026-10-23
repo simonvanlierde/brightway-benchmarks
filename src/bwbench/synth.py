@@ -210,6 +210,22 @@ class System:
             for p in range(supply.shape[1])
         ]
 
+    def float32_reference(self) -> float:
+        """``reference_scores(1)[0][0]`` with every amount rounded to float32, as bw2data's processed arrays hold them.
+
+        bw_processing 1.6 stores amounts as float32 (brightway-lca/bw_processing#112), which moves
+        bw2data's score by 3e-9 at smoke size and 5.7e-8 at the ecoinvent size. Against this
+        reference it is off by about 1e-15. Drop it once #112 is fixed.
+        """
+
+        def f32(a: NDArray[np.float64]) -> NDArray[np.float64]:
+            return a.astype(np.float32).astype(np.float64)
+
+        rounded = replace(
+            self, tech_data=f32(self.tech_data), bio_data=f32(self.bio_data), cf_data=[f32(c) for c in self.cf_data]
+        )
+        return rounded.reference_scores(1)[0][0]
+
     def datapackages(self) -> Path:
         """Folder of this system's datapackages in the cache, written on first use.
 

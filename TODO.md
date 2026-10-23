@@ -24,8 +24,6 @@
       Still there in 3.1.0 by wall time (2026-10-19). A fix that caches the lookup in
       pypardiso itself is ready to propose upstream; if it is released, the history shows it
       only once the fixed stack moves to that pypardiso.
-- [ ] Find why bw_graph_tools traversal on EXIOBASE with `max_calc` 2 and 100 counts 16
-      calculations in both, yet takes 11.3 s against 2.25 minutes.
 - [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
       hold the same versions.
 - [ ] The site job builds the box image and clones six upstream repos on every run, though

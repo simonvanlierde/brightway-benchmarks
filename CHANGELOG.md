@@ -32,6 +32,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   in light and dark mode, and links bw2calc's time for one score as the place to start.
 - The first results in the README: bw2calc 2.0 to 3.0.0 at the ecoinvent size, with 3.0.0's
   `IterativeLCA` slowdown without PyPardiso.
+- Why bw_graph_tools on EXIOBASE takes 11.3 s at `max_calc` 2 and 2.25 minutes at 100, though
+  both count 16 calculations: the counter counts nodes created, not solves, and is checked only
+  before the next node is expanded. Both runs create the same 16 nodes in the second expansion;
+  at 2 the traversal stops there (392 right-hand sides solved), at 100 it expands all 16, each
+  solving its ~390 inputs (4,922 right-hand sides). Time follows the right-hand-side count:
+  about 12 ms each with PyPardiso, 51 ms with SuperLU. A transposed unit-score solve makes it
+  one solve either way (0.21 s against 0.33 s).
 - asv suites for bw2calc, bw2data, bw_processing, matrix_utils, bw_graph_tools and bw_timex,
   run over their released versions. Every case except bw_processing's two `EntriesPath`
   cases checks its result against a float64 reference.

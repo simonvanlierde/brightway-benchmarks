@@ -17,8 +17,6 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   on bw2calc's fixed stack) and `import bw2data`, each in a fresh interpreter.
 - `just noise` logs each sample's CPU time, wall time and involuntary context switches, and
   its summary counts the samples another process preempted (CPU time under 95% of wall time).
-- `BWBENCH_NOASLR=1` turns address randomization off for any box run, under a seccomp profile
-  that is Docker's default plus `personality(ADDR_NO_RANDOMIZE)` (`just seccomp-profile`).
 - bw2calc 3.1.0 joins the bw2calc releases. Its new minimum versions of bw_processing and
   matrix_utils are already in the fixed stack, so the older releases keep their history.
 - `just solver-lci SOLVER SIZE [BW2CALC]` times bw2calc's own `lci()` (3.1.0 unless you name

@@ -103,7 +103,7 @@ registry-vs-sqlite size="smoke":
 
 # Docker's default seccomp profile (moby/profiles at TAG; v0.2.4 is Docker 29.9's) plus one rule
 # allowing personality(ADDR_NO_RANDOMIZE), so `setarch -R` can turn address randomization off.
-# Rewrite docker/seccomp-noaslr.json, the profile box.sh gives codspeed and BWBENCH_NOASLR runs.
+# Rewrite docker/seccomp-noaslr.json, the profile box.sh gives the codspeed box.
 seccomp-profile tag="seccomp/v0.2.4":
     curl -fsSL "https://raw.githubusercontent.com/moby/profiles/{{ tag }}/seccomp/default.json" | jq '.syscalls = [{"names": ["personality"], "action": "SCMP_ACT_ALLOW", "args": [{"index": 0, "value": 262144, "op": "SCMP_CMP_EQ"}]}] + .syscalls' >docker/seccomp-noaslr.json
 

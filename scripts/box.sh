@@ -15,10 +15,9 @@ if ! docker image inspect "$image" >/dev/null 2>&1; then
     docker build -q --target "$target" -t "$image" "$repo/docker" >/dev/null
 fi
 # CodSpeed's runner turns address randomization (ASLR) off with `setarch -R`, which Docker's
-# default seccomp profile refuses. BWBENCH_NOASLR=1 turns it off for any run. Both use
-# docker/seccomp-noaslr.json (`just seccomp-profile`): the default profile plus one rule that
-# allows personality(ADDR_NO_RANDOMIZE). Seccomp itself stays on.
-[ "$target" != codspeed ] || export BWBENCH_NOASLR=1
+# default seccomp profile refuses. The codspeed box runs under docker/seccomp-noaslr.json
+# (`just seccomp-profile`): the default profile plus one rule that allows
+# personality(ADDR_NO_RANDOMIZE). Seccomp itself stays on.
 # ${knobs[@]+...} below: bash 3.2 (macOS) treats an empty array as unset under `set -u`.
 knobs=()
 while IFS='=' read -r name value; do
@@ -33,7 +32,7 @@ writable=".asv results site"
 if command -v oss-bench >/dev/null && grep -q OSS_BENCH_RW "$(command -v oss-bench)"; then
     # oss-bench drops capabilities and caps processes itself. OSS_BENCH_NOASLR swaps in its own
     # copy of the same profile (moby/profiles seccomp/v0.2.4 plus the personality rule).
-    if [ -n "${BWBENCH_NOASLR:-}" ]; then
+    if [ "$target" = codspeed ]; then
         grep -q OSS_BENCH_NOASLR "$(command -v oss-bench)" || {
             echo "box.sh: this oss-bench cannot turn ASLR off (no OSS_BENCH_NOASLR)" >&2
             exit 2
@@ -45,7 +44,7 @@ if command -v oss-bench >/dev/null && grep -q OSS_BENCH_RW "$(command -v oss-ben
 fi
 mounts=(-v "$repo":/src:ro)
 noaslr=()
-[ -z "${BWBENCH_NOASLR:-}" ] || noaslr=(--security-opt "seccomp=$repo/docker/seccomp-noaslr.json")
+[ "$target" != codspeed ] || noaslr=(--security-opt "seccomp=$repo/docker/seccomp-noaslr.json")
 for d in $writable; do
     mkdir -p "$repo/$d"
     mounts+=(-v "$repo/$d":"/src/$d")

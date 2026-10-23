@@ -108,10 +108,19 @@ def test_box_lets_codspeed_turn_aslr_off_with_seccomp_on(box: tuple[Path, Path])
     assert run_box(repo, BWBENCH_TARGET="codspeed").returncode == 0
     args = log.read_text().split("\n")
     assert f"seccomp={repo}/docker/seccomp-noaslr.json" in args
-    assert "BWBENCH_NOASLR=1" in args
     assert not any("unconfined" in a for a in args)
     for flag in ("--cap-drop", "no-new-privileges"):
         assert flag in args
+
+
+def test_box_refuses_codspeed_on_an_oss_bench_that_cannot_turn_aslr_off(box: tuple[Path, Path]):
+    repo, _ = box
+    stub = repo / "stub" / "oss-bench"
+    stub.write_text("#!/bin/sh\n# knows OSS_BENCH_RW only\nexit 0\n")
+    stub.chmod(0o755)
+    out = run_box(repo, BWBENCH_TARGET="codspeed")
+    assert out.returncode == 2
+    assert "cannot turn ASLR off" in out.stderr
 
 
 def test_seccomp_profile_is_dockers_default_plus_addr_no_randomize():

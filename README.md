@@ -214,7 +214,7 @@ sizes, the others at the ecoinvent size.
   size, on a slot of 8 efficiency cores:
   - asv, six quick runs per arm: bw2calc's first score under PyPardiso spreads 0.0% with ASLR
     on and 0.1% with it off (interquartile range over the median). ASLR changes nothing
-    measurable for the asv cells, so it stays on by default and `BWBENCH_NOASLR=1` is opt-in.
+    measurable for the asv cells, so it stays on.
   - CodSpeed, three runs with ASLR off through the real `setarch -R` (see below): the
     traversal cases are 0.035% and 0.014% apart, against 0.7 to 1.1% with the old shim that
     left ASLR on.
@@ -237,7 +237,7 @@ sizes, the others at the ecoinvent size.
   default seccomp profile refuses that, so the CodSpeed box runs under
   [`docker/seccomp-noaslr.json`](docker/seccomp-noaslr.json): Docker's default profile with one
   more rule, which allows only `personality(ADDR_NO_RANDOMIZE)` (`just seccomp-profile`
-  rebuilds it). `BWBENCH_NOASLR=1` runs any box command that way.
+  rebuilds it).
 - Each run records exactly what was installed (a `pylock.toml` lock file per environment)
   and an RO-Crate that names the code and settings that produced it.
 

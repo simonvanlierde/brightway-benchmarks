@@ -1,9 +1,10 @@
 import math
-import resource
+import subprocess
+import sys
 
 import pytest
 
-from bwbench import DIRECT_RTOL, check, check_table, peak_rss_bytes
+from bwbench import DIRECT_RTOL, check, check_table
 from bwbench.synth import system
 
 
@@ -28,11 +29,10 @@ def test_check_table_catches_swapped_demands():
         check_table(refs[:3], refs[:4], DIRECT_RTOL)
 
 
-def test_peak_rss_bytes_is_bytes_and_follows_allocations(monkeypatch: pytest.MonkeyPatch):
-    before = peak_rss_bytes()
-    assert before > 1_000_000  # a Python process is megabytes, not the KiB ru_maxrss reports
+@pytest.mark.skipif(sys.platform != "linux", reason="the inherited high-water mark is a Linux kernel trait")
+def test_peak_rss_bytes_in_a_child_is_its_own_not_its_parents():
     block = bytearray(200_000_000)
     block[::4096] = b"x" * len(block[::4096])  # touch every page
-    assert peak_rss_bytes() >= before + 150_000_000
-    monkeypatch.setattr("sys.platform", "darwin")
-    assert peak_rss_bytes() == resource.getrusage(resource.RUSAGE_SELF).ru_maxrss  # macOS already counts bytes
+    code = "from bwbench import peak_rss_bytes; print(peak_rss_bytes())"
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
+    assert 1_000_000 < int(out.stdout) < 100_000_000

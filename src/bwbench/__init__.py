@@ -35,11 +35,17 @@ BW2DATA_RTOL = 1e-6
 
 
 def peak_rss_bytes() -> int:
-    """This process's peak resident memory in bytes; ``ru_maxrss`` is KiB on Linux, bytes on macOS."""
+    """This process's peak resident memory in bytes.
+
+    On Linux it reads ``VmHWM``: ``ru_maxrss`` keeps the parent's high-water mark across exec, so
+    a fresh child reports its parent's peak. Elsewhere it is ``ru_maxrss`` (bytes on macOS).
+    """
+    if sys.platform == "linux":
+        with open("/proc/self/status") as f:  # noqa: PTH123 - no pathlib import for one read
+            return next(int(line.split()[1]) for line in f if line.startswith("VmHWM:")) * 1024
     import resource  # noqa: PLC0415 - Unix only
 
-    peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    return peak if sys.platform == "darwin" else peak * 1024
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
 
 def check(score: float, reference: float, rtol: float, what: str = "score") -> float:

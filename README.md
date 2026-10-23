@@ -227,12 +227,8 @@ sizes, the others at the ecoinvent size.
   few milliseconds. So a step of 5% or more at the ecoinvent size is a real change. Short
   cases need the CPU on its performance power profile (on Linux, `powerprofilesctl set
   performance`): under a power-saving one, an idle core starts slow and they vary up to
-  five-fold. `just noise` also writes each sample's CPU time, wall time
-  and involuntary context switches to `rounds.jsonl`, and counts the samples whose CPU time
-  was under 95% of their wall time: in a case that only computes, those waited for their
-  core, so another process slowed them. A case that waits on disk, like bw2data's write,
-  always falls under 95%, so that count says nothing there; for those, the context switches
-  tell.
+  five-fold. `just noise` also writes each sample's CPU time, wall time and involuntary
+  context switches to `rounds.jsonl`; `scripts/noise_summary.py` says how to read them.
 - CodSpeed's runner turns address randomization (ASLR) off with `setarch -R`. Docker's
   default seccomp profile refuses that, so the CodSpeed box runs under
   [`docker/seccomp-noaslr.json`](docker/seccomp-noaslr.json): Docker's default profile with one

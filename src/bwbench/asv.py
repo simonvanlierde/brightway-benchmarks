@@ -98,13 +98,9 @@ def _usage() -> tuple[float, float, int]:
 def _log_usage(obj: Any, args: tuple) -> None:
     """Append one JSON line per timed sample: its wall and CPU time and involuntary context switches.
 
-    Only when ``BWBENCH_ROUNDLOG`` names the log file.
-
-    In a CPU-bound case on one thread, CPU time well below wall time means the process waited
-    for its core, so the sample was preempted rather than slow. A case that waits on disk
-    (bw2data's write) has a low ratio anyway; there the involuntary context switches tell.
-    Only time_ calls fill ``results``, so only time_ samples are logged. The span runs from
-    the end of setup to teardown, so it includes asv's timer.
+    Only when ``BWBENCH_ROUNDLOG`` names the log file. Only time_ calls fill ``results``, so only
+    time_ samples are logged. The span runs from the end of setup to teardown, so it includes
+    asv's timer. ``scripts/noise_summary.py`` reads the log.
     """
     log = os.environ.get("BWBENCH_ROUNDLOG")
     results = getattr(obj, "results", {})

@@ -10,7 +10,7 @@ change we want to see need more samples, or a quieter machine.
 If the folder holds ``rounds.jsonl`` (``BWBENCH_ROUNDLOG``), a second table gives each case's
 lowest CPU time over wall time and most involuntary context switches per second, and counts
 the samples that were preempted: in a CPU-bound case on one thread, a sample whose CPU time
-is under ``PREEMPTED`` of its wall time spent the rest waiting for its core, so another
+is under ``PREEMPTED`` (95%) of its wall time spent the rest waiting for its core, so another
 process slowed it, not the code. A case that waits on disk (bw2data's write) always counts
 as preempted; read its context switches instead.
 """

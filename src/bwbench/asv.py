@@ -78,7 +78,7 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         body.update(b.options)
         new: dict[str, Any] = {f"time_{b.name}": _time(b.name)}
         if b.peakmem:
-            new[f"peakmem_{b.name}"] = _time(b.name, peakmem=True)  # asv reads the process's peak RSS, not a time
+            new[f"peakmem_{b.name}"] = _peak(b.name)
         new |= {f"track_{t}": _track(b.name, fn) for t, fn in b.track.items()}
         if b.error:
             new[f"track_{b.error}"] = _error(b.name)
@@ -103,14 +103,15 @@ def _log_usage(obj: Any, args: tuple) -> None:
     In a CPU-bound case on one thread, CPU time well below wall time means the process waited
     for its core, so the sample was preempted rather than slow. A case that waits on disk
     (bw2data's write) has a low ratio anyway; there the involuntary context switches tell.
-    track_ calls leave ``results`` empty and peakmem_ calls are skipped, so only time_ samples
-    are logged. The span runs from the end of setup to teardown, so it includes asv's timer.
+    Only time_ calls fill ``results``, so only time_ samples are logged. The span runs from
+    the end of setup to teardown, so it includes asv's timer.
     """
     log = os.environ.get("BWBENCH_ROUNDLOG")
-    if not log or not hasattr(obj, "usage") or getattr(obj, "peakmem", False):
+    results = getattr(obj, "results", {})
+    if not log or not results:
         return
     log = Path(log)
-    cls, results = type(obj), getattr(obj, "results", {})
+    cls = type(obj)
     wall, cpu, nivcsw = (b - a for a, b in zip(obj.usage, _usage(), strict=True))
     log.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.get("ASV_ENV_NAME") or Path(sys.prefix).name
@@ -120,7 +121,6 @@ def _log_usage(obj: Any, args: tuple) -> None:
                 "case": f"{cls.__module__.rsplit('.', 1)[-1]}.{cls.__name__}.time_{bench_name}",  # as asv names it
                 "params": ", ".join(map(repr, args)),
                 "env": env,
-                "pid": os.getpid(),
                 "wall": wall,
                 "cpu": cpu,
                 "nivcsw": nivcsw,
@@ -135,12 +135,20 @@ def _verify_once(cls_name: str, prepared: dict[str, Prepared], results: dict[str
             prepared[bench_name].verify(result)
 
 
-def _time(bench_name: str, *, peakmem: bool = False) -> Callable[..., None]:
+def _time(bench_name: str) -> Callable[..., None]:
     def time(self: Any, *args: Any) -> None:
-        self.peakmem = peakmem  # a memory sample fills results too, but is not logged as a timed one
         self.results[bench_name] = self.prepared[bench_name]()
 
     return time
+
+
+def _peak(bench_name: str) -> Callable[..., None]:
+    """A ``peakmem_`` method: asv reads the process's peak resident memory, so nothing is kept."""
+
+    def peak(self: Any, *args: Any) -> None:
+        self.prepared[bench_name]()
+
+    return peak
 
 
 def _track(bench_name: str, fn: Callable[[Any], float]) -> Callable[..., float]:

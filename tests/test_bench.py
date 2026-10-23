@@ -1,4 +1,5 @@
 import ast
+import itertools
 import json
 import os
 import subprocess
@@ -321,6 +322,7 @@ def test_asv_peakmem_method_only_when_asked(tmp_path: Path, monkeypatch: pytest.
     obj = mem()
     obj.setup("smoke")
     obj.peakmem_with_mem("smoke")
+    assert obj.results == {}  # asv reads the peak itself; there is nothing to check or log
     obj.teardown("smoke")
     assert not log.exists()  # a memory sample is not a timed sample
 
@@ -328,6 +330,9 @@ def test_asv_peakmem_method_only_when_asked(tmp_path: Path, monkeypatch: pytest.
 def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     log = tmp_path / "noise" / "rounds.jsonl"
     monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    monkeypatch.setenv("ASV_ENV_NAME", "env-x")
+    usage = itertools.chain([(10.0, 1.0, 5), (12.0, 2.5, 8)], itertools.repeat((0.0, 0.0, 0)))
+    monkeypatch.setattr(asv, "_usage", lambda: next(usage))
     (cls,) = asv.classes(module(double=double).__name__)
     obj = cls()
     obj.setup("smoke", 2)
@@ -340,7 +345,5 @@ def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pyt
     entry = json.loads(line)
     assert entry["case"] == "fake_bench.Doubling.time_double"
     assert entry["params"] == "'smoke', 2"
-    assert entry["pid"] == os.getpid()
-    assert entry["wall"] >= 0
-    assert entry["cpu"] >= 0
-    assert entry["nivcsw"] >= 0
+    assert entry["env"] == "env-x"
+    assert (entry["wall"], entry["cpu"], entry["nivcsw"]) == (2.0, 1.5, 3)

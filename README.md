@@ -209,16 +209,29 @@ sizes, the others at the ecoinvent size.
   since 1.0.0 fails a check that bw_processing 1.6 added later. Every release of bw2calc,
   bw_processing, matrix_utils and bw_graph_tools runs.
 - The solvers run on one thread, so a timing does not depend on how many cores were free.
-- Between runs, a case's time varies by at most 1% at the ecoinvent size (median 0.1%,
-  PyPardiso, 5 runs) and by up to 4% at the smoke size (median 0.9%, 10 runs), apart from
-  cases of a few milliseconds (`just noise`). So a step of 5% or more at the ecoinvent size
-  is a real change. Short cases need the CPU on its performance power profile (on Linux,
-  `powerprofilesctl set performance`): under a power-saving one, an idle core starts slow
-  and they vary up to five-fold. `just noise` also writes each sample's CPU time, wall time
+- The noise floor, measured with `just noise` on a pinned benchmark machine, at the ecoinvent
+  size, on a slot of 8 efficiency cores:
+  - asv, six quick runs per arm: bw2calc's first score under PyPardiso spreads 0.0% with ASLR
+    on and 0.1% with it off (interquartile range over the median). ASLR changes nothing
+    measurable for the asv cells, so it stays on by default and `BWBENCH_NOASLR=1` is opt-in.
+  - CodSpeed, three runs with ASLR off through the real `setarch -R` (see below): the
+    traversal cases are 0.035% and 0.014% apart, against 0.7 to 1.1% with the old shim that
+    left ASLR on.
+  - bw2data's write takes about 12.7 s wall time and 11.7 s CPU time. In either arm, 1 or 2
+    samples in 12 stall for 16 to 17 s off the CPU (3 of 36 samples over two nights), at the
+    same time as the host writes its disk cache back (blocked processes in `vmstat`). asv's
+    median does not move, but max/min is no usable spread for this cell.
+
+  At the smoke size a case varies by up to 4% (median 0.9%, 10 runs), apart from cases of a
+  few milliseconds. So a step of 5% or more at the ecoinvent size is a real change. Short
+  cases need the CPU on its performance power profile (on Linux, `powerprofilesctl set
+  performance`): under a power-saving one, an idle core starts slow and they vary up to
+  five-fold. `just noise` also writes each sample's CPU time, wall time
   and involuntary context switches to `rounds.jsonl`, and counts the samples whose CPU time
   was under 95% of their wall time: in a case that only computes, those waited for their
   core, so another process slowed them. A case that waits on disk, like bw2data's write,
-  always falls under 95%; for those, the context switches tell.
+  always falls under 95%, so that count says nothing there; for those, the context switches
+  tell.
 - CodSpeed's runner turns address randomization (ASLR) off with `setarch -R`. Docker's
   default seccomp profile refuses that, so the CodSpeed box runs under
   [`docker/seccomp-noaslr.json`](docker/seccomp-noaslr.json): Docker's default profile with one

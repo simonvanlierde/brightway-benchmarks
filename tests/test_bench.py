@@ -303,7 +303,10 @@ def test_pytest_adapter_tears_down_after_a_skip_in_run():
     assert log == ["teardown"]
 
 
-def test_asv_peakmem_method_only_when_asked():
+def test_asv_peakmem_method_only_when_asked(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    log = tmp_path / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+
     @bench({"size": ["smoke"]}, asv="Memory", peakmem=True)
     def with_mem(size: str):
         return lambda: 1, UNCHECKED
@@ -319,6 +322,7 @@ def test_asv_peakmem_method_only_when_asked():
     obj.setup("smoke")
     obj.peakmem_with_mem("smoke")
     obj.teardown("smoke")
+    assert not log.exists()  # a memory sample is not a timed sample
 
 
 def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

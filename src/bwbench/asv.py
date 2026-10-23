@@ -52,8 +52,7 @@ def _asv_class(name: str, group: list[Bench]) -> type:
     def teardown(self: Any, *args: Any) -> None:
         # The check runs here, outside the timed call; asv reports a raise as a failed benchmark.
         prepared: dict[str, Prepared] = getattr(self, "prepared", {})
-        if (log := os.environ.get("BWBENCH_ROUNDLOG")) and hasattr(self, "usage"):
-            _log_usage(Path(log), type(self), getattr(self, "results", {}), args, self.usage)
+        _log_usage(self, args)
         try:
             _verify_once(name, prepared, getattr(self, "results", {}), args)
         finally:
@@ -79,7 +78,7 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         body.update(b.options)
         new: dict[str, Any] = {f"time_{b.name}": _time(b.name)}
         if b.peakmem:
-            new[f"peakmem_{b.name}"] = _time(b.name)  # asv reads the process's peak RSS, not a time
+            new[f"peakmem_{b.name}"] = _time(b.name, peakmem=True)  # asv reads the process's peak RSS, not a time
         new |= {f"track_{t}": _track(b.name, fn) for t, fn in b.track.items()}
         if b.error:
             new[f"track_{b.error}"] = _error(b.name)
@@ -96,16 +95,23 @@ def _usage() -> tuple[float, float, int]:
     return time.perf_counter(), ru.ru_utime + ru.ru_stime, ru.ru_nivcsw
 
 
-def _log_usage(log: Path, cls: type, results: dict[str, Any], args: tuple, start: tuple[float, float, int]) -> None:
+def _log_usage(obj: Any, args: tuple) -> None:
     """Append one JSON line per timed sample: its wall and CPU time and involuntary context switches.
+
+    Only when ``BWBENCH_ROUNDLOG`` names the log file.
 
     In a CPU-bound case on one thread, CPU time well below wall time means the process waited
     for its core, so the sample was preempted rather than slow. A case that waits on disk
     (bw2data's write) has a low ratio anyway; there the involuntary context switches tell.
-    Only time_ methods fill ``results``, so track_ calls are not logged. The span runs from
-    the end of setup to teardown, so it includes asv's timer.
+    track_ calls leave ``results`` empty and peakmem_ calls are skipped, so only time_ samples
+    are logged. The span runs from the end of setup to teardown, so it includes asv's timer.
     """
-    wall, cpu, nivcsw = (b - a for a, b in zip(start, _usage(), strict=True))
+    log = os.environ.get("BWBENCH_ROUNDLOG")
+    if not log or not hasattr(obj, "usage") or getattr(obj, "peakmem", False):
+        return
+    log = Path(log)
+    cls, results = type(obj), getattr(obj, "results", {})
+    wall, cpu, nivcsw = (b - a for a, b in zip(obj.usage, _usage(), strict=True))
     log.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.get("ASV_ENV_NAME") or Path(sys.prefix).name
     with log.open("a") as f:
@@ -129,8 +135,9 @@ def _verify_once(cls_name: str, prepared: dict[str, Prepared], results: dict[str
             prepared[bench_name].verify(result)
 
 
-def _time(bench_name: str) -> Callable[..., None]:
+def _time(bench_name: str, *, peakmem: bool = False) -> Callable[..., None]:
     def time(self: Any, *args: Any) -> None:
+        self.peakmem = peakmem  # a memory sample fills results too, but is not logged as a timed one
         self.results[bench_name] = self.prepared[bench_name]()
 
     return time

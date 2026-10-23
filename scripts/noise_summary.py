@@ -37,7 +37,7 @@ def rows(folder: Path) -> list[tuple[str, str, int, float, float, float]]:
             continue
         env = data.get("env_name", path.stem)
         for name, entry in data.get("results", {}).items():
-            if not name.split(".")[-1].startswith("time_"):
+            if not name.split(".")[-1].startswith(("time_", "timeraw_")):
                 continue
             params = entry[columns.index("params")] if "params" in columns else []
             labels = [", ".join(p) for p in itertools.product(*params)] if params else [""]

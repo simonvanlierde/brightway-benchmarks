@@ -25,6 +25,7 @@ def test_spread_per_case_and_parameter(tmp_path: Path):
                 [[1.0, 1.1, 0.9, 1.0], [2.0, 2.0, 2.0, 4.0]],
             ],
             "bench_lca.SingleScore.track_relative_error": [[0.0], [], [[0.0]]],
+            "bench_import.timeraw_import_bw2data": [[0.05], [], [[0.05, 0.051]]],
             # Skipped at every parameter: asv drops the trailing empty samples column.
             "bench_lca.MonteCarlo.time_iterations": [[float("nan")], [["'smoke'"]]],
         },
@@ -39,6 +40,7 @@ def test_spread_per_case_and_parameter(tmp_path: Path):
     assert [r[0] for r in rows] == [
         "bench_lca.SingleScore.time_first_score('smoke', 'LCA')",
         "bench_lca.SingleScore.time_first_score('smoke', 'IterativeLCA')",
+        "bench_import.timeraw_import_bw2data",
     ]
     _case, env, n, median, iqr, spread = rows[1]
     assert (env, n, median, spread) == ("env-a", 4, 2.0, 2.0)

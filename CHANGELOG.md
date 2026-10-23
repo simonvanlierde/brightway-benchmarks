@@ -17,8 +17,6 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `BWBENCH_MACHINE=peakmem` keeps results in `.asv/peakmem/`, out of `results/` and the site.
 - `timeraw` cells that time a cold `import bw2calc`, `import stats_arrays` (in the bw2calc suite,
   on bw2calc's fixed stack) and `import bw2data`, each in a fresh interpreter.
-- The box runs from a git worktree: `scripts/in-box.sh` runs `git config` from `/`, because from
-  `/src` git stops when `/src/.git` points outside the mount.
 - `just noise` logs each sample's CPU time, wall time and involuntary context switches, and
   its summary counts the samples another process preempted (CPU time under 95% of wall time).
 - `BWBENCH_NOASLR=1` turns address randomization off for any box run, under a seccomp profile
@@ -92,5 +90,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Carlo from the ecoinvent size up. `JacobiGMRESLCA` solves by GMRES and is never skipped.
 - A warning when numpy is imported before `bwbench`, because the BLAS thread pin then comes
   too late.
+
+### Fixed
+
+- `scripts/in-box.sh` works in a git worktree, whose `.git` file points outside the mounted
+  folder: it runs `git config` from `/`.
 
 [Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/commits/HEAD

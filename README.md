@@ -34,8 +34,9 @@ bw_processing cases that build datapackages from entries have nothing to check, 
 the import cells.
 
 bw2calc's first score and bw2data's write also record peak memory (`peakmem_` in asv). The box
-has 2 GB by default and no swap, so a job over the limit ends with exit 137, which `in-box.sh`
-reports as an out-of-memory kill. Set `BWBENCH_MEM` to give it more.
+has 2 GB by default and no swap, so a job over the limit is killed by the kernel's OOM killer:
+under asv that shows as a failed benchmark, otherwise as exit 137. Set `BWBENCH_MEM` to give it
+more.
 
 ## The synthetic databases
 

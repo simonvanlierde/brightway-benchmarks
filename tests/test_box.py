@@ -80,29 +80,24 @@ def test_box_rebuilds_the_image_when_the_dockerfile_changes(box: tuple[Path, Pat
     assert built_tag() != first
 
 
-def run_in_box(tmp_path: Path, command: str) -> subprocess.CompletedProcess:
-    """in-box.sh with /src moved into a scratch folder, running a shell command."""
+def run_in_box(tmp_path: Path, command: str) -> tuple[int, str]:
+    """in-box.sh with /src moved into a scratch folder, running a shell command: its pid and stdout."""
     script = tmp_path / "in-box.sh"
     script.write_text((REPO / "scripts" / "in-box.sh").read_text().replace("/src", str(tmp_path)))
-    return subprocess.run(
+    with subprocess.Popen(
         ["/bin/sh", str(script), "sh", "-c", command],
         env={"PATH": "/usr/bin:/bin", "HOME": str(tmp_path)},
-        capture_output=True,
+        stdout=subprocess.PIPE,
         text=True,
-        check=False,
-    )
+    ) as proc:
+        out, _ = proc.communicate()
+    return proc.pid, out
 
 
-def test_in_box_labels_exit_137_as_out_of_memory(tmp_path: Path):
-    out = run_in_box(tmp_path, "kill -KILL $$")
-    assert out.returncode == 137
-    assert "OOM" in out.stderr
-
-
-def test_in_box_keeps_other_exit_codes_quiet(tmp_path: Path):
-    out = run_in_box(tmp_path, "exit 3")
-    assert out.returncode == 3
-    assert "137" not in out.stderr
+def test_in_box_execs_the_command(tmp_path: Path):
+    # The command must replace in-box.sh, so signals sent to the box reach it directly.
+    pid, out = run_in_box(tmp_path, "echo $$")
+    assert out.strip() == str(pid)
 
 
 def test_box_lets_codspeed_turn_aslr_off_with_seccomp_on(box: tuple[Path, Path]):

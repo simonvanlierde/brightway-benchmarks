@@ -20,11 +20,4 @@ export PYTHONHASHSEED=0 PYTHONFAULTHANDLER=1
 git -C / config --global --get safe.directory >/dev/null || git -C / config --global --add safe.directory "*"
 # box.sh gives a BWBENCH_NOASLR run a seccomp profile that lets setarch turn ASLR off.
 [ -z "${BWBENCH_NOASLR:-}" ] || set -- setarch "$(uname -m)" -R "$@"
-# Not `exec`, to read the status. Swap equals the memory limit, so a job over it is killed
-# (137, SIGKILL) instead of slowed down.
-status=0
-"$@" || status=$?
-if [ "$status" -eq 137 ]; then
-    echo "in-box.sh: exit 137, usually the kernel's OOM kill at the memory limit (BWBENCH_MEM, 2g by default)" >&2
-fi
-exit "$status"
+exec "$@"

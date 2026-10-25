@@ -90,6 +90,14 @@ about 24 minutes with the SuperLU environment and 6 with `BWBENCH_SOLVERS=pypard
 asv times each case in 2 rounds by default; `BWBENCH_ROUNDS=1` halves a full-size run.
 Each result is checked once per parameter set, not after every sample.
 
+`bw2calc-conda` is the same bw2calc suite on conda-forge's builds instead of PyPI's wheels:
+Python, NumPy, SciPy, PyPardiso with MKL, and scikit-umfpack with conda-forge's SuiteSparse
+and OpenBLAS, at the fixed stack's versions ([`asv/bw2calc-conda.json`](asv/bw2calc-conda.json),
+asv's `rattler` environments). The pure-Python rest of the stack still comes from PyPI.
+`just bench bw2calc-conda` runs it over the two releases conda-forge has carried since NumPy 2,
+2.4.0 and 3.1.0. Its environments are solved when they are built, so the build strings of
+every conda package (the BLAS among them) go into the `versions-*.txt` files beside the results.
+
 When a package publishes a new release, `just stack` and `just stack-check` move its fixed
 set of dependencies (below) forward; the steps are in the [justfile](justfile).
 

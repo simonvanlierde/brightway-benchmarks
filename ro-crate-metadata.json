@@ -16,7 +16,7 @@
       "@type": "Dataset",
       "name": "brightway-benchmarks results",
       "description": "asv timings of the Brightway stack on seeded synthetic LCA systems, with lock files.",
-      "datePublished": "2026-10-22",
+      "datePublished": "2026-10-25",
       "license": {
         "@id": "https://spdx.org/licenses/BSD-3-Clause"
       },
@@ -534,7 +534,7 @@
       "@type": "CreateAction",
       "name": "asv run",
       "instrument": {
-        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/7ef64a0f4d98c360d6215b564e053695697285fd"
+        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/01318329fb203121d14477fd865f4b2230aadd4c"
       },
       "object": [
         {
@@ -1058,11 +1058,11 @@
       ]
     },
     {
-      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/7ef64a0f4d98c360d6215b564e053695697285fd",
+      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/01318329fb203121d14477fd865f4b2230aadd4c",
       "@type": "SoftwareSourceCode",
       "name": "bwbench",
       "codeRepository": "https://github.com/simonvanlierde/brightway-benchmarks",
-      "version": "7ef64a0f4d98c360d6215b564e053695697285fd",
+      "version": "01318329fb203121d14477fd865f4b2230aadd4c",
       "description": "generator version 3"
     },
     {

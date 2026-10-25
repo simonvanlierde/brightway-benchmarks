@@ -1,6 +1,37 @@
 {
+    "bench_import.timeraw_import_bw2data": {
+        "code": "def timeraw_import_bw2data() -> str:\n    return \"import bw2data\"",
+        "min_run_count": 2,
+        "name": "bench_import.timeraw_import_bw2data",
+        "number": 1,
+        "param_names": [],
+        "params": [],
+        "repeat": 0,
+        "rounds": 2,
+        "sample_time": 0.01,
+        "type": "time",
+        "unit": "seconds",
+        "version": "bb8e4e12639641973e874049a72f0e2108372a6b9a9ce77682e0e69f8db7aae5",
+        "warmup_time": -1
+    },
+    "bench_write.DatabaseWrite.peakmem_write": {
+        "code": "class <locals>:\n    def peak(self: Any, *args: Any) -> None:\n        self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "name": "bench_write.DatabaseWrite.peakmem_write",
+        "param_names": [
+            "size"
+        ],
+        "params": [
+            [
+                "'ecoinvent'"
+            ]
+        ],
+        "timeout": 1800,
+        "type": "peakmemory",
+        "unit": "bytes",
+        "version": "3-05303220"
+    },
     "bench_write.DatabaseWrite.time_write": {
-        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))",
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
         "min_run_count": 2,
         "name": "bench_write.DatabaseWrite.time_write",
         "number": 1,
@@ -12,7 +43,7 @@
                 "'ecoinvent'"
             ]
         ],
-        "rounds": 6,
+        "rounds": 2,
         "sample_time": 0.01,
         "timeout": 1800,
         "type": "time",
@@ -21,7 +52,7 @@
         "warmup_time": 0
     },
     "bench_write.DatabaseWrite.track_score_error": {
-        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        prepared = self.prepared[bench_name]\n        return prepared.verify(prepared())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))",
+        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        prepared = self.prepared[bench_name]\n        return prepared.verify(prepared())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
         "name": "bench_write.DatabaseWrite.track_score_error",
         "param_names": [
             "size"

@@ -16,7 +16,7 @@ asv_runner==0.2.5
 attrs==26.1.0
 blinker==1.9.0
 build==1.6.1
-bw2calc @ file:///src/.asv/env/bw2calc/c7741cf55906a33ec58cfdeeb5b04d91/asv-build-cache/fe780d2b6292a3d180281bff3fe1bc973bc7ab07/bw2calc-3.1.0-py3-none-any.whl#sha256=f9ed75805f8999a9fa6ade3f34ee889300d681fec18038ea8606f2375f6a17b1
+bw2calc @ file:///src/.asv/env/bw2calc/c7741cf55906a33ec58cfdeeb5b04d91/asv-build-cache/fe780d2b6292a3d180281bff3fe1bc973bc7ab07/bw2calc-3.1.0-py3-none-any.whl#sha256=9b2c4845b548ab61045249c165404e277f4cfb5092abfb13dea075729d92d1af
 bw2parameters==1.1.0
 bw_graph_tools==0.10
 bw_processing==1.6

@@ -1,4 +1,6 @@
 import ast
+import itertools
+import json
 import os
 import subprocess
 import sys
@@ -300,3 +302,48 @@ def test_pytest_adapter_tears_down_after_a_skip_in_run():
     with pytest.raises(pytest.skip.Exception, match="while running"):
         namespace["test_late_skip"](FakeBenchmark())
     assert log == ["teardown"]
+
+
+def test_asv_peakmem_method_only_when_asked(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    log = tmp_path / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+
+    @bench({"size": ["smoke"]}, asv="Memory", peakmem=True)
+    def with_mem(size: str):
+        return lambda: 1, UNCHECKED
+
+    @bench({"size": ["smoke"]}, asv="Plain")
+    def without(size: str):
+        return lambda: 1, UNCHECKED
+
+    mem, plain = asv.classes(module(with_mem=with_mem, without=without).__name__)
+    assert hasattr(mem, "peakmem_with_mem")
+    assert not hasattr(plain, "peakmem_without")
+    obj = mem()
+    obj.setup("smoke")
+    obj.peakmem_with_mem("smoke")
+    assert obj.results == {}  # asv reads the peak itself; there is nothing to check or log
+    obj.teardown("smoke")
+    assert not log.exists()  # a memory sample is not a timed sample
+
+
+def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    log = tmp_path / "noise" / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    monkeypatch.setenv("ASV_ENV_NAME", "env-x")
+    usage = itertools.chain([(10.0, 1.0, 5), (12.0, 2.5, 8)], itertools.repeat((0.0, 0.0, 0)))
+    monkeypatch.setattr(asv, "_usage", lambda: next(usage))
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    obj.setup("smoke", 2)
+    obj.time_double("smoke", 2)
+    obj.teardown("smoke", 2)
+    obj.setup("smoke", 2)
+    obj.track_relative_error("smoke", 2)  # not a timed sample, so not logged
+    obj.teardown("smoke", 2)
+    (line,) = log.read_text().splitlines()
+    entry = json.loads(line)
+    assert entry["case"] == "fake_bench.Doubling.time_double"
+    assert entry["params"] == "'smoke', 2"
+    assert entry["env"] == "env-x"
+    assert (entry["wall"], entry["cpu"], entry["nivcsw"]) == (2.0, 1.5, 3)

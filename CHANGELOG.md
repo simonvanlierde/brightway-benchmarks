@@ -9,6 +9,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `peakmem_first_score` (bw2calc) and `peakmem_write` (bw2data) record the process's peak
+  resident memory beside the time of the same case, through `@bench(peakmem=True)`.
+- `scripts/registry_vs_sqlite.py` prints `peak_rss` (bytes) for each cold read of #290.
+- `timeraw` cells that time a cold `import bw2calc` and `import bw2data`, each in a fresh
+  interpreter.
+- `just noise` logs each sample's CPU time, wall time and involuntary context switches, and
+  its summary counts the samples another process preempted (CPU time under 95% of wall time).
 - bw2calc 3.1.0 joins the bw2calc releases. Its new minimum versions of bw_processing and
   matrix_utils are already in the fixed stack, so the older releases keep their history.
 - `just solver-lci SOLVER SIZE [BW2CALC]` times bw2calc's own `lci()` (3.1.0 unless you name
@@ -25,6 +32,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   in light and dark mode, and links bw2calc's time for one score as the place to start.
 - The first results in the README: bw2calc 2.0 to 3.0.0 at the ecoinvent size, with 3.0.0's
   `IterativeLCA` slowdown without PyPardiso.
+- Why bw_graph_tools on EXIOBASE takes 11.3 s at `max_calc` 2 and 2.25 minutes at 100, though
+  both count 16 calculations: the counter counts nodes created, not solves, and is checked only
+  before the next node is expanded. Both runs create the same 16 nodes in the second expansion;
+  at 2 the traversal stops there (392 right-hand sides solved), at 100 it expands all 16, each
+  solving its ~390 inputs (4,922 right-hand sides). Time follows the right-hand-side count:
+  about 12 ms each with PyPardiso, 51 ms with SuperLU. A transposed unit-score solve makes it
+  one solve either way (0.21 s against 0.33 s).
 - asv suites for bw2calc, bw2data, bw_processing, matrix_utils, bw_graph_tools and bw_timex,
   run over their released versions. Every case except bw_processing's two `EntriesPath`
   cases checks its result against a float64 reference.
@@ -50,7 +64,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Next to each machine's results, a PEP 751 lock file per asv environment. At the results
   root, an RO-Crate `ro-crate-metadata.json` over all of them that names the bwbench commit,
   the generator version and the profiles.
-- A comparison of a bw2data SQLite project with the Parquet registry of bw2data #290.
+- A comparison of a bw2data SQLite project with the Parquet registry of bw2data #290. At the
+  ecoinvent size (2026-10-18, single runs, no PyPardiso): write 10.6 s and 123 MB for SQLite,
+  1.04 s and 16.7 MB for the registry with `bw_package/`, 0.96 s and 6.5 MB for its Parquet
+  tables alone; first scores 18.0 to 20.0 s, all of it SuperLU's factorization. DuckDB's
+  narrower lookup saves 0.27 s at smoke size and nothing visible there.
 - `just smoke`, `just bench`, `just site` and `just registry-vs-sqlite`. Each runs in a
   throwaway container.
 - A weekly smoke run in CI, over each package's oldest and latest release.
@@ -78,5 +96,20 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Carlo from the ecoinvent size up. `JacobiGMRESLCA` solves by GMRES and is never skipped.
 - A warning when numpy is imported before `bwbench`, because the BLAS thread pin then comes
   too late.
+
+### Changed
+
+- bw2data's score check (`DatabaseWrite.track_score_error` and the SQLite row of
+  `just registry-vs-sqlite`) compares against a reference built from amounts rounded to
+  float32, since bw_processing 1.6 stores them that way
+  ([bw_processing#112](https://github.com/brightway-lca/bw_processing/issues/112)), and
+  `BW2DATA_RTOL` drops from 1e-6 to 1e-12. From this version on, `track_score_error` falls
+  from about 3e-9 (smoke) and 5.7e-8 (ecoinvent size) to about 1e-15: a step in the published
+  history, not a change in bw2data.
+
+### Fixed
+
+- `scripts/in-box.sh` works in a git worktree, whose `.git` file points outside the mounted
+  folder: it runs `git config` from `/`.
 
 [Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/commits/HEAD

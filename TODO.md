@@ -24,20 +24,11 @@
       Still there in 3.1.0 by wall time (2026-10-19). A fix that caches the lookup in
       pypardiso itself is ready to propose upstream; if it is released, the history shows it
       only once the fixed stack moves to that pypardiso.
-- [ ] Find why bw_graph_tools traversal on EXIOBASE with `max_calc` 2 and 100 counts 16
-      calculations in both, yet takes 11.3 s against 2.25 minutes.
 - [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
       hold the same versions.
 - [ ] The site job builds the box image and clones six upstream repos on every run, though
       `asv publish` only reads results. Run asv there directly, or cache `.asv/`, once the
       first runs show how long it takes. CodSpeed, if added, runs on `pull_request` only.
-- [ ] Find where the SQLite path loses precision: at the ecoinvent size its score is off by
-      5.7e-8 (bw2data 4.7), against 1.1e-14 for every registry read, which is inside
-      `BW2DATA_RTOL` but 6 orders above the solver. Measured 2026-10-18 with
-      `just registry-vs-sqlite ecoinvent`: write 10.6 s and 123 MB for SQLite, 1.04 s and
-      16.7 MB for the registry with `bw_package/`, 0.96 s and 6.5 MB for its Parquet tables
-      alone; first scores 18.0 to 20.0 s, all of it SuperLU's factorization (single runs, no
-      PyPardiso). DuckDB's narrower lookup saves 0.27 s at smoke size and nothing visible here.
 
 ## Verify in the box
 

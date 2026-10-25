@@ -19,8 +19,8 @@ of ecoinvent, so anyone can rerun them and the results can be published.
 
 | Package | What is timed, in LCA terms |
 | --- | --- |
-| bw2calc | One score (build the matrices, solve, characterize); a second functional unit on a solved system; many functional units against three impact categories; Monte Carlo draws |
-| bw2data | Writing a database, up to the size of ecoinvent |
+| bw2calc | One score (build the matrices, solve, characterize); a second functional unit on a solved system; many functional units against three impact categories; Monte Carlo draws; a cold `import bw2calc` |
+| bw2data | Writing a database, up to the size of ecoinvent; a cold `import bw2data` |
 | bw_processing, matrix_utils | Building datapackages and matrices from many resource groups |
 | bw_graph_tools | Supply-chain graph traversal, small and large |
 | bw_timex | The time-explicit LCI as the timeline grows |
@@ -30,7 +30,13 @@ iterative solvers.
 
 Each benchmark checks its score next to the timing, against a reference that uses no
 Brightway code at all. So a fast but wrong release fails instead of looking good. Only the
-bw_processing cases that build datapackages from entries have nothing to check.
+bw_processing cases that build datapackages from entries have nothing to check, and neither do
+the import cells.
+
+bw2calc's first score and bw2data's write also record peak memory (`peakmem_` in asv). The box
+has 2 GB by default and no swap, so a job over the limit is killed by the kernel's OOM killer:
+under asv that shows as a failed benchmark, otherwise as exit 137. Set `BWBENCH_MEM` to give it
+more.
 
 ## The synthetic databases
 
@@ -204,12 +210,30 @@ sizes, the others at the ecoinvent size.
   since 1.0.0 fails a check that bw_processing 1.6 added later. Every release of bw2calc,
   bw_processing, matrix_utils and bw_graph_tools runs.
 - The solvers run on one thread, so a timing does not depend on how many cores were free.
-- Between runs, a case's time varies by at most 1% at the ecoinvent size (median 0.1%,
-  PyPardiso, 5 runs) and by up to 4% at the smoke size (median 0.9%, 10 runs), apart from
-  cases of a few milliseconds (`just noise`). So a step of 5% or more at the ecoinvent size
-  is a real change. Short cases need the CPU on its performance power profile (on Linux,
-  `powerprofilesctl set performance`): under a power-saving one, an idle core starts slow
-  and they vary up to five-fold.
+- The noise floor, measured with `just noise` on a pinned benchmark machine, at the ecoinvent
+  size, on a slot of 8 efficiency cores:
+  - asv, six quick runs per arm: bw2calc's first score under PyPardiso spreads 0.0% with ASLR
+    on and 0.1% with it off (interquartile range over the median). ASLR changes nothing
+    measurable for the asv cells, so it stays on.
+  - CodSpeed, three runs with ASLR off through the real `setarch -R` (see below): the
+    traversal cases are 0.035% and 0.014% apart, against 0.7 to 1.1% with the old shim that
+    left ASLR on.
+  - bw2data's write takes about 12.7 s wall time and 11.7 s CPU time. In either arm, 1 or 2
+    samples in 12 stall for 16 to 17 s off the CPU (3 of 36 samples over two nights), at the
+    same time as the host writes its disk cache back (blocked processes in `vmstat`). asv's
+    median does not move, but max/min is no usable spread for this cell.
+
+  At the smoke size a case varies by up to 4% (median 0.9%, 10 runs), apart from cases of a
+  few milliseconds. So a step of 5% or more at the ecoinvent size is a real change. Short
+  cases need the CPU on its performance power profile (on Linux, `powerprofilesctl set
+  performance`): under a power-saving one, an idle core starts slow and they vary up to
+  five-fold. `just noise` also writes each sample's CPU time, wall time and involuntary
+  context switches to `rounds.jsonl`; `scripts/noise_summary.py` says how to read them.
+- CodSpeed's runner turns address randomization (ASLR) off with `setarch -R`. Docker's
+  default seccomp profile refuses that, so the CodSpeed box runs under
+  [`docker/seccomp-noaslr.json`](docker/seccomp-noaslr.json): Docker's default profile with one
+  more rule, which allows only `personality(ADDR_NO_RANDOMIZE)` (`just seccomp-profile`
+  rebuilds it).
 - Each run records exactly what was installed (a `pylock.toml` lock file per environment)
   and an RO-Crate that names the code and settings that produced it.
 

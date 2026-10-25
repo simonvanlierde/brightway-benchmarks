@@ -97,7 +97,7 @@ def score_of(scores: object, method: tuple, demand: str) -> float:
 # iterative classes never start from the answer of the last call.
 
 
-@bench({"size": SIZES, "cls": CLASSES}, error="relative_error", asv="SingleScore", timeout=600)
+@bench({"size": SIZES, "cls": CLASSES}, error="relative_error", asv="SingleScore", timeout=600, peakmem=True)
 def first_score(size: str, cls: str) -> BenchSetup:
     """One demand, one method: build the matrices, factorize, solve, characterize."""
     # The setup solves once before the timed call; JacobiGMRESLCA solves by GMRES, not LU.

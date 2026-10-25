@@ -38,15 +38,7 @@ uv pip install -q --python "$py" $newer -c "asv/$subject.stack.txt" pytest pytes
 shim=/tmp/codspeed-shim
 mkdir -p "$shim"
 printf '#!/bin/sh\necho bench\n' >"$shim/whoami"
-# The runner turns ASLR off with `setarch -R`, which docker's seccomp profile refuses. So
-# this runs the command with ASLR on, which costs some run-to-run spread in the counts.
-cat >"$shim/setarch" <<'SH'
-#!/bin/sh
-shift
-while [ "${1#-}" != "$1" ]; do shift; done
-exec "$@"
-SH
-chmod +x "$shim/whoami" "$shim/setarch"
+chmod +x "$shim/whoami"
 
 out=.asv/codspeed/$subject
 [ $# -eq 0 ] || out=$out$(printf -- '-%s' "$@" | tr '=<>' '___')

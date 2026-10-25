@@ -1,4 +1,6 @@
 import math
+import subprocess
+import sys
 
 import pytest
 
@@ -25,3 +27,12 @@ def test_check_table_catches_swapped_demands():
         check_table(swapped, refs, DIRECT_RTOL)
     with pytest.raises(AssertionError, match="rows"):
         check_table(refs[:3], refs[:4], DIRECT_RTOL)
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="the inherited high-water mark is a Linux kernel trait")
+def test_peak_rss_bytes_in_a_child_is_its_own_not_its_parents():
+    block = bytearray(200_000_000)
+    block[::4096] = b"x" * len(block[::4096])  # touch every page
+    code = "from bwbench import peak_rss_bytes; print(peak_rss_bytes())"
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
+    assert 1_000_000 < int(out.stdout) < 100_000_000

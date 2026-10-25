@@ -49,6 +49,7 @@ smoke:
 
 # Results go to .asv/noise/, never to results/ or the site. Sizes come from BWBENCH_* as usual.
 # Short cases need the CPU's performance power profile (Linux: powerprofilesctl set performance).
+# Each sample's CPU time, wall time and involuntary context switches go to rounds.jsonl beside them.
 # Run-to-run noise: RUNS separate quick runs of SUBJECT's latest release, then each case's spread.
 noise subject runs="10":
     #!/usr/bin/env bash
@@ -58,7 +59,7 @@ noise subject runs="10":
     for i in $(seq {{ runs }}); do
       echo "noise: run $i of {{ runs }}" >&2
       # A failed case fails the run, but the other cases' samples still count.
-      BWBENCH_MACHINE=noise scripts/box.sh scripts/asv.sh {{ subject }} run --quick --append-samples "$last^!" ||
+      BWBENCH_MACHINE=noise BWBENCH_ROUNDLOG="/src/.asv/noise/{{ subject }}/rounds.jsonl" scripts/box.sh scripts/asv.sh {{ subject }} run --quick --append-samples "$last^!" ||
         echo "noise: run $i exited $?" >&2
     done
     uv run --no-project --with numpy==2.5.3 python scripts/noise_summary.py ".asv/noise/{{ subject }}"
@@ -99,6 +100,12 @@ solver-lci solver size="smoke" bw2calc="3.1.0":
 # bw2data #290: SQLite project against sentier-brightway's Parquet registry. size: smoke | ecoinvent.
 registry-vs-sqlite size="smoke":
     scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --with "sentier-brightway @ git+https://github.com/sentier-dev/sentier-brightway@adacaf9" --with bw2data --with bw2calc --with duckdb==1.5.6 python scripts/registry_vs_sqlite.py {{ size }}'
+
+# Docker's default seccomp profile (moby/profiles at TAG; v0.2.4 is Docker 29.9's) plus one rule
+# allowing personality(ADDR_NO_RANDOMIZE), so `setarch -R` can turn address randomization off.
+# Rewrite docker/seccomp-noaslr.json, the profile box.sh gives the codspeed box.
+seccomp-profile tag="seccomp/v0.2.4":
+    curl -fsSL "https://raw.githubusercontent.com/moby/profiles/{{ tag }}/seccomp/default.json" | jq '.syscalls = [{"names": ["personality"], "action": "SCMP_ACT_ALLOW", "args": [{"index": 0, "value": 262144, "op": "SCMP_CMP_EQ"}]}] + .syscalls' >docker/seccomp-noaslr.json
 
 # CodSpeed counts instructions, not seconds, so a busy machine changes nothing. Profiles go to
 # .asv/codspeed/SUBJECT/; nothing is uploaded. Smoke size unless BWBENCH_SIZES says otherwise.

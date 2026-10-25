@@ -6,8 +6,12 @@ them before each method, so give them the same ``params``.
 
 from __future__ import annotations
 
+import json
 import os
+import resource
 import sys
+import time
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from bwbench import first_time
@@ -43,10 +47,12 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         self.results = {}
         for b in group:
             self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))
+        self.usage = _usage()  # last, so the setup's own work is not counted
 
     def teardown(self: Any, *args: Any) -> None:
         # The check runs here, outside the timed call; asv reports a raise as a failed benchmark.
         prepared: dict[str, Prepared] = getattr(self, "prepared", {})
+        _log_usage(self, args)
         try:
             _verify_once(name, prepared, getattr(self, "results", {}), args)
         finally:
@@ -71,6 +77,8 @@ def _asv_class(name: str, group: list[Bench]) -> type:
     for b in group:
         body.update(b.options)
         new: dict[str, Any] = {f"time_{b.name}": _time(b.name)}
+        if b.peakmem:
+            new[f"peakmem_{b.name}"] = _peak(b.name)
         new |= {f"track_{t}": _track(b.name, fn) for t, fn in b.track.items()}
         if b.error:
             new[f"track_{b.error}"] = _error(b.name)
@@ -79,6 +87,41 @@ def _asv_class(name: str, group: list[Bench]) -> type:
             raise ValueError(msg)
         methods |= new
     return type(name, (), body | methods)
+
+
+def _usage() -> tuple[float, float, int]:
+    """(wall seconds, CPU seconds of this process's threads, involuntary context switches so far)."""
+    ru = resource.getrusage(resource.RUSAGE_SELF)
+    return time.perf_counter(), ru.ru_utime + ru.ru_stime, ru.ru_nivcsw
+
+
+def _log_usage(obj: Any, args: tuple) -> None:
+    """Append one JSON line per timed sample: its wall and CPU time and involuntary context switches.
+
+    Only when ``BWBENCH_ROUNDLOG`` names the log file. Only time_ calls fill ``results``, so only
+    time_ samples are logged. The span runs from the end of setup to teardown, so it includes
+    asv's timer. ``scripts/noise_summary.py`` reads the log.
+    """
+    log = os.environ.get("BWBENCH_ROUNDLOG")
+    results = getattr(obj, "results", {})
+    if not log or not results:
+        return
+    log = Path(log)
+    cls = type(obj)
+    wall, cpu, nivcsw = (b - a for a, b in zip(obj.usage, _usage(), strict=True))
+    log.parent.mkdir(parents=True, exist_ok=True)
+    env = os.environ.get("ASV_ENV_NAME") or Path(sys.prefix).name
+    with log.open("a") as f:
+        for bench_name in results:
+            entry = {
+                "case": f"{cls.__module__.rsplit('.', 1)[-1]}.{cls.__name__}.time_{bench_name}",  # as asv names it
+                "params": ", ".join(map(repr, args)),
+                "env": env,
+                "wall": wall,
+                "cpu": cpu,
+                "nivcsw": nivcsw,
+            }
+            f.write(json.dumps(entry) + "\n")
 
 
 def _verify_once(cls_name: str, prepared: dict[str, Prepared], results: dict[str, Any], args: tuple) -> None:
@@ -93,6 +136,15 @@ def _time(bench_name: str) -> Callable[..., None]:
         self.results[bench_name] = self.prepared[bench_name]()
 
     return time
+
+
+def _peak(bench_name: str) -> Callable[..., None]:
+    """A ``peakmem_`` method: asv reads the process's peak resident memory, so nothing is kept."""
+
+    def peak(self: Any, *args: Any) -> None:
+        self.prepared[bench_name]()
+
+    return peak
 
 
 def _track(bench_name: str, fn: Callable[[Any], float]) -> Callable[..., float]:

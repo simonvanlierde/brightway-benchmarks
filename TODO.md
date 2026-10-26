@@ -24,8 +24,9 @@
       Still there in 3.1.0 by wall time (2026-10-19). A fix that caches the lookup in
       pypardiso itself is ready to propose upstream; if it is released, the history shows it
       only once the fixed stack moves to that pypardiso.
-- [ ] Drop the `versions-*.txt` files once the pins check below has run: the lock files
-      hold the same versions.
+- [ ] Drop the PyPI subjects' `versions-*.txt` files once the pins check below has run: the
+      lock files hold the same versions. Keep them for `bw2calc-conda`, which has no lock file
+      and records each conda package's build there.
 - [ ] The site job builds the box image and clones six upstream repos on every run, though
       `asv publish` only reads results. Run asv there directly, or cache `.asv/`, once the
       first runs show how long it takes. CodSpeed, if added, runs on `pull_request` only.

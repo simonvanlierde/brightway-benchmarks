@@ -14,6 +14,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Both are patched into bw2calc, and a case fails if bw2calc never called the patched solver.
   `FastScoresOnlyMultiLCA` is skipped under `klu`, as bw2calc needs PyPardiso or UMFPACK for it,
   and in its adjoint direction under `umfpack-T`, which would factorize A there.
+- The `noise-hosted` workflow runs `just noise` on a GitHub-hosted runner, so its noise
+  floor can be set against the pinned machine's (README, under the noise floor).
 - `bw2calc-conda`: the bw2calc suite with NumPy, SciPy, PyPardiso (MKL) and scikit-umfpack
   (SuiteSparse, OpenBLAS) from conda-forge instead of PyPI, at the same versions, for
   bw2calc 2.4.0 and 3.1.0. Its `versions-*.txt` files also list each conda package's build.

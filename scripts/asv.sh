@@ -77,6 +77,9 @@ PY
 
 grep -qs "\"$machine\"" "$HOME/.asv-machine.json" ||
     asv machine --yes --machine "$machine" --config "$conf" >/dev/null
+# The klu and umfpack-T entries set BWBENCH_SOLVER in their own env. One left in the caller's
+# shell would reach every environment and patch the stock umfpack one without a word.
+unset BWBENCH_SOLVER
 status=0
 case $cmd in
 run | continuous | compare) asv "$cmd" --config "$conf" --machine "$machine" "$@" || status=$? ;;

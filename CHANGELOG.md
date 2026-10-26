@@ -12,7 +12,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Two experimental bw2calc solver environments, run only when named in `BWBENCH_SOLVERS`:
   `klu` (KLU through pyklu, x86_64 only) and `umfpack-T` (scikit-umfpack factorizing Aᵀ).
   Both are patched into bw2calc, and a case fails if bw2calc never called the patched solver.
-  `FastScoresOnlyMultiLCA` is skipped under `klu`, as bw2calc needs PyPardiso or UMFPACK for it.
+  `FastScoresOnlyMultiLCA` is skipped under `klu`, as bw2calc needs PyPardiso or UMFPACK for it,
+  and in its adjoint direction under `umfpack-T`, which would factorize A there.
 - `bw2calc-conda`: the bw2calc suite with NumPy, SciPy, PyPardiso (MKL) and scikit-umfpack
   (SuiteSparse, OpenBLAS) from conda-forge instead of PyPI, at the same versions, for
   bw2calc 2.4.0 and 3.1.0. Its `versions-*.txt` files also list each conda package's build.

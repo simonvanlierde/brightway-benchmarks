@@ -59,7 +59,7 @@ from importlib.metadata import version  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 
-from bwbench.solvers import CALLS, klu, patch, umfpack_transposed  # noqa: E402
+from bwbench.solvers import CALLS, FACTORIZERS, patch  # noqa: E402
 from bwbench.synth import packages  # noqa: E402
 
 warnings.simplefilter("ignore")  # bw2calc warns that a faster solver is missing; that is the point here
@@ -104,10 +104,8 @@ def main(size: str) -> None:
     """Time one score and lci(factorize=True) on profile ``size``, and check the scores."""
     import bw2calc  # noqa: PLC0415
 
-    if SOLVER == "umfpack-T":
-        patch(umfpack_transposed)
-    elif SOLVER == "klu":
-        patch(klu)
+    if SOLVER in FACTORIZERS:
+        patch(FACTORIZERS[SOLVER])
     picked = "pypardiso" if bw2calc.PYPARDISO else "umfpack" if bw2calc.UMFPACK else "superlu"
     if SOLVER in {"superlu", "umfpack", "pypardiso"} and picked != SOLVER:
         msg = f"bw2calc picked {picked}, not {SOLVER}: is {SOLVER} installed?"
@@ -138,7 +136,7 @@ def main(size: str) -> None:
             flush=True,
         )
     print_linked_blas()
-    if SOLVER in {"umfpack-T", "klu"} and not CALLS[0]:
+    if SOLVER in FACTORIZERS and not CALLS[0]:
         msg = f"bw2calc never called the patched {SOLVER}: its solver names have moved"
         raise SystemExit(msg)
     if worst > bwbench.DIRECT_RTOL:

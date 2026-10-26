@@ -91,7 +91,7 @@ environments that run only when you name them, as in `BWBENCH_SOLVERS=klu,umfpac
 cannot pick either, so the suite patches them in where bw2calc binds its solvers
 ([`src/bwbench/solvers.py`](src/bwbench/solvers.py)), and a case fails if bw2calc never
 reached the patch. `FastScoresOnlyMultiLCA` needs PyPardiso or UMFPACK, so it is skipped
-under `klu`. A full-size bw2calc run takes
+under `klu`; its adjoint direction hands bw2calc's solver Aᵀ, so `umfpack-T` skips that too. A full-size bw2calc run takes
 about 24 minutes with the SuperLU environment and 6 with `BWBENCH_SOLVERS=pypardiso`.
 asv times each case in 2 rounds by default; `BWBENCH_ROUNDS=1` halves a full-size run.
 Each result is checked once per parameter set, not after every sample.

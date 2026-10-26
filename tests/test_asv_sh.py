@@ -33,7 +33,8 @@ def repo(tmp_path: Path) -> Path:
     for s in ("solvers", "plain"):
         (tmp_path / "asv" / f"{s}.stack.txt").write_text("numpy==2.5.3\n")
     (tmp_path / "stub").mkdir()
-    (tmp_path / "stub" / "uvx").write_text('#!/bin/sh\necho "$@" >>"$0.log"\nexit 0\n')
+    # Also logs BWBENCH_SOLVER, which asv would hand on to every environment's benchmarks.
+    (tmp_path / "stub" / "uvx").write_text('#!/bin/sh\necho "$@" "solver=${BWBENCH_SOLVER-unset}" >>"$0.log"\nexit 0\n')
     (tmp_path / "stub" / "uvx").chmod(0o755)
     # uname -n is the container hostname; -m stays real.
     (tmp_path / "stub" / "uname").write_text(
@@ -156,3 +157,10 @@ def test_a_conda_environment_records_its_conda_packages(repo: Path):
 def test_asv_can_build_rattler_environments(repo: Path):
     config(repo, "plain")
     assert "--with py-rattler==" in (repo / "stub" / "uvx.log").read_text()
+
+
+def test_a_stray_solver_does_not_reach_asv(repo: Path):
+    # Only the klu and umfpack-T entries may set it (in their own env), not the caller's shell.
+    out, _ = config(repo, "solvers", BWBENCH_SOLVERS="umfpack", BWBENCH_SOLVER="umfpack-T")
+    assert out.returncode == 0, out.stderr
+    assert "solver=unset" in (repo / "stub" / "uvx.log").read_text()

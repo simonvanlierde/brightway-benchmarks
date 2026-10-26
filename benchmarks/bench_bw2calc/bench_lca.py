@@ -187,6 +187,9 @@ def scores(size: str, demands: int, variant: str) -> BenchSetup:
             kwargs["direction"] = variant
         elif variant == "adjoint":
             raise NotImplementedError(f"bw2calc {bc.__version__} has no adjoint direction")
+        if variant == "adjoint" and solver() == "umfpack-T":
+            # The adjoint hands factorized() Aᵀ, so UMFPACK on its transpose would factorize A.
+            raise NotImplementedError("umfpack-T would factorize A, not Aᵀ, in the adjoint direction")
 
     def run() -> object:
         lca = lca_cls(demands=wanted, method_config=config, data_objs=[inventory, *methods], **kwargs)

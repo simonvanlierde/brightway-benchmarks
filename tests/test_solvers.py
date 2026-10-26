@@ -64,7 +64,7 @@ def test_patched_names_solve_and_count(fake_bw2calc: dict[str, types.ModuleType]
     solvers.patch(diagonal)
     np.testing.assert_allclose(fake_bw2calc["bw2calc"].spsolve(A, np.array([2.0, 4.0])), [1.0, 1.0])
     solve = fake_bw2calc["bw2calc.lca_base"].lu_solver(A, copy=False)
-    np.testing.assert_allclose(solve(np.array([[2.0, 4.0], [8.0, 8.0]])), [[1.0, 2.0], [2.0, 2.0]])
+    np.testing.assert_allclose(solve(np.array([[2.0, 4.0, 6.0], [8.0, 8.0, 4.0]])), [[1.0, 2.0, 3.0], [2.0, 2.0, 1.0]])
     assert solvers.CALLS == [2]
 
 

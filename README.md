@@ -149,8 +149,22 @@ Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
 - **The UMFPACK line uses reference BLAS.** scikit-umfpack has no wheels, so it builds
   against the SuiteSparse in the benchmark image, which links Debian's reference BLAS.
   With OpenBLAS in its place, one score takes 2.6 s instead of 9.0 s. scikit-umfpack from
-  conda-forge comes with an optimized BLAS, so for those users this line probably
-  overstates the time by about 3.5x.
+  conda-forge links OpenBLAS, and `bw2calc-conda` measures the same 2.63 s (below).
+- **On conda-forge's builds only UMFPACK changes.** `bw2calc-conda` against the PyPI stack,
+  run the same night on the same commits, two rounds each, `LCA` on the ecoinvent-sized database:
+
+  | Case | Solver | PyPI 3.1.0 | conda-forge 3.1.0 | PyPI 2.4.0 | conda-forge 2.4.0 |
+  | --- | --- | --- | --- | --- | --- |
+  | One score | SuperLU | 27.8 s | 27.7 s | 27.7 s | 27.7 s |
+  | One score | PyPardiso | 10.1 s | 10.0 s | 10.0 s | 10.0 s |
+  | One score | UMFPACK | 9.06 s | 2.63 s | 9.06 s | 2.63 s |
+  | Second functional unit | UMFPACK | 33.5 ms | 42.7 ms | 51.4 ms | 63.3 ms |
+  | `import bw2calc` | PyPardiso | 825 ms | 753 ms | 824 ms | 753 ms |
+
+  UMFPACK's first score is 3.4x faster on OpenBLAS, but a solve on the stored factorization
+  (`time_redo_lci`) is 23 to 27% slower. PyPardiso, on conda-forge's MKL 2026.1.0, and
+  SuperLU stay within 1%, and so does peak memory. Importing bw2calc with PyPardiso is
+  70 ms faster, and about 15 ms slower without it. Scores are identical.
 
 ### The other packages
 

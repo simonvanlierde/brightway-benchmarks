@@ -155,11 +155,11 @@ Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
 
   | Case | Solver | PyPI 3.1.0 | conda-forge 3.1.0 | PyPI 2.4.0 | conda-forge 2.4.0 |
   | --- | --- | --- | --- | --- | --- |
-  | One score | SuperLU | 27.8 s | 27.7 s | 27.7 s | 27.7 s |
+  | One score | SuperLU | 27.8 s | 27.7 s | 27.7 s | 27.6 s |
   | One score | PyPardiso | 10.1 s | 10.0 s | 10.0 s | 10.0 s |
   | One score | UMFPACK | 9.06 s | 2.63 s | 9.06 s | 2.63 s |
-  | Second functional unit | UMFPACK | 33.5 ms | 42.7 ms | 51.4 ms | 63.3 ms |
-  | `import bw2calc` | PyPardiso | 825 ms | 753 ms | 824 ms | 753 ms |
+  | Second functional unit | UMFPACK | 33.6 ms | 42.7 ms | 51.4 ms | 63.2 ms |
+  | `import bw2calc` | PyPardiso | 825 ms | 755 ms | 824 ms | 753 ms |
 
   UMFPACK's first score is 3.4x faster on OpenBLAS, but a solve on the stored factorization
   (`time_redo_lci`) is 23 to 27% slower. PyPardiso, on conda-forge's MKL 2026.1.0, and

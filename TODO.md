@@ -30,6 +30,9 @@
 - [ ] The site job builds the box image and clones six upstream repos on every run, though
       `asv publish` only reads results. Run asv there directly, or cache `.asv/`, once the
       first runs show how long it takes. CodSpeed, if added, runs on `pull_request` only.
+- [ ] Run the `klu` and `umfpack-T` columns at full size (`BWBENCH_SOLVERS=klu,umfpack-T
+      BWBENCH_SIZES=ecoinvent just bench bw2calc`); so far they ran at smoke size on 2.0, 2.5.0
+      and 3.1.0.
 
 ## Verify in the box
 

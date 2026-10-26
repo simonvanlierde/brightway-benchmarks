@@ -35,6 +35,32 @@
         "pip+asv_runner": "0.2.5",
         "scikit-umfpack": ""
       }
+    },
+    {
+      "python": "3.12",
+      "environment_type": "uv",
+      "req": {
+        "numpy": "2.5.3",
+        "scipy": "1.18.1",
+        "pip+asv_runner": "0.2.5",
+        "pyklu": "0.2.0"
+      },
+      "env": {
+        "BWBENCH_SOLVER": "klu"
+      }
+    },
+    {
+      "python": "3.12",
+      "environment_type": "uv",
+      "req": {
+        "numpy": "2.5.3",
+        "scipy": "1.18.1",
+        "pip+asv_runner": "0.2.5",
+        "scikit-umfpack": ""
+      },
+      "env": {
+        "BWBENCH_SOLVER": "umfpack-T"
+      }
     }
   ],
   "matrix": {

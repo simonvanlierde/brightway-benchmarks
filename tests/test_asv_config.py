@@ -36,3 +36,21 @@ def test_the_site_deploys_from_main_only():
     workflow = (ASV.parent / ".github" / "workflows" / "site.yml").read_text()
     deploy = workflow[workflow.index("\n  deploy:") :]
     assert "if: github.ref == 'refs/heads/main'" in deploy
+
+
+@pytest.mark.parametrize(
+    "subject", [s for s in SUBJECTS if json.loads((ASV / f"{s}.json").read_text())["environment_type"] == "rattler"]
+)
+def test_conda_pins_match_the_stack_pip_installs(subject: str):
+    # pip --no-deps skips a package conda already installed at the same version, but replaces it
+    # with the PyPI wheel at any other, and the subject would then time PyPI's build after all.
+    conf = json.loads((ASV / f"{subject}.json").read_text())
+    stack = f"/src/asv/{subject}.stack.txt"
+    assert any(stack in cmd for cmd in conf["install_command"])
+    pins = dict(
+        line.split(" ;")[0].split("==") for line in (ASV / f"{subject}.stack.txt").read_text().splitlines() if line
+    )
+    for env in conf["include"]:
+        for name, version in env["req"].items():
+            if name in pins:
+                assert pins[name] == version, name

@@ -448,18 +448,23 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
     return ids[rows], ids[cols], scale[rows] * amounts / scale[cols], scale[order], region, sector
 
 
+DENSE_RADIUS_MAX_PRODUCTS = 1000  # largest system solved densely when ARPACK fails (0.36 s at 1000)
+
+
 def spectral_radius(m: sparse.csc_matrix | sparse.csr_matrix) -> float | None:
-    """Largest ``|eigenvalue|`` of ``m``; None if ARPACK did not converge."""
+    """Largest ``|eigenvalue|`` of ``m``; None if ARPACK did not converge and ``m`` is too big for a dense solve."""
     n = m.shape[0]
     if m.nnz == 0:
         return 0.0
-    if n < 3:  # eigs needs k < n - 1
-        return float(np.abs(np.linalg.eigvals(m.toarray())).max())
-    try:
-        eig = sla.eigs(m, k=1, which="LM", return_eigenvectors=False, tol=1e-8, maxiter=n * 10, v0=np.ones(n))
-    except sla.ArpackNoConvergence:
-        return None
-    return float(np.abs(eig).max())
+    if n >= 3:  # eigs needs k < n - 1
+        try:
+            eig = sla.eigs(m, k=1, which="LM", return_eigenvectors=False, tol=1e-8, maxiter=n * 10, v0=np.ones(n))
+            return float(np.abs(eig).max())
+        except sla.ArpackNoConvergence:
+            # A system with no loops is nilpotent: every eigenvalue is 0 and ARPACK cannot find one.
+            if n > DENSE_RADIUS_MAX_PRODUCTS:
+                return None
+    return float(np.abs(np.linalg.eigvals(m.toarray())).max())
 
 
 def neumann(
@@ -698,7 +703,7 @@ class Stats:
     negative_input_share: float  # inputs with X < 0: wastes sent to treatment, and a treatment's own inputs
     column_abs_sum: dict[str, float]  # sum over i of |X[i, j]|, quantiles only
     loops: dict[str, float]  # strongly connected components of more than one product
-    spectral_radius: float | None  # largest |eigenvalue| of X; None if ARPACK did not converge
+    spectral_radius: float | None  # largest |eigenvalue| of X; None if ARPACK failed on a large X
     spectral_radius_abs: float | None  # largest eigenvalue of |X|, an upper bound on the above
     lu_fill: dict[str, float]  # nnz(L + U) / nnz(A) per SuperLU column ordering, of A and of A^T
     factor_seconds: dict[str, float]  # median of the SuperLU factorizations, per ordering, of A and of A^T

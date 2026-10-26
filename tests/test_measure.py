@@ -212,5 +212,8 @@ def test_spectral_radius_branches(monkeypatch: pytest.MonkeyPatch):
         raise sla.ArpackNoConvergence(msg, np.array([]), np.array([]))
 
     monkeypatch.setattr(sla, "eigs", no_convergence)
-    assert synth.spectral_radius(sparse.csc_matrix(np.diag([1.0, 2.0, 3.0]))) is None
+    three = sparse.csc_matrix(np.diag([1.0, 2.0, 3.0]))
+    assert synth.spectral_radius(three) == pytest.approx(3.0)  # small enough for the dense fallback
+    monkeypatch.setattr(synth, "DENSE_RADIUS_MAX_PRODUCTS", 2)
+    assert synth.spectral_radius(three) is None
     assert synth.spectral_radius(small) == pytest.approx(np.sqrt(4.25))  # the dense branch never calls eigs

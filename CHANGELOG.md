@@ -9,6 +9,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `just compat PYTHON` installs today's PyPI releases of brightway25, bw_graph_tools and
+  bw_timex, with no cutoff and no fixed stack, and runs every case once at the smoke size.
+  The `compat` workflow runs it nightly on Python 3.12 to 3.14 and keeps the resolved
+  `pylock.toml` of each Python.
 - A 60-second Atheris fuzz run of the `release_report.py` result parser on each pull request
   (`.github/workflows/fuzz.yml`).
 - Two experimental bw2calc solver environments, run only when named in `BWBENCH_SOLVERS`:

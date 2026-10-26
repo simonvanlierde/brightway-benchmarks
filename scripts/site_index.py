@@ -87,7 +87,9 @@ What the histories show so far is in the <a href="{REPO}#results-so-far">README<
 <ul>
 <li>Each point is one release. Lower is faster.</li>
 <li>Each line is one environment. For bw2calc the environment name says the solver:
-<code>pypardiso</code>, <code>scikit-umfpack</code>, or neither for SciPy's SuperLU.</li>
+<code>pypardiso</code>, <code>scikit-umfpack</code>, or neither for SciPy's SuperLU. A name with
+<code>BWBENCH_SOLVER</code> is an experimental solver patched into bw2calc: <code>klu</code>
+(KLU, through pyklu) or <code>umfpack-T</code> (UMFPACK factorizing Aᵀ).</li>
 <li>Only the package changes along a line. Its dependencies stay fixed, so a step is the
 package's own change.</li>
 <li>Every timing ran one thread, pinned to one set of CPU cores. Compare points within a

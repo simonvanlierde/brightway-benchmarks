@@ -85,7 +85,13 @@ example, `BWBENCH_SIZES=ecoinvent just bench bw2calc` times the ecoinvent-sized 
 (bw_timex).
 `BWBENCH_SOLVERS` picks the solver environments of bw2calc and bw_graph_tools: `superlu`,
 `pypardiso` and `umfpack`, all three by default. PyPardiso needs Intel's MKL, so off x86_64
-(an Apple Silicon Mac, say) the default is `superlu,umfpack`. A full-size bw2calc run takes
+(an Apple Silicon Mac, say) the default is `superlu,umfpack`. bw2calc has two experimental
+environments that run only when you name them, as in `BWBENCH_SOLVERS=klu,umfpack-T`: `klu`
+(KLU, through pyklu, x86_64 only) and `umfpack-T` (scikit-umfpack factorizing Aᵀ). bw2calc
+cannot pick either, so the suite patches them in where bw2calc binds its solvers
+([`src/bwbench/solvers.py`](src/bwbench/solvers.py)), and a case fails if bw2calc never
+reached the patch. `FastScoresOnlyMultiLCA` needs PyPardiso or UMFPACK, so it is skipped
+under `klu`. A full-size bw2calc run takes
 about 24 minutes with the SuperLU environment and 6 with `BWBENCH_SOLVERS=pypardiso`.
 asv times each case in 2 rounds by default; `BWBENCH_ROUNDS=1` halves a full-size run.
 Each result is checked once per parameter set, not after every sample.

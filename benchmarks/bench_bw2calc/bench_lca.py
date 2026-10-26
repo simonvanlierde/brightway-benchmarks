@@ -1,7 +1,8 @@
 """bw2calc: single scores, multiple scores and Monte Carlo on synthetic systems.
 
 The solver is whatever the asv environment installs (PyPardiso, UMFPACK or SuperLU),
-because bw2calc picks it at import. Every case checks its scores against the float64
+because bw2calc picks it at import, or the one ``BWBENCH_SOLVER`` patches in (KLU, or UMFPACK
+on Aᵀ; see ``bwbench.solvers``). Every case checks its scores against the float64
 reference in ``reference.json``, outside the timed call, and the ``track_relative_error``
 results record the relative error, so a wrong answer shows up in the history next to a
 fast one. Each setup also solves once before the timed call, so one-time costs (imports,
@@ -9,6 +10,7 @@ first loads) stay out of the first sample.
 """
 
 import inspect
+import os
 import warnings
 
 import bw2calc as bc
@@ -19,6 +21,7 @@ from scipy.sparse.linalg import cgs
 from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, first_time, knob
 from bwbench.asv import classes
 from bwbench.bench import BenchSetup, bench
+from bwbench.solvers import assert_reached
 from bwbench.synth import method_name, neumann_score, packages, skip_unless_factorizable
 
 CLASSES = ["LCA", "IterativeLCA", "JacobiGMRESLCA"]
@@ -27,10 +30,22 @@ MC_SIZES = knob("mc_sizes", "smoke")
 
 
 def solver() -> str:
-    """The direct solver bw2calc chose at import."""
+    """The direct solver patched into bw2calc, or the one it chose at import."""
+    if os.environ.get("BWBENCH_SOLVER"):
+        return os.environ["BWBENCH_SOLVER"]
     if bc.PYPARDISO:
         return "pypardiso"
     return "umfpack" if getattr(bc, "UMFPACK", False) else "superlu"
+
+
+def reached_patch(cls: str) -> None:
+    """Fail a case that solved without the patched solver, in its environment.
+
+    ``JacobiGMRESLCA`` solves by GMRES and may never factorize, so it is left out. The count is
+    per process, and asv runs each parameter set in a process of its own.
+    """
+    if cls != "JacobiGMRESLCA":
+        assert_reached()
 
 
 def rtol_for(cls: str) -> float:
@@ -113,6 +128,7 @@ def first_score(size: str, cls: str) -> BenchSetup:
         return float(lca.score)
 
     def against_reference(score: float) -> float:
+        reached_patch(cls)
         return check(score, refs[0][0], rtol, f"score ({solver()})")
 
     if first_time("first_score", size, cls):  # also the warm-up before the first timed call
@@ -140,6 +156,7 @@ def redo_lci(size: str, cls: str) -> BenchSetup:
         lca.redo_lci({1: 1})
 
     def against_reference(_: None) -> float:
+        reached_patch(cls)
         score = float((lca.characterization_matrix @ lca.inventory).sum())
         return check(score, refs[1][0], rtol, f"second-demand score ({solver()})")
 
@@ -181,6 +198,7 @@ def scores(size: str, demands: int, variant: str) -> BenchSetup:
         return lca.scores
 
     def against_reference(result: object) -> float:
+        reached_patch("MultiLCA")
         table = [[score_of(result, method_name(m), f"d{d}") for m in range(len(methods))] for d in range(demands)]
         return check_table(table, refs[:demands], DIRECT_RTOL, f"score ({solver()})")
 
@@ -213,6 +231,7 @@ def iterations(size: str, iterations: int, cls: str) -> BenchSetup:
     lca.lcia()
     next(lca)
     if first_time("iterations", size, iterations, cls):  # the same draw (seed_override) every sample
+        reached_patch(cls)
         # Product ids are 0 to n - 1, so bw2calc's matrix order is the id order of `scale`.
         check(float(lca.score), neumann_score(lca, scale), rtol_for(cls), f"Monte Carlo score ({solver()})")
         if abs(lca.score - refs[0][0]) <= ITERATIVE_RTOL * abs(refs[0][0]):

@@ -58,55 +58,11 @@ from collections.abc import Callable  # noqa: E402
 from importlib.metadata import version  # noqa: E402
 from pathlib import Path  # noqa: E402
 
-import numpy as np  # noqa: E402
-from scipy import sparse  # noqa: E402
 
+from bwbench.solvers import CALLS, klu, patch, umfpack_transposed  # noqa: E402
 from bwbench.synth import packages  # noqa: E402
 
 warnings.simplefilter("ignore")  # bw2calc warns that a faster solver is missing; that is the point here
-
-
-def umfpack_transposed(a: sparse.spmatrix) -> Callable[[np.ndarray], np.ndarray]:
-    """Factorize A's CSR arrays, which are Aᵀ in CSC: less fill than A on LCA matrices."""
-    import scikits.umfpack as um  # noqa: PLC0415
-
-    m = sparse.csr_matrix(a)
-    m.indices, m.indptr = m.indices.astype(np.int32), m.indptr.astype(np.int32)
-    ctx = um.UmfpackContext("di")
-    ctx.numeric(m)
-    return lambda b: ctx.solve(um.UMFPACK_A, m, np.asarray(b, dtype=np.float64), autoTranspose=True)
-
-
-def klu(a: sparse.spmatrix) -> Callable[[np.ndarray], np.ndarray]:
-    """Factorize A with KLU, which splits it into blocks first (block triangular form)."""
-    from PyKLU import Klu  # noqa: PLC0415
-
-    m = sparse.csc_matrix(a)
-    m.sort_indices()
-    k = Klu(m)
-    return lambda b: k.solve(np.asarray(b, dtype=np.float64))
-
-
-CALLS = [0]  # factorizations through the patch; 0 after a run means bw2calc bypassed it
-
-
-def patch(bw2calc: object, factorize: Callable) -> None:
-    """Route bw2calc's module-level ``spsolve`` and ``factorized`` through ``factorize``."""
-    from bw2calc import lca_base  # noqa: PLC0415
-
-    def factorized(a: sparse.spmatrix) -> Callable[[np.ndarray], np.ndarray]:
-        CALLS[0] += 1
-        return factorize(a)
-
-    def spsolve(a: sparse.spmatrix, b: np.ndarray, *_: object, **__: object) -> np.ndarray:
-        return factorized(a)(b)
-
-    # lca_base binds both names at import; LCA.lci and decompose_technosphere use its copies.
-    for module in (bw2calc, lca_base):
-        module.spsolve, module.factorized = spsolve, factorized
-    # From 3.1.0, decompose_technosphere calls lu_solver (bound in lca_base) instead of factorized.
-    if hasattr(lca_base, "lu_solver"):
-        lca_base.lu_solver = lambda a, copy=True: factorized(a)  # noqa: ARG005 - our solvers copy anyway
 
 
 def timed(run: Callable[[], float]) -> tuple[list[float], float]:
@@ -149,9 +105,9 @@ def main(size: str) -> None:
     import bw2calc  # noqa: PLC0415
 
     if SOLVER == "umfpack-T":
-        patch(bw2calc, umfpack_transposed)
+        patch(umfpack_transposed)
     elif SOLVER == "klu":
-        patch(bw2calc, klu)
+        patch(klu)
     picked = "pypardiso" if bw2calc.PYPARDISO else "umfpack" if bw2calc.UMFPACK else "superlu"
     if SOLVER in {"superlu", "umfpack", "pypardiso"} and picked != SOLVER:
         msg = f"bw2calc picked {picked}, not {SOLVER}: is {SOLVER} installed?"

@@ -15,6 +15,8 @@ CONF = {
     "include": [
         {"python": "3.12", "req": {"numpy": "2.5.3", "pypardiso": ""}},
         {"python": "3.12", "req": {"numpy": "2.5.3", "scikit-umfpack": ""}},
+        {"python": "3.12", "req": {"numpy": "2.5.3", "pyklu": "0.2.0"}, "env": {"BWBENCH_SOLVER": "klu"}},
+        {"python": "3.12", "req": {"numpy": "2.5.3", "scikit-umfpack": ""}, "env": {"BWBENCH_SOLVER": "umfpack-T"}},
     ],
 }
 
@@ -61,6 +63,32 @@ def test_solvers_filter_the_environments(repo: Path):
     assert "exclude" not in conf
     out, conf = config(repo, "solvers", BWBENCH_SOLVERS="umfpack")
     assert conf["exclude"] == [{"python": ".*"}]  # no superlu: the base environment goes
+
+
+def test_patched_solvers_run_only_when_named(repo: Path):
+    out, conf = config(repo, "solvers")  # the default set
+    assert out.returncode == 0, out.stderr
+    assert all("BWBENCH_SOLVER" not in e["env"] for e in conf["include"])
+    out, conf = config(repo, "solvers", BWBENCH_SOLVERS="umfpack-T")
+    assert out.returncode == 0, out.stderr
+    # Its scikit-umfpack does not make it the umfpack environment, nor the reverse.
+    assert [e["env"]["BWBENCH_SOLVER"] for e in conf["include"]] == ["umfpack-T"]
+    if platform.machine() == "x86_64":
+        _, conf = config(repo, "solvers", BWBENCH_SOLVERS="klu,umfpack")
+        assert [list(e["req"])[-1] for e in conf["include"]] == ["scikit-umfpack", "pyklu"]
+    else:
+        out, _ = config(repo, "solvers", BWBENCH_SOLVERS="klu")
+        assert "klu has wheels for x86_64 only" in out.stderr
+
+
+def test_an_entry_keeps_its_env_and_gets_the_stack(repo: Path):
+    """The env names asv's environment, so the entries without one must come out as before."""
+    _, conf = config(repo, "solvers", BWBENCH_SOLVERS="superlu,umfpack,umfpack-T")
+    stack = conf["matrix"]["env"]["BWBENCH_STACK"][0]
+    assert [e["env"] for e in conf["include"]] == [
+        {"BWBENCH_STACK": stack},
+        {"BWBENCH_SOLVER": "umfpack-T", "BWBENCH_STACK": stack},
+    ]
 
 
 def test_a_misspelt_solver_is_refused(repo: Path):

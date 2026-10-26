@@ -9,6 +9,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A 60-second Atheris fuzz run of the `release_report.py` result parser on each pull request
+  (`.github/workflows/fuzz.yml`).
 - Two experimental bw2calc solver environments, run only when named in `BWBENCH_SOLVERS`:
   `klu` (KLU through pyklu, x86_64 only) and `umfpack-T` (scikit-umfpack factorizing Aᵀ).
   Both are patched into bw2calc, and a case fails if bw2calc never called the patched solver.

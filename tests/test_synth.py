@@ -263,6 +263,13 @@ def test_property_columns_sum_at_most_the_maximum_without_units(s: synth.System)
     assert abs(x0).sum(axis=0).max() <= MAX_COLUMN_SUM + 1e-12
 
 
+def test_loopless_system_gets_its_radius_from_a_dense_solve():
+    # No loops, so the matrix is nilpotent and ARPACK does not converge on it.
+    s = system("smoke", seed=129, products=385, radius=0.5, back=0.0, units=0.0)
+    x = sparse.identity(385) - s.technosphere()
+    assert abs(sparse.diags(1 / s.scale) @ x @ sparse.diags(s.scale)).sum(axis=0).max() <= MAX_COLUMN_SUM + 1e-12
+
+
 @PROPERTY
 @given(tiered())
 def test_property_reference_scores_equal_a_dense_solve(s: synth.System):

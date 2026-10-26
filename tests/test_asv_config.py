@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from bwbench.solvers import FACTORIZERS
+
 ASV = Path(__file__).resolve().parents[1] / "asv"
 SUBJECTS = sorted(p.stem for p in ASV.glob("*.json"))
 
@@ -54,3 +56,12 @@ def test_conda_pins_match_the_stack_pip_installs(subject: str):
         for name, version in env["req"].items():
             if name in pins:
                 assert pins[name] == version, name
+
+
+def test_patched_solver_environments_name_a_known_solver_and_install_it():
+    installs = {"klu": "pyklu", "umfpack-T": "scikit-umfpack"}
+    include = json.loads((ASV / "bw2calc.json").read_text())["include"]
+    patched = [e for e in include if "BWBENCH_SOLVER" in e.get("env", {})]
+    assert {e["env"]["BWBENCH_SOLVER"] for e in patched} == set(FACTORIZERS)
+    for e in patched:
+        assert installs[e["env"]["BWBENCH_SOLVER"]] in e["req"]

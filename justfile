@@ -58,8 +58,9 @@ noise subject runs="10":
     rm -rf ".asv/noise/{{ subject }}"
     for i in $(seq {{ runs }}); do
       echo "noise: run $i of {{ runs }}" >&2
-      # A failed case fails the run, but the other cases' samples still count.
-      BWBENCH_MACHINE=noise BWBENCH_ROUNDLOG="/src/.asv/noise/{{ subject }}/rounds.jsonl" scripts/box.sh scripts/asv.sh {{ subject }} run --quick --append-samples "$last^!" ||
+      # A failed case fails the run, but the other cases' samples still count. asv's output goes
+      # to stderr, so stdout carries only the summary below.
+      BWBENCH_MACHINE=noise BWBENCH_ROUNDLOG="/src/.asv/noise/{{ subject }}/rounds.jsonl" scripts/box.sh scripts/asv.sh {{ subject }} run --quick --append-samples "$last^!" >&2 ||
         echo "noise: run $i exited $?" >&2
     done
     uv run --no-project --with numpy==2.5.3 python scripts/noise_summary.py ".asv/noise/{{ subject }}"

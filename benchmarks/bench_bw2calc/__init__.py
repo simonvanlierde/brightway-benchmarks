@@ -5,3 +5,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 import bwbench  # noqa: F401
+from bwbench.solvers import patch_from_env
+
+# The klu and umfpack-T environments set BWBENCH_SOLVER; bw2calc must be patched before any
+# case builds an LCA.
+patch_from_env()

@@ -85,7 +85,13 @@ example, `BWBENCH_SIZES=ecoinvent just bench bw2calc` times the ecoinvent-sized 
 (bw_timex).
 `BWBENCH_SOLVERS` picks the solver environments of bw2calc and bw_graph_tools: `superlu`,
 `pypardiso` and `umfpack`, all three by default. PyPardiso needs Intel's MKL, so off x86_64
-(an Apple Silicon Mac, say) the default is `superlu,umfpack`. A full-size bw2calc run takes
+(an Apple Silicon Mac, say) the default is `superlu,umfpack`. bw2calc has two experimental
+environments that run only when you name them, as in `BWBENCH_SOLVERS=klu,umfpack-T`: `klu`
+(KLU, through pyklu, x86_64 only) and `umfpack-T` (scikit-umfpack factorizing Aᵀ). bw2calc
+cannot pick either, so the suite patches them in where bw2calc binds its solvers
+([`src/bwbench/solvers.py`](src/bwbench/solvers.py)), and a case fails if bw2calc never
+reached the patch. `FastScoresOnlyMultiLCA` needs PyPardiso or UMFPACK, so it is skipped
+under `klu`; its adjoint direction hands bw2calc's solver Aᵀ, so `umfpack-T` skips that too. A full-size bw2calc run takes
 about 24 minutes with the SuperLU environment and 6 with `BWBENCH_SOLVERS=pypardiso`.
 asv times each case in 2 rounds by default; `BWBENCH_ROUNDS=1` halves a full-size run.
 Each result is checked once per parameter set, not after every sample.
@@ -251,6 +257,10 @@ sizes, the others at the ecoinvent size.
   performance`): under a power-saving one, an idle core starts slow and they vary up to
   five-fold. `just noise` also writes each sample's CPU time, wall time and involuntary
   context switches to `rounds.jsonl`; `scripts/noise_summary.py` says how to read them.
+  On a GitHub-hosted `ubuntu-latest` runner (the `noise-hosted` workflow, bw2calc, 10 runs,
+  smoke size) the same cases vary by 1 to 14%, median 4.0% (2 to 6% for cases of 50 ms or
+  more). A hosted runner would catch a several-fold step such as bw2calc 3.0.0 factorizing A,
+  but a change below about 15% can hide in its spread.
 - CodSpeed's runner turns address randomization (ASLR) off with `setarch -R`. Docker's
   default seccomp profile refuses that, so the CodSpeed box runs under
   [`docker/seccomp-noaslr.json`](docker/seccomp-noaslr.json): Docker's default profile with one

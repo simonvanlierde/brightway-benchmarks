@@ -251,6 +251,10 @@ sizes, the others at the ecoinvent size.
   performance`): under a power-saving one, an idle core starts slow and they vary up to
   five-fold. `just noise` also writes each sample's CPU time, wall time and involuntary
   context switches to `rounds.jsonl`; `scripts/noise_summary.py` says how to read them.
+  On a GitHub-hosted `ubuntu-latest` runner (the `noise-hosted` workflow, bw2calc, 10 runs,
+  smoke size) the same cases vary by 1 to 14%, median 4.0% (2 to 6% for cases of 50 ms or
+  more). A hosted runner would catch a several-fold step such as bw2calc 3.0.0 factorizing A,
+  but a change below about 15% can hide in its spread.
 - CodSpeed's runner turns address randomization (ASLR) off with `setarch -R`. Docker's
   default seccomp profile refuses that, so the CodSpeed box runs under
   [`docker/seccomp-noaslr.json`](docker/seccomp-noaslr.json): Docker's default profile with one

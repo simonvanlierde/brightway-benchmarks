@@ -96,3 +96,35 @@ def test_the_default_machine_leaves_out_the_host_name(repo: Path, hostname: str,
 def test_an_explicit_machine_wins(repo: Path):
     config(repo, "plain", FAKE_HOSTNAME="host-x-e0")
     assert "--machine m " in (repo / "stub" / "uvx.log").read_text()
+
+
+def test_a_conda_environment_records_its_conda_packages(repo: Path):
+    """A rattler environment lists conda-meta (build strings show the BLAS) and gets no PyPI lock."""
+    env = repo / ".asv" / "env" / "plain" / "abc"
+    (env / "bin").mkdir(parents=True)
+    (env / "conda-meta").mkdir()
+    (env / "conda-meta" / "libblas-3.11.0-1_h1ea3ea9_openblas.json").write_text("{}")
+    (env / "asv-env-info.json").write_text('{"tool_name": "rattler"}')
+    (env / "bin" / "python").write_text("#!/bin/sh\necho numpy==2.5.3\n")
+    (env / "bin" / "python").chmod(0o755)
+    (repo / "stub" / "uv").write_text('#!/bin/sh\necho "$@" >>"$0.log"\nexit 0\n')
+    (repo / "stub" / "uv").chmod(0o755)
+    out = subprocess.run(
+        ["/bin/sh", "scripts/asv.sh", "plain", "run"],
+        cwd=repo,
+        env={"PATH": f"{repo / 'stub'}:/usr/bin:/bin", "HOME": str(repo), "BWBENCH_MACHINE": "m"},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert out.returncode == 0, out.stderr
+    versions = (repo / "results" / "m" / "versions-abc.txt").read_text()
+    assert "libblas-3.11.0-1_h1ea3ea9_openblas" in versions
+    assert "numpy==2.5.3" in versions
+    assert not (repo / "results" / "m" / "pylock.abc.toml").exists()
+    assert "pip compile" not in (repo / "stub" / "uv.log").read_text()
+
+
+def test_asv_can_build_rattler_environments(repo: Path):
+    config(repo, "plain")
+    assert "--with py-rattler==" in (repo / "stub" / "uvx.log").read_text()

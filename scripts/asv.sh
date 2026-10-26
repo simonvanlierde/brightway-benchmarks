@@ -14,8 +14,9 @@ host=$(uname -n) quiet=
 case $host in *-quiet) host=${host%-quiet} quiet=-quiet ;; esac
 case $host in *-[pe][0-9]) slot=-${host##*-}$quiet ;; *) slot= ;; esac
 machine=${BWBENCH_MACHINE:-box$slot}
-# The same asv_runner as the configs install into each environment.
-asv() { uvx --quiet --from asv==0.6.6 --with asv-runner==0.2.5 asv "$@"; }
+# The same asv_runner as the configs install into each environment. py-rattler builds the
+# conda-forge environments (environment_type "rattler", asv/bw2calc-conda.json).
+asv() { uvx --quiet --from asv==0.6.6 --with asv-runner==0.2.5 --with py-rattler==0.27.0 asv "$@"; }
 
 # One run per subject at a time: two would rebuild the same environments under each other.
 exec 9>".asv/$subject.lock"
@@ -77,6 +78,12 @@ if [ "$cmd" = run ]; then
         [ -e "$info" ] || continue
         env=$(dirname "$info")
         { cat "$info" && echo && "$env/bin/python" -m pip freeze; } >"$out/versions-${env##*/}.txt"
+        # A conda environment: its packages as name-version-build (the build names the BLAS),
+        # and no PEP 751 lock, which describes PyPI files only.
+        if [ -d "$env/conda-meta" ]; then
+            for pkg in "$env"/conda-meta/*.json; do basename "$pkg" .json; done >>"$out/versions-${env##*/}.txt"
+            continue
+        fi
         # The same as a PEP 751 lock file, with each package's index URL and hashes. The subject
         # is left out: asv built it from the commit its result names, which need not be a release.
         # asv names environment folders by a hex hash, which PEP 751's "pylock.<name>.toml" allows.

@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "project": "bw2calc-conda",
+  "project_url": "https://github.com/brightway-lca/brightway2-calc",
+  "repo": "https://github.com/brightway-lca/brightway2-calc.git",
+  "branches": [
+    "main"
+  ],
+  "environment_type": "rattler",
+  "conda_channels": [
+    "conda-forge"
+  ],
+  "pythons": [
+    "3.12"
+  ],
+  "benchmark_dir": "../benchmarks/bench_bw2calc",
+  "env_dir": "../.asv/env/bw2calc-conda",
+  "results_dir": "../results/bw2calc-conda",
+  "html_dir": "../site/bw2calc-conda",
+  "build_cache_size": 4,
+  "include": [
+    {
+      "python": "3.12",
+      "environment_type": "rattler",
+      "req": {
+        "numpy": "2.5.3",
+        "scipy": "1.18.1",
+        "pip+asv_runner": "0.2.5",
+        "pypardiso": "0.4.7",
+        "mkl": "2026.1.0"
+      }
+    },
+    {
+      "python": "3.12",
+      "environment_type": "rattler",
+      "req": {
+        "numpy": "2.5.3",
+        "scipy": "1.18.1",
+        "pip+asv_runner": "0.2.5",
+        "scikit-umfpack": "0.4.2"
+      }
+    }
+  ],
+  "matrix": {
+    "req": {
+      "numpy": [
+        "2.5.3"
+      ],
+      "scipy": [
+        "1.18.1"
+      ],
+      "pip+asv_runner": [
+        "0.2.5"
+      ]
+    }
+  },
+  "build_command": [
+    "python -m pip wheel --no-deps -w {build_cache_dir} {build_dir}"
+  ],
+  "install_command": [
+    "in-dir={env_dir} python -m pip install --no-deps -r /src/asv/bw2calc.stack.txt",
+    "in-dir={env_dir} python -m pip install --no-deps threadpoolctl==3.7.0",
+    "in-dir={env_dir} python -m pip install --force-reinstall --no-deps {wheel_file}"
+  ]
+}

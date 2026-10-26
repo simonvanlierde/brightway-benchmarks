@@ -111,6 +111,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- PyPI environments no longer write a `versions-*.txt` file beside the results: their
+  `pylock.*.toml` lock file holds the same versions. Only the conda environments
+  (`bw2calc-conda`) keep one, as they have no lock file. The PyPI versions
+  files already published stay, and no longer change.
 - bw2data's score check (`DatabaseWrite.track_score_error` and the SQLite row of
   `just registry-vs-sqlite`) compares against a reference built from amounts rounded to
   float32, since bw_processing 1.6 stores them that way

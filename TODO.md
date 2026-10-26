@@ -24,9 +24,6 @@
       Still there in 3.1.0 by wall time (2026-10-19). A fix that caches the lookup in
       pypardiso itself is ready to propose upstream; if it is released, the history shows it
       only once the fixed stack moves to that pypardiso.
-- [ ] Drop the PyPI subjects' `versions-*.txt` files once the pins check below has run: the
-      lock files hold the same versions. Keep them for `bw2calc-conda`, which has no lock file
-      and records each conda package's build there.
 - [ ] The site job builds the box image and clones six upstream repos on every run, though
       `asv publish` only reads results. Run asv there directly, or cache `.asv/`, once the
       first runs show how long it takes. CodSpeed, if added, runs on `pull_request` only.
@@ -38,13 +35,3 @@
 - [ ] Run the `klu` and `umfpack-T` columns at full size (`BWBENCH_SOLVERS=klu,umfpack-T
       BWBENCH_SIZES=ecoinvent just bench bw2calc`); so far they ran at smoke size on 2.0, 2.5.0
       and 3.1.0.
-
-## Verify in the box
-
-Checked on the benchmark machine on 2026-10-13: the read-only mount (plain docker, and oss-bench through `OSS_BENCH_RW`), `just smoke`,
-the PyPardiso reset (4.32 ms against 3.18 ms at `cfad4bf`), the lock and the image tag.
-Still open:
-
-- [ ] Pins hold: run `just smoke` on another day and `diff` `.asv/smoke/*/smoke/versions-*.txt`
-      against the copies in `.asv/versions-2026-10-13/`. Also check old releases in a full
-      `just bench bw2calc`: a versions file showing another numpy means pip replaced the pin.

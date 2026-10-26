@@ -1,0 +1,71 @@
+name: noise-hosted
+
+# `just noise` on a GitHub-hosted runner: RUNS separate quick runs of one subject's latest
+# release at smoke size, all on one runner, then each case's spread (scripts/noise_summary.py).
+# It is the same recipe as on the pinned benchmark machine, so the two noise floors compare.
+
+on:
+  workflow_dispatch:
+    inputs:
+      subject:
+        description: subject (asv/<subject>.json)
+        type: choice
+        options: [bw2calc, bw2data, bw_graph_tools, bw_processing, bw_timex, matrix_utils]
+        default: bw2calc
+      runs:
+        description: separate runs on the one runner
+        type: choice
+        options: ["5", "10", "20"]
+        default: "10"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  noise:
+    name: noise on ubuntu-latest
+    runs-on: ubuntu-latest
+    # Builds the subject's asv environments once (scikit-umfpack from source), then RUNS quick runs.
+    timeout-minutes: 90
+    env:
+      SUBJECT: ${{ inputs.subject }}
+      RUNS: ${{ inputs.runs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: false
+          version: "0.12.19"
+
+      # box.sh falls back to a plain `docker run` here, which the runner has.
+      - name: just noise
+        run: |
+          set -o pipefail
+          uvx --from rust-just==1.58.0 just noise "$SUBJECT" "$RUNS" | tee noise.txt
+
+      - name: Job summary
+        if: ${{ !cancelled() }}
+        run: |
+          {
+            echo "### Run-to-run noise: $SUBJECT, $RUNS runs on one \`ubuntu-latest\` runner"
+            echo '```'
+            cat noise.txt
+            echo '```'
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: noise-${{ env.SUBJECT }}
+          path: |
+            .asv/noise/${{ env.SUBJECT }}
+            noise.txt
+          include-hidden-files: true # the results sit under .asv
+          if-no-files-found: error

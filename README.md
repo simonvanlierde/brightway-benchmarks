@@ -102,7 +102,8 @@ and OpenBLAS, at the fixed stack's versions ([`asv/bw2calc-conda.json`](asv/bw2c
 asv's `rattler` environments). The pure-Python rest of the stack still comes from PyPI.
 `just bench bw2calc-conda` runs it over the two releases conda-forge has carried since NumPy 2,
 2.4.0 and 3.1.0. Its environments are solved when they are built, so the build strings of
-every conda package (the BLAS among them) go into the `versions-*.txt` files beside the results.
+every conda package (the BLAS among them) go into a `versions-*.txt` file beside the results.
+The PyPI environments have a `pylock.*.toml` lock file instead.
 
 When a package publishes a new release, `just stack` and `just stack-check` move its fixed
 set of dependencies (below) forward; the steps are in the [justfile](justfile).

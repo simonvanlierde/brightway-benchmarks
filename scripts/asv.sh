@@ -86,22 +86,24 @@ run | continuous | compare) asv "$cmd" --config "$conf" --machine "$machine" "$@
 *) asv "$cmd" --config "$conf" "$@" || status=$? ;;
 esac
 
-# Record what each environment holds next to the results. asv reinstalls only the
-# subject per commit, so this is the state after the last commit it installed.
+# Record what each environment holds next to the results: a lock file, or for conda a versions
+# file. asv reinstalls only the subject per commit, so this is the state after the last commit it installed.
 if [ "$cmd" = run ]; then
     out=$results/$machine
     mkdir -p "$out"
     for info in .asv/env/"$subject"/*/asv-env-info.json; do
         [ -e "$info" ] || continue
         env=$(dirname "$info")
-        { cat "$info" && echo && "$env/bin/python" -m pip freeze; } >"$out/versions-${env##*/}.txt"
-        # A conda environment: its packages as name-version-build (the build names the BLAS),
-        # and no PEP 751 lock, which describes PyPI files only.
+        # A conda environment has no lock: its versions file lists its packages as
+        # name-version-build (the build names the BLAS). PEP 751 describes PyPI files only.
         if [ -d "$env/conda-meta" ]; then
-            for pkg in "$env"/conda-meta/*.json; do basename "$pkg" .json; done >>"$out/versions-${env##*/}.txt"
+            {
+                cat "$info" && echo && "$env/bin/python" -m pip freeze
+                for pkg in "$env"/conda-meta/*.json; do basename "$pkg" .json; done
+            } >"$out/versions-${env##*/}.txt"
             continue
         fi
-        # The same as a PEP 751 lock file, with each package's index URL and hashes. The subject
+        # A PyPI environment: a PEP 751 lock file, with each package's index URL and hashes. The subject
         # is left out: asv built it from the commit its result names, which need not be a release.
         # asv names environment folders by a hex hash, which PEP 751's "pylock.<name>.toml" allows.
         lock=$out/pylock.${env##*/}.toml

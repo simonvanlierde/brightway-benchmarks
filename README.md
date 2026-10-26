@@ -99,7 +99,7 @@ Each result is checked once per parameter set, not after every sample.
 
 `bw2calc-conda` is the same bw2calc suite on conda-forge's builds instead of PyPI's wheels:
 Python, NumPy, SciPy, PyPardiso with MKL, and scikit-umfpack with conda-forge's SuiteSparse
-and OpenBLAS, at the fixed stack's versions ([`asv/bw2calc-conda.json`](asv/bw2calc-conda.json),
+on OpenBLAS and again on MKL's BLAS, at the fixed stack's versions ([`asv/bw2calc-conda.json`](asv/bw2calc-conda.json),
 asv's `rattler` environments). The pure-Python rest of the stack still comes from PyPI.
 `just bench bw2calc-conda` runs it over the two releases conda-forge has carried since NumPy 2,
 2.4.0 and 3.1.0. Its environments are solved when they are built, so the build strings of

@@ -39,6 +39,17 @@
         "pip+asv_runner": "0.2.5",
         "scikit-umfpack": "0.4.2"
       }
+    },
+    {
+      "python": "3.12",
+      "environment_type": "rattler",
+      "req": {
+        "numpy": "2.5.3",
+        "scipy": "1.18.1",
+        "pip+asv_runner": "0.2.5",
+        "scikit-umfpack": "0.4.2",
+        "libblas": "*=*_mkl"
+      }
     }
   ],
   "matrix": {

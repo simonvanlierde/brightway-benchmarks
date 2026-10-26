@@ -79,11 +79,10 @@ stack-check subject:
     -BWBENCH_MACHINE=stack scripts/box.sh scripts/asv.sh {{ subject }} run --quick "HASHFILE:/src/asv/{{ subject }}.hashes"
     python3 scripts/release_report.py {{ subject }}
 
-# No release cutoff and no stack pins, unlike the recipes above. The resolved set goes to
-# .asv/compat/PYTHON/. The compat workflow runs this nightly for each Python.
 # Today's PyPI releases of the Brightway set on PYTHON, then every case once at smoke size.
+# 6g: every suite shares one pytest process here, not one process per case as under asv.
 compat python="3.12":
-    scripts/box.sh scripts/compat.sh {{ python }}
+    BWBENCH_MEM=${BWBENCH_MEM:-6g} scripts/box.sh scripts/compat.sh {{ python }}
 
 # Build the static history site in site/ from results/ (one asv site per subject plus an index).
 site:

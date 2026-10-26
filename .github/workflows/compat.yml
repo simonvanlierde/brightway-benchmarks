@@ -1,9 +1,6 @@
 name: compat
 
-# `just compat` per Python: the latest PyPI releases of brightway25, bw_graph_tools and
-# bw_timex installed fresh, then every benchmark once at smoke size. Unlike smoke.yml it
-# follows new upstream releases, so a release that breaks the set shows up the next night.
-# Each Python's resolved set (pylock.toml, freeze.txt) is an artifact and in the job summary.
+# `just compat` per Python (see the README). Unlike smoke.yml it follows new upstream releases.
 
 on:
   schedule:
@@ -29,8 +26,6 @@ jobs:
         python: ["3.12", "3.13", "3.14"]
     env:
       PYTHON: ${{ matrix.python }}
-      # Every suite runs in one pytest process here, not one process per case as under asv.
-      BWBENCH_MEM: 6g
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -50,8 +45,8 @@ jobs:
           {
             echo "### Python $PYTHON"
             echo '```'
-            grep -iE '^(brightway25|bw|matrix|numpy|scipy|pandas|peewee|pypardiso)' ".asv/compat/$PYTHON/freeze.txt" ||
-              echo "no freeze.txt: the install failed"
+            grep -iE '^(brightway25|bw|matrix|numpy|scipy|pandas|peewee|pypardiso)' ".asv/compat/$PYTHON/requirements.txt" ||
+              echo "no requirements.txt: the resolve failed"
             echo '```'
           } >>"$GITHUB_STEP_SUMMARY"
 

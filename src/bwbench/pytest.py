@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import inspect
+import os
 from typing import Any
 
 import pytest
@@ -34,6 +35,9 @@ def _test(b: Bench) -> Any:
             benchmark.pedantic(target, setup=setup, rounds=1, iterations=1)
             state["run"].verify(state["result"])
         except NotImplementedError as e:
+            # The compat run sets BWBENCH_STRICT: there a case the installed releases cannot run is a failure.
+            if os.environ.get("BWBENCH_STRICT"):
+                raise
             pytest.skip(str(e))
         finally:
             if "run" in state:

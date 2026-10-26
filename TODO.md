@@ -30,6 +30,11 @@
 - [ ] The site job builds the box image and clones six upstream repos on every run, though
       `asv publish` only reads results. Run asv there directly, or cache `.asv/`, once the
       first runs show how long it takes. CodSpeed, if added, runs on `pull_request` only.
+- [ ] `test_property_columns_sum_at_most_the_maximum_without_units` fails now and then on main:
+      `synth.py`'s ARPACK call that sets the spectral radius does not converge on some tiered
+      profiles (`pytest tests/test_synth.py -k columns_sum_at_most --hypothesis-seed=6`, e.g.
+      products 385, radius 0.5, hub_sigma 2.75). Fall back to a dense eigenvalue or more ARPACK
+      iterations for small systems, or have the strategy avoid such profiles.
 
 ## Verify in the box
 

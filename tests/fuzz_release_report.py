@@ -23,7 +23,7 @@ release_report = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(release_report)
 
 # The exceptions ``tally`` documents for text that is not JSON or not asv's shape.
-MALFORMED = (ValueError, AttributeError, IndexError, KeyError, TypeError)
+MALFORMED = (ValueError, RecursionError, AttributeError, IndexError, KeyError, TypeError)
 
 
 def one_input(data: bytes) -> None:

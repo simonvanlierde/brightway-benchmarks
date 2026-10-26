@@ -5,6 +5,11 @@ name: fuzz
 
 on:
   pull_request:
+    # Scorecard only looks for the harness; running it is worth it when the parser changes.
+    paths:
+      - scripts/release_report.py
+      - tests/fuzz_release_report.py
+      - .github/workflows/fuzz.yml
   workflow_dispatch:
 
 permissions:

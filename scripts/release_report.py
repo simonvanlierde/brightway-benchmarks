@@ -30,6 +30,7 @@ def tally(text: str) -> tuple[str, str, int, int, int, list[str]]:
 
     Raises:
         ValueError: ``text`` is not JSON.
+        RecursionError: ``text`` nests too deep for the JSON parser.
         AttributeError, IndexError, KeyError, TypeError: the JSON does not have asv's shape.
     """
     data = json.loads(text)

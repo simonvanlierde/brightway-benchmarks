@@ -9,6 +9,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A 60-second Atheris fuzz run of the `release_report.py` result parser on each pull request
+  (`.github/workflows/fuzz.yml`).
 - `bw2calc-conda`: the bw2calc suite with NumPy, SciPy, PyPardiso (MKL) and scikit-umfpack
   (SuiteSparse, OpenBLAS) from conda-forge instead of PyPI, at the same versions, for
   bw2calc 2.4.0 and 3.1.0. Its `versions-*.txt` files also list each conda package's build.

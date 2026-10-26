@@ -13,13 +13,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-subject = sys.argv[1]
-folder = Path(".asv/stack") / subject
-mirror = Path(".asv") / subject  # asv's clone of the upstream repository
-tags = Path(f"asv/{subject}.hashes").read_text().split()
 
-
-def sha(tag: str) -> str:
+def sha(mirror: Path, tag: str) -> str:
     """The commit a release tag points at, as the 8 characters asv names result files with."""
     run = subprocess.run(  # noqa: S603 - fixed git command on the asv mirror
         ["git", "--git-dir", str(mirror), "rev-parse", f"{tag}^{{commit}}"],  # noqa: S607
@@ -30,12 +25,14 @@ def sha(tag: str) -> str:
     return run.stdout.strip()[:8] or tag[:8]
 
 
-order = {sha(t): t for t in tags}
-rows = []
-for path in folder.rglob("*-*.json"):
-    if path.name in {"machine.json", "benchmarks.json"}:
-        continue
-    data = json.loads(path.read_text())
+def tally(text: str) -> tuple[str, str, int, int, int, list[str]]:
+    """Count one asv result file: (commit, environment, ok, failed, skipped, failing cases).
+
+    Raises:
+        ValueError: ``text`` is not JSON.
+        AttributeError, IndexError, KeyError, TypeError: the JSON does not have asv's shape.
+    """
+    data = json.loads(text)
     commit = data.get("commit_hash", "")[:8]
     ok = failed = skipped = 0
     broken = []
@@ -49,21 +46,39 @@ for path in folder.rglob("*-*.json"):
                 skipped += 1
             else:
                 ok += 1
-    rows.append(
-        (
-            tags.index(order[commit]) if commit in order else -1,
-            order.get(commit, commit),
-            data.get("env_name", ""),
-            ok,
-            failed,
-            skipped,
-            sorted(set(broken)),
+    return commit, data.get("env_name", ""), ok, failed, skipped, sorted(set(broken))
+
+
+def main(subject: str) -> int:
+    """Print the table for SUBJECT and return the exit code."""
+    folder = Path(".asv/stack") / subject
+    mirror = Path(".asv") / subject  # asv's clone of the upstream repository
+    tags = Path(f"asv/{subject}.hashes").read_text().split()
+    order = {sha(mirror, t): t for t in tags}
+    rows = []
+    for path in folder.rglob("*-*.json"):
+        if path.name in {"machine.json", "benchmarks.json"}:
+            continue
+        commit, env, ok, failed, skipped, broken = tally(path.read_text())
+        rows.append(
+            (
+                tags.index(order[commit]) if commit in order else -1,
+                order.get(commit, commit),
+                env,
+                ok,
+                failed,
+                skipped,
+                broken,
+            )
         )
-    )
-print("| release | environment | ok | failed | skipped | failing cases |\n| --- | --- | --- | --- | --- | --- |")
-for _, tag, env, ok, failed, skipped, broken in sorted(rows):
-    print(f"| {tag} | {env[-40:]} | {ok} | {failed} | {skipped} | {', '.join(broken)} |")
-missing = [t for t in tags if t not in {row[1] for row in rows}]
-for tag in missing:
-    print(f"| {tag} | missing | | | | no result file |")
-sys.exit(1 if missing else 0)
+    print("| release | environment | ok | failed | skipped | failing cases |\n| --- | --- | --- | --- | --- | --- |")
+    for _, tag, env, ok, failed, skipped, broken in sorted(rows):
+        print(f"| {tag} | {env[-40:]} | {ok} | {failed} | {skipped} | {', '.join(broken)} |")
+    missing = [t for t in tags if t not in {row[1] for row in rows}]
+    for tag in missing:
+        print(f"| {tag} | missing | | | | no result file |")
+    return 1 if missing else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1]))

@@ -3,7 +3,6 @@ name: noise-hosted
 # `just noise` on a GitHub-hosted runner: RUNS separate quick runs of one subject's latest
 # release at smoke size, all on one runner, then each case's spread (scripts/noise_summary.py).
 # It is the same recipe as on the pinned benchmark machine, so the two noise floors compare.
-# The pull_request trigger runs it for edits to this file only, before it is on main.
 
 on:
   workflow_dispatch:
@@ -15,10 +14,9 @@ on:
         default: bw2calc
       runs:
         description: separate runs on the one runner
+        type: choice
+        options: ["5", "10", "20"]
         default: "10"
-  pull_request:
-    paths:
-      - .github/workflows/noise-hosted.yml
 
 permissions:
   contents: read
@@ -34,8 +32,8 @@ jobs:
     # Builds the subject's asv environments once (scikit-umfpack from source), then RUNS quick runs.
     timeout-minutes: 90
     env:
-      SUBJECT: ${{ inputs.subject || 'bw2calc' }}
-      RUNS: ${{ inputs.runs || '10' }}
+      SUBJECT: ${{ inputs.subject }}
+      RUNS: ${{ inputs.runs }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

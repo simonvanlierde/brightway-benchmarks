@@ -191,6 +191,30 @@ def test_pytest_adapter_tears_down_the_warmup_setup():
     assert log == ["setup", "run", "teardown", "setup", "run", "teardown"]
 
 
+@pytest.mark.parametrize(("strict", "outcome"), [("", pytest.skip.Exception), ("1", NotImplementedError)])
+def test_pytest_adapter_fails_unsupported_cases_when_strict(
+    monkeypatch: pytest.MonkeyPatch, strict: str, outcome: type[BaseException]
+):
+    @bench()
+    def unsupported():
+        message = "bw2calc has no such class"
+        raise NotImplementedError(message)
+
+    namespace: dict[str, Any] = {"unsupported": unsupported}
+    bw_pytest.tests(namespace)
+
+    class OnceBenchmark:
+        def pedantic(self, target, setup, rounds, iterations):  # noqa: ANN001, ARG002
+            setup()
+            target()
+
+    monkeypatch.setenv("BWBENCH_STRICT", strict)
+    # BaseException: pytest.skip's exception is not an Exception.
+    with pytest.raises(BaseException, match="no such class") as raised:
+        namespace["test_unsupported"](OnceBenchmark())
+    assert raised.type is outcome
+
+
 def test_numpy_before_bwbench_warns():
     code = "import numpy, bwbench"
     unpinned = {k: v for k, v in os.environ.items() if k not in bwbench.PINNED}

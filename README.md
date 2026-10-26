@@ -76,6 +76,7 @@ just site                        # build the history pages in site/
 just results-commit              # keep results/ on the local results branch, for publishing
 just solver-lci klu ecoinvent    # bw2calc 3.1.0's own lci() with one solver, KLU here
 just codspeed bw2calc pypardiso  # one suite under CodSpeed's CPU simulation (instruction counts)
+just compat 3.13                 # today's Brightway releases together on one Python, small database
 ```
 
 Every benchmark runs on the 200-product `smoke` database unless you pick others. For
@@ -107,6 +108,15 @@ The PyPI environments have a `pylock.*.toml` lock file instead.
 
 When a package publishes a new release, `just stack` and `just stack-check` move its fixed
 set of dependencies (below) forward; the steps are in the [justfile](justfile).
+
+`just compat` asks a different question: do the newest releases work together? It installs
+the latest brightway25, bw_graph_tools and bw_timex from PyPI into a fresh environment, with
+no release cutoff and no fixed stack, and runs every case once at the `smoke` size. A case
+fails if it errors, its result check fails, or the releases cannot run it; nothing is timed.
+bw_timex pulls in PyPardiso on Linux x86_64, so bw2calc solves with PyPardiso here, not SuperLU
+or UMFPACK. The versions it resolved go to `.asv/compat/PYTHON/requirements.txt`. The
+`compat` workflow runs it every night on Python 3.12, 3.13 and 3.14 and lists the versions in
+each job's summary.
 
 ## Results so far
 

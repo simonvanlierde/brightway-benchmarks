@@ -1,0 +1,22 @@
+# Zenodo reads this on each GitHub release and takes the version from the tag.
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "brightway-benchmarks"
+abstract: "Continuous benchmarks for the Brightway LCA stack, with a correctness check beside every timing. It times the calculations an LCA practitioner runs every day (an LCI and LCIA, many functional units at once, Monte Carlo, database writes, graph traversal, time-explicit LCA) across the released versions of bw2calc, bw2data, bw_processing, matrix_utils, bw_graph_tools and bw_timex, and checks every result against an independent reference score. The benchmarks run on seeded synthetic databases that copy the structure of ecoinvent, so no licensed data is used and anyone can rerun them. Each result records the exact versions it ran on."
+authors:
+  - family-names: "van Lierde"
+    given-names: "Simon"
+    orcid: "https://orcid.org/0009-0006-6953-909X"
+repository-code: "https://github.com/simonvanlierde/brightway-benchmarks"
+url: "https://simonvanlierde.github.io/brightway-benchmarks/"
+license: "BSD-3-Clause"
+keywords:
+  - "brightway"
+  - "life cycle assessment"
+  - "lca"
+  - "benchmark"
+  - "asv"
+  - "sparse linear solvers"
+  - "performance regression"
+  - "reproducibility"

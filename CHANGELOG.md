@@ -9,6 +9,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A `release` workflow: a pushed `vX.Y.Z` tag creates the GitHub release with the source
+  archive, its checksums and a signed build provenance attestation. `CITATION.cff` gives
+  the citation, and Zenodo archives each release.
 - `.github/CONTRIBUTING.md`: how to report a bug, the checks and tests a pull request needs,
   how dependencies are chosen, and the DCO sign-off, which the new `dco` workflow checks on
   pull requests from forks. SECURITY.md now promises an answer within 14 days and says what

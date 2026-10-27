@@ -183,6 +183,14 @@ Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
   SuperLU stay within 1%, and so does peak memory. Importing bw2calc with PyPardiso is
   70 ms faster, and about 15 ms slower without it. Scores are identical.
 
+  On MKL's BLAS (`libblas=*=*_mkl`, MKL 2026.1.0) UMFPACK's first score takes 2.45 s, 7%
+  less than on OpenBLAS. The second functional unit still takes 42.7 ms on both, so the
+  slower solve comes from conda-forge's UMFPACK build, not from the BLAS. On the real
+  ecoinvent 3.12 matrix (`solver_factorize.py`, same core, two rounds) UMFPACK factorizes in
+  1.79 s on reference BLAS, 0.66 s on OpenBLAS and 0.63 s on MKL: 2.7x and 2.8x, less than
+  the 3.4x on the generated database. One solve takes 16.5 ms on PyPI's build and 24 ms on
+  both conda-forge builds, so the slower solve holds on real data too.
+
 ### The other packages
 
 Every release of bw_processing, matrix_utils and bw_graph_tools, bw2data from 4.6 and

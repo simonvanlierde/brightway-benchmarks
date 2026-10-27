@@ -45,3 +45,27 @@ def test_start_link_points_at_a_real_benchmark():
     assert "#bench_lca.SingleScore.time_first_score" in SCRIPT.read_text()
     # The asv adapter names the method time_<function name> (src/bwbench/asv.py).
     assert 'asv="SingleScore"' in bench.split("def first_score(")[0].rsplit("@bench", 1)[1]
+
+
+def test_refuses_to_write_through_a_symlink(tmp_path: Path):
+    # The box can write site/, so a planted link must not make the host overwrite another file.
+    site, victim = tmp_path / "site", tmp_path / "victim.txt"
+    victim.write_text("keep")
+    (site / "bw2calc").mkdir(parents=True)
+    (site / "bw2calc" / "index.html").write_text(NAV)
+    (site / "index.html").symlink_to(victim)
+    run = subprocess.run([sys.executable, SCRIPT, site], capture_output=True, text=True, check=False)
+    assert run.returncode != 0
+    assert "symlink" in run.stderr
+    assert victim.read_text() == "keep"
+
+
+def test_refuses_a_subject_folder_that_links_out(tmp_path: Path):
+    site, outside = tmp_path / "site", tmp_path / "outside"
+    outside.mkdir()
+    (outside / "index.html").write_text(NAV)
+    site.mkdir()
+    (site / "bw2calc").symlink_to(outside)
+    run = subprocess.run([sys.executable, SCRIPT, site], capture_output=True, text=True, check=False)
+    assert run.returncode != 0
+    assert (outside / "index.html").read_text() == NAV

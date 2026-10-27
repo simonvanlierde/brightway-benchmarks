@@ -18,7 +18,7 @@ jobs:
   build:
     name: build the site
     runs-on: ubuntu-latest
-    # Builds the box image (it only needs asv here; see TODO.md), then asv publish per subject,
+    # Builds the box image (it only needs asv here), then asv publish per subject,
     # which clones each upstream repository for its tags.
     timeout-minutes: 60
     steps:

@@ -21,7 +21,8 @@ README's [Running it](../README.md#running-it) explains the benchmark recipes.
 Run `just check` before you open a pull request. It runs what the `python` workflow runs:
 ruff, the ruff format check, ty, pytest and `uv audit`. These run no Brightway code. `just hooks`
 runs every git hook over the whole repository, as the `checks` workflow does: yamllint,
-zizmor and actionlint on the workflows, rumdl on the Markdown, betterleaks for secrets.
+zizmor and actionlint on the workflows, rumdl on the Markdown. The betterleaks hook for
+secrets runs only locally; on GitHub, secret scanning with push protection covers it.
 
 Both workflows must pass before a pull request can merge. The others run apart from a pull
 request:

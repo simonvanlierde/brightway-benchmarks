@@ -157,6 +157,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `BW2DATA_RTOL` drops from 1e-6 to 1e-12. From this version on, `track_score_error` falls
   from about 3e-9 (smoke) and 5.7e-8 (ecoinvent size) to about 1e-15: a step in the published
   history, not a change in bw2data.
+- A test pins a hash of the `smoke` system's arrays to `GENERATOR_VERSION`, so a builder
+  change without a version bump fails.
+- The box gives every run a new home folder and sets `UV_NO_CONFIG` and
+  `PIP_CONFIG_FILE=/dev/null`, so config one run writes cannot reach the next. The caches
+  stay in `.asv/`; generated datapackages follow `XDG_CACHE_HOME`.
 
 ### Fixed
 
@@ -166,5 +171,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   which `solver_lci.py` and `solver_factorize.py` share instead of their own copies.
 - `scripts/in-box.sh` works in a git worktree, whose `.git` file points outside the mounted
   folder: it runs `git config` from `/`.
+- The `release` workflow refuses a tag whose commit is not on `main`.
+- `scripts/asv.sh` writes lock files only for the environments of the current stack, not for
+  the folders older stacks left in `.asv/env/`.
+- The RO-Crate credits each result file to the bwbench commit that wrote it, from a
+  `bwbench-run-*.txt` record `scripts/asv.sh` writes per run, not every file to the current
+  commit. `box.sh` passes the commit in, so a run from a git worktree no longer records
+  `unknown`, and `just results-commit` writes the crate again over the merged `results`
+  branch.
 
 [Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/commits/HEAD

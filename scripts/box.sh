@@ -19,6 +19,10 @@ fi
 # (`just seccomp-profile`): the default profile plus one rule that allows
 # personality(ADDR_NO_RANDOMIZE). Seccomp itself stays on.
 # ${knobs[@]+...} below: bash 3.2 (macOS) treats an empty array as unset under `set -u`.
+# asv.sh records which commit wrote each result. git cannot tell it from inside the box when
+# this is a worktree, whose .git file points outside the mount.
+BWBENCH_COMMIT=${BWBENCH_COMMIT:-$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)}
+export BWBENCH_COMMIT
 knobs=()
 while IFS='=' read -r name value; do
     knobs+=("$name=$value")

@@ -33,7 +33,7 @@ default=superlu,umfpack
 [ "$(uname -m)" = x86_64 ] && default=superlu,pypardiso,umfpack
 # Written to .asv/ (writable in the box), so asv/ with the tracked configs can stay read-only.
 conf=.asv/.$subject.local.json
-results=$(
+printed=$(
     BWBENCH_SOLVERS=${BWBENCH_SOLVERS:-$default} python3 - "$subject" "$machine" <<'PY'
 import hashlib, json, os, platform, sys
 subject, machine = sys.argv[1:]
@@ -71,15 +71,18 @@ if conf.get("include"):
 if machine in ("smoke", "noise", "stack"):
     conf["results_dir"] = f"../.asv/{machine}/{subject}"
 json.dump(conf, open(f".asv/.{subject}.local.json", "w"), indent=2)
-print(f".asv/{conf['results_dir']}")
+print(stack, f".asv/{conf['results_dir']}")
 PY
 )
+stack=${printed%% *} results=${printed#* }
 
 grep -qs "\"$machine\"" "$HOME/.asv-machine.json" ||
     asv machine --yes --machine "$machine" --config "$conf" >/dev/null
 # The klu and umfpack-T entries set BWBENCH_SOLVER in their own env. One left in the caller's
 # shell would reach every environment and patch the stock umfpack one without a word.
 unset BWBENCH_SOLVER
+# Files newer than this one were written by this run.
+start=$(mktemp "$PWD/.asv/.run-XXXXXX")
 status=0
 case $cmd in
 run | continuous | compare) asv "$cmd" --config "$conf" --machine "$machine" "$@" || status=$? ;;
@@ -94,6 +97,8 @@ if [ "$cmd" = run ]; then
     for info in .asv/env/"$subject"/*/asv-env-info.json; do
         [ -e "$info" ] || continue
         env=$(dirname "$info")
+        # A folder of an older stack is no longer used, and its packages are not what ran.
+        grep -q "\"BWBENCH_STACK\": *\"$stack\"" "$info" || continue
         # A conda environment has no lock: its versions file lists its packages as
         # name-version-build (the build names the BLAS). PEP 751 describes PyPI files only.
         if [ -d "$env/conda-meta" ]; then
@@ -111,9 +116,19 @@ if [ "$cmd" = run ]; then
             uv pip compile --quiet --no-deps --python "$env/bin/python" --no-header -o "$lock" - ||
             status=1
     done
+    # Which bwbench commit wrote which file, by checksum. run_crate.py gives each file the newest
+    # record that lists its content, so this holds after results-commit merges several clones.
+    # box.sh passes the commit in: in a worktree, git cannot reach .git from inside the box.
+    commit=${BWBENCH_COMMIT:-$(git rev-parse HEAD 2>/dev/null || echo unknown)}
+    {
+        echo "commit $commit"
+        echo "generator $(sed -n 's/^GENERATOR_VERSION = "\(.*\)"$/\1/p' src/bwbench/synth.py 2>/dev/null)"
+        find "$results" -type f -newer "$start" ! -name 'bwbench-run-*' -exec sha256sum {} +
+    } >"$out/bwbench-run-$(date -u +%Y%m%dT%H%M%SZ)-$(echo "$commit" | cut -c1-12).txt"
     # What ran, as one RO-Crate over every subject. It sits above the subjects' asv folders,
     # where asv looks for no results.
     uv run --quiet --no-project --with numpy==2.5.3 --with scipy==1.18.1 python scripts/run_crate.py "$(dirname "$results")" ||
         status=1
 fi
+rm -f "$start"
 exit $status

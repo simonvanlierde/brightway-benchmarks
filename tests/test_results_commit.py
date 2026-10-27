@@ -1,5 +1,6 @@
 """scripts/results-commit.sh in throwaway git repos, with a fixed host name."""
 
+import json
 import os
 import shutil
 import subprocess
@@ -44,7 +45,9 @@ def write(repo: Path, name: str, text: str = "{}") -> None:
 
 
 def files_on_branch(repo: Path, env: dict[str, str]) -> list[str]:
-    return git(repo, env, "ls-tree", "-r", "--name-only", "refs/heads/results").split()
+    """The result files on the branch, without the RO-Crate written over them."""
+    files = git(repo, env, "ls-tree", "-r", "--name-only", "refs/heads/results").split()
+    return [f for f in files if f != "ro-crate-metadata.json"]
 
 
 @pytest.fixture
@@ -102,12 +105,19 @@ def test_clones_share_one_history(repo: Path, env: dict[str, str], tmp_path: Pat
     # The first clone's local branch is now behind origin: it moves forward first.
     git(repo, env, "fetch", "-q", str(clone), "results:refs/remotes/origin/results")
     write(repo, "bw2calc/pinned-e0/c.json")
+    # asv.sh's crate of this clone, which knows nothing of the other clone's b.json.
+    graph = [{"@id": "./", "hasPart": [{"@id": "bw2calc/pinned-e0/a.json"}, {"@id": "bw2calc/pinned-e0/c.json"}]}]
+    write(repo, "ro-crate-metadata.json", json.dumps({"@graph": graph}))
     assert commit_results(repo, env).returncode == 0
     assert files_on_branch(repo, env) == [
         "bw2calc/pinned-e0/a.json",
         "bw2calc/pinned-e0/c.json",
         "bw2calc/pinned-p0/b.json",
     ]
+    # The crate on the branch covers both clones' results, not only the last one's.
+    crate = json.loads(git(repo, env, "show", "refs/heads/results:ro-crate-metadata.json"))
+    (dataset,) = [e for e in crate["@graph"] if e["@id"] == "./"]
+    assert [p["@id"] for p in dataset["hasPart"]] == files_on_branch(repo, env)
 
 
 def test_refuses_a_branch_that_diverged_from_origin(repo: Path, env: dict[str, str], tmp_path: Path):

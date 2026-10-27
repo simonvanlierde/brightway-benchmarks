@@ -7,6 +7,7 @@ a background product spread over ``steps`` years, so the timeline has about
 system, so the time-explicit static score must equal the plain LCA score.
 """
 
+import contextlib
 from collections.abc import Iterator
 from datetime import datetime
 
@@ -81,7 +82,11 @@ def lci(size: str, steps: int) -> Iterator[BenchSetup]:
         return check(tlca.static_score, lca.score, DIRECT_RTOL, "timex static score")
 
     yield tlca.lci, static_score_error
-    bd.projects.delete_project(delete_dir=True)
+    # NOTE: on Windows the timeline's datapackage zips are still open here, so the folder cannot
+    # go. bw2data has already dropped the project by then, and the folder sits in a temporary
+    # Brightway dir, so leaving it is harmless.
+    with contextlib.suppress(PermissionError):
+        bd.projects.delete_project(delete_dir=True)
 
 
 classes(__name__)

@@ -1,6 +1,6 @@
 name: compat
 
-# `just compat` per Python (see the README). Unlike smoke.yml it follows new upstream releases.
+# `just compat` per column, Python and OS (see the README). Unlike smoke.yml it follows new upstream releases.
 
 on:
   schedule:
@@ -16,16 +16,37 @@ concurrency:
 
 jobs:
   compat:
-    name: Python ${{ matrix.python }} on ubuntu-latest
-    runs-on: ubuntu-latest
+    name: ${{ matrix.column }} · Python ${{ matrix.python }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 60
+    # floors and pre report problems upstream, so they never turn the run red: a new failure
+    # in latest must stand out.
+    continue-on-error: ${{ matrix.column != 'latest' }}
     strategy:
       fail-fast: false
       matrix:
-        # The benchmark code needs 3.12 or later (PEP 695 type aliases), though brightway25 allows 3.9.
-        python: ["3.12", "3.13", "3.14"]
+        # The benchmark code needs 3.12 or later (PEP 695 type aliases), though brightway25
+        # allows 3.9, so floors runs on 3.12. macOS and Windows run latest on one Python.
+        include:
+          - {column: latest, python: "3.12", os: ubuntu-latest}
+          - {column: latest, python: "3.13", os: ubuntu-latest}
+          - {column: latest, python: "3.14", os: ubuntu-latest}
+          - {column: latest, python: "3.12", os: macos-latest}
+          - {column: latest, python: "3.12", os: windows-latest}
+          - {column: floors, python: "3.12", os: ubuntu-latest}
+          - {column: pre, python: "3.14", os: ubuntu-latest}
+    defaults:
+      run:
+        shell: bash # Windows too, where compat.sh runs under Git Bash
     env:
       PYTHON: ${{ matrix.python }}
+      COLUMN: ${{ matrix.column }}
+      OUT: .asv/compat/${{ matrix.python }}-${{ matrix.column }}
+      # Windows Python would otherwise write to a pipe in the locale's code page and fail on
+      # any non-ASCII character.
+      PYTHONUTF8: "1"
+      # macOS has no PyPardiso wheel, so there the cases that need a fast solver skip.
+      BWBENCH_STRICT: ${{ matrix.os != 'macos-latest' && '1' || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -37,15 +58,21 @@ jobs:
           version: "0.12.19"
 
       # box.sh falls back to a plain `docker run` here, which the runner has.
-      - run: uvx --from rust-just==1.58.0 just compat "$PYTHON"
+      - if: runner.os == 'Linux'
+        run: uvx --from rust-just==1.58.0 just compat "$PYTHON" "$COLUMN"
+
+      # GitHub's macOS and Windows runners have no Docker that runs Linux containers. The runner is thrown away after
+      # the job, so the releases run on it directly.
+      - if: runner.os != 'Linux'
+        run: sh scripts/compat.sh "$PYTHON" "$COLUMN"
 
       - name: Job summary
         if: ${{ !cancelled() }}
         run: |
           {
-            echo "### Python $PYTHON"
+            echo "### $COLUMN · Python $PYTHON on $RUNNER_OS"
             echo '```'
-            grep -iE '^(brightway25|bw|matrix|numpy|scipy|pandas|peewee|pypardiso)' ".asv/compat/$PYTHON/requirements.txt" ||
+            grep -iE '^(brightway25|bw|matrix|numpy|scipy|pandas|peewee|pypardiso)' "$OUT/requirements.txt" ||
               echo "no requirements.txt: the resolve failed"
             echo '```'
           } >>"$GITHUB_STEP_SUMMARY"
@@ -53,7 +80,7 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}
         with:
-          name: compat-${{ matrix.python }}
-          path: .asv/compat/${{ matrix.python }}
+          name: compat-${{ matrix.column }}-${{ matrix.python }}-${{ matrix.os }}
+          path: ${{ env.OUT }}
           include-hidden-files: true # the files sit under .asv
           if-no-files-found: warn # the resolve itself can fail

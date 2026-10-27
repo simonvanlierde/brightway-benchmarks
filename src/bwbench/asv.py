@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 import os
-import resource
 import sys
 import time
 from pathlib import Path
@@ -91,6 +90,8 @@ def _asv_class(name: str, group: list[Bench]) -> type:
 
 def _usage() -> tuple[float, float, int]:
     """(wall seconds, CPU seconds of this process's threads, involuntary context switches so far)."""
+    import resource  # noqa: PLC0415 - Unix only, and only the round log needs it
+
     ru = resource.getrusage(resource.RUSAGE_SELF)
     return time.perf_counter(), ru.ru_utime + ru.ru_stime, ru.ru_nivcsw
 

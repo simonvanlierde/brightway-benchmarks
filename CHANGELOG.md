@@ -12,7 +12,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `just compat PYTHON` installs today's PyPI releases of brightway25, bw_graph_tools and
   bw_timex, with no cutoff and no fixed stack, and runs every case once at the smoke size.
   The `compat` workflow runs it nightly on Python 3.12 to 3.14 and keeps the resolved
-  `requirements.txt` of each Python.
+  `requirements.txt` of each run.
+- Two more `just compat` columns, picked by a second argument. `floors` installs the newest
+  Brightway packages with each package they depend on at the lowest version their bounds
+  allow, so a lower bound set too low fails. `pre` lets pre-releases in, such as NumPy and
+  SciPy betas. The `compat` workflow runs `floors` on Python 3.12 and `pre` on 3.14, and
+  `latest` on macOS and Windows too. Each run keeps its resolved set in `.asv/compat/PYTHON-COLUMN/`.
 - A 60-second Atheris fuzz run of the `release_report.py` result parser on each pull request
   (`.github/workflows/fuzz.yml`).
 - Two experimental bw2calc solver environments, run only when named in `BWBENCH_SOLVERS`:

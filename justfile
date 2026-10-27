@@ -80,9 +80,10 @@ stack-check subject:
     python3 scripts/release_report.py {{ subject }}
 
 # Today's PyPI releases of the Brightway set on PYTHON, then every case once at smoke size.
+# COLUMN: latest, floors or pre (see scripts/compat.sh).
 # 6g: every suite shares one pytest process here, not one process per case as under asv.
-compat python="3.12":
-    BWBENCH_MEM=${BWBENCH_MEM:-6g} scripts/box.sh scripts/compat.sh {{ python }}
+compat python="3.12" column="latest":
+    BWBENCH_MEM=${BWBENCH_MEM:-6g} scripts/box.sh scripts/compat.sh {{ python }} {{ column }}
 
 # Build the static history site in site/ from results/ (one asv site per subject plus an index).
 site:

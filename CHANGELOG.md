@@ -25,6 +25,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `bw2calc-conda`: the bw2calc suite with NumPy, SciPy, PyPardiso (MKL) and scikit-umfpack
   (SuiteSparse, OpenBLAS) from conda-forge instead of PyPI, at the same versions, for
   bw2calc 2.4.0 and 3.1.0. Its `versions-*.txt` files also list each conda package's build.
+  A third environment runs scikit-umfpack on MKL's BLAS (`libblas=*=*_mkl`).
 - `peakmem_first_score` (bw2calc) and `peakmem_write` (bw2data) record the process's peak
   resident memory beside the time of the same case, through `@bench(peakmem=True)`.
 - `scripts/registry_vs_sqlite.py` prints `peak_rss` (bytes) for each cold read of #290.
@@ -40,6 +41,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   runner, where PyPardiso cannot install, for the release you pick.
 - `scripts/solver_factorize.py` times one factorization and one solve of the real ecoinvent
   matrix with SuperLU, UMFPACK, KLU and PyPardiso, for anyone with an ecoinvent licence.
+  It names the BLAS libraries it loaded, and runs in a conda environment without pyklu too.
 - Each package's history page links back to the front page, from a first tab in asv's menu.
 - `measure()` also factorizes Aᵀ, under both column orderings: bw2calc's
   `decompose_technosphere` factorizes A, while scipy's `spsolve` on a CSR matrix factorizes Aᵀ.

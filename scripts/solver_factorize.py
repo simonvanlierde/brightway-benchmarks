@@ -10,10 +10,14 @@ release (its ``datasets/`` folder of ecospold2 files), mounted read-only. ``box.
 only this repo, hence the plain ``docker run``.
 
 Builds A as ``scripts/measure_stats.py`` does, then times SuperLU and UMFPACK through
-bw2calc's own ``spsolve`` and ``lu_solver``, KLU through pyklu, and with ``--pardiso``
+bw2calc's own ``spsolve`` and ``lu_solver``, KLU through pyklu if installed, and with ``--pardiso``
 PyPardiso: one factorization (median of 3) and one solve (median of 5) each. Checks every
 solution's backward error and its score against UMFPACK's. Prints timings and fill only:
-no dataset, name or amount.
+no dataset, name or amount, plus which BLAS is loaded.
+
+To time conda-forge's builds, run the script with the python of an asv ``rattler`` environment
+(``.asv/env/bw2calc-conda/*/bin/python``, which has no pyklu) in place of ``uv run``, still
+with ``PYTHONPATH=src``.
 """
 
 # First, so the BLAS thread pin lands before numpy loads (bwbench warns otherwise).
@@ -70,7 +74,11 @@ def timed[T](f: Callable[[], T], reps: int = 3) -> tuple[float, T]:
 def main() -> None:
     """Time each solver on the release mounted at /ecoinvent and print the results."""
     import bw2calc.utils as bu  # noqa: PLC0415
-    from PyKLU import Klu  # noqa: PLC0415
+
+    try:
+        from PyKLU import Klu  # noqa: PLC0415
+    except ImportError:  # conda-forge has no pyklu
+        Klu = None  # noqa: N806
 
     a = build(Path("/ecoinvent"))
     n = a.shape[0]
@@ -79,9 +87,14 @@ def main() -> None:
     b[rng.choice(n, 30, replace=False)] = 1.0  # a sparse demand, like a few functional units
     print(
         f"ecoinvent in /ecoinvent: n {n}, nnz {a.nnz}; bw2calc {version('bw2calc')}, scipy {version('scipy')}"
-        f", scikit-umfpack {version('scikit-umfpack')}, pyklu {version('pyklu')}",
+        f", scikit-umfpack {version('scikit-umfpack')}, pyklu {version('pyklu') if Klu else 'none'}",
         flush=True,
     )
+    # The BLAS libraries mapped once bw2calc has imported its solvers. threadpoolctl misses the
+    # reference BLAS that PyPI's scikit-umfpack links, so read the process's own memory map.
+    libs = {Path(line.split()[-1]).name for line in Path("/proc/self/maps").read_text().splitlines()}
+    blas = sorted(lib for lib in libs if lib.startswith("lib") and ("blas" in lib or "mkl_rt" in lib))
+    print(f"  BLAS loaded: {', '.join(blas)}", flush=True)
 
     xs = {}
     c = rng.random(n)  # a positive characterization row, to compare scores
@@ -105,10 +118,11 @@ def main() -> None:
     s, solve = timed(lambda: bu.lu_solver(a))
     report("UMFPACK lu_solver (A^T)", s, solve)
 
-    csc = a.tocsc()
-    csc.sort_indices()
-    s, k = timed(lambda: Klu(csc))
-    report("KLU pyklu (A, AMD + BTF)", s, k.solve)
+    if Klu is not None:
+        csc = a.tocsc()
+        csc.sort_indices()
+        s, k = timed(lambda: Klu(csc))
+        report("KLU pyklu (A, AMD + BTF)", s, k.solve)
 
     if "--pardiso" in sys.argv:
         # pypardiso looks for MKL in sys.prefix only, which `uv run --with` puts elsewhere.

@@ -77,6 +77,7 @@ just results-commit              # keep results/ on the local results branch, fo
 just solver-lci klu ecoinvent    # bw2calc 3.1.0's own lci() with one solver, KLU here
 just codspeed bw2calc pypardiso  # one suite under CodSpeed's CPU simulation (instruction counts)
 just compat 3.13                 # today's Brightway releases together on one Python, small database
+just compat 3.12 floors          # the same, with Brightway's dependencies at their lowest allowed versions
 ```
 
 Every benchmark runs on the 200-product `smoke` database unless you pick others. For
@@ -113,10 +114,22 @@ set of dependencies (below) forward; the steps are in the [justfile](justfile).
 the latest brightway25, bw_graph_tools and bw_timex from PyPI into a fresh environment, with
 no release cutoff and no fixed stack, and runs every case once at the `smoke` size. A case
 fails if it errors, its result check fails, or the releases cannot run it; nothing is timed.
-bw_timex pulls in PyPardiso on Linux x86_64, so bw2calc solves with PyPardiso here, not SuperLU
-or UMFPACK. The versions it resolved go to `.asv/compat/PYTHON/requirements.txt`. The
-`compat` workflow runs it every night on Python 3.12, 3.13 and 3.14 and lists the versions in
-each job's summary.
+A second argument picks the column, which sets what gets installed:
+
+- `latest` (the default): the newest release of everything.
+- `floors`: the newest Brightway packages, with each package they depend on directly (NumPy,
+  SciPy, pandas and so on) at the lowest version their declared bounds allow that has a
+  wheel. A lower bound set too low fails here. The rest of the dependencies stay at their
+  latest, since their own floors say nothing about Brightway.
+- `pre`: like `latest`, but pre-releases count too, so NumPy, SciPy and pandas betas show
+  problems before their release.
+
+For example, `just compat 3.12 floors`. bw_timex pulls in PyPardiso on Linux x86_64, so there
+bw2calc solves with PyPardiso, not SuperLU or UMFPACK. The versions each run resolved go to
+`.asv/compat/PYTHON-COLUMN/requirements.txt`. The `compat` workflow runs `latest` every night
+on Linux with Python 3.12, 3.13 and 3.14 and on macOS and Windows with 3.12, `floors` on 3.12
+and `pre` on 3.14, and lists the versions in each job's summary. On macOS and Windows it runs
+on the runner itself, which has no Docker.
 
 ## Results so far
 

@@ -8,8 +8,9 @@ bw-graph-tools==0.10
 bw-processing==1.6
 bw2calc==2.5.0
 bw2parameters==1.1.0
+cachebox==5.2.3
 colorama==0.4.6 ; sys_platform == 'win32'
-deepdiff==7.0.1
+deepdiff==9.1.0
 deprecated==3.0.0
 flexcache==0.3
 flexparser==0.4
@@ -20,15 +21,15 @@ lxml==6.1.3
 matrix-utils==0.9
 morefs==0.2.2
 numpy==2.5.3
-ordered-set==4.1.0
+orderly-set==5.5.0
 packaging==26.3
 pandas==3.0.6
-peewee==4.5.2
-pint==0.26.1
-platformdirs==4.12.3
-pydantic==2.13.5
-pydantic-core==2.46.5
-pydantic-settings==2.15.0
+peewee==4.5.3
+pint==0.26.2
+platformdirs==4.13.5
+pydantic==2.14.1
+pydantic-core==2.50.1
+pydantic-settings==2.16.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.4
 rapidfuzz==3.14.6 ; sys_platform != 'emscripten'
@@ -45,5 +46,5 @@ typing-inspection==0.4.4
 tzdata==2026.5 ; sys_platform == 'emscripten' or sys_platform == 'win32'
 voluptuous==0.16.0
 wheel==0.48.0
-wrapt==2.5.0
+wrapt==2.5.1
 xarray==2026.9.0

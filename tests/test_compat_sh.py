@@ -52,7 +52,7 @@ def compat(repo: Path, *args: str, **env: str) -> subprocess.CompletedProcess:
             "TMPDIR": str(repo),
             "LOG": str(repo / "log"),
             # in-box.sh's cutoff, which this column must not inherit.
-            "UV_EXCLUDE_NEWER": "2026-10-06T00:00:00Z",
+            "UV_EXCLUDE_NEWER": "2026-10-20T00:00:00Z",
             # A knob from the calling shell, which would make pytest import pyklu.
             "BWBENCH_SOLVER": "klu",
             **env,

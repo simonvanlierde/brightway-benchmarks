@@ -38,6 +38,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   interpreter.
 - `just noise` logs each sample's CPU time, wall time and involuntary context switches, and
   its summary counts the samples another process preempted (CPU time under 95% of wall time).
+- bw2data 4.8 joins the bw2data releases. It needs deepdiff 8.6.2 or later, so the release
+  cutoff moves to 2026-10-20 and bw2data's fixed stack is resolved again from 4.8 (deepdiff
+  9.1.0, peewee 4.5.3, pydantic 2.14). All six bw2data releases from 4.6 still run every case
+  on it, but their timings start a new history on the new stack. The cutoff also applies to
+  the packages `just solver-lci` and `just registry-vs-sqlite` leave unpinned, and both now get
+  bw2calc 3.1.0 and bw2data 4.8 without per-package exceptions.
 - bw2calc 3.1.0 joins the bw2calc releases. Its new minimum versions of bw_processing and
   matrix_utils are already in the fixed stack, so the older releases keep their history.
 - `just solver-lci SOLVER SIZE [BW2CALC]` times bw2calc's own `lci()` (3.1.0 unless you name

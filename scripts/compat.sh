@@ -10,7 +10,8 @@
 #   pre     like latest, but pre-releases count too (NumPy, SciPy and pandas betas)
 # Then runs every benchmark once at smoke size through the pytest adapter in
 # benchmarks/codspeed: each case runs and checks its result, and nothing is timed. A case the
-# releases cannot run fails rather than skips. The resolved set goes to
+# releases cannot run fails rather than skips, unless BWBENCH_STRICT is set empty (the macOS and
+# Windows jobs: a solver their wheels lack is a platform gap, not a release problem). The resolved set goes to
 # .asv/compat/PYTHON-COLUMN/requirements.txt before the cases run, so a failing set is on
 # record too.
 set -eu
@@ -59,4 +60,4 @@ floors)
     ;;
 esac
 uv pip install --quiet --python "$py" -r "$out/requirements.txt"
-BWBENCH_STRICT=1 PYTHONPATH=benchmarks "$py" -m pytest -p no:cacheprovider --rootdir benchmarks/codspeed benchmarks/codspeed -v
+BWBENCH_STRICT=${BWBENCH_STRICT-1} PYTHONPATH=benchmarks "$py" -m pytest -p no:cacheprovider --rootdir benchmarks/codspeed benchmarks/codspeed -v

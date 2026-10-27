@@ -129,7 +129,8 @@ bw2calc solves with PyPardiso, not SuperLU or UMFPACK. The versions each run res
 `.asv/compat/PYTHON-COLUMN/requirements.txt`. The `compat` workflow runs `latest` every night
 on Linux with Python 3.12, 3.13 and 3.14 and on macOS and Windows with 3.12, `floors` on 3.12
 and `pre` on 3.14, and lists the versions in each job's summary. On macOS and Windows it runs
-on the runner itself, which has no Docker.
+on the runner itself, which has no Docker, and the cases that need PyPardiso or UMFPACK skip
+there instead of failing, since neither installs from PyPI on those systems.
 
 ## Results so far
 

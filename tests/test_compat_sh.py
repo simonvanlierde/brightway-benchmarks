@@ -74,6 +74,13 @@ def test_resolves_the_newest_releases_and_runs_every_suite(repo: Path):
     assert log[-1].endswith("PYTHONPATH=benchmarks strict=1 solver=unset")
 
 
+def test_an_empty_strict_lets_platform_gaps_skip(repo: Path):
+    # The macOS and Windows jobs set it empty: a solver their wheels lack is not a release problem.
+    out = compat(repo, BWBENCH_STRICT="")
+    assert out.returncode == 0, out.stderr
+    assert (repo / "log").read_text().splitlines()[-1].endswith("strict= solver=unset")
+
+
 def test_a_failing_set_is_still_recorded(repo: Path):
     out = compat(repo, FAKE_PYTEST_EXIT="1")
     assert out.returncode == 1

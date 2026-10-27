@@ -169,5 +169,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `scripts/in-box.sh` works in a git worktree, whose `.git` file points outside the mounted
   folder: it runs `git config` from `/`.
 - The `release` workflow refuses a tag whose commit is not on `main`.
+- `scripts/asv.sh` writes lock files only for the environments of the current stack, not for
+  the folders older stacks left in `.asv/env/`.
 
 [Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/commits/HEAD

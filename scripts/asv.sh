@@ -33,7 +33,7 @@ default=superlu,umfpack
 [ "$(uname -m)" = x86_64 ] && default=superlu,pypardiso,umfpack
 # Written to .asv/ (writable in the box), so asv/ with the tracked configs can stay read-only.
 conf=.asv/.$subject.local.json
-results=$(
+printed=$(
     BWBENCH_SOLVERS=${BWBENCH_SOLVERS:-$default} python3 - "$subject" "$machine" <<'PY'
 import hashlib, json, os, platform, sys
 subject, machine = sys.argv[1:]
@@ -71,9 +71,10 @@ if conf.get("include"):
 if machine in ("smoke", "noise", "stack"):
     conf["results_dir"] = f"../.asv/{machine}/{subject}"
 json.dump(conf, open(f".asv/.{subject}.local.json", "w"), indent=2)
-print(f".asv/{conf['results_dir']}")
+print(stack, f".asv/{conf['results_dir']}")
 PY
 )
+stack=${printed%% *} results=${printed#* }
 
 grep -qs "\"$machine\"" "$HOME/.asv-machine.json" ||
     asv machine --yes --machine "$machine" --config "$conf" >/dev/null
@@ -94,6 +95,8 @@ if [ "$cmd" = run ]; then
     for info in .asv/env/"$subject"/*/asv-env-info.json; do
         [ -e "$info" ] || continue
         env=$(dirname "$info")
+        # A folder of an older stack is no longer used, and its packages are not what ran.
+        grep -q "\"BWBENCH_STACK\": *\"$stack\"" "$info" || continue
         # A conda environment has no lock: its versions file lists its packages as
         # name-version-build (the build names the BLAS). PEP 751 describes PyPI files only.
         if [ -d "$env/conda-meta" ]; then

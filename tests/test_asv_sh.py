@@ -1,5 +1,6 @@
 """scripts/asv.sh's config step: which environments asv gets, with uvx stubbed out."""
 
+import hashlib
 import json
 import platform
 import shutil
@@ -127,16 +128,24 @@ def test_an_explicit_machine_wins(repo: Path):
     assert "--machine m " in (repo / "stub" / "uvx.log").read_text()
 
 
-def run_with_env(repo: Path, *, conda: bool) -> subprocess.CompletedProcess:
-    """`asv.sh plain run` with one built environment, abc, whose python prints numpy==2.5.3."""
-    env = repo / ".asv" / "env" / "plain" / "abc"
+def add_env(repo: Path, name: str, *, conda: bool = False, stack: str | None = None) -> None:
+    """A built environment of plain, whose python prints numpy==2.5.3, on the current stack unless named."""
+    env = repo / ".asv" / "env" / "plain" / name
     (env / "bin").mkdir(parents=True)
     if conda:
         (env / "conda-meta").mkdir()
         (env / "conda-meta" / "libblas-3.11.0-1_h1ea3ea9_openblas.json").write_text("{}")
-    (env / "asv-env-info.json").write_text('{"tool_name": "rattler"}' if conda else '{"tool_name": "virtualenv"}')
+    stack = stack or hashlib.sha256((repo / "asv" / "plain.stack.txt").read_bytes()).hexdigest()[:8]
+    # As asv writes it, indented.
+    info = {"build_env_vars": {"BWBENCH_STACK": stack}, "tool_name": "rattler" if conda else "uv"}
+    (env / "asv-env-info.json").write_text(json.dumps(info, indent=4))
     (env / "bin" / "python").write_text("#!/bin/sh\necho numpy==2.5.3\n")
     (env / "bin" / "python").chmod(0o755)
+
+
+def run_with_env(repo: Path, *, conda: bool) -> subprocess.CompletedProcess:
+    """`asv.sh plain run` with one built environment, abc."""
+    add_env(repo, "abc", conda=conda)
     (repo / "stub" / "uv").write_text('#!/bin/sh\necho "$@" >>"$0.log"\nexit 0\n')
     (repo / "stub" / "uv").chmod(0o755)
     return subprocess.run(
@@ -178,3 +187,14 @@ def test_a_stray_solver_does_not_reach_asv(repo: Path):
     out, _ = config(repo, "solvers", BWBENCH_SOLVERS="umfpack", BWBENCH_SOLVER="umfpack-T")
     assert out.returncode == 0, out.stderr
     assert "solver=unset" in (repo / "stub" / "uvx.log").read_text()
+
+
+@pytest.mark.parametrize("conda", [False, True])
+def test_an_environment_of_an_older_stack_gets_no_lock(repo: Path, conda: bool):  # noqa: FBT001
+    """Asv leaves the folders of earlier stacks in .asv/env; their packages are not what ran."""
+    add_env(repo, "old", conda=conda, stack="0ld57ack")
+    out = run_with_env(repo, conda=conda)
+    assert out.returncode == 0, out.stderr
+    written = sorted(p.name for p in (repo / "results" / "m").iterdir())
+    assert written == (["versions-abc.txt"] if conda else [])
+    assert "pylock.old.toml" not in (repo / "stub" / "uv.log").read_text()

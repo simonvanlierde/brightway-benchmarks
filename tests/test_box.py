@@ -141,3 +141,14 @@ def test_seccomp_profile_is_dockers_default_plus_addr_no_randomize():
     allowed = {r["args"][0]["value"] for r in personality}
     assert 0x40000 in allowed  # ADDR_NO_RANDOMIZE; the rest are Docker's own, which moby may change
     assert all(r["action"] == "SCMP_ACT_ALLOW" and r["args"][0]["op"] == "SCMP_CMP_EQ" for r in personality)
+
+
+def test_box_passes_the_commit_in(box: tuple[Path, Path]):
+    """Git cannot read a worktree's .git from inside the box, so box.sh names the commit."""
+    repo, log = box
+    git = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t.test", "-c", "commit.gpgsign=false"]
+    subprocess.run([*git, "init", "-q"], check=True)
+    subprocess.run([*git, "commit", "-q", "--allow-empty", "-m", "x"], check=True)
+    head = subprocess.run([*git, "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+    assert run_box(repo).returncode == 0
+    assert f"BWBENCH_COMMIT={head}" in log.read_text().split("\n")

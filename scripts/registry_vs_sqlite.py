@@ -1,4 +1,4 @@
-"""bw2data #290: a SQLite project against sentier-brightway's Parquet registry.
+"""A SQLite project against sentier-brightway's Parquet registry, the format of bw2data #290.
 
 Writes one synthetic system both ways from the same ``BuildResult`` and prints one JSON
 line per format: write time, bytes on disk, the first score in a fresh Python process
@@ -19,7 +19,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from bwbench import BW2DATA_RTOL, check, temporary_brightway_dir
+from bwbench import BW2DATA_RTOL, check, point_pypardiso_at_mkl, temporary_brightway_dir
 from bwbench.synth import system
 
 METHOD_KEY = ("synthetic", "method 0")
@@ -134,6 +134,7 @@ def cold(fmt: str, where: str) -> dict:
 def main() -> None:  # noqa: D103 - the module docstring is the usage
     size = sys.argv[1] if len(sys.argv) > 1 else "smoke"
     temporary_brightway_dir()
+    point_pypardiso_at_mkl()  # the cold-read processes inherit it
     import bw2data as bd  # noqa: PLC0415
     from sentier_brightway.datapackage import PACKAGE_DIR, REGISTRY_DIR, write_datapackages  # noqa: PLC0415
     from sentier_brightway.registry import build_registry, write_registry  # noqa: PLC0415
@@ -169,6 +170,7 @@ def main() -> None:  # noqa: D103 - the module docstring is the usage
 
     modules = ("bw2data", "bw2calc", "bw_processing", "sentier_brightway", "duckdb")
     versions = {m: __import__(m).__version__ for m in modules}
+    versions["solver"] = "pypardiso" if __import__("bw2calc").PYPARDISO else "superlu"
     for row in rows:
         r = ref32 if row["format"] == "sqlite" else ref
         row |= {"size": size, "reference": r, "relative_error": abs(row["score"] - r) / abs(r), **versions}

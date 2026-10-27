@@ -11,6 +11,7 @@ unknown commit when none does. Rerun after every run; it replaces the file. RO-C
 
 import hashlib
 import json
+import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -24,17 +25,27 @@ REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
 LICENSE = "https://spdx.org/licenses/BSD-3-Clause"
 
 
-def writers(folder: Path) -> dict[str, tuple[str, str]]:
-    """The (commit, generator version) of the newest run that wrote each content, by sha256.
+def writers(folder: Path) -> dict[str | tuple[str, str], tuple[str, str]]:
+    """The (commit, generator version) of the newest run that wrote each file.
 
+    Keyed by (sha256, crate id) and by sha256 alone: the first tells apart files with the same
+    content in two subjects (machine.json), the second a file whose recorded path names no subject.
     Record names start with the time of the run, so sorting by name puts the newest last.
     """
-    found: dict[str, tuple[str, str]] = {}
+    found: dict[str | tuple[str, str], tuple[str, str]] = {}
     for record in sorted(folder.rglob("bwbench-run-*.txt"), key=lambda p: p.name):
         lines = record.read_text().splitlines()
         head = dict(line.split(" ", 1) for line in lines if line.startswith(("commit ", "generator ")))
         run = (head.get("commit", "unknown"), head.get("generator", ""))
-        found |= dict.fromkeys([line[:64] for line in lines if line[64:66] == "  "], run)  # sha256sum's format
+        subject = record.relative_to(folder).parts[0]  # asv.sh writes it in <subject>/<machine>/
+        for line in lines:
+            if line[64:66] != "  ":  # sha256sum's format
+                continue
+            sha, parts = line[:64], Path(os.path.normpath(line[66:])).parts
+            found[sha] = run
+            if subject in parts:
+                start = len(parts) - 1 - parts[::-1].index(subject)
+                found[sha, "/".join(parts[start:])] = run
         found[hashlib.sha256(record.read_bytes()).hexdigest()] = run
     return found
 
@@ -69,7 +80,8 @@ def crate(folder: Path) -> dict:
     known = writers(folder)
     runs: dict[str, tuple[str, list[str]]] = {}  # commit: (generator version, files it wrote)
     for i, f in zip(ids, files, strict=True):
-        sha, generator = known.get(hashlib.sha256(f.read_bytes()).hexdigest(), ("unknown", ""))
+        digest = hashlib.sha256(f.read_bytes()).hexdigest()
+        sha, generator = known.get((digest, i)) or known.get(digest, ("unknown", ""))
         runs.setdefault(sha, (generator, []))[1].append(i)
     code = [software(sha, generator) for sha, (generator, _) in runs.items()]
     profiles = [

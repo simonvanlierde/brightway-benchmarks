@@ -21,14 +21,14 @@ with ``PYTHONPATH=src``.
 """
 
 # First, so the BLAS thread pin lands before numpy loads (bwbench warns otherwise).
-import bwbench  # noqa: F401, I001
+import bwbench  # noqa: I001
 import os
 import statistics
 import sys
 import time
 from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor
-from importlib.metadata import files, version
+from importlib.metadata import version
 from pathlib import Path
 
 import numpy as np
@@ -125,9 +125,7 @@ def main() -> None:
         report("KLU pyklu (A, AMD + BTF)", s, k.solve)
 
     if "--pardiso" in sys.argv:
-        # pypardiso looks for MKL in sys.prefix only, which `uv run --with` puts elsewhere.
-        mkl_rt = next(str(f.locate()) for f in files("mkl") or [] if f.name.startswith("libmkl_rt.so"))
-        os.environ.setdefault("PYPARDISO_MKL_RT", mkl_rt)
+        bwbench.point_pypardiso_at_mkl()
         import pypardiso  # noqa: PLC0415
 
         def pardiso() -> pypardiso.PyPardisoSolver:

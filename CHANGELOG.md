@@ -117,6 +117,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `just registry-vs-sqlite` runs bw2data 4.8 and bw2calc 3.1.0. The box's release cutoff had
+  held it at bw2data 4.7 and bw2calc 2.5.0. `solver=pypardiso` adds PyPardiso, and each row
+  names the solver bw2calc used.
 - PyPI environments no longer write a `versions-*.txt` file beside the results: their
   `pylock.*.toml` lock file holds the same versions. Only the conda environments
   (`bw2calc-conda`) keep one, as they have no lock file. The PyPI versions
@@ -131,6 +134,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- PyPardiso under `uv run --with` fell back to SuperLU without a word, because pypardiso
+  looks for MKL in `sys.prefix` only. `bwbench.point_pypardiso_at_mkl()` points it at the
+  `mkl` package's runtime, for `registry-vs-sqlite`, `solver-lci` and `solver_factorize.py`.
 - `scripts/in-box.sh` works in a git worktree, whose `.git` file points outside the mounted
   folder: it runs `git config` from `/`.
 

@@ -21,7 +21,6 @@ hosted runner.
 
 # Hide what this solver must not see before bwbench, scipy or bw2calc import it.
 # A None entry makes the import raise ModuleNotFoundError, as if it were not installed.
-import os
 import sys
 
 SOLVER = sys.argv[1]
@@ -37,17 +36,6 @@ if SOLVER not in HIDE:
     raise SystemExit(msg)
 sys.modules.update(dict.fromkeys(HIDE[SOLVER]))
 
-if SOLVER == "pypardiso" and "PYPARDISO_MKL_RT" not in os.environ:
-    # pypardiso looks for MKL in sys.prefix only, which `uv run --with` puts elsewhere.
-    from importlib.metadata import PackageNotFoundError, files
-
-    try:
-        mkl_rt = [f.locate() for f in files("mkl") or [] if f.name.startswith("libmkl_rt.so")]
-    except PackageNotFoundError:
-        mkl_rt = []
-    if mkl_rt:
-        os.environ["PYPARDISO_MKL_RT"] = str(mkl_rt[0])
-
 # First, so the BLAS thread pin lands before numpy loads (bwbench warns otherwise).
 import bwbench  # noqa: E402, I001
 import platform  # noqa: E402
@@ -61,6 +49,9 @@ from pathlib import Path  # noqa: E402
 
 from bwbench.solvers import CALLS, FACTORIZERS, patch  # noqa: E402
 from bwbench.synth import packages  # noqa: E402
+
+if SOLVER == "pypardiso":
+    bwbench.point_pypardiso_at_mkl()  # before bw2calc imports pypardiso
 
 warnings.simplefilter("ignore")  # bw2calc warns that a faster solver is missing; that is the point here
 

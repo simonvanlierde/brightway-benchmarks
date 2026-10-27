@@ -105,3 +105,19 @@ def temporary_brightway_dir() -> str:
     atexit.register(shutil.rmtree, path, ignore_errors=True)
     os.environ["BRIGHTWAY2_DIR"] = path
     return path
+
+
+def point_pypardiso_at_mkl() -> None:
+    """Set ``PYPARDISO_MKL_RT`` to the ``mkl`` package's runtime, if it is installed and the variable is unset.
+
+    pypardiso looks for MKL in ``sys.prefix`` only, which ``uv run --with`` puts elsewhere, and
+    bw2calc then quietly falls back to SuperLU. Call it before bw2calc or pypardiso is imported.
+    """
+    from importlib.metadata import PackageNotFoundError, files  # noqa: PLC0415
+
+    try:
+        mkl_rt = [f.locate() for f in files("mkl") or [] if f.name.startswith("libmkl_rt.so")]
+    except PackageNotFoundError:
+        return
+    if mkl_rt:
+        os.environ.setdefault("PYPARDISO_MKL_RT", str(mkl_rt[0]))

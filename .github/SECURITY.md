@@ -43,9 +43,10 @@ what stops each:
 - **A Brightway release or one of its dependencies runs harmful code.** asv installs every
   release it times, so that code runs only in the benchmark box: a container with the
   repository mounted read-only, every capability dropped, `no-new-privileges`, and limits on
-  processes, memory and CPUs (`scripts/box.sh`). The one exception is the macOS and Windows
-  jobs of the `compat` workflow, which run on a throwaway GitHub-hosted runner with a
-  read-only token. The box keeps its uv cache in `.asv/` between runs.
+  processes, memory and CPUs (`scripts/box.sh`). The exceptions are the macOS and Windows
+  jobs of the `compat` workflow and the `codspeed` workflow, which run on a throwaway
+  GitHub-hosted runner with a read-only token. `codspeed` also holds an OIDC token for its
+  upload, which cannot pass for `release.yml` (CONTRIBUTING.md names it in the verify step). The box keeps its uv cache in `.asv/` between runs.
 - **A compromised dependency of this project.** `uv.lock` pins the tree, Renovate holds a
   new release back for 7 days, `uv audit` checks the lock on every pull request, and the
   Docker base image and every GitHub Action are pinned by digest or commit.
@@ -53,7 +54,8 @@ what stops each:
   contents: read`, no checkout keeps its credentials, no workflow runs on
   `pull_request_target`, and zizmor and actionlint check each workflow on every pull
   request. A job that needs more asks for it alone: `scorecard` uploads its report to code
-  scanning, the hand-started `site` workflow deploys GitHub Pages from `main`, and
+  scanning, `codspeed` uploads to CodSpeed, the hand-started `site` workflow deploys
+  GitHub Pages from `main`, and
   `release` creates a release for a pushed version tag.
 - **A wrong result.** Every LCA score is checked against an independent reference and fails
   when it leaves the tolerance, and each run records the exact versions it installed. The

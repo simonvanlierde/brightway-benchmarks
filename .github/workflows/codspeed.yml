@@ -1,0 +1,90 @@
+name: codspeed
+
+# Every suite in benchmarks/codspeed under CodSpeed's CPU simulation, uploaded to CodSpeed so
+# a pull request that changes a benchmark's instruction count shows up on the PR. Same
+# environments as `just codspeed SUBJECT` (scripts/codspeed-venv.sh at in-box.sh's cutoff),
+# at smoke size. One job per suite; CodSpeed merges the shards into one run.
+#
+# Unlike `just codspeed`, the suites run on the hosted runner, not in the box, and the job
+# holds an OIDC token for the upload while released Brightway code runs. That token can only
+# prove "a workflow in this repository": release attestations are verified against
+# release.yml by name (CONTRIBUTING.md), so it cannot pass for a release.
+
+on:
+  push:
+    branches: [main]
+  # Pull requests only when what a suite runs can change; every push to main runs, since
+  # CodSpeed compares a pull request with its base commit's results.
+  pull_request:
+    paths:
+      - benchmarks/**
+      - src/**
+      - asv/**
+      - scripts/codspeed-venv.sh
+      - scripts/in-box.sh
+      - .github/workflows/codspeed.yml
+  # Lets CodSpeed trigger backtest runs to fill in the history.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  codspeed:
+    name: ${{ matrix.subject }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write # OpenID Connect authentication with CodSpeed
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # bw2calc with PyPardiso, as asv's first environment.
+          - {subject: bw2calc, packages: pypardiso}
+          - {subject: bw2data, packages: ""}
+          - {subject: bw_graph_tools, packages: ""}
+          - {subject: bw_processing, packages: ""}
+          - {subject: bw_timex, packages: ""}
+          - {subject: matrix_utils, packages: ""}
+    env:
+      SUBJECT: ${{ matrix.subject }}
+      PACKAGES: ${{ matrix.packages }}
+      VENV: /tmp/codspeed-venv
+      # As in-box.sh: one BLAS thread and a fixed hash seed, so the counts repeat.
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      PYTHONHASHSEED: "0"
+      PYTHONFAULTHANDLER: "1"
+      BWBENCH_SIZES: smoke
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: false
+          version: "0.12.19"
+
+      # Only what was on PyPI at in-box.sh's cutoff, as in the box.
+      - name: Install the ${{ matrix.subject }} environment
+        run: |
+          cutoff=$(sed -n 's/^cutoff=//p' scripts/in-box.sh)
+          # shellcheck disable=SC2086 # $PACKAGES is a list of words
+          UV_EXCLUDE_NEWER=$cutoff sh scripts/codspeed-venv.sh "$VENV" "$SUBJECT" $PACKAGES
+          uv pip freeze --python "$VENV/bin/python"
+
+      - name: Run the benchmarks
+        uses: CodSpeedHQ/action@78102a468f96d8e0ccb92d0ec49425753fc42062 # v5.6.0
+        with:
+          mode: simulation
+          run: >-
+            PYTHONPATH=benchmarks "$VENV/bin/python" -m pytest -p no:cacheprovider
+            --rootdir benchmarks/codspeed "benchmarks/codspeed/test_$SUBJECT.py" --codspeed -v

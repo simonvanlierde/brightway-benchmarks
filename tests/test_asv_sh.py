@@ -205,9 +205,11 @@ def test_an_environment_of_an_older_stack_gets_no_lock(repo: Path, conda: bool):
 def test_each_result_keeps_the_commit_that_wrote_it(repo: Path):
     """Two runs at different bwbench commits: the crate credits each result to its own run."""
     (repo / "asv" / "plain.json").write_text(json.dumps({"results_dir": "../results/plain", "matrix": {"req": {}}}))
-    # asv writes one result file per run, named after RESULT.
+    # asv writes one result file per run, named after RESULT. It waits first: asv.sh finds the
+    # run's files with `find -newer`, and the disk's clock ticks in milliseconds, so a file
+    # written in the same tick as asv.sh's start marker would not count as newer.
     (repo / "stub" / "uvx").write_text(
-        '#!/bin/sh\ncase "$*" in *" run "*) mkdir -p results/plain/m\n'
+        '#!/bin/sh\ncase "$*" in *" run "*) sleep 0.1; mkdir -p results/plain/m\n'
         'echo "$RESULT" >"results/plain/m/$RESULT.json" ;; esac\n'
     )
     env = {"PATH": f"{repo / 'stub'}:/usr/bin:/bin", "HOME": str(repo), "BWBENCH_MACHINE": "m"}

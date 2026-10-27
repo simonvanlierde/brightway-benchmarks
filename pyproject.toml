@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Benchmarks for the Brightway LCA stack on seeded synthetic matrices"
 readme = "README.md"
 requires-python = ">=3.12"
-authors = [{ name = "Simon van Lierde", email = "simonvanlierde@gmail.com" }]
+authors = [{ name = "Simon van Lierde", email = "code@duinlab.nl" }]
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 dependencies = [

@@ -159,6 +159,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   history, not a change in bw2data.
 - A test pins a hash of the `smoke` system's arrays to `GENERATOR_VERSION`, so a builder
   change without a version bump fails.
+- The box gives every run a new home folder and sets `UV_NO_CONFIG` and
+  `PIP_CONFIG_FILE=/dev/null`, so config one run writes cannot reach the next. The caches
+  stay in `.asv/`; generated datapackages follow `XDG_CACHE_HOME`.
 
 ### Fixed
 

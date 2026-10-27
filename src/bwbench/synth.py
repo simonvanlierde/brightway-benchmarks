@@ -27,6 +27,7 @@ import functools
 import hashlib
 import json
 import math
+import os
 import shutil
 import time
 import uuid
@@ -600,8 +601,11 @@ def write_datapackages(system: System, folder: Path) -> Path:
 
 
 def data_root() -> Path:
-    """Where generated datapackages are cached: ``~/.cache/bwbench`` (under ``.asv/`` in the box)."""
-    return Path.home() / ".cache" / "bwbench"
+    """Where generated datapackages are cached: ``$XDG_CACHE_HOME/bwbench``, by default ``~/.cache/bwbench``.
+
+    The box sets XDG_CACHE_HOME under ``.asv/``, so the cache outlives its per-run home.
+    """
+    return Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "bwbench"
 
 
 def cache_folder(name: str, p: Profile, *, seed: int, uncertain: bool, bwp_version: str | None = None) -> Path:

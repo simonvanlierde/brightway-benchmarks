@@ -321,3 +321,11 @@ def test_smoke_arrays_match_the_generator_version():
         f"system('smoke') now hashes to {digest} under GENERATOR_VERSION {synth.GENERATOR_VERSION!r}: "
         "if the builder changed, bump GENERATOR_VERSION in synth.py and set SMOKE_VERSION and SMOKE_SHA256 here"
     )
+
+
+def test_datapackages_follow_xdg_cache_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """The box gives every run a new home and keeps the cache under .asv/ with XDG_CACHE_HOME."""
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    assert synth.data_root() == tmp_path / "bwbench"
+    monkeypatch.delenv("XDG_CACHE_HOME")
+    assert synth.data_root() == Path.home() / ".cache" / "bwbench"

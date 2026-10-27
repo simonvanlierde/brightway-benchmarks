@@ -86,7 +86,7 @@ def run_in_box(tmp_path: Path, command: str) -> tuple[int, str]:
     script.write_text((REPO / "scripts" / "in-box.sh").read_text().replace("/src", str(tmp_path)))
     with subprocess.Popen(
         ["/bin/sh", str(script), "sh", "-c", command],
-        env={"PATH": "/usr/bin:/bin", "HOME": str(tmp_path)},
+        env={"PATH": "/usr/bin:/bin", "HOME": str(tmp_path), "TMPDIR": str(tmp_path)},
         stdout=subprocess.PIPE,
         text=True,
     ) as proc:
@@ -98,6 +98,17 @@ def test_in_box_execs_the_command(tmp_path: Path):
     # The command must replace in-box.sh, so signals sent to the box reach it directly.
     pid, out = run_in_box(tmp_path, "echo $$")
     assert out.strip() == str(pid)
+
+
+def test_in_box_config_does_not_outlive_the_run(tmp_path: Path):
+    """A run that writes config to its home leaves nothing for the next; the caches stay in .asv/."""
+    _, first = run_in_box(tmp_path, "mkdir -p $HOME/.config/pip && touch $HOME/.config/pip/pip.conf && echo $HOME")
+    _, second = run_in_box(tmp_path, "echo $HOME; ls -A $HOME; echo $UV_NO_CONFIG $PIP_CONFIG_FILE")
+    home, *rest = second.split()
+    assert home != first.strip()
+    assert rest == [".gitconfig", "1", "/dev/null"]  # only what in-box.sh itself writes
+    _, caches = run_in_box(tmp_path, "echo $XDG_CACHE_HOME $UV_CACHE_DIR")
+    assert caches.split() == [f"{tmp_path}/.asv/home/.cache", f"{tmp_path}/.asv/uv-cache"]
 
 
 def test_box_lets_codspeed_turn_aslr_off_with_seccomp_on(box: tuple[Path, Path]):

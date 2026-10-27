@@ -1,3 +1,4 @@
+import hashlib
 import os
 import types
 from pathlib import Path
@@ -296,3 +297,27 @@ def test_property_neumann_agrees_with_the_reference(s: synth.System, product: in
         characterization_matrix=sparse.diags(cf),
     )
     assert synth.neumann_score(lca, s.scale) == pytest.approx(s.reference[product][0], rel=1e-9)
+
+
+# What system("smoke") builds under GENERATOR_VERSION "3". A builder change that moves the
+# arrays fails here: bump GENERATOR_VERSION in synth.py and this pair together.
+SMOKE_VERSION = "3"
+SMOKE_SHA256 = "92e68c73c66a3db51a2baf067782ac4e3fdb292f0db777cbcbcfaf1199c9d71c"
+
+
+def arrays_digest(s: synth.System) -> str:
+    """sha256 of the arrays, floats to 10 significant digits so a last-bit libm difference does not count."""
+    h = hashlib.sha256()
+    for ints in (s.tech_rows, s.tech_cols, s.tech_flip, s.bio_rows, s.bio_cols, *s.cf_flows):
+        h.update(np.ascontiguousarray(ints, dtype="<i8").tobytes())
+    for floats in (s.tech_data, s.bio_data, s.scale, *s.cf_data, np.asarray(s.reference)):
+        h.update(" ".join(f"{v:.10g}" for v in np.ravel(floats)).encode())
+    return h.hexdigest()
+
+
+def test_smoke_arrays_match_the_generator_version():
+    digest = arrays_digest(system("smoke"))
+    assert (synth.GENERATOR_VERSION, digest) == (SMOKE_VERSION, SMOKE_SHA256), (
+        f"system('smoke') now hashes to {digest} under GENERATOR_VERSION {synth.GENERATOR_VERSION!r}: "
+        "if the builder changed, bump GENERATOR_VERSION in synth.py and set SMOKE_VERSION and SMOKE_SHA256 here"
+    )

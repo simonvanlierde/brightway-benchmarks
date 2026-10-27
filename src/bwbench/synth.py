@@ -47,6 +47,7 @@ if TYPE_CHECKING:
 # Bump when a builder or the stored reference changes. It is part of the cache key and of
 # the asv `version` of benchmarks on generated data, so their old results are dropped.
 # That replaces asv's hash of the benchmark code: bump it when their timed code changes too.
+# tests/test_synth.py pins a hash of system("smoke")'s arrays to it: update both together.
 GENERATOR_VERSION = "3"
 INPUTS_SHARE = 0.5  # random builder: upper bound on the sum of input amounts per column
 NEUMANN_TOL = 1e-17  # the series stops when the rest of it is below this, relative to the demand

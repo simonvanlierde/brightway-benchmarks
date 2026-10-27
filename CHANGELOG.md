@@ -157,6 +157,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `BW2DATA_RTOL` drops from 1e-6 to 1e-12. From this version on, `track_score_error` falls
   from about 3e-9 (smoke) and 5.7e-8 (ecoinvent size) to about 1e-15: a step in the published
   history, not a change in bw2data.
+- A test pins a hash of the `smoke` system's arrays to `GENERATOR_VERSION`, so a builder
+  change without a version bump fails.
 
 ### Fixed
 

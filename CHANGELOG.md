@@ -45,20 +45,22 @@ the history on GitHub Pages. The README describes what is measured and how to ru
   calibrate the profile and drive LU fill, and `measure_stats.py` refreshes a profile.
 - **Running it.** `just smoke`, `just bench`, `just noise`, `just site`, `just
   results-commit`, `just registry-vs-sqlite` and `just codspeed`. Brightway's code runs only
-  in a throwaway container with the repository read-only, no capabilities and limits from
-  `BWBENCH_CPUS`, `BWBENCH_MEM` and `BWBENCH_THREADS`. `BWBENCH_SIZES` and its per-case
+  in a throwaway container with the repository read-only, no capabilities, a new home folder
+  and no uv or pip config each run, and limits from `BWBENCH_CPUS`, `BWBENCH_MEM` and
+  `BWBENCH_THREADS`. `BWBENCH_SIZES` and its per-case
   variants pick the database size, and `BWBENCH_ROUNDS` the rounds. `just bench` skips what
   already succeeded, so a stopped backfill resumes. `@bench` writes a case once for both asv
   and pytest-codspeed; `just codspeed` runs a suite under CodSpeed's CPU simulation with
   address randomization off (`docker/seccomp-noaslr.json`).
 - **Reproducible results.** Each run keeps a PEP 751 lock file per environment (a
-  `versions-*.txt` with build strings for conda) and an RO-Crate naming the bwbench commit,
-  generator version and profiles. `just noise` measures the run-to-run spread per case; the
+  `versions-*.txt` with build strings for conda) and a `bwbench-run-*.txt` record of the
+  commit and generator version that wrote each file. The RO-Crate over the results credits
+  each file to that commit and names the profiles. `just noise` measures the run-to-run spread per case; the
   README gives the noise floor on the pinned machine and on a hosted runner
   (`noise-hosted` workflow).
 - **Publishing.** `just results-commit` keeps results on a `results` branch, refusing any that
   name the host or a name in `BWBENCH_PRIVATE_NAMES`, and the `site` workflow builds the
-  history pages from it. The front page says how to read the graphs and, from the nightly
+  history pages from it, daily and after new results. The front page says how to read the graphs and, from the nightly
   `compat` runs, which Brightway set works together today, with its `requirements.txt` and
   `pylock.toml`.
 - **Compatibility.** `just compat PYTHON [latest|floors|pre]` installs today's PyPI releases
@@ -81,6 +83,9 @@ For readers of the history pages, which were published before this release:
   (deepdiff 9.1.0, peewee 4.5.3, pydantic 2.14), so bw2data's timings start a new history.
 - PyPI environments no longer write `versions-*.txt` beside their results: the lock file
   holds the same versions. The files already published stay.
+- The published RO-Crate credits each result file to the commit that wrote it. Files written
+  before the run records existed show the commit as `unknown`, where the crate used to name
+  whatever commit last wrote it.
 
 [Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/simonvanlierde/brightway-benchmarks/releases/tag/v0.1.0

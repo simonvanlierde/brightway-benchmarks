@@ -150,8 +150,8 @@ The [site](https://simonvanlierde.github.io/brightway-benchmarks/#works-together
 "works together today" table: how each job ended in the latest nightly run, and the last
 set that passed, with its Brightway and NumPy versions and its `requirements.txt` and
 `pylock.toml`. To install a set known to work, use its `requirements.txt` as constraints, as
-in `uv pip install brightway25 -c requirements.txt`. The table is as fresh as the last `site`
-run, and a set is kept for 90 days, as long as GitHub keeps the workflow's artifacts.
+in `uv pip install brightway25 -c requirements.txt`. The `site` workflow rebuilds the page
+daily after the nightly run, and a set is kept for 90 days, as long as GitHub keeps the workflow's artifacts.
 
 ## Results so far
 

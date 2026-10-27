@@ -46,7 +46,10 @@ what stops each:
   processes, memory and CPUs (`scripts/box.sh`). The exceptions are the macOS and Windows
   jobs of the `compat` workflow and the `codspeed` workflow, which run on a throwaway
   GitHub-hosted runner with a read-only token. `codspeed` also holds an OIDC token for its
-  upload, which cannot pass for `release.yml` (CONTRIBUTING.md names it in the verify step). The box keeps its uv cache in `.asv/` between runs.
+  upload, which cannot pass for `release.yml` (CONTRIBUTING.md names it in the verify step).
+  The box's home folder is new on every run, and uv and pip read no config file, so a release
+  cannot leave config for later runs. Its package caches (uv, pip, rattler) and the generated
+  datapackages stay in `.asv/` between runs.
 - **A compromised dependency of this project.** `uv.lock` pins the tree, Renovate holds a
   new release back for 7 days, `uv audit` checks the lock on every pull request, and the
   Docker base image and every GitHub Action are pinned by digest or commit.
@@ -54,9 +57,8 @@ what stops each:
   contents: read`, no checkout keeps its credentials, no workflow runs on
   `pull_request_target`, and zizmor and actionlint check each workflow on every pull
   request. A job that needs more asks for it alone: `scorecard` uploads its report to code
-  scanning, `codspeed` uploads to CodSpeed, the hand-started `site` workflow deploys
-  GitHub Pages from `main`, and
-  `release` creates a release for a pushed version tag.
+  scanning, `codspeed` uploads to CodSpeed, the `site` workflow deploys GitHub Pages
+  from `main`, and `release` creates a release for a pushed version tag.
 - **A wrong result.** Every LCA score is checked against an independent reference and fails
   when it leaves the tolerance, and each run records the exact versions it installed. The
   check runs in the same box as the release it times, so it cannot catch a release written

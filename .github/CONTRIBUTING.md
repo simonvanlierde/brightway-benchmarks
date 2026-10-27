@@ -32,6 +32,8 @@ request:
 - `smoke` runs `just smoke` weekly, and `compat` runs `just compat` nightly.
 - `site`, `noise-hosted` and `solvers-macos` run by hand.
 - `scorecard` rates the repository for the OpenSSF Scorecard badge.
+- `codspeed` runs the pytest-codspeed suites under CodSpeed's CPU simulation on every push to
+  `main` and on pull requests that touch them, and CodSpeed reports changes on the pull request.
 - `release` runs on a pushed version tag (see Releasing).
 
 `just smoke` builds the benchmark box and runs every benchmark once at the oldest and
@@ -88,7 +90,8 @@ The tag runs the `release` workflow. It checks the tag against `pyproject.toml` 
 CHANGELOG, then creates the GitHub release with that version's section as notes, the source
 archive, `SHA256SUMS` and a signed build provenance attestation. Do not create the release by
 hand. Zenodo archives each published release from `CITATION.cff`. To check a download:
-`gh attestation verify brightway-benchmarks-X.Y.Z.tar.gz --repo simonvanlierde/brightway-benchmarks`.
+`gh attestation verify brightway-benchmarks-X.Y.Z.tar.gz --repo simonvanlierde/brightway-benchmarks
+--signer-workflow simonvanlierde/brightway-benchmarks/.github/workflows/release.yml`.
 
 ## Sign off your commits
 

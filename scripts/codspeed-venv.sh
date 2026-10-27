@@ -24,8 +24,11 @@ uv venv -q "$venv" --python 3.12
 py=$venv/bin/python
 reqs=$(python3 -c '
 import json, sys
-req = json.load(open(f"asv/{sys.argv[1]}.json"))["matrix"]["req"]
-print(" ".join(f"{k}=={v[0]}" for k, v in req.items() if not k.startswith("pip+")))
+conf = json.load(open(f"asv/{sys.argv[1]}.json"))
+pins = [f"{k}=={v[0]}" for k, v in conf["matrix"]["req"].items() if not k.startswith("pip+")]
+# Pinned extras its install_command adds, such as bw2calc 3.x'"'"'s threadpoolctl.
+pins += [w for c in conf.get("install_command", []) for w in c.split() if "==" in w]
+print(" ".join(pins))
 ' "$subject")
 # shellcheck disable=SC2086 # $reqs and $newer are lists of words
 uv pip install -q --python "$py" $newer --no-deps -r "asv/$subject.stack.txt" $reqs "$spec"

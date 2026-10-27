@@ -4,11 +4,25 @@ name: codspeed
 # a pull request that changes a benchmark's instruction count shows up on the PR. Same
 # environments as `just codspeed SUBJECT` (scripts/codspeed-venv.sh at in-box.sh's cutoff),
 # at smoke size. One job per suite; CodSpeed merges the shards into one run.
+#
+# Unlike `just codspeed`, the suites run on the hosted runner, not in the box, and the job
+# holds an OIDC token for the upload while released Brightway code runs. That token can only
+# prove "a workflow in this repository": release attestations are verified against
+# release.yml by name (CONTRIBUTING.md), so it cannot pass for a release.
 
 on:
   push:
     branches: [main]
+  # Pull requests only when what a suite runs can change; every push to main runs, since
+  # CodSpeed compares a pull request with its base commit's results.
   pull_request:
+    paths:
+      - benchmarks/**
+      - src/**
+      - asv/**
+      - scripts/codspeed-venv.sh
+      - scripts/in-box.sh
+      - .github/workflows/codspeed.yml
   # Lets CodSpeed trigger backtest runs to fill in the history.
   workflow_dispatch:
 
@@ -17,7 +31,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   codspeed:
@@ -31,9 +45,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # bw2calc with PyPardiso, as asv's first environment. threadpoolctl: bw2calc 3.1
-          # imports it, and asv/bw2calc.stack.txt lacks it.
-          - {subject: bw2calc, packages: pypardiso threadpoolctl==3.7.0}
+          # bw2calc with PyPardiso, as asv's first environment.
+          - {subject: bw2calc, packages: pypardiso}
           - {subject: bw2data, packages: ""}
           - {subject: bw_graph_tools, packages: ""}
           - {subject: bw_processing, packages: ""}

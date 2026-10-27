@@ -25,6 +25,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # the history of main, for the next step
+
+      # A tag pushed on a branch would release code that was never reviewed into main.
+      - name: The tagged commit is on main
+        run: |
+          git merge-base --is-ancestor HEAD origin/main ||
+            { echo "The tagged commit $(git rev-parse --short HEAD) is not on main: tag a commit of main"; exit 1; }
 
       - name: The tag matches pyproject.toml and CHANGELOG.md
         env:

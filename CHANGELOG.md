@@ -168,5 +168,6 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   which `solver_lci.py` and `solver_factorize.py` share instead of their own copies.
 - `scripts/in-box.sh` works in a git worktree, whose `.git` file points outside the mounted
   folder: it runs `git config` from `/`.
+- The `release` workflow refuses a tag whose commit is not on `main`.
 
 [Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/commits/HEAD

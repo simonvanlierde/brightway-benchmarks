@@ -134,9 +134,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- PyPardiso under `uv run --with` fell back to SuperLU without a word, because pypardiso
-  looks for MKL in `sys.prefix` only. `bwbench.point_pypardiso_at_mkl()` points it at the
-  `mkl` package's runtime, for `registry-vs-sqlite`, `solver-lci` and `solver_factorize.py`.
+- `just registry-vs-sqlite solver=pypardiso` fell back to SuperLU without a word, because
+  pypardiso looks for MKL in `sys.prefix` only, which `uv run --with` puts elsewhere. It now
+  points pypardiso at the `mkl` package's runtime through `bwbench.point_pypardiso_at_mkl()`,
+  which `solver_lci.py` and `solver_factorize.py` share instead of their own copies.
 - `scripts/in-box.sh` works in a git worktree, whose `.git` file points outside the mounted
   folder: it runs `git config` from `/`.
 

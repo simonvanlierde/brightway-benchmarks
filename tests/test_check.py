@@ -50,7 +50,8 @@ def test_point_pypardiso_at_mkl(monkeypatch: pytest.MonkeyPatch, tmp_path: Path)
         def locate(self) -> Path:
             return tmp_path / self.name
 
-    monkeypatch.delenv("PYPARDISO_MKL_RT", raising=False)
+    monkeypatch.setenv("PYPARDISO_MKL_RT", "before")  # so monkeypatch restores the real state, set or not
+    monkeypatch.delenv("PYPARDISO_MKL_RT")
     monkeypatch.setattr(importlib.metadata, "files", lambda _: [File("libmkl_core.so.2"), File("libmkl_rt.so.2")])
     point_pypardiso_at_mkl()
     assert os.environ["PYPARDISO_MKL_RT"] == str(tmp_path / "libmkl_rt.so.2")

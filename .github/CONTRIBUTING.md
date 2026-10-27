@@ -31,6 +31,7 @@ request:
 - `smoke` runs `just smoke` weekly, and `compat` runs `just compat` nightly.
 - `site`, `noise-hosted` and `solvers-macos` run by hand.
 - `scorecard` rates the repository for the OpenSSF Scorecard badge.
+- `release` runs on a pushed version tag (see Releasing).
 
 `just smoke` builds the benchmark box and runs every benchmark once at the oldest and
 latest release of its package. Run it when you change a benchmark, `scripts/` or
@@ -73,6 +74,21 @@ reproducible").
 The pull request title becomes the squash commit, so it follows the same rule. Add an
 entry to [CHANGELOG.md](../CHANGELOG.md) under `[Unreleased]` for a change users see.
 
+## Releasing
+
+A release is one pull request and one tag:
+
+1. In a pull request, set `version` in `pyproject.toml` and move the `[Unreleased]` entries
+   in CHANGELOG.md under a new `## [X.Y.Z] - date` heading, with its compare link.
+2. On the merge commit on `main`, make a signed tag and push it:
+   `git tag -s vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`.
+
+The tag runs the `release` workflow. It checks the tag against `pyproject.toml` and the
+CHANGELOG, then creates the GitHub release with that version's section as notes, the source
+archive, `SHA256SUMS` and a signed build provenance attestation. Do not create the release by
+hand. Zenodo archives each published release from `CITATION.cff`. To check a download:
+`gh attestation verify brightway-benchmarks-X.Y.Z.tar.gz --repo simonvanlierde/brightway-benchmarks`.
+
 ## Sign off your commits
 
 Every commit in a pull request carries a `Signed-off-by:` line, which says you wrote the
@@ -100,7 +116,7 @@ needed write access.
   workflow builds the history pages from that branch and publishes them on GitHub Pages.
 - **GitHub Actions** runs the checks above with a read-only token. `scorecard` may upload
   its report to code scanning, and `site` may deploy Pages, only when started by hand on
-  `main`.
+  `main`, and `release` may create a release, only for a pushed version tag.
 
 ## Who maintains this
 

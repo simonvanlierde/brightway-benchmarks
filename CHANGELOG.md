@@ -9,6 +9,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `.github/CONTRIBUTING.md`: how to report a bug, the checks and tests a pull request needs,
+  how dependencies are chosen, and the DCO sign-off, which the new `dco` workflow checks on
+  pull requests from forks. SECURITY.md now promises an answer within 14 days and says what
+  the project defends against.
 - `just compat PYTHON` installs today's PyPI releases of brightway25, bw_graph_tools and
   bw_timex, with no cutoff and no fixed stack, and runs every case once at the smoke size.
   The `compat` workflow runs it nightly on Python 3.12 to 3.14 and keeps the resolved

@@ -306,6 +306,8 @@ sizes, the others at the ecoinvent size.
 ## For developers
 
 Run `uv sync`, then `just check` for lint, types and tests. These run no Brightway code.
+[CONTRIBUTING.md](.github/CONTRIBUTING.md) says how to report a bug, which checks a pull
+request must pass and how to sign off your commits.
 
 - Benchmarks: [`benchmarks/`](benchmarks), configs and releases: [`asv/`](asv)
 - Security: [SECURITY.md](.github/SECURITY.md)

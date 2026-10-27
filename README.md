@@ -1,6 +1,7 @@
 # brightway-benchmarks
 
 [![python](https://github.com/simonvanlierde/brightway-benchmarks/actions/workflows/python.yml/badge.svg)](https://github.com/simonvanlierde/brightway-benchmarks/actions/workflows/python.yml)
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/simonvanlierde/brightway-benchmarks?utm_source=badge)
 [![license](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/simonvanlierde/brightway-benchmarks/badge)](https://scorecard.dev/viewer/?uri=github.com/simonvanlierde/brightway-benchmarks)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15991/badge)](https://www.bestpractices.dev/projects/15991)
@@ -80,6 +81,11 @@ just codspeed bw2calc pypardiso  # one suite under CodSpeed's CPU simulation (in
 just compat 3.13                 # today's Brightway releases together on one Python, small database
 just compat 3.12 floors          # the same, with Brightway's dependencies at their lowest allowed versions
 ```
+
+The `codspeed` workflow runs every suite in `benchmarks/codspeed` the same way on each pull
+request and push to `main`, at the smoke size, and uploads the instruction counts to
+[CodSpeed](https://app.codspeed.io/simonvanlierde/brightway-benchmarks), which reports any
+change on the pull request.
 
 Every benchmark runs on the 200-product `smoke` database unless you pick others. For
 example, `BWBENCH_SIZES=ecoinvent just bench bw2calc` times the ecoinvent-sized one.

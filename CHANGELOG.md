@@ -9,6 +9,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A `codspeed` workflow: every pytest-codspeed suite runs under CodSpeed's CPU simulation on
+  pull requests and pushes to `main`, one job per suite, and uploads to CodSpeed, which
+  comments on the pull request when an instruction count changes. `scripts/codspeed-venv.sh`
+  builds a suite's environment for both this workflow and `just codspeed`.
 - A `release` workflow: a pushed `vX.Y.Z` tag creates the GitHub release with the source
   archive, its checksums and a signed build provenance attestation. `CITATION.cff` gives
   the citation, and Zenodo archives each release.

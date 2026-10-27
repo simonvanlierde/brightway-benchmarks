@@ -28,13 +28,13 @@ jobs:
         # The benchmark code needs 3.12 or later (PEP 695 type aliases), though brightway25
         # allows 3.9, so floors runs on 3.12. macOS and Windows run latest on one Python.
         include:
-          - { column: latest, python: "3.12", os: ubuntu-latest }
-          - { column: latest, python: "3.13", os: ubuntu-latest }
-          - { column: latest, python: "3.14", os: ubuntu-latest }
-          - { column: latest, python: "3.12", os: macos-latest }
-          - { column: latest, python: "3.12", os: windows-latest }
-          - { column: floors, python: "3.12", os: ubuntu-latest }
-          - { column: pre, python: "3.14", os: ubuntu-latest }
+          - {column: latest, python: "3.12", os: ubuntu-latest}
+          - {column: latest, python: "3.13", os: ubuntu-latest}
+          - {column: latest, python: "3.14", os: ubuntu-latest}
+          - {column: latest, python: "3.12", os: macos-latest}
+          - {column: latest, python: "3.12", os: windows-latest}
+          - {column: floors, python: "3.12", os: ubuntu-latest}
+          - {column: pre, python: "3.14", os: ubuntu-latest}
     defaults:
       run:
         shell: bash # Windows too, where compat.sh runs under Git Bash

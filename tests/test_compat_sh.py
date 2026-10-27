@@ -87,6 +87,15 @@ def test_a_failing_set_is_still_recorded(repo: Path):
     assert (repo / ".asv" / "compat" / "3.13-latest" / "requirements.txt").read_text() == "lock\n"
 
 
+def test_locks_the_resolved_set_as_pylock_toml(repo: Path):
+    out = compat(repo, LOCK="numpy==2.5.4")
+    assert out.returncode == 0, out.stderr
+    assert (repo / ".asv" / "compat" / "3.13-latest" / "pylock.toml").exists()
+    _, lock = compiles(repo)
+    assert "pylock.toml" in lock.splitlines()[0]
+    assert lock.splitlines()[1:] == ["numpy==2.5.4"]  # read from requirements.txt, not resolved again
+
+
 def compiles(repo: Path) -> list[str]:
     """Each `uv pip compile` call: its arguments, then the requirements it read."""
     return (repo / "log.in").read_text().split("--- ")[1:]
@@ -110,7 +119,7 @@ pytest==9.0.1"""
     floors = repo / ".asv" / "compat" / "3.13-floors"
     assert (floors / "requirements.txt").exists()
     assert (floors / "latest.txt").exists()
-    first, second = compiles(repo)
+    first, second, _lock = compiles(repo)
     assert "--annotation-style line" in first
     args, *reqs = second.splitlines()
     assert "--resolution lowest-direct" in args
@@ -125,7 +134,7 @@ pytest==9.0.1"""
 def test_pre_allows_pre_releases(repo: Path):
     out = compat(repo, "pre")
     assert out.returncode == 0, out.stderr
-    (only,) = compiles(repo)
+    only, _lock = compiles(repo)
     assert "--prerelease allow" in only
     assert (repo / ".asv" / "compat" / "3.13-pre" / "requirements.txt").exists()
 

@@ -127,12 +127,20 @@ A second argument picks the column, which sets what gets installed:
 
 For example, `just compat 3.12 floors`. bw_timex pulls in PyPardiso on Linux x86_64, so there
 bw2calc solves with PyPardiso, not SuperLU or UMFPACK. The versions each run resolved go to
-`.asv/compat/PYTHON-COLUMN/requirements.txt`. The `compat` workflow runs `latest` every night
+`.asv/compat/PYTHON-COLUMN/requirements.txt`, and the same set with each wheel's hash to
+`pylock.toml` beside it. The `compat` workflow runs `latest` every night
 on Linux with Python 3.12, 3.13 and 3.14 and on macOS and Windows with 3.12, `floors` on 3.12
 and `pre` on 3.14, and lists the versions in each job's summary. On macOS and Windows it runs
 on the runner itself, which cannot run the Linux box. On macOS the cases that need PyPardiso
 or UMFPACK skip instead of failing, since neither installs from PyPI there. `floors` and `pre`
 can fail without turning the run red, so check their jobs.
+
+The [site](https://simonvanlierde.github.io/brightway-benchmarks/#works-together) has a
+"works together today" table: how each job ended in the latest nightly run, and the last
+set that passed, with its Brightway and NumPy versions and its `requirements.txt` and
+`pylock.toml`. To install a set known to work, use its `requirements.txt` as constraints, as
+in `uv pip install brightway25 -c requirements.txt`. The table is as fresh as the last `site`
+run, and a set is kept for 90 days, as long as GitHub keeps the workflow's artifacts.
 
 ## Results so far
 

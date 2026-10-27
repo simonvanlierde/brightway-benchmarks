@@ -25,6 +25,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   allow, so a lower bound set too low fails. `pre` lets pre-releases in, such as NumPy and
   SciPy betas. The `compat` workflow runs `floors` on Python 3.12 and `pre` on 3.14, and
   `latest` on macOS and Windows too. Each run keeps its resolved set in `.asv/compat/PYTHON-COLUMN/`.
+- A "works together today" table on the site: for each `compat` job, how it ended in the
+  latest nightly run and the last set that passed, with its Brightway versions, its
+  `requirements.txt` to use as constraints and its `pylock.toml`. `just compat` now writes the
+  `pylock.toml` next to `requirements.txt`.
 - A 60-second Atheris fuzz run of the `release_report.py` result parser on each pull request
   (`.github/workflows/fuzz.yml`).
 - Two experimental bw2calc solver environments, run only when named in `BWBENCH_SOLVERS`:

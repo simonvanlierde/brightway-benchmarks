@@ -1,10 +1,14 @@
 name: site
 
 # Builds the asv history site from the `results` branch and publishes it on GitHub Pages.
-# Run it by hand after pushing new results (`just results-commit` prints the commands): a
-# push to `results` cannot start it, because that branch holds data only, no workflows.
+# Daily after the nightly compat run (03:41 UTC, a few minutes), so the "works together
+# today" table stays current; run it by hand after pushing new results (`just results-commit`
+# prints the commands): a push to `results` cannot start it, because that branch holds data
+# only, no workflows.
 
 on:
+  schedule:
+    - cron: "17 5 * * *" # daily 05:17 UTC
   workflow_dispatch:
 
 permissions:

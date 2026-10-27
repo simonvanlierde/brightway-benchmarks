@@ -41,9 +41,12 @@ The project has no server, no accounts and no secrets of its own. The likely pro
 what stops each:
 
 - **A Brightway release or one of its dependencies runs harmful code.** asv installs every
-  release it times, so that code runs only in the benchmark box: a throwaway container with
-  the repository mounted read-only, every capability dropped, `no-new-privileges`, and
-  limits on processes, memory and CPUs (`scripts/box.sh`).
+  release it times, so that code runs only in the benchmark box: a container with the
+  repository mounted read-only, every capability dropped, `no-new-privileges`, and limits on
+  processes, memory and CPUs (`scripts/box.sh`). The exceptions are the macOS and Windows
+  jobs of the `compat` workflow and the `codspeed` workflow, which run on a throwaway
+  GitHub-hosted runner with a read-only token. `codspeed` also holds an OIDC token for its
+  upload, which cannot pass for `release.yml` (CONTRIBUTING.md names it in the verify step). The box keeps its uv cache in `.asv/` between runs.
 - **A compromised dependency of this project.** `uv.lock` pins the tree, Renovate holds a
   new release back for 7 days, `uv audit` checks the lock on every pull request, and the
   Docker base image and every GitHub Action are pinned by digest or commit.
@@ -51,11 +54,14 @@ what stops each:
   contents: read`, no checkout keeps its credentials, no workflow runs on
   `pull_request_target`, and zizmor and actionlint check each workflow on every pull
   request. A job that needs more asks for it alone: `scorecard` uploads its report to code
-  scanning, the hand-started `site` workflow deploys GitHub Pages from `main`, and
+  scanning, `codspeed` uploads to CodSpeed, the hand-started `site` workflow deploys
+  GitHub Pages from `main`, and
   `release` creates a release for a pushed version tag.
-- **A wrong or tampered result.** Every benchmark checks its score against an independent
-  reference and fails when it leaves the tolerance, and each run records the exact
-  versions it installed.
+- **A wrong result.** Every LCA score is checked against an independent reference and fails
+  when it leaves the tolerance, and each run records the exact versions it installed. The
+  check runs in the same box as the release it times, so it cannot catch a release written
+  to fool it: read the results diff before pushing the `results` branch. Host scripts that
+  read what the box wrote (`site_index.py`, `just stack`) refuse to follow a symlink.
 - **A leaked secret.** The workflows use only GitHub's short-lived token, `.env` files are
   ignored, and secret scanning with push protection and the betterleaks hook refuse a
   commit that holds a known secret.

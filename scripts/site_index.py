@@ -27,12 +27,22 @@ ABOUT = {
 }
 
 site = Path(sys.argv[1])
+
+
+def own(path: Path) -> Path:
+    """PATH, if writing it stays inside SITE. The box can write site/, so it could plant a link."""
+    if path.is_symlink() or not path.resolve().is_relative_to(site.resolve()):
+        msg = f"{path}: a symlink or outside {site}, refusing to write it"
+        raise SystemExit(msg)
+    return path
+
+
 subjects = sorted(p.name for p in site.iterdir() if (p / "index.html").exists())
 # asv's navbar has no link out of a subject's site, so add one as its first tab.
 NAV = '<li id="nav-li-" class="active">'
 BACK = '<li><a href="../index.html">All benchmarks</a></li>'
 for s in subjects:
-    page = site / s / "index.html"
+    page = own(site / s / "index.html")
     text = page.read_text()
     if BACK not in text:
         if NAV not in text:
@@ -91,7 +101,7 @@ run needs. A set is kept for 90 days.</p>
 """
 
 
-(site / "index.html").write_text(f"""<!doctype html>
+own(site / "index.html").write_text(f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">

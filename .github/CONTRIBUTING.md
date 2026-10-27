@@ -21,7 +21,8 @@ README's [Running it](../README.md#running-it) explains the benchmark recipes.
 Run `just check` before you open a pull request. It runs what the `python` workflow runs:
 ruff, the ruff format check, ty, pytest and `uv audit`. These run no Brightway code. `just hooks`
 runs every git hook over the whole repository, as the `checks` workflow does: yamllint,
-zizmor and actionlint on the workflows, rumdl on the Markdown, betterleaks for secrets.
+zizmor and actionlint on the workflows, rumdl on the Markdown. The betterleaks hook for
+secrets runs only locally; on GitHub, secret scanning with push protection covers it.
 
 Both workflows must pass before a pull request can merge. The others run apart from a pull
 request:
@@ -31,6 +32,8 @@ request:
 - `smoke` runs `just smoke` weekly, and `compat` runs `just compat` nightly.
 - `site`, `noise-hosted` and `solvers-macos` run by hand.
 - `scorecard` rates the repository for the OpenSSF Scorecard badge.
+- `codspeed` runs the pytest-codspeed suites under CodSpeed's CPU simulation on every push to
+  `main` and on pull requests that touch them, and CodSpeed reports changes on the pull request.
 - `release` runs on a pushed version tag (see Releasing).
 
 `just smoke` builds the benchmark box and runs every benchmark once at the oldest and
@@ -87,7 +90,8 @@ The tag runs the `release` workflow. It checks the tag against `pyproject.toml` 
 CHANGELOG, then creates the GitHub release with that version's section as notes, the source
 archive, `SHA256SUMS` and a signed build provenance attestation. Do not create the release by
 hand. Zenodo archives each published release from `CITATION.cff`. To check a download:
-`gh attestation verify brightway-benchmarks-X.Y.Z.tar.gz --repo simonvanlierde/brightway-benchmarks`.
+`gh attestation verify brightway-benchmarks-X.Y.Z.tar.gz --repo simonvanlierde/brightway-benchmarks
+--signer-workflow simonvanlierde/brightway-benchmarks/.github/workflows/release.yml`.
 
 ## Sign off your commits
 

@@ -1,6 +1,7 @@
 # brightway-benchmarks
 
 [![python](https://github.com/simonvanlierde/brightway-benchmarks/actions/workflows/python.yml/badge.svg)](https://github.com/simonvanlierde/brightway-benchmarks/actions/workflows/python.yml)
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://app.codspeed.io/simonvanlierde/brightway-benchmarks?utm_source=badge)
 [![license](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/simonvanlierde/brightway-benchmarks/badge)](https://scorecard.dev/viewer/?uri=github.com/simonvanlierde/brightway-benchmarks)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15991/badge)](https://www.bestpractices.dev/projects/15991)
@@ -29,10 +30,11 @@ of ecoinvent, so anyone can rerun them and the results can be published.
 bw2calc runs each case with the direct solvers (PyPardiso, UMFPACK, SuperLU) and with its
 iterative solvers.
 
-Each benchmark checks its score next to the timing, against a reference that uses no
-Brightway code at all. So a fast but wrong release fails instead of looking good. Only the
-bw_processing cases that build datapackages from entries have nothing to check, and neither do
-the import cells.
+Each LCA score is checked next to its timing, against a reference that uses no Brightway
+code at all. So a fast but wrong release fails instead of looking good. Two kinds of case
+are checked more loosely: Monte Carlo draws only for finite values, and bw_timex against
+bw2calc's own score. The cases that only build datapackages, matrices or a graph traversal
+have no score to check, and neither do the import cells.
 
 bw2calc's first score and bw2data's write also record peak memory (`peakmem_` in asv). The box
 has 2 GB by default and no swap, so a job over the limit is killed by the kernel's OOM killer:
@@ -81,6 +83,11 @@ just compat 3.13                 # today's Brightway releases together on one Py
 just compat 3.12 floors          # the same, with Brightway's dependencies at their lowest allowed versions
 ```
 
+The `codspeed` workflow runs every suite in `benchmarks/codspeed` the same way on each pull
+request and push to `main`, at the smoke size, and uploads the instruction counts to
+[CodSpeed](https://app.codspeed.io/simonvanlierde/brightway-benchmarks), which reports any
+change on the pull request.
+
 Every benchmark runs on the 200-product `smoke` database unless you pick others. For
 example, `BWBENCH_SIZES=ecoinvent just bench bw2calc` times the ecoinvent-sized one.
 `BWBENCH_SIZES` sets the size for most cases, and three cases have their own variable:
@@ -97,6 +104,10 @@ reached the patch. `FastScoresOnlyMultiLCA` needs PyPardiso or UMFPACK, so it is
 under `klu`; its adjoint direction hands bw2calc's solver Aᵀ, so `umfpack-T` skips that too. A full-size bw2calc run takes
 about 24 minutes with the SuperLU environment and 6 with `BWBENCH_SOLVERS=pypardiso`.
 asv times each case in 2 rounds by default; `BWBENCH_ROUNDS=1` halves a full-size run.
+The box gets 2 CPUs and 2 GB of memory unless `BWBENCH_CPUS` and `BWBENCH_MEM` say otherwise,
+and the solvers run on `BWBENCH_THREADS` threads, 1 by default.
+`just results-commit` refuses results that name this host, since they become public once
+pushed; other names to refuse, such as an ssh alias, go in `BWBENCH_PRIVATE_NAMES`.
 Each result is checked once per parameter set, not after every sample.
 
 `bw2calc-conda` is the same bw2calc suite on conda-forge's builds instead of PyPI's wheels:

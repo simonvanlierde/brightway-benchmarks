@@ -70,6 +70,7 @@ noise subject runs="10":
 # Resolve SUBJECT's fixed stack (its latest release's dependencies at the cutoff) into asv/.
 stack subject:
     scripts/box.sh scripts/stack.sh {{ subject }}
+    test ! -L ".asv/stack/{{ subject }}.txt"  # the box wrote it: never copy through a link
     cp ".asv/stack/{{ subject }}.txt" "asv/{{ subject }}.stack.txt"
 
 # Results go to .asv/stack/. Failing cases are expected on old releases; the table is the signal.

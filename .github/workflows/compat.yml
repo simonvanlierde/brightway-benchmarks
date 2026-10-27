@@ -1,6 +1,6 @@
 name: compat
 
-# `just compat` per Python (see the README). Unlike smoke.yml it follows new upstream releases.
+# `just compat` per column, Python and OS (see the README). Unlike smoke.yml it follows new upstream releases.
 
 on:
   schedule:
@@ -45,8 +45,8 @@ jobs:
       # Windows Python would otherwise write to a pipe in the locale's code page and fail on
       # any non-ASCII character.
       PYTHONUTF8: "1"
-      # Only Linux gets PyPardiso, so elsewhere the cases that need a fast solver skip.
-      BWBENCH_STRICT: ${{ matrix.os == 'ubuntu-latest' && '1' || '' }}
+      # macOS has no PyPardiso wheel, so there the cases that need a fast solver skip.
+      BWBENCH_STRICT: ${{ matrix.os != 'macos-latest' && '1' || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -61,7 +61,7 @@ jobs:
       - if: runner.os == 'Linux'
         run: uvx --from rust-just==1.58.0 just compat "$PYTHON" "$COLUMN"
 
-      # GitHub's macOS and Windows runners have no Docker. The runner is thrown away after
+      # GitHub's macOS and Windows runners have no Docker that runs Linux containers. The runner is thrown away after
       # the job, so the releases run on it directly.
       - if: runner.os != 'Linux'
         run: sh scripts/compat.sh "$PYTHON" "$COLUMN"

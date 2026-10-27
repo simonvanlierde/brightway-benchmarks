@@ -5,14 +5,15 @@
 # Installs PyPI releases of brightway25, bw_graph_tools and bw_timex into a fresh environment,
 # with none of the cutoffs or stack pins the asv runs use. The column picks the releases:
 #   latest  the newest release of everything (the default)
-#   floors  the newest Brightway packages, with each package they depend on at the lowest
-#           version their declared bounds allow, so a lower bound set too low shows up
+#   floors  the newest Brightway packages and test harness, with each package they depend on
+#           directly at the lowest version their declared bounds allow that has a wheel, so a
+#           lower bound set too low shows up
 #   pre     like latest, but pre-releases count too (NumPy, SciPy and pandas betas)
 # Then runs every benchmark once at smoke size through the pytest adapter in
 # benchmarks/codspeed: each case runs and checks its result, and nothing is timed. A case the
-# releases cannot run fails rather than skips, unless BWBENCH_STRICT is set empty (the macOS and
-# Windows jobs: a solver their wheels lack is a platform gap, not a release problem). The resolved set goes to
-# .asv/compat/PYTHON-COLUMN/requirements.txt before the cases run, so a failing set is on
+# releases cannot run fails rather than skips, unless BWBENCH_STRICT is set empty (the macOS
+# job: a solver its wheels lack is a platform gap, not a release problem). The resolved set
+# goes to .asv/compat/PYTHON-COLUMN/requirements.txt before the cases run, so a failing set is on
 # record too.
 set -eu
 python=$1

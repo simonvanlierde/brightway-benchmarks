@@ -107,6 +107,9 @@ pluggy==1.6.0            # via pytest
 pytest==9.0.1"""
     out = compat(repo, "floors", LOCK=lock)
     assert out.returncode == 0, out.stderr
+    floors = repo / ".asv" / "compat" / "3.13-floors"
+    assert (floors / "requirements.txt").exists()
+    assert (floors / "latest.txt").exists()
     first, second = compiles(repo)
     assert "--annotation-style line" in first
     args, *reqs = second.splitlines()

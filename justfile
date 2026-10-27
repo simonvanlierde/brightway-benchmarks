@@ -87,6 +87,7 @@ compat python="3.12" column="latest":
     BWBENCH_MEM=${BWBENCH_MEM:-6g} scripts/box.sh scripts/compat.sh {{ python }} {{ column }}
 
 # Build the static history site in site/ from results/ (one asv site per subject plus an index).
+# The index's compat table comes from the compat workflow's artifacts, read through `gh`.
 site:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -94,6 +95,7 @@ site:
       s=$(basename "$conf" .json)
       if [ -d "results/$s" ]; then scripts/box.sh scripts/asv.sh "$s" publish; fi
     done
+    scripts/compat_site.py site
     scripts/site_index.py site
 
 # Commit results/ to the local `results` branch for the site; refuses results that name this host.

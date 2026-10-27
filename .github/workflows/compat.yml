@@ -84,3 +84,13 @@ jobs:
           path: ${{ env.OUT }}
           include-hidden-files: true # the files sit under .asv
           if-no-files-found: warn # the resolve itself can fail
+
+      # A job that passed keeps its set a second time under this name, so the site's
+      # "works together today" table finds each job's last green set (scripts/compat_site.py).
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: success()
+        with:
+          name: compat-green-${{ matrix.column }}-${{ matrix.python }}-${{ matrix.os }}
+          path: ${{ env.OUT }}
+          include-hidden-files: true
+          retention-days: 90

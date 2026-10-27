@@ -13,8 +13,8 @@
 # benchmarks/codspeed: each case runs and checks its result, and nothing is timed. A case the
 # releases cannot run fails rather than skips, unless BWBENCH_STRICT is set empty (the macOS
 # job: a solver its wheels lack is a platform gap, not a release problem). The resolved set
-# goes to .asv/compat/PYTHON-COLUMN/requirements.txt before the cases run, so a failing set is on
-# record too.
+# goes to .asv/compat/PYTHON-COLUMN/requirements.txt, and as a PEP 751 lock (wheel URLs and
+# hashes) to pylock.toml beside it, before the cases run, so a failing set is on record too.
 set -eu
 python=$1
 column=${2:-latest}
@@ -60,5 +60,6 @@ floors)
         compile --no-annotate --resolution lowest-direct --no-build -o "$out/requirements.txt"
     ;;
 esac
+compile --no-annotate -o "$out/pylock.toml" <"$out/requirements.txt"
 uv pip install --quiet --python "$py" -r "$out/requirements.txt"
 BWBENCH_STRICT=${BWBENCH_STRICT-1} PYTHONPATH=benchmarks "$py" -m pytest -p no:cacheprovider --rootdir benchmarks/codspeed benchmarks/codspeed -v

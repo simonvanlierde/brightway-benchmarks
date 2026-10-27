@@ -93,6 +93,11 @@ class Profile:
     regions: int = 20
     sectors: int = 40
     treatment: float = 0.126  # share of products that are waste treatments
+    copies: float = 0.0  # share of products in a run that shares most of one input list (regional variants)
+    bundles: float = 0.0  # share of suppliers in a run that sells to mostly the same consumers
+    copy_zipf: float = 2.1  # runs have 1 + Zipf(copy_zipf) products: mostly pairs, a few dozens
+    copy_max: int = 60  # caps the longest runs
+    copy_keep: float = 1.0  # share of the template's list a run member takes; it keeps the rest of its own
     amount_sigma: float = 3.5  # lognormal spread of input amounts within a column, before units
     units: float = 0.3  # standard deviation of log10 of each product's unit
     radius: float = 0.78  # spectral radius of X
@@ -402,6 +407,38 @@ def _draw(
     return order[pick], hi > lo
 
 
+def _copy_lists(
+    rng: np.random.Generator, rows: NDArray, cols: NDArray, p: Profile, share: float
+) -> tuple[NDArray, NDArray]:
+    """Give runs of products mostly one input list, as the regional variants of one technology have.
+
+    A run starts at a product, its template, and each product right after it in the order
+    takes a ``p.copy_keep`` share of the template's inputs and keeps the rest of its own.
+    Runs start often enough that about ``p.copies`` of all products sit in one. Repeated
+    cells, and a variant buying from itself, are left for ``_off_diagonal_once`` to drop.
+    """
+    n = p.products
+    sizes = np.minimum(1 + rng.zipf(p.copy_zipf, n), p.copy_max)
+    mean = float(sizes.mean())
+    starts = rng.random(n) < share / (mean * (1 - share) + share)
+    template = np.arange(n)
+    j = 0
+    while j < n:
+        if starts[j]:
+            template[j + 1 : j + sizes[j]] = j
+            j += int(sizes[j])
+        else:
+            j += 1
+    variant = template != np.arange(n)
+    borrowed = sparse.csc_matrix((np.ones(rows.size), (rows, cols)), shape=(n, n))[:, template].tocoo()
+    take = ~variant[borrowed.col] | (rng.random(borrowed.nnz) < p.copy_keep)
+    own = variant[cols] & (rng.random(cols.size) >= p.copy_keep)
+    return (
+        np.concatenate([borrowed.row[take].astype(np.int64), rows[own]]),
+        np.concatenate([borrowed.col[take].astype(np.int64), cols[own]]),
+    )
+
+
 def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
     """The supply-chain structure the module docstring describes, scaled to ``p.radius`` at most.
 
@@ -435,8 +472,14 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
         m = pool == i
         rows[m], found[m] = _draw(rng, cols[m], weight, group, p.back)
 
-    rows = np.concatenate([suppliers, rows[found]])
-    cols = np.concatenate([consumers, cols[found]])
+    rows, cols = rows[found], cols[found]
+    # Not the inputs every seller's first consumer takes: without them some suppliers would sell to nobody.
+    if p.bundles:
+        cols, rows = _copy_lists(rng, cols, rows, p, p.bundles)
+    if p.copies:
+        rows, cols = _copy_lists(rng, rows, cols, p, p.copies)
+    rows = np.concatenate([suppliers, rows])
+    cols = np.concatenate([consumers, cols])
     rows, cols = _off_diagonal_once(rows, cols, n)
 
     # Amounts free of units: lognormal, each column summing to 1, then all scaled to the radius.

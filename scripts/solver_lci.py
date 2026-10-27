@@ -116,11 +116,11 @@ def main(size: str) -> None:
         f" {platform.system()} {platform.machine()}, BLAS seen by threadpoolctl {', '.join(threadpool_blas())}",
         flush=True,
     )
-    worst = 0.0
+    scores = []
     for label, factorize in (("one score", False), ("lci(factorize=True)", True)):
         times, value = timed(lambda f=factorize: score(f))
         err = abs(value - ref) / abs(ref)
-        worst = max(worst, err)
+        scores.append((label, value))
         print(
             f"  {label:<20} median {statistics.median(times):8.3f} s  runs {[round(t, 3) for t in times]}"
             f"  rel err {err:.1e}",
@@ -130,9 +130,8 @@ def main(size: str) -> None:
     if SOLVER in FACTORIZERS and not CALLS[0]:
         msg = f"bw2calc never called the patched {SOLVER}: its solver names have moved"
         raise SystemExit(msg)
-    if worst > bwbench.DIRECT_RTOL:
-        msg = f"score off by {worst:.1e}, more than {bwbench.DIRECT_RTOL:.0e}"
-        raise SystemExit(msg)
+    for label, value in scores:  # check, not max(): a NaN score must fail too
+        bwbench.check(value, ref, bwbench.DIRECT_RTOL, label)
 
 
 if __name__ == "__main__":

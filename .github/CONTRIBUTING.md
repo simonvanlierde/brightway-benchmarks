@@ -30,7 +30,8 @@ request:
 - `fuzz` runs the Atheris harness of `scripts/release_report.py` for 60 seconds on a pull
   request that touches it.
 - `smoke` runs `just smoke` weekly, and `compat` runs `just compat` nightly.
-- `site`, `noise-hosted` and `solvers-macos` run by hand.
+- `site` rebuilds the history pages daily after `compat`, and by hand after new results.
+- `noise-hosted` and `solvers-macos` run by hand.
 - `scorecard` rates the repository for the OpenSSF Scorecard badge.
 - `codspeed` runs the pytest-codspeed suites under CodSpeed's CPU simulation on every push to
   `main` and on pull requests that touch them, and CodSpeed reports changes on the pull request.
@@ -119,7 +120,7 @@ needed write access.
 - **`just results-commit`** copies `results/` to the `results` branch, and the `site`
   workflow builds the history pages from that branch and publishes them on GitHub Pages.
 - **GitHub Actions** runs the checks above with a read-only token. `scorecard` may upload
-  its report to code scanning, and `site` may deploy Pages, only when started by hand on
+  its report to code scanning, and `site` may deploy Pages, only from
   `main`, and `release` may create a release, only for a pushed version tag.
 
 ## Who maintains this

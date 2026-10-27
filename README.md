@@ -247,7 +247,7 @@ sizes, the others at the ecoinvent size.
 ## How the results stay reproducible
 
 - [asv](https://asv.readthedocs.io) runs every release of a package on one fixed set of
-  dependencies: those of its latest release, from before 2026-10-06, listed in
+  dependencies: those of its latest release, from before 2026-10-20, listed in
   `asv/<package>.stack.txt`. Only the package itself changes from one point in the history
   to the next, so a step in a graph is that package's change. One exception: bw2calc 3.0.0 and later
   need threadpoolctl, which its asv config installs beside the set, so that the older

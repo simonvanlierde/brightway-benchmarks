@@ -101,13 +101,12 @@ results-commit:
 # bw2calc's own lci() with one sparse solver: superlu, umfpack, pypardiso, umfpack-T or klu.
 # 12 GB by default on plain docker: SuperLU on A at the ecoinvent size needs several.
 solver-lci solver size="smoke" bw2calc="3.1.0":
-    BWBENCH_MEM="${BWBENCH_MEM:-12g}" scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --exclude-newer-package bw2calc=2026-10-19 --with bw2calc=={{ bw2calc }} --with threadpoolctl==3.7.0 --with pypardiso==0.4.7 --with scikit-umfpack==0.4.2 --with pyklu==0.2.0 python scripts/solver_lci.py {{ solver }} {{ size }}'
+    BWBENCH_MEM="${BWBENCH_MEM:-12g}" scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --with bw2calc=={{ bw2calc }} --with threadpoolctl==3.7.0 --with pypardiso==0.4.7 --with scikit-umfpack==0.4.2 --with pyklu==0.2.0 python scripts/solver_lci.py {{ solver }} {{ size }}'
 
 # A SQLite project against sentier-brightway's Parquet registry (the format of bw2data #290, which
-# stays outside bw2data). size: smoke | ecoinvent; solver: superlu | pypardiso. The box's release
-# cutoff would hold bw2data and bw2calc back, so both are let through at their current versions.
+# stays outside bw2data). size: smoke | ecoinvent; solver: superlu | pypardiso.
 registry-vs-sqlite size="smoke" solver="superlu":
-    scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --exclude-newer-package bw2data=2026-10-20 --exclude-newer-package bw2calc=2026-10-19 --with "sentier-brightway @ git+https://github.com/sentier-dev/sentier-brightway@adacaf9" --with bw2data==4.8 --with bw2calc==3.1.0 --with threadpoolctl==3.7.0 {{ if solver == "pypardiso" { "--with pypardiso==0.4.7" } else if solver == "superlu" { "" } else { error("solver: superlu or pypardiso") } }} --with duckdb==1.5.6 python scripts/registry_vs_sqlite.py {{ size }}'
+    scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --with "sentier-brightway @ git+https://github.com/sentier-dev/sentier-brightway@adacaf9" --with bw2data==4.8 --with bw2calc==3.1.0 --with threadpoolctl==3.7.0 {{ if solver == "pypardiso" { "--with pypardiso==0.4.7" } else if solver == "superlu" { "" } else { error("solver: superlu or pypardiso") } }} --with duckdb==1.5.6 python scripts/registry_vs_sqlite.py {{ size }}'
 
 # Docker's default seccomp profile (moby/profiles at TAG; v0.2.4 is Docker 29.9's) plus one rule
 # allowing personality(ADDR_NO_RANDOMIZE), so `setarch -R` can turn address randomization off.

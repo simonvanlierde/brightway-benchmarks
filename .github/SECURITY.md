@@ -54,9 +54,8 @@ what stops each:
   contents: read`, no checkout keeps its credentials, no workflow runs on
   `pull_request_target`, and zizmor and actionlint check each workflow on every pull
   request. A job that needs more asks for it alone: `scorecard` uploads its report to code
-  scanning, `codspeed` uploads to CodSpeed, the hand-started `site` workflow deploys
-  GitHub Pages from `main`, and
-  `release` creates a release for a pushed version tag.
+  scanning, `codspeed` uploads to CodSpeed, the `site` workflow deploys GitHub Pages
+  from `main`, and `release` creates a release for a pushed version tag.
 - **A wrong result.** Every LCA score is checked against an independent reference and fails
   when it leaves the tolerance, and each run records the exact versions it installed. The
   check runs in the same box as the release it times, so it cannot catch a release written

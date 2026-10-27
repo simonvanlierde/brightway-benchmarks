@@ -3,11 +3,10 @@
 
 Writes ``ro-crate-metadata.json`` into the results root (``results/`` or ``.asv/smoke/``),
 above each subject's asv folder and its machine folders, which hold asv's result files and
-the ``pylock.*.toml`` files ``asv.sh`` leaves there. It names the
-files, and the digest of every registered profile. Each file is credited to the bwbench commit
-and generator version in the newest ``bwbench-run-*.txt`` record (written by ``asv.sh``) that
-lists its checksum, or to an unknown commit when none does. Rerun after every run; it replaces
-the file. RO-Crate 1.3: https://w3id.org/ro/crate/1.3
+the ``pylock.*.toml`` files ``asv.sh`` leaves there. It names the files and the digest of
+every registered profile. Each file is credited to the bwbench commit and generator version in
+the newest ``bwbench-run-*.txt`` record (written by ``asv.sh``) that lists its checksum, or to an
+unknown commit when none does. Rerun after every run; it replaces the file. RO-Crate 1.3: https://w3id.org/ro/crate/1.3
 """
 
 import hashlib

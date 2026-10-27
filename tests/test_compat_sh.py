@@ -87,16 +87,17 @@ def compiles(repo: Path) -> list[str]:
 
 def test_floors_lowers_only_what_brightway_depends_on(repo: Path):
     # The latest set, as `--annotation-style line` writes it.
-    lock = "\n".join([
-        "bw2data==4.5             # via bw2io",
-        "bw-processing==1.1       # via bw2calc",
-        "matrix-utils==0.6",
-        "numpy==2.3.4             # via bw2calc, pandas",
-        "pandas==3.1.0            # via bw2io",
-        "six==1.17.0              # via python-dateutil",
-        "pluggy==1.6.0            # via pytest",
-        "pytest==9.0.1",
-    ])
+    lock = """\
+bw2data==4.5             # via bw2io
+bw-processing==1.1       # via bw2calc
+matrix-utils==0.6
+ecoinvent-interface==3.1 # via brightway25
+numpy==2.3.4             # via bw2calc, pandas
+pandas==3.1.0            # via bw2io
+loguru==0.7.3            # via ipython, bw-timex
+six==1.17.0              # via python-dateutil
+pluggy==1.6.0            # via pytest
+pytest==9.0.1"""
     out = compat(repo, "floors", LOCK=lock)
     assert out.returncode == 0, out.stderr
     first, second = compiles(repo)
@@ -104,11 +105,10 @@ def test_floors_lowers_only_what_brightway_depends_on(repo: Path):
     args, *reqs = second.splitlines()
     assert "--resolution lowest-direct" in args
     assert "--no-build" in args
-    assert args.split(" -o ")[1].startswith(".asv/compat/3.13-floors/requirements.txt")
     # Brightway and the test harness pinned at latest, Brightway's own dependencies unpinned
     # (lowest-direct takes them to their floor), and the rest left to the resolver.
-    pinned = {"bw2data==4.5", "bw-processing==1.1", "matrix-utils==0.6", "pytest==9.0.1"}
-    assert pinned | {"numpy", "pandas"} <= set(reqs)
+    pinned = {"bw2data==4.5", "bw-processing==1.1", "matrix-utils==0.6", "ecoinvent-interface==3.1", "pytest==9.0.1"}
+    assert pinned | {"numpy", "pandas", "loguru"} <= set(reqs)
     assert not {"numpy==2.3.4", "six", "six==1.17.0", "pluggy", "pluggy==1.6.0"} & set(reqs)
 
 

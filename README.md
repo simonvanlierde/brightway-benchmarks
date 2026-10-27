@@ -117,7 +117,7 @@ fails if it errors, its result check fails, or the releases cannot run it; nothi
 A second argument picks the column, which sets what gets installed:
 
 - `latest` (the default): the newest release of everything.
-- `floors`: the newest Brightway packages, with each package they depend on directly (NumPy,
+- `floors`: the newest Brightway packages and test harness, with each package they depend on directly (NumPy,
   SciPy, pandas and so on) at the lowest version their declared bounds allow that has a
   wheel. A lower bound set too low fails here. The rest of the dependencies stay at their
   latest, since their own floors say nothing about Brightway.

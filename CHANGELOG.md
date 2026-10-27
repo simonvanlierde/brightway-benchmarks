@@ -171,5 +171,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The `release` workflow refuses a tag whose commit is not on `main`.
 - `scripts/asv.sh` writes lock files only for the environments of the current stack, not for
   the folders older stacks left in `.asv/env/`.
+- The RO-Crate credits each result file to the bwbench commit that wrote it, from a
+  `bwbench-run-*.txt` record `scripts/asv.sh` writes per run, not every file to the current
+  commit. `box.sh` passes the commit in, so a run from a git worktree no longer records
+  `unknown`, and `just results-commit` writes the crate again over the merged `results`
+  branch.
 
 [Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/commits/HEAD

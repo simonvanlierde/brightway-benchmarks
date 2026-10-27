@@ -35,4 +35,5 @@ def test_crate_lists_every_file_and_the_profiles(tmp_path: Path, monkeypatch: py
     assert graph["bw2calc/m1/machine.json"]["description"] == "asv machine description"
     assert "m1" not in graph["./"]["name"]  # machine folders carry host names; the dataset name must not
     assert graph["#profile-ecoinvent"]["value"]
-    assert graph["#run"]["instrument"]["@id"].startswith("https://github.com/simonvanlierde/brightway-benchmarks")
+    # No bwbench-run record lists them, so the commit that wrote them is unknown.
+    assert graph["#run-unknown"]["instrument"]["@id"] == "https://github.com/simonvanlierde/brightway-benchmarks"

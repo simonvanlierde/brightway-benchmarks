@@ -81,6 +81,8 @@ grep -qs "\"$machine\"" "$HOME/.asv-machine.json" ||
 # The klu and umfpack-T entries set BWBENCH_SOLVER in their own env. One left in the caller's
 # shell would reach every environment and patch the stock umfpack one without a word.
 unset BWBENCH_SOLVER
+# Files newer than this one were written by this run.
+start=$(mktemp "$PWD/.asv/.run-XXXXXX")
 status=0
 case $cmd in
 run | continuous | compare) asv "$cmd" --config "$conf" --machine "$machine" "$@" || status=$? ;;
@@ -114,9 +116,19 @@ if [ "$cmd" = run ]; then
             uv pip compile --quiet --no-deps --python "$env/bin/python" --no-header -o "$lock" - ||
             status=1
     done
+    # Which bwbench commit wrote which file, by checksum. run_crate.py gives each file the newest
+    # record that lists its content, so this holds after results-commit merges several clones.
+    # box.sh passes the commit in: in a worktree, git cannot reach .git from inside the box.
+    commit=${BWBENCH_COMMIT:-$(git rev-parse HEAD 2>/dev/null || echo unknown)}
+    {
+        echo "commit $commit"
+        echo "generator $(sed -n 's/^GENERATOR_VERSION = "\(.*\)"$/\1/p' src/bwbench/synth.py 2>/dev/null)"
+        find "$results" -type f -newer "$start" ! -name 'bwbench-run-*' -exec sha256sum {} +
+    } >"$out/bwbench-run-$(date -u +%Y%m%dT%H%M%SZ)-$(echo "$commit" | cut -c1-12).txt"
     # What ran, as one RO-Crate over every subject. It sits above the subjects' asv folders,
     # where asv looks for no results.
     uv run --quiet --no-project --with numpy==2.5.3 --with scipy==1.18.1 python scripts/run_crate.py "$(dirname "$results")" ||
         status=1
 fi
+rm -f "$start"
 exit $status

@@ -1,10 +1,12 @@
 """scripts/asv.sh's config step: which environments asv gets, with uvx stubbed out."""
 
 import hashlib
+import importlib.util
 import json
 import platform
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -24,7 +26,7 @@ CONF = {
 
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
-    """A scratch repo with asv.sh, two subject configs and a uvx stub that does nothing."""
+    """A scratch repo with asv.sh, two subject configs and uvx and uv stubs that do nothing."""
     (tmp_path / "scripts").mkdir()
     shutil.copy(REPO / "scripts" / "asv.sh", tmp_path / "scripts")
     (tmp_path / "asv").mkdir()
@@ -37,6 +39,8 @@ def repo(tmp_path: Path) -> Path:
     # Also logs BWBENCH_SOLVER, which asv would hand on to every environment's benchmarks.
     (tmp_path / "stub" / "uvx").write_text('#!/bin/sh\necho "$@" "solver=${BWBENCH_SOLVER-unset}" >>"$0.log"\nexit 0\n')
     (tmp_path / "stub" / "uvx").chmod(0o755)
+    (tmp_path / "stub" / "uv").write_text('#!/bin/sh\necho "$@" >>"$0.log"\nexit 0\n')
+    (tmp_path / "stub" / "uv").chmod(0o755)
     # uname -n is the container hostname; -m stays real.
     (tmp_path / "stub" / "uname").write_text(
         '#!/bin/sh\n[ "$1" = -n ] && echo "${FAKE_HOSTNAME:-host-x-e0}" || exec /usr/bin/uname "$@"\n'
@@ -146,8 +150,6 @@ def add_env(repo: Path, name: str, *, conda: bool = False, stack: str | None = N
 def run_with_env(repo: Path, *, conda: bool) -> subprocess.CompletedProcess:
     """`asv.sh plain run` with one built environment, abc."""
     add_env(repo, "abc", conda=conda)
-    (repo / "stub" / "uv").write_text('#!/bin/sh\necho "$@" >>"$0.log"\nexit 0\n')
-    (repo / "stub" / "uv").chmod(0o755)
     return subprocess.run(
         ["/bin/sh", "scripts/asv.sh", "plain", "run"],
         cwd=repo,
@@ -195,6 +197,37 @@ def test_an_environment_of_an_older_stack_gets_no_lock(repo: Path, conda: bool):
     add_env(repo, "old", conda=conda, stack="0ld57ack")
     out = run_with_env(repo, conda=conda)
     assert out.returncode == 0, out.stderr
-    written = sorted(p.name for p in (repo / "results" / "m").iterdir())
+    written = sorted(p.name for p in (repo / "results" / "m").iterdir() if not p.name.startswith("bwbench-run-"))
     assert written == (["versions-abc.txt"] if conda else [])
     assert "pylock.old.toml" not in (repo / "stub" / "uv.log").read_text()
+
+
+def test_each_result_keeps_the_commit_that_wrote_it(repo: Path):
+    """Two runs at different bwbench commits: the crate credits each result to its own run."""
+    (repo / "asv" / "plain.json").write_text(json.dumps({"results_dir": "../results/plain", "matrix": {"req": {}}}))
+    # asv writes one result file per run, named after RESULT.
+    (repo / "stub" / "uvx").write_text(
+        '#!/bin/sh\ncase "$*" in *" run "*) mkdir -p results/plain/m\n'
+        'echo "$RESULT" >"results/plain/m/$RESULT.json" ;; esac\n'
+    )
+    env = {"PATH": f"{repo / 'stub'}:/usr/bin:/bin", "HOME": str(repo), "BWBENCH_MACHINE": "m"}
+    for result, commit in (("first", "a" * 40), ("second", "b" * 40)):
+        out = subprocess.run(
+            ["/bin/sh", "scripts/asv.sh", "plain", "run"],
+            cwd=repo,
+            env=env | {"RESULT": result, "BWBENCH_COMMIT": commit},
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert out.returncode == 0, out.stderr
+        time.sleep(1)  # records are named by the second
+    spec = importlib.util.spec_from_file_location("run_crate", REPO / "scripts" / "run_crate.py")
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    graph = {e["@id"]: e for e in module.crate(repo / "results")["@graph"]}
+    assert [r["@id"] for r in graph[f"#run-{'a' * 40}"]["result"]][-1] == "plain/m/first.json"
+    assert [r["@id"] for r in graph[f"#run-{'b' * 40}"]["result"]][-1] == "plain/m/second.json"
+    assert graph[f"{module.REPO}/tree/{'b' * 40}"]["version"] == "b" * 40

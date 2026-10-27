@@ -16,7 +16,8 @@ solution's backward error and its score against UMFPACK's. Prints timings and fi
 no dataset, name or amount, plus which BLAS is loaded.
 
 To time conda-forge's builds, run the script with the python of an asv ``rattler`` environment
-(``.asv/env/bw2calc-conda/*/bin/python``, which has no pyklu) in place of ``uv run``.
+(``.asv/env/bw2calc-conda/*/bin/python``, which has no pyklu) in place of ``uv run``, still
+with ``PYTHONPATH=src``.
 """
 
 # First, so the BLAS thread pin lands before numpy loads (bwbench warns otherwise).

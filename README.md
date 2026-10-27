@@ -99,8 +99,8 @@ Each result is checked once per parameter set, not after every sample.
 
 `bw2calc-conda` is the same bw2calc suite on conda-forge's builds instead of PyPI's wheels:
 Python, NumPy, SciPy, PyPardiso with MKL, and scikit-umfpack with conda-forge's SuiteSparse
-on OpenBLAS and again on MKL's BLAS, at the fixed stack's versions ([`asv/bw2calc-conda.json`](asv/bw2calc-conda.json),
-asv's `rattler` environments). The pure-Python rest of the stack still comes from PyPI.
+on OpenBLAS and again on MKL's BLAS, at the fixed stack's versions
+([`asv/bw2calc-conda.json`](asv/bw2calc-conda.json), asv's `rattler` environments). The pure-Python rest of the stack still comes from PyPI.
 `just bench bw2calc-conda` runs it over the two releases conda-forge has carried since NumPy 2,
 2.4.0 and 3.1.0. Its environments are solved when they are built, so the build strings of
 every conda package (the BLAS among them) go into a `versions-*.txt` file beside the results.
@@ -185,10 +185,10 @@ Each case ran on one thread, on an efficiency core of an Intel i9-14900KF.
 
   On MKL's BLAS (`libblas=*=*_mkl`, MKL 2026.1.0) UMFPACK's first score takes 2.45 s, 7%
   less than on OpenBLAS. The second functional unit still takes 42.7 ms on both, so the
-  slower solve comes from conda-forge's UMFPACK build, not from the BLAS. On the real
-  ecoinvent 3.12 matrix (`solver_factorize.py`, same core, two rounds) UMFPACK factorizes in
-  1.79 s on reference BLAS, 0.66 s on OpenBLAS and 0.63 s on MKL: 2.7x and 2.8x, less than
-  the 3.4x on the generated database. One solve takes 16.5 ms on PyPI's build and 24 ms on
+  slower solve comes with conda-forge's builds, not with the BLAS. On the real ecoinvent
+  3.12 matrix (`solver_factorize.py`, same core, two rounds) UMFPACK factorizes in 1.79 s
+  on reference BLAS, 0.66 s on OpenBLAS and 0.63 s on MKL: 2.7x and 2.8x, less than the
+  3.4x and 3.7x on the generated database. One solve takes 16.5 ms on PyPI's build and 24 ms on
   both conda-forge builds, so the slower solve holds on real data too.
 
 ### The other packages

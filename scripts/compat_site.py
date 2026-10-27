@@ -40,6 +40,14 @@ def versions(requirements: str) -> dict[str, str]:
     return {name: pins[name].split()[0] for name in SHOWN if name in pins}
 
 
+def own(site: Path, path: Path) -> Path:
+    """PATH, if writing it stays inside SITE. The box can write site/, so it could plant a link."""
+    if path.is_symlink() or not path.resolve().is_relative_to(site.resolve()):
+        msg = f"{path}: a symlink or outside {site}, refusing to write it"
+        raise SystemExit(msg)
+    return path
+
+
 def main(site: Path) -> None:
     """Write the sets and status.json under SITE_DIR/compat."""
     runs = json.loads(gh(f"repos/{REPO}/actions/workflows/compat.yml/runs?branch=main&status=completed&per_page=1"))
@@ -54,7 +62,7 @@ def main(site: Path) -> None:
     for a in map(json.loads, lines.splitlines()):
         if a["name"].startswith(GREEN) and a["workflow_run"]["head_branch"] == "main" and not a["expired"]:
             green.setdefault(a["name"].removeprefix(GREEN), a)
-    out = site / "compat"
+    out = own(site, site / "compat")
     cells = []
     for job in jobs:
         m = JOB.fullmatch(job["name"])
@@ -64,10 +72,10 @@ def main(site: Path) -> None:
         last = None
         if a := green.get(cell):
             with zipfile.ZipFile(io.BytesIO(gh(f"repos/{REPO}/actions/artifacts/{a['id']}/zip"))) as z:
-                (out / cell).mkdir(parents=True, exist_ok=True)
+                own(site, out / cell).mkdir(parents=True, exist_ok=True)
                 # Only these two names are read, so an entry's path never leaves out / cell.
                 for name in FILES:
-                    (out / cell / name).write_bytes(z.read(name))
+                    own(site, out / cell / name).write_bytes(z.read(name))
                 reqs = z.read("requirements.txt").decode()
             last = {
                 "date": a["created_at"][:10],
@@ -79,7 +87,7 @@ def main(site: Path) -> None:
     cells.sort(key=lambda c: (COLUMNS.index(c["column"]) if c["column"] in COLUMNS else 9, c["python"], c["os"]))
     out.mkdir(parents=True, exist_ok=True)
     status = {"date": run["created_at"][:10], "run": run["html_url"], "cells": cells}
-    (out / "status.json").write_text(json.dumps(status, indent=1) + "\n")
+    own(site, out / "status.json").write_text(json.dumps(status, indent=1) + "\n")
     print(f"{out / 'status.json'}: {len(cells)} jobs, {sum(bool(c['green']) for c in cells)} with a green set")
 
 

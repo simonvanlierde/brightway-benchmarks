@@ -32,7 +32,7 @@ def artifact(id_: int, name: str, created: str, branch: str = "main", *, expired
     }
 
 
-def run_site(tmp_path: Path, jobs: list[tuple[str, str]], artifacts: list[dict]) -> dict:
+def run_site(tmp_path: Path, jobs: list[tuple[str, str]], artifacts: list[dict], *, ok: bool = True) -> dict:
     fake = tmp_path / "fake"
     fake.mkdir()
     (fake / "gh").write_text(GH)
@@ -55,6 +55,9 @@ def run_site(tmp_path: Path, jobs: list[tuple[str, str]], artifacts: list[dict])
         text=True,
         check=False,
     )
+    if not ok:
+        assert out.returncode != 0
+        return {"stderr": out.stderr}
     assert out.returncode == 0, out.stderr
     return json.loads((site / "compat" / "status.json").read_text())
 
@@ -135,3 +138,17 @@ def test_index_shows_the_table(tmp_path: Path):
     )
     assert '<a href="compat/latest-3.12-ubuntu-latest/pylock.toml">pylock.toml</a>' in page
     assert '<td class="bad">failure</td><td>none kept</td>' in page
+
+
+def test_refuses_to_write_through_a_symlink_the_box_planted(tmp_path: Path):
+    # The box can write site/, and this script runs on the host.
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (tmp_path / "site").mkdir()
+    (tmp_path / "site" / "compat").symlink_to(outside)
+    job = "latest · Python 3.12 on ubuntu-latest"
+    out = run_site(
+        tmp_path, [(job, "success")], [artifact(1, "compat-green-latest-3.12-ubuntu-latest", "2026-10-27")], ok=False
+    )
+    assert "refusing" in out["stderr"]
+    assert not any(outside.iterdir())

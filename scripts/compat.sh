@@ -53,11 +53,26 @@ floors)
     # unpinned, so lowest-direct takes it to the floor their bounds allow. The rest gets the
     # newest version that fits, since a third-party package's own floors (python-dateutil's
     # six>=1.5, which predates Python 3.12) say nothing about Brightway.
+    # Declared floors found too low on Python 3.12, raised so the run reaches the next one. Each
+    # line is the oldest release that worked here (some only "worked", not bisected), with the
+    # package that leaves it unbounded. Drop a line once that package's release raises it.
+    cat >"$out/raised.txt" <<'EOF'
+astunparse>=1.6.3      # bw2parameters (brightway2-parameters#15): 1.1.0 pulls six 1.6.1
+pint>=0.18             # bw2parameters: 0.9 imports pkg_resources (not bisected)
+fsspec>=2022.10.0      # bw_processing, bw2data, bw2calc: no dirfs before 2022.2, zip writes fail to 2022.8.2
+structlog>=20.2.0      # bw2data: structlog.contextvars
+voluptuous>=0.12.0     # bw2data: collections.Mapping in 0.11.5 (0.11.6 not tried)
+xarray>=2023.1.0       # bw2calc: 0.7.0 imports collections.Mapping (not bisected)
+threadpoolctl>=3.0.0   # bw2calc: ThreadpoolController
+ipython>=8.0           # bw_timex: 7.x uses asyncio.coroutine (not bisected)
+ipywidgets>=8.0        # bw_timex: collections.Mapping in 7.0 (not bisected)
+seaborn>=0.13          # bw_timex: matplotlib.cm.register_cmap in 0.11 (0.12 not tried)
+EOF
     # --no-build: only versions with a wheel for this Python, as a user's install would pick.
     awk -F ' *# via ' -v pin="^($bw|pytest)" -v via="(^|, )($bw)" '
         $1 ~ pin { print $1; next }
         $2 ~ via { sub(/==.*/, "", $1); print $1 }' "$out/latest.txt" |
-        compile --no-annotate --resolution lowest-direct --no-build -o "$out/requirements.txt"
+        compile --no-annotate --resolution lowest-direct --no-build -c "$out/raised.txt" -o "$out/requirements.txt"
     ;;
 esac
 compile --no-annotate -o "$out/pylock.toml" <"$out/requirements.txt"

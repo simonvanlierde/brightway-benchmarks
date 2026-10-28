@@ -333,5 +333,7 @@ Run `uv sync`, then `just check` for lint, types and tests. These run no Brightw
 request must pass and how to sign off your commits.
 
 - Benchmarks: [`benchmarks/`](benchmarks), configs and releases: [`asv/`](asv)
-- Security: [SECURITY.md](.github/SECURITY.md)
+- Plans: [ROADMAP.md](ROADMAP.md); who decides: [GOVERNANCE.md](.github/GOVERNANCE.md)
+- Security: [SECURITY.md](.github/SECURITY.md) and the [assurance case](docs/assurance-case.md)
+- Code of conduct: [CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md)
 - License: [LICENSE](LICENSE)

@@ -16,6 +16,11 @@ to reproduce it, and the impact you expect.
 I acknowledge a report within 14 days, then tell you whether I can reproduce it and when I
 expect a fix.
 
+## Supported versions
+
+Only the newest release gets fixes. A fix lands on `main` and goes out in the next release;
+older releases are not patched. Upgrade by checking out the new tag and running `uv sync`.
+
 ## Fixes and disclosure
 
 When a fix is on `main`, I publish the GitHub security advisory for it, with a CVE where one
@@ -37,7 +42,8 @@ dependency that does not affect this project.
 
 ## What could go wrong
 
-The project has no server, no accounts and no secrets of its own. The likely problems, and
+[docs/assurance-case.md](../docs/assurance-case.md) argues these in full, with the trust
+boundaries and the controls at each. The project has no server, no accounts and no secrets of its own. The likely problems, and
 what stops each:
 
 - **A Brightway release or one of its dependencies runs harmful code.** asv installs every

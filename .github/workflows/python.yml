@@ -27,7 +27,9 @@ env:
 
 jobs:
   check:
-    name: lint, types, tests
+    # protect-main requires this exact name, and GitHub appends matrix values to a name
+    # that doesn't use them: 3.12 keeps the bare name, any other version gets its own.
+    name: lint, types, tests${{ matrix.python != '3.12' && format(' ({0})', matrix.python) || '' }}
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 10

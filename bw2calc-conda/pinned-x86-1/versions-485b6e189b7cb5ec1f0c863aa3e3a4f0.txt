@@ -1,0 +1,129 @@
+{
+    "build_env_vars": {
+        "BWBENCH_STACK": "75149e5a"
+    },
+    "python": "3.12",
+    "requirements": {
+        "libblas": "*=*_mkl",
+        "mkl": "2026.1.0",
+        "numpy": "2.5.3",
+        "scikit-umfpack": "0.4.2",
+        "scipy": "1.18.1"
+    },
+    "tool_name": "rattler"
+}
+annotated-types==0.8.0
+asteval==1.0.10
+astunparse==1.6.3
+asv_runner==0.2.5
+attrs==26.1.0
+blinker==1.9.0
+build==1.6.1
+bw2calc @ file:///src/.asv/env/bw2calc-conda/485b6e189b7cb5ec1f0c863aa3e3a4f0/asv-build-cache/fe780d2b6292a3d180281bff3fe1bc973bc7ab07/bw2calc-3.1.0-py3-none-any.whl#sha256=c6d1de5080d15783c4ccd717c4de8070cf42f3c8d28363bd6c58311f0fbd7625
+bw2parameters==1.1.0
+bw_graph_tools==0.10
+bw_processing==1.6
+deepdiff==7.0.1
+Deprecated==3.0.0
+flexcache==0.3
+flexparser==0.4
+fsspec==2026.9.0
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+lxml==6.1.3
+matrix_utils==0.9
+morefs==0.2.2
+numpy @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_numpy_1788731992/work/dist/numpy-2.5.3-cp312-cp312-linux_x86_64.whl#sha256=1be3ad2bf4cb9ea719274cad1e6d3549db345e5a88225accb0a2d8f166d43787
+ordered-set==4.1.0
+packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1785888127/work
+pandas==3.0.6
+peewee==4.5.2
+Pint==0.26.1
+platformdirs==4.12.3
+pydantic==2.13.5
+pydantic-settings==2.15.0
+pydantic_core==2.46.5
+Pympler==1.1
+pyproject_hooks==1.3.3
+python-dateutil==2.9.0.post0
+python-dotenv==1.2.4
+RapidFuzz==3.14.6
+referencing==0.37.0
+rpds-py==2026.9.1
+scikit-umfpack @ file:///home/conda/feedstock_root/build_artifacts/scikit-umfpack_1790091695562/work
+scipy @ file:///home/conda/feedstock_root/build_artifacts/scipy-split_1792929777261/work/dist/scipy-1.18.1-cp312-cp312-linux_x86_64.whl#sha256=b4f5173e9cb1db5cb64c5eff0355755f2ecc9db27934d34cf5ba41c6b5c66206
+setuptools==84.2.1
+six==1.17.0
+snowflake-id==1.0.2
+stats_arrays==3.0
+structlog==26.1.0
+threadpoolctl==3.7.0
+tqdm==4.70.1
+typing-inspection==0.4.4
+typing_extensions==4.16.0
+voluptuous==0.16.0
+wheel==0.48.0
+wrapt==2.5.0
+xarray==2026.9.0
+_openmp_mutex-4.5-8_kmp_llvm
+_x86_64-microarch-level-3-5_level3
+bzip2-1.0.8-hda65f42_10
+ca-certificates-2026.10.23-hbd8a1cb_0
+gmp-6.3.0-hfd2156b_3
+ld_impl_linux-64-2.46.1-default_hbd61a6d_103
+libamd-3.3.3-haaf9dc3_7100102
+libblas-3.11.0-11_h5875eb1_mkl
+libbtf-2.3.2-h32481e8_7100102
+libcamd-3.3.3-h32481e8_7100102
+libcblas-3.11.0-11_hfef963f_mkl
+libccolamd-3.3.4-h32481e8_7100102
+libcholmod-5.3.1-h59ddab4_7100102
+libcolamd-3.3.4-h32481e8_7100102
+libcxsparse-4.4.1-h32481e8_7100102
+libexpat-2.9.0-hd2095e1_0
+libffi-3.7.0-h81df57d_1
+libgcc-16.2.0-ha9f2e26_7
+libgfortran-16.2.0-h69a702a_7
+libgfortran5-16.2.0-h6b99dfc_7
+libhwloc-2.15.0-default_hd7c4d0c_1001
+libiconv-1.18-h0cb94f2_3
+libklu-2.3.5-hf24d653_7100102
+liblapack-3.11.0-11_h5e43f62_mkl
+libldl-3.3.2-h32481e8_7100102
+liblzma-5.8.3-hb03c661_1
+libnsl-2.0.1-hb9d3cd8_1
+libparu-1.0.0-h17147ab_7100102
+libpython-3.12.16-ha57cdbe_0_cpython
+librbio-4.3.4-h32481e8_7100102
+libspex-3.2.3-had10066_7100102
+libspqr-4.3.4-h852d39f_7100102
+libsqlite-3.54.1-h0737f62_101
+libstdcxx-16.2.0-h934c35e_7
+libsuitesparseconfig-7.10.1-h92d6892_7100102
+libumfpack-6.3.5-heb53515_7100102
+libuuid-2.42.4-hcfc3c73_0
+libxcrypt-4.4.38-h280c20c_0
+libxml2-16-2.15.4-hbdfff7e_1
+libxml2-2.15.4-ha7a5771_1
+libzlib-1.3.2-h25fd6f3_3
+llvm-openmp-23.1.4-h7148c6a_0
+metis-5.1.0-h86e3903_1008
+mkl-2026.1.0-hd2095e1_246
+mpfr-4.2.2-ha2cb11d_1
+ncurses-6.6-hdb14827_1
+numpy-2.5.3-py312he827f4e_0
+openssl-3.6.5-h781a0a9_0
+packaging-26.3-pyhc364b38_0
+pip-26.2.2-pyh8b19718_0
+python-3.12.16-h5f976f7_0_cpython
+python_abi-3.12-9_cp312
+readline-8.3-hd6e31c0_1
+scikit-umfpack-0.4.2-py312ha719b02_3
+scipy-1.18.1-py312h106c528_2
+setuptools-84.2.1-pyhe730653_0
+suitesparse-7.10.1-ha0f6916_7100102
+tbb-2023.1.0-haa8c3ee_2
+tk-8.6.13-noxft_h1df4ec4_4
+tzdata-2026e-h5d301ff_0
+wheel-0.48.0-pyhd8ed1ab_0
+zstd-1.5.7-hb78ec9c_7

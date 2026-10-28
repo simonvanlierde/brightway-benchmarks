@@ -1,6 +1,6 @@
 {
     "bench_traversal.Traversal.time_traverse": {
-        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))",
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
         "min_run_count": 2,
         "name": "bench_traversal.Traversal.time_traverse",
         "number": 1,
@@ -10,8 +10,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'",
-                "'exiobase'"
+                "'ecoinvent'"
             ],
             [
                 "2",
@@ -19,7 +18,7 @@
             ]
         ],
         "repeat": 0,
-        "rounds": 1,
+        "rounds": 2,
         "sample_time": 0.01,
         "timeout": 900,
         "type": "time",
@@ -28,7 +27,7 @@
         "warmup_time": 0
     },
     "bench_traversal.Traversal.track_calculation_count": {
-        "code": "class <locals>:\n    def track(self: Any, *args: Any) -> float:\n        return fn(self.prepared[bench_name]())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))",
+        "code": "class <locals>:\n    def track(self: Any, *args: Any) -> float:\n        return fn(self.prepared[bench_name]())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
         "name": "bench_traversal.Traversal.track_calculation_count",
         "param_names": [
             "size",
@@ -36,8 +35,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'",
-                "'exiobase'"
+                "'ecoinvent'"
             ],
             [
                 "2",

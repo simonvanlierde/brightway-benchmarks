@@ -1,0 +1,206 @@
+{
+    "bench_import.timeraw_import_bw2calc": {
+        "code": "def timeraw_import_bw2calc() -> str:\n    return \"import bw2calc\"",
+        "min_run_count": 2,
+        "name": "bench_import.timeraw_import_bw2calc",
+        "number": 1,
+        "param_names": [],
+        "params": [],
+        "repeat": 0,
+        "rounds": 2,
+        "sample_time": 0.01,
+        "type": "time",
+        "unit": "seconds",
+        "version": "ce934fe2d4f5e2fc94524a88423fff2404699a10336975a86e82510058ceba99",
+        "warmup_time": -1
+    },
+    "bench_lca.MonteCarlo.time_iterations": {
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "min_run_count": 2,
+        "name": "bench_lca.MonteCarlo.time_iterations",
+        "number": 1,
+        "param_names": [
+            "size",
+            "iterations",
+            "cls"
+        ],
+        "params": [
+            [
+                "'ecoinvent'"
+            ],
+            [
+                "10"
+            ],
+            [
+                "'LCA'",
+                "'IterativeLCA'",
+                "'JacobiGMRESLCA'"
+            ]
+        ],
+        "rounds": 2,
+        "sample_time": 0.01,
+        "timeout": 1800,
+        "type": "time",
+        "unit": "seconds",
+        "version": "3-05303220",
+        "warmup_time": 0
+    },
+    "bench_lca.MultiScores.time_scores": {
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "min_run_count": 2,
+        "name": "bench_lca.MultiScores.time_scores",
+        "number": 1,
+        "param_names": [
+            "size",
+            "demands",
+            "variant"
+        ],
+        "params": [
+            [
+                "'ecoinvent'"
+            ],
+            [
+                "1",
+                "3",
+                "10",
+                "30"
+            ],
+            [
+                "'MultiLCA'",
+                "'forward'",
+                "'adjoint'"
+            ]
+        ],
+        "repeat": 0,
+        "rounds": 2,
+        "sample_time": 0.01,
+        "timeout": 900,
+        "type": "time",
+        "unit": "seconds",
+        "version": "3-05303220",
+        "warmup_time": 0
+    },
+    "bench_lca.NewDemand.time_redo_lci": {
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "min_run_count": 2,
+        "name": "bench_lca.NewDemand.time_redo_lci",
+        "number": 1,
+        "param_names": [
+            "size",
+            "cls"
+        ],
+        "params": [
+            [
+                "'ecoinvent'"
+            ],
+            [
+                "'LCA'",
+                "'IterativeLCA'",
+                "'JacobiGMRESLCA'"
+            ]
+        ],
+        "repeat": 0,
+        "rounds": 2,
+        "sample_time": 0.01,
+        "timeout": 600,
+        "type": "time",
+        "unit": "seconds",
+        "version": "3-05303220",
+        "warmup_time": 0
+    },
+    "bench_lca.NewDemand.track_relative_error": {
+        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        prepared = self.prepared[bench_name]\n        return prepared.verify(prepared())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "name": "bench_lca.NewDemand.track_relative_error",
+        "param_names": [
+            "size",
+            "cls"
+        ],
+        "params": [
+            [
+                "'ecoinvent'"
+            ],
+            [
+                "'LCA'",
+                "'IterativeLCA'",
+                "'JacobiGMRESLCA'"
+            ]
+        ],
+        "timeout": 600,
+        "type": "track",
+        "unit": "unit",
+        "version": "3-05303220"
+    },
+    "bench_lca.SingleScore.peakmem_first_score": {
+        "code": "class <locals>:\n    def peak(self: Any, *args: Any) -> None:\n        self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "name": "bench_lca.SingleScore.peakmem_first_score",
+        "param_names": [
+            "size",
+            "cls"
+        ],
+        "params": [
+            [
+                "'ecoinvent'"
+            ],
+            [
+                "'LCA'",
+                "'IterativeLCA'",
+                "'JacobiGMRESLCA'"
+            ]
+        ],
+        "timeout": 600,
+        "type": "peakmemory",
+        "unit": "bytes",
+        "version": "3-05303220"
+    },
+    "bench_lca.SingleScore.time_first_score": {
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "min_run_count": 2,
+        "name": "bench_lca.SingleScore.time_first_score",
+        "number": 1,
+        "param_names": [
+            "size",
+            "cls"
+        ],
+        "params": [
+            [
+                "'ecoinvent'"
+            ],
+            [
+                "'LCA'",
+                "'IterativeLCA'",
+                "'JacobiGMRESLCA'"
+            ]
+        ],
+        "repeat": 0,
+        "rounds": 2,
+        "sample_time": 0.01,
+        "timeout": 600,
+        "type": "time",
+        "unit": "seconds",
+        "version": "3-05303220",
+        "warmup_time": 0
+    },
+    "bench_lca.SingleScore.track_relative_error": {
+        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        prepared = self.prepared[bench_name]\n        return prepared.verify(prepared())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "name": "bench_lca.SingleScore.track_relative_error",
+        "param_names": [
+            "size",
+            "cls"
+        ],
+        "params": [
+            [
+                "'ecoinvent'"
+            ],
+            [
+                "'LCA'",
+                "'IterativeLCA'",
+                "'JacobiGMRESLCA'"
+            ]
+        ],
+        "timeout": 600,
+        "type": "track",
+        "unit": "unit",
+        "version": "3-05303220"
+    },
+    "version": 2
+}

@@ -91,14 +91,18 @@ markers = ["benchmark: a benchmark for pytest-codspeed"]
 testpaths = ["tests"]
 
 # Coverage is opt-in via `pytest --cov` (`just py-cov`), not addopts, because it
-# slows every plain test run. No fail_under until there is a suite worth setting
-# one against.
+# slows every plain test run. The tests run most scripts as subprocesses, which
+# `patch` measures too. The omitted scripts need Brightway, so they run only in
+# the box, where `just smoke` exercises them.
 [tool.coverage.run]
-source = ["src"]
+source = ["src", "scripts"]
+omit = ["*/scripts/registry_vs_sqlite.py", "*/scripts/solver_factorize.py", "*/scripts/solver_lci.py"]
 branch = true
+patch = ["subprocess"]
 
 [tool.coverage.report]
 show_missing = true
+fail_under = 80
 exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
 
 # Brightway packages are never installed on the host: they run only inside the box,

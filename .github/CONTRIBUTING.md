@@ -51,6 +51,9 @@ A new benchmark case checks its result, as every case does: `bwbench.check` comp
 score with an independent reference score and fails the case when it leaves the tolerance. A
 timing without a check is not accepted.
 
+CI runs the tests with coverage and fails below 80% (`fail_under` in `pyproject.toml`);
+`just py-cov` shows what is missing.
+
 Fix a ruff or ty warning, or silence it on that line with the rule's name and a reason.
 
 ## Choosing dependencies
@@ -125,9 +128,6 @@ needed write access.
 
 ## Who maintains this
 
-Simon van Lierde ([@simonvanlierde](https://github.com/simonvanlierde)) maintains
-brightway-benchmarks: reviews and merges pull requests, runs the published benchmarks and
-makes releases. He is the only person with write or admin access to the repository, its
-settings and its GitHub Pages site. Anyone can propose a change by pull request. A new
-maintainer is added by name in this section. If no maintainer can continue, the README says
-so and the repository is archived; anyone may fork it under its license.
+[GOVERNANCE.md](GOVERNANCE.md) names the maintainer, says how decisions are made and who has
+access, and what happens if the maintainer is unavailable. Everyone taking part follows the
+[code of conduct](CODE_OF_CONDUCT.md).

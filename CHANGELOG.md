@@ -11,6 +11,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - A DOI for citing the project, 10.5281/zenodo.23727602, in `CITATION.cff` and as a README
   badge. It always points at the latest release.
+- A roadmap (ROADMAP.md), a governance page that says who decides and what happens if the
+  maintainer is unavailable, a code of conduct, and an assurance case
+  (docs/assurance-case.md) that ties each security claim to the code that backs it.
+- SECURITY.md says which releases get fixes: only the newest.
+- CI fails when test coverage drops below 80%. Coverage now counts the scripts the tests run
+  as subprocesses, leaving out the three that only run inside the benchmark box.
 
 ### Changed
 

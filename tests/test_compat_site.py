@@ -2,6 +2,7 @@
 
 import io
 import json
+import os
 import subprocess
 import sys
 import zipfile
@@ -50,7 +51,12 @@ def run_site(tmp_path: Path, jobs: list[tuple[str, str]], artifacts: list[dict],
     site = tmp_path / "site"
     out = subprocess.run(
         [sys.executable, SCRIPT, site],
-        env={"PATH": f"{fake}:/usr/bin:/bin", "FAKE": str(fake), "GITHUB_REPOSITORY": "o/r"},
+        env={
+            **{k: v for k, v in os.environ.items() if k.startswith("COVERAGE_")},  # for `patch = ["subprocess"]`
+            "PATH": f"{fake}:/usr/bin:/bin",
+            "FAKE": str(fake),
+            "GITHUB_REPOSITORY": "o/r",
+        },
         capture_output=True,
         text=True,
         check=False,

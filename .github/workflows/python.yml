@@ -4,36 +4,58 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # The event is in the group because a queued run replaces a pending one in its group
+  # whatever cancel-in-progress says, so a push to main must not wait beside the weekly run.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  # Only a newer push to the same pull request cancels a run. A push to main must not cancel
+  # the weekly scheduled run, or that week's revision report is lost.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # uv checks every package against OSV's malware advisories before its code
+  # runs, and fails if OSV is unreachable. The preview flag only silences the
+  # "experimental" warning.
+  UV_MALWARE_CHECK: "1"
+  UV_PREVIEW_FEATURES: malware-check
 
 jobs:
   check:
-    name: lint, types, tests
+    # protect-main requires this exact name, and GitHub appends matrix values to a name
+    # that doesn't use them: 3.12 keeps the bare name, any other version gets its own.
+    name: lint, types, tests${{ matrix.python != '3.12' && format(' ({0})', matrix.python) || '' }}
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Every version from requires-python up: a library runs on interpreters its
+    # author doesn't use.
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           # No cache: the nightly compat jobs run released Brightway code on hosted runners,
           # and nothing they could write should feed this required check.
           enable-cache: false
-          version: "0.12.19"
+          version: "0.13.1"
+          python-version: ${{ matrix.python }}
 
       - run: uv sync --locked
       # Checks every locked dependency, dev group included, against the OSV database
-      # for known vulnerabilities and deprecated or quarantined projects. Experimental
-      # in uv 0.12, hence the preview flag.
+      # for known vulnerabilities and deprecated or quarantined projects. Still
+      # experimental in uv, hence the preview flag.
       - run: uv audit --locked --preview-features audit-command
 
       - run: uv run ruff check --output-format=github

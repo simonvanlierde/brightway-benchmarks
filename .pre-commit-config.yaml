@@ -2,7 +2,13 @@
 #
 # Python projects get prek from `uv tool install prek`. TypeScript-only projects
 # get it from the @j178/prek devDependency. Revs are commit SHAs, since tags are
-# mutable; Dependabot moves each SHA and its `# frozen:` tag together.
+# mutable; the dependency bot moves each SHA and its `# frozen:` tag together.
+
+# `prek install` sets up each of these: the commit message is checked as you commit.
+default_install_hook_types: [pre-commit, commit-msg]
+
+# data/ holds inputs: the whitespace, end-of-file and notebook hooks must not rewrite them.
+# Excluded per hook, so the secret scan and the large-file check still cover data/.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
@@ -10,11 +16,24 @@ repos:
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: check-yaml
+        # pnpm writes its own version into the lockfile as a second YAML document.
+        exclude: (^|/)pnpm-lock\.yaml$
       - id: end-of-file-fixer
+        exclude: ^data/
       - id: mixed-line-ending
+        exclude: ^data/
       - id: trailing-whitespace
+        exclude: ^data/
       # Not gated to python: .rumdl.toml ships to every stack.
       - id: check-toml
+
+  # Commit messages follow committed.toml: Conventional Commits, imperative, no period.
+  - repo: https://github.com/crate-ci/committed
+    rev: faeed42f2e10c244533a01525f13c4d8b6ce383f # frozen: v1.1.11
+    hooks:
+      - id: committed
+        # git writes a merge commit's message itself, so skip the check during a merge.
+        entry: sh -c 'test -f "$(git rev-parse --git-path MERGE_HEAD)" || exec committed "$@"' --
 
   # Formats first, so yamllint below sees the formatted file.
   - repo: https://github.com/google/yamlfmt
@@ -37,26 +56,59 @@ repos:
   # and impostor commits. Set GH_TOKEN to enable the audits that need the API;
   # without it only the offline subset runs.
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: fa412071e4f5d44d44f9e365f4676f9df92456a2 # frozen: v1.30.1
+    rev: c92afdf2c6ca336aaa8f39e2bd8d48f62dbd8e1f # frozen: v1.31.1
     hooks:
       - id: zizmor
 
   # Checks what zizmor doesn't: unknown keys, bad `needs`, expression type errors,
-  # and shellcheck over every `run:` when shellcheck is on PATH.
-  - repo: https://github.com/rhysd/actionlint
-    rev: 914e7df21a07ef503a81201c76d2b11c789d3fca # frozen: v1.7.12
+  # and shellcheck over every `run:` when shellcheck is on PATH. jactionlint is a
+  # maintained fork of actionlint that adds release, cache and concurrency checks.
+  - repo: https://github.com/jdx/jactionlint
+    rev: 1027f0a131ab98bc7e191d995bfa15dbed5bbf8f # frozen: v2.2.0
     hooks:
-      - id: actionlint
+      - id: jactionlint
+
+  # CITATION.cff against the official schema. GitHub's "Cite this repository"
+  # silently drops a file that fails it.
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0494aa7fa1314e98913a41227d8f0a515b2c1049 # frozen: 0.38.2
+    hooks:
+      - id: check-citation-file-format
 
   - repo: https://github.com/kynan/nbstripout
     rev: 34071b78c181af3bf5af955c1426466e096fc3db # frozen: 0.9.1
     hooks:
       - id: nbstripout
+        exclude: ^data/
   - repo: https://github.com/rvben/rumdl-pre-commit
-    rev: 83cecb6b523a053d7d3dfdc4798d705b505a88f9 # frozen: v0.2.78
+    rev: 03a7d1a4936b5889602852175bca2d39acb3281e # frozen: v0.3.0
     hooks:
       - id: rumdl
         args: [--fix]
+
+  # Misspelt words in code, comments and docs. It fixes the ones it is sure of and
+  # fails, so you review the fix. List a word it must leave alone in _typos.toml.
+  - repo: https://github.com/crate-ci/typos
+    rev: 7f9d0819ca1c008ade73f4b41fa9d258d48f605b # frozen: v1.51.1
+    hooks:
+      - id: typos
+        # Copier writes the template's commit id here, and a hex id can spell a word
+        # typos rejects.
+        exclude: ^\.copier-answers\.yml$
+
+  # Dead relative links in Markdown and HTML. Offline, so a commit never waits on the
+  # network: the weekly links.yml checks the web links. lychee's own hook installs its
+  # binary with an unpinned install script, so this takes upstream's wheel from PyPI
+  # at an exact version instead.
+  - repo: local
+    hooks:
+      - id: lychee
+        name: lychee --offline
+        entry: lychee --no-progress --offline
+        language: python
+        additional_dependencies: [lychee-bin==0.24.2]
+        types_or: [markdown, html]
+        require_serial: true
 
   - repo: local
     hooks:

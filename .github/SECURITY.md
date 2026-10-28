@@ -1,7 +1,7 @@
 # Security
 
 <!-- The advisories link below works only once Settings > Code security >
-     Private vulnerability reporting is on. Turn it on when you create the repo. -->
+     Private vulnerability reporting is on. `just repo-settings` turns it on. -->
 
 ## Report a vulnerability
 

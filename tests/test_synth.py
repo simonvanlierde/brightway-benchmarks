@@ -16,7 +16,8 @@ SMALL = ["smoke", "stress-random"]
 
 
 def small(name: str, **kw: object) -> synth.System:
-    return system(name, **({"products": 300} if name == "stress-random" else {}), **kw)
+    # ty checks the unpacked dict's int against every keyword, `uncertain: bool` included.
+    return system(name, **({"products": 300} if name == "stress-random" else {}), **kw)  # ty: ignore[invalid-argument-type]
 
 
 @pytest.mark.parametrize("name", SMALL)

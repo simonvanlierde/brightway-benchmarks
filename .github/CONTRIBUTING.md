@@ -78,8 +78,11 @@ reproducible").
 `main` takes changes only through a pull request. Write commit subjects as
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), such as
 `fix(bw2calc): skip the adjoint case under umfpack-T`: imperative, lower case, no period.
-The pull request title becomes the squash commit, so it follows the same rule. Add an
-entry to [CHANGELOG.md](../CHANGELOG.md) under `[Unreleased]` for a change users see.
+The pull request title becomes the squash commit, so it follows the same rule. Both are
+checked against [`committed.toml`](../committed.toml): a commit-msg hook (installed by
+`prek install`) refuses a commit message that breaks the rule, and the `pull request title`
+check fails a pull request whose title does. Add an entry to [CHANGELOG.md](../CHANGELOG.md)
+under `[Unreleased]` for a change users see.
 
 ## Releasing
 

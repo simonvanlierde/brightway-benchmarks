@@ -1,0 +1,9 @@
+# Words the typos hook must leave alone.
+[default]
+extend-ignore-re = [
+  "`[0-9a-f]{7,40}`", # git commit ids in prose, such as `a71ede78`
+  "PACKAGEs",         # the plural of a PACKAGE argument
+]
+
+[default.extend-words]
+intoto = "intoto" # in-toto attestation bundles, `.intoto.jsonl`

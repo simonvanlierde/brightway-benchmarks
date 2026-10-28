@@ -13,6 +13,11 @@ on:
 permissions:
   contents: read
 
+# One group per tag: a re-pushed tag waits for its running release.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest

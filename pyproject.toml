@@ -24,19 +24,17 @@ dev = [
   "hypothesis>=6.169.1",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
-  "ruff>=0.16.9",
-  "ty>=0.0.84",
+  "ruff>=0.17.1",
+  "ty>=0.0.89",
 ]
 
-# Research projects are packaged too, so notebooks can `import bwbench`
-# without sys.path edits.
 [build-system]
-requires = ["uv_build>=0.12.19,<0.13.0"]
+requires = ["uv_build>=0.12.19,<0.14.0"]
 build-backend = "uv_build"
 
 # Resolve only releases at least a week old: a compromised release is usually
-# caught and yanked within that window. Dependabot's cooldown waits the same. Set here,
-# not user-wide, so every machine writes the same uv.lock.
+# caught and yanked within that window. The dependency bot waits the same week.
+# Set here, not user-wide, so every machine writes the same uv.lock.
 [tool.uv]
 exclude-newer = "1 week"
 
@@ -83,6 +81,10 @@ convention = "google"
 [tool.ruff.lint.pylint]
 allow-magic-value-types = ["int", "str"]
 max-args = 10
+
+# A rule set to "warn" reports without failing: ty otherwise exits 1 on warnings too.
+[tool.ty.terminal]
+error-on-warning = false
 
 [tool.pytest.ini_options]
 addopts = ["-ra", "--strict-config", "--strict-markers", "--import-mode=importlib"]

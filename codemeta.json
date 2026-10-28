@@ -1,0 +1,19 @@
+{
+  "@context": "https://w3id.org/codemeta/4.0",
+  "@type": "SoftwareSourceCode",
+  "name": "brightway-benchmarks",
+  "description": "Continuous benchmarks for the Brightway LCA stack on seeded synthetic matrices",
+  "author": [
+    {
+      "@type": "Person",
+      "@id": "https://orcid.org/0009-0006-6953-909X",
+      "givenName": "Simon",
+      "familyName": "van Lierde",
+      "email": "code@duinlab.nl"
+    }
+  ],
+  "codeRepository": "https://github.com/simonvanlierde/brightway-benchmarks",
+  "issueTracker": "https://github.com/simonvanlierde/brightway-benchmarks/issues",
+  "license": "https://spdx.org/licenses/BSD-3-Clause",
+  "programmingLanguage": "Python"
+}

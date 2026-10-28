@@ -373,6 +373,9 @@
           "@id": "bw2data/pinned-x86-1/8a5b0bdb-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json"
         },
         {
+          "@id": "bw2data/pinned-x86-1/bwbench-run-20261028T213846Z-d7d77f77a74d.txt"
+        },
+        {
           "@id": "bw2data/pinned-x86-1/c60b0ec4-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json"
         },
         {
@@ -676,9 +679,14 @@
           "@id": "matrix_utils/pinned-x86-1/versions-a815f3220552001c2604697199f8eaed.txt"
         }
       ],
-      "mentions": {
-        "@id": "#run"
-      }
+      "mentions": [
+        {
+          "@id": "#run-unknown"
+        },
+        {
+          "@id": "#run-d7d77f77a74d183bcf90d4558bf56b4adacd8997"
+        }
+      ]
     },
     {
       "@id": "https://spdx.org/licenses/BSD-3-Clause",
@@ -686,11 +694,11 @@
       "name": "BSD 3-Clause License"
     },
     {
-      "@id": "#run",
+      "@id": "#run-unknown",
       "@type": "CreateAction",
       "name": "asv run",
       "instrument": {
-        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/3d89a22bc525f84342a4e093fc58cf87961500db"
+        "@id": "https://github.com/simonvanlierde/brightway-benchmarks"
       },
       "object": [
         {
@@ -942,9 +950,6 @@
           "@id": "bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
-          "@id": "bw2calc/pinned-x86-1/machine.json"
-        },
-        {
           "@id": "bw2calc/pinned-x86-1/pylock.06c0739afc89df80dc227a808174960e.toml"
         },
         {
@@ -1014,9 +1019,6 @@
           "@id": "bw2calc-conda/pinned-x86-1/fe780d2b-rattler-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
-          "@id": "bw2calc-conda/pinned-x86-1/machine.json"
-        },
-        {
           "@id": "bw2calc-conda/pinned-x86-1/versions-055264f7110d0aec39ed82443df1d913.txt"
         },
         {
@@ -1027,9 +1029,6 @@
         },
         {
           "@id": "bw2calc-conda/pinned-x86-1/versions-9e71f93c1c9cfcee3f39b9812f0fccf5.txt"
-        },
-        {
-          "@id": "bw2data/benchmarks.json"
         },
         {
           "@id": "bw2data/pinned-x86-1/106d6271-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd040c487.json"
@@ -1059,9 +1058,6 @@
           "@id": "bw2data/pinned-x86-1/81a0b454-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json"
         },
         {
-          "@id": "bw2data/pinned-x86-1/8a5b0bdb-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd040c487.json"
-        },
-        {
           "@id": "bw2data/pinned-x86-1/8a5b0bdb-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json"
         },
         {
@@ -1074,13 +1070,7 @@
           "@id": "bw2data/pinned-x86-1/f6999430-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json"
         },
         {
-          "@id": "bw2data/pinned-x86-1/machine.json"
-        },
-        {
           "@id": "bw2data/pinned-x86-1/pylock.637f1838e0b44a93bd96100e1d0d071f.toml"
-        },
-        {
-          "@id": "bw2data/pinned-x86-1/pylock.c91ac9ee6b8837741b018937263d80a0.toml"
         },
         {
           "@id": "bw2data/pinned-x86-1/pylock.cc02267cf8c2dba59ecce642ff28bfd8.toml"
@@ -1129,9 +1119,6 @@
         },
         {
           "@id": "bw_graph_tools/pinned-x86-1/e3a36daa-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACK2c9ff45a.json"
-        },
-        {
-          "@id": "bw_graph_tools/pinned-x86-1/machine.json"
         },
         {
           "@id": "bw_graph_tools/pinned-x86-1/pylock.0a116e4868a326be2dcc7a26dddc2919.toml"
@@ -1183,9 +1170,6 @@
         },
         {
           "@id": "bw_processing/pinned-x86-1/e895747b-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json"
-        },
-        {
-          "@id": "bw_processing/pinned-x86-1/machine.json"
         },
         {
           "@id": "bw_processing/pinned-x86-1/pylock.c6e2dcb1b600713cb1ee672a44138a66.toml"
@@ -1269,9 +1253,6 @@
           "@id": "bw_timex/pinned-x86-1/fb9b087e-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json"
         },
         {
-          "@id": "bw_timex/pinned-x86-1/machine.json"
-        },
-        {
           "@id": "bw_timex/pinned-x86-1/pylock.5e50132386f98a9751eb6a59050c40e8.toml"
         },
         {
@@ -1341,9 +1322,6 @@
           "@id": "matrix_utils/pinned-x86-1/bbb820b4-uv-py3.12-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK5d2957fc.json"
         },
         {
-          "@id": "matrix_utils/pinned-x86-1/machine.json"
-        },
-        {
           "@id": "matrix_utils/pinned-x86-1/pylock.0e4121f85ed4d6bafea72abeb49c3f40.toml"
         },
         {
@@ -1370,11 +1348,81 @@
       ]
     },
     {
-      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/3d89a22bc525f84342a4e093fc58cf87961500db",
+      "@id": "#run-d7d77f77a74d183bcf90d4558bf56b4adacd8997",
+      "@type": "CreateAction",
+      "name": "asv run",
+      "instrument": {
+        "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/d7d77f77a74d183bcf90d4558bf56b4adacd8997"
+      },
+      "object": [
+        {
+          "@id": "#profile-smoke"
+        },
+        {
+          "@id": "#profile-ecoinvent"
+        },
+        {
+          "@id": "#profile-exiobase"
+        },
+        {
+          "@id": "#profile-mc100k"
+        },
+        {
+          "@id": "#profile-regional"
+        },
+        {
+          "@id": "#profile-stress-random"
+        }
+      ],
+      "result": [
+        {
+          "@id": "bw2calc/pinned-x86-1/machine.json"
+        },
+        {
+          "@id": "bw2calc-conda/pinned-x86-1/machine.json"
+        },
+        {
+          "@id": "bw2data/benchmarks.json"
+        },
+        {
+          "@id": "bw2data/pinned-x86-1/8a5b0bdb-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd040c487.json"
+        },
+        {
+          "@id": "bw2data/pinned-x86-1/bwbench-run-20261028T213846Z-d7d77f77a74d.txt"
+        },
+        {
+          "@id": "bw2data/pinned-x86-1/machine.json"
+        },
+        {
+          "@id": "bw2data/pinned-x86-1/pylock.c91ac9ee6b8837741b018937263d80a0.toml"
+        },
+        {
+          "@id": "bw_graph_tools/pinned-x86-1/machine.json"
+        },
+        {
+          "@id": "bw_processing/pinned-x86-1/machine.json"
+        },
+        {
+          "@id": "bw_timex/pinned-x86-1/machine.json"
+        },
+        {
+          "@id": "matrix_utils/pinned-x86-1/machine.json"
+        }
+      ]
+    },
+    {
+      "@id": "https://github.com/simonvanlierde/brightway-benchmarks",
       "@type": "SoftwareSourceCode",
       "name": "bwbench",
       "codeRepository": "https://github.com/simonvanlierde/brightway-benchmarks",
-      "version": "3d89a22bc525f84342a4e093fc58cf87961500db",
+      "version": "unknown"
+    },
+    {
+      "@id": "https://github.com/simonvanlierde/brightway-benchmarks/tree/d7d77f77a74d183bcf90d4558bf56b4adacd8997",
+      "@type": "SoftwareSourceCode",
+      "name": "bwbench",
+      "codeRepository": "https://github.com/simonvanlierde/brightway-benchmarks",
+      "version": "d7d77f77a74d183bcf90d4558bf56b4adacd8997",
       "description": "generator version 3"
     },
     {
@@ -1997,6 +2045,11 @@
       "@id": "bw2data/pinned-x86-1/8a5b0bdb-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json",
       "@type": "File",
       "description": "asv result"
+    },
+    {
+      "@id": "bw2data/pinned-x86-1/bwbench-run-20261028T213846Z-d7d77f77a74d.txt",
+      "@type": "File",
+      "description": "which bwbench commit wrote which file, by sha256"
     },
     {
       "@id": "bw2data/pinned-x86-1/c60b0ec4-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json",

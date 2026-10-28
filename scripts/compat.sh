@@ -54,19 +54,21 @@ floors)
     # newest version that fits, since a third-party package's own floors (python-dateutil's
     # six>=1.5, which predates Python 3.12) say nothing about Brightway.
     # Declared floors found too low on Python 3.12, raised so the run reaches the next one. Each
-    # line is the oldest release that worked here (some only "worked", not bisected), with the
-    # package that leaves it unbounded. Drop a line once that package's release raises it.
+    # line is the oldest release that passes, bisected against this column or the package's own
+    # tests, with the package that leaves it unbounded. Drop a line once that release raises it.
     cat >"$out/raised.txt" <<'EOF'
 astunparse>=1.6.3      # bw2parameters (brightway2-parameters#15): 1.1.0 pulls six 1.6.1
-pint>=0.18             # bw2parameters: 0.9 imports pkg_resources (not bisected)
-fsspec>=2022.10.0      # bw_processing, bw2data, bw2calc: no dirfs before 2022.2, zip writes fail to 2022.8.2
-structlog>=20.2.0      # bw2data: structlog.contextvars
-voluptuous>=0.12.0     # bw2data: collections.Mapping in 0.11.5 (0.11.6 not tried)
-xarray>=2023.1.0       # bw2calc: 0.7.0 imports collections.Mapping (not bisected)
+asteval>=0.9.27        # bw2parameters: eval(raise_errors=) from 0.9.24, which has no 3.12 wheel until 0.9.27
+pint>=0.18             # bw2data: 0.17 lacks pint.util._subs_re_list, 0.14 imports pkg_resources
+fsspec>=2023.3.0       # bw_processing: zip compression is ignored up to 2023.1.0
+structlog>=22.2.0      # bw2data: logger calls with positional arguments fail up to 22.1.0
+voluptuous>=0.12.0     # bw2data: collections.Mapping in 0.11.5
+tqdm>=4.21.0           # bw2data: edges_to_dataframe fails up to 4.20.0
+xarray>=0.21.0         # bw2calc: 0.20.0 calls Index.get_loc(method=), gone in pandas 2
 threadpoolctl>=3.0.0   # bw2calc: ThreadpoolController
-ipython>=8.0           # bw_timex: 7.x uses asyncio.coroutine (not bisected)
-ipywidgets>=8.0        # bw_timex: collections.Mapping in 7.0 (not bisected)
-seaborn>=0.13          # bw_timex: matplotlib.cm.register_cmap in 0.11 (0.12 not tried)
+ipython>=7.6.0         # bw_timex: asyncio.coroutine up to 7.5.0
+ipywidgets>=7.5.0      # bw_timex: collections.Mapping up to 7.4.2
+seaborn>=0.12.0        # bw_timex: matplotlib.cm.register_cmap in 0.11.2
 EOF
     # --no-build: only versions with a wheel for this Python, as a user's install would pick.
     awk -F ' *# via ' -v pin="^($bw|pytest)" -v via="(^|, )($bw)" '

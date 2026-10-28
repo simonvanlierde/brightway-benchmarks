@@ -20,8 +20,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- The `floors` compat column raises ten declared floors found too low on Python 3.12 to the
-  oldest release that worked, so it runs every case again and catches the next one. They
+- The `floors` compat column raises twelve declared floors found too low on Python 3.12 to
+  the oldest release that passes, so it runs every case again and catches the next one. They
   are in bw2parameters, bw_processing, bw2data, bw2calc and bw_timex; `scripts/compat.sh`
   lists them.
 

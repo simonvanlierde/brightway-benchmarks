@@ -32,6 +32,25 @@ venv*)
 esac
 """
 
+# Logs each call; `pixi lock` writes pixi.lock next to the manifest, and `pixi install` makes the
+# environment's python, which logs its arguments and prints a package for `-c`.
+PIXI = """#!/bin/sh
+echo "pixi $*" >>"$LOG"
+for a; do manifest=$a; done
+env=$(dirname "$manifest")
+case $1 in
+lock) echo "lock for $(sed -n 's/^python = //p' "$manifest")" >"$env/pixi.lock" ;;
+install)
+    mkdir -p "$env/.pixi/envs/default/bin"
+    py=$env/.pixi/envs/default/bin/python
+    echo '#!/bin/sh' >"$py"
+    echo '[ "$1" = -c ] && { echo bw2calc==3.1.0; exit; }' >>"$py"
+    echo 'echo "python $* PYTHONPATH=$PYTHONPATH strict=$BWBENCH_STRICT" >>"$LOG"' >>"$py"
+    chmod +x "$py"
+    ;;
+esac
+"""
+
 
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
@@ -40,6 +59,8 @@ def repo(tmp_path: Path) -> Path:
     (tmp_path / "stub").mkdir()
     (tmp_path / "stub" / "uv").write_text(UV)
     (tmp_path / "stub" / "uv").chmod(0o755)
+    (tmp_path / "stub" / "pixi").write_text(PIXI)
+    (tmp_path / "stub" / "pixi").chmod(0o755)
     return tmp_path
 
 
@@ -137,6 +158,25 @@ def test_pre_allows_pre_releases(repo: Path):
     only, _lock = compiles(repo)
     assert "--prerelease allow" in only
     assert (repo / ".asv" / "compat" / "3.13-pre" / "requirements.txt").exists()
+
+
+def test_conda_forge_installs_with_pixi_and_leaves_out_what_it_lacks(repo: Path):
+    out = compat(repo, "conda-forge")
+    assert out.returncode == 0, out.stderr
+    log = (repo / "log").read_text().splitlines()
+    assert not [line for line in log if not line.startswith(("pixi ", "python "))]  # no uv
+    assert log[0].startswith("pixi lock")
+    assert "--frozen" in log[1]
+    # The set is on record before the cases run: the manifest, its lock and the Python packages.
+    cell = repo / ".asv" / "compat" / "3.13-conda-forge"
+    assert 'python = "3.13.*"' in (cell / "pixi.toml").read_text()
+    assert (cell / "pixi.lock").read_text() == 'lock for "3.13.*"\n'
+    assert (cell / "requirements.txt").read_text() == "bw2calc==3.1.0\n"
+    run = log[-1]
+    assert run.startswith("python -m pytest")
+    assert run.endswith("PYTHONPATH=benchmarks strict=1")
+    assert "--ignore=benchmarks/codspeed/test_bw_graph_tools.py --ignore=benchmarks/codspeed/test_bw_timex.py" in run
+    assert "bw_timex is not on conda-forge" in out.stderr
 
 
 def test_an_unknown_column_stops_before_resolving(repo: Path):

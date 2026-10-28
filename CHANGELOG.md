@@ -15,6 +15,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   maintainer is unavailable, a code of conduct, and an assurance case
   (docs/assurance-case.md) that ties each security claim to the code that backs it.
 - SECURITY.md says which releases get fixes: only the newest.
+- A `conda-forge` compat column: each night the Brightway set is installed from conda-forge
+  with pixi and its cases run on Python 3.12, since conda-forge gets releases later than PyPI
+  and breaks separately. Run it with `just compat 3.12 conda-forge`. The bw_graph_tools and
+  bw_timex cases are left out until those packages are on conda-forge. The site table shows
+  the last set that passed, with a `pixi.toml` and `pixi.lock` to install it.
 - CI fails when test coverage drops below 80%. Coverage now counts the scripts the tests run
   as subprocesses, leaving out the three that only run inside the benchmark box.
 

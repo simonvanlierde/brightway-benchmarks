@@ -67,10 +67,11 @@ def compat_section(status_file: Path) -> str:
         g = c["green"]
         if g:
             v = g["versions"]
-            files = " · ".join(f'<a href="{e(g["dir"])}/{f}">{f}</a>' for f in ("requirements.txt", "pylock.toml"))
+            files = " · ".join(f'<a href="{e(g["dir"])}/{e(f)}">{e(f)}</a>' for f in g["files"])
             last = f'<a href="{e(g["run"])}">{e(g["date"])}</a>'
+            gap = "not on conda-forge" if c["column"] == "conda-forge" else "-"
             pins = "".join(
-                f"<td>{e(v.get(p, '-'))}</td>" for p in ("brightway25", "bw2calc", "bw2data", "bw2io", "numpy")
+                f"<td>{e(v.get(p, gap))}</td>" for p in ("brightway25", "bw2calc", "bw2data", "bw2io", "numpy")
             )
         else:
             files, last, pins = "", "none kept", '<td colspan="5"></td>'
@@ -85,7 +86,10 @@ def compat_section(status_file: Path) -> str:
 <p>Each night the <code>compat</code> workflow installs the newest Brightway releases from PyPI
 on each Python and runs every case once on a small database (<code>latest</code>), and again with
 Brightway's dependencies at their lowest allowed versions (<code>floors</code>) or with
-pre-releases (<code>pre</code>). The table shows how each job ended in the
+pre-releases (<code>pre</code>). <code>conda-forge</code> installs the same set from
+conda-forge with pixi, leaving out the cases of packages conda-forge does not have yet
+(bw_graph_tools and bw_timex); its <code>pixi.toml</code> and <code>pixi.lock</code> install
+it with <code>pixi install --frozen</code>. The table shows how each job ended in the
 <a href="{e(status["run"])}">run of {e(status["date"])}</a>, and the last set that passed. Its
 <code>requirements.txt</code> works as a constraints file, as in
 <code>uv pip install brightway25 -c requirements.txt</code>; <code>pylock.toml</code> pins

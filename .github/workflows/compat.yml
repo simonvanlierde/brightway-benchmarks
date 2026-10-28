@@ -19,8 +19,8 @@ jobs:
     name: ${{ matrix.column }} · Python ${{ matrix.python }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
-    # floors and pre report problems upstream, so they never turn the run red: a new failure
-    # in latest must stand out.
+    # floors, pre and conda-forge report problems upstream, so they never turn the run red: a new
+    # failure in latest must stand out.
     continue-on-error: ${{ matrix.column != 'latest' }}
     strategy:
       fail-fast: false
@@ -35,6 +35,8 @@ jobs:
           - {column: latest, python: "3.12", os: windows-latest}
           - {column: floors, python: "3.12", os: ubuntu-latest}
           - {column: pre, python: "3.14", os: ubuntu-latest}
+          # The set from conda-forge with pixi, in its image (scripts/compat.sh).
+          - {column: conda-forge, python: "3.12", os: ubuntu-latest}
     defaults:
       run:
         shell: bash # Windows too, where compat.sh runs under Git Bash

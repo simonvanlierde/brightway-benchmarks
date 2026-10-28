@@ -5,6 +5,7 @@
 [![license](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/simonvanlierde/brightway-benchmarks/badge)](https://scorecard.dev/viewer/?uri=github.com/simonvanlierde/brightway-benchmarks)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15991/badge)](https://www.bestpractices.dev/projects/15991)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23727602.svg)](https://doi.org/10.5281/zenodo.23727602)
 
 How fast is [Brightway](https://docs.brightway.dev), and does it still give the right answer?
 This repository times the calculations an LCA practitioner runs every day, across

@@ -13,7 +13,7 @@ Brightway's released versions: an LCI and LCIA, many functional units at once, M
 It also checks every result against an independent reference score. A release that makes a
 calculation slower, or quietly changes a score, shows up here.
 The results so far are on the
-[benchmark history pages](https://simonvanlierde.github.io/brightway-benchmarks/).
+[benchmark history pages](https://simonvanlierde.com/brightway-benchmarks/).
 
 No licensed data is used. The benchmarks run on synthetic databases that copy the structure
 of ecoinvent, so anyone can rerun them and the results can be published.
@@ -149,7 +149,7 @@ on the runner itself, which cannot run the Linux box. On macOS the cases that ne
 or UMFPACK skip instead of failing, since neither installs from PyPI there. `floors` and `pre`
 can fail without turning the run red, so check their jobs.
 
-The [site](https://simonvanlierde.github.io/brightway-benchmarks/#works-together) has a
+The [site](https://simonvanlierde.com/brightway-benchmarks/#works-together) has a
 "works together today" table: how each job ended in the latest nightly run, and the last
 set that passed, with its Brightway and NumPy versions and its `requirements.txt` and
 `pylock.toml`. To install a set known to work, use its `requirements.txt` as constraints, as
@@ -158,7 +158,7 @@ daily after the nightly run, and a set is kept for 90 days, as long as GitHub ke
 
 ## Results so far
 
-The history pages are at <https://simonvanlierde.github.io/brightway-benchmarks/>.
+The history pages are at <https://simonvanlierde.com/brightway-benchmarks/>.
 So far they hold all 15 bw2calc releases from 2.0 to 3.1.0 on the ecoinvent-sized database.
 2.1.1 has no git tag, so it shows up under its commit, `a71ede78`.
 The other five packages are there too; [The other packages](#the-other-packages) has what they show.

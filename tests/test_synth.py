@@ -81,6 +81,18 @@ def test_profiles_take_overrides():
         system("smoke", no_such_field=1)
 
 
+def test_market_lists_draw_from_their_family_pool():
+    # Products 0 and 1 are one family, 2 and 3 another; 0 and 2 are the longest, so the pools.
+    lengths = [20, 18, 30, 3]
+    cols = np.repeat(np.arange(4), lengths)
+    rows = np.arange(cols.size) + 100  # every draw a different supplier
+    p = synth.profile("smoke", products=4, markets=1.0, market_min=17)
+    got = synth._market_lists(np.random.default_rng(0), rows, cols, np.array([0, 0, 1, 1]), p)  # noqa: SLF001
+    assert np.array_equal(got[cols != 1], rows[cols != 1])  # the pools, and a list too short to be a market
+    assert set(got[cols == 1]) <= set(rows[cols == 0])  # all from its own family's pool
+    assert np.unique(got[cols == 1]).size == 18  # never one supplier twice: the length stays
+
+
 def test_bw2data_form_has_every_exchange():
     s = system("smoke")
     bio, tech, cfs = as_bw2data(s)

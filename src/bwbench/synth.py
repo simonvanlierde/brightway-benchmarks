@@ -98,6 +98,8 @@ class Profile:
     copy_zipf: float = 2.1  # runs have 1 + Zipf(copy_zipf) products: mostly pairs, a few dozens
     copy_max: int = 60  # caps the longest runs
     copy_keep: float = 1.0  # share of the template's list a run member takes; it keeps the rest of its own
+    markets: float = 0.0  # share of a long input list drawn from its region's pool, as markets of one product do
+    market_min: int = 17  # shortest input list (in draws) that counts as a market
     amount_sigma: float = 3.5  # lognormal spread of input amounts within a column, before units
     units: float = 0.3  # standard deviation of log10 of each product's unit
     radius: float = 0.78  # spectral radius of X
@@ -439,6 +441,32 @@ def _copy_lists(
     )
 
 
+def _market_lists(rng: np.random.Generator, rows: NDArray, cols: NDArray, family: NDArray, p: Profile) -> NDArray:
+    """Let long input lists of one family draw mostly from one pool of suppliers, as markets do.
+
+    The pool is the list of the family's longest member. Each other list of at least
+    ``p.market_min`` draws swaps a ``p.markets`` share of its draws for a window of the
+    pool, from a random offset: no list takes a pool supplier twice, and the lengths stay.
+    ``cols`` must be sorted, as the draws are. Returns the new ``rows``.
+    """
+    n = p.products
+    length = np.bincount(cols, minlength=n)
+    start = np.concatenate([[0], np.cumsum(length)])
+    market = np.flatnonzero(length >= p.market_min)
+    by_family = market[np.lexsort((-length[market], family[market]))]
+    _, first = np.unique(family[by_family], return_index=True)
+    pool = np.full(family.max() + 1, -1)
+    pool[family[by_family[first]]] = by_family[first]
+    t = pool[family[cols]]
+    offset = rng.random(n)
+    swap = np.flatnonzero((length[cols] >= p.market_min) & (t != cols) & (rng.random(cols.size) < p.markets))
+    c, t = cols[swap], t[swap]
+    at = start[t] + (np.floor(offset[c] * length[t]).astype(np.int64) + swap - start[c]) % length[t]
+    rows = rows.copy()
+    rows[swap] = rows[at]  # the pool's own draws are never swapped
+    return rows
+
+
 def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
     """The supply-chain structure the module docstring describes, scaled to ``p.radius`` at most.
 
@@ -472,8 +500,10 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
         m = pool == i
         rows[m], found[m] = _draw(rng, cols[m], weight, group, p.back)
 
-    rows, cols = rows[found], cols[found]
+    rows, cols, pool = rows[found], cols[found], pool[found]
     # Not the inputs every seller's first consumer takes: without them some suppliers would sell to nobody.
+    if p.markets:  # a region's markets share one pool; draws from the consumer's own sector stay its own
+        rows[pool != 2] = _market_lists(rng, rows[pool != 2], cols[pool != 2], groups[1], p)
     if p.bundles:
         cols, rows = _copy_lists(rng, cols, rows, p, p.bundles)
     if p.copies:

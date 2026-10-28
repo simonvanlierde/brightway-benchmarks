@@ -7,9 +7,9 @@
 # tests read it) are unpacked, so pytest imports the installed package, not a source tree
 # beside the tests. Of the package's pytest settings only testpaths applies (it names files
 # that pytest's default pattern skips); the rest only add coverage. Each result goes to
-# OUT/suites.txt, one line per package (NAME VERSION passed|failed|no tag, then the failing
-# tests), and pytest's output to OUT/suites/NAME.log. Exits 1 if any package failed. Linux
-# only (GNU tar's --wildcards).
+# OUT/suites.txt, one line per package (NAME VERSION passed|failed|no tag, or NAME not in the
+# set; then the failing tests), and pytest's output to OUT/suites/NAME.log. Exits 1 if any
+# package failed. Linux only (GNU tar's --wildcards).
 set -eu
 py=$1
 out=$2
@@ -28,6 +28,11 @@ for pkg in $packages; do
     name=${pkg%%:*}
     repo=${pkg#*:}
     version=$(sed -n "s/^$name==//p" "$out/requirements.txt")
+    if [ -z "$version" ]; then
+        echo "$name not in the set" >>"$out/suites.txt"
+        failed=1
+        continue
+    fi
     dir=$out/suites/$name
     mkdir -p "$dir"
     url=https://github.com/brightway-lca/$repo/archive/refs/tags

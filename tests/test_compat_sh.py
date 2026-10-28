@@ -234,7 +234,9 @@ testpaths = ["tests/*.py", "tests/sub/*.py"]
 """
 
 
-def suites(tmp_path: Path, tags: list[str], deselect: str = "", fail: str = "") -> tuple[int, Path]:
+def suites(
+    tmp_path: Path, tags: list[str], deselect: str = "", fail: str = "", requirements: str = ""
+) -> tuple[int, Path]:
     """Run compat-suites.sh on REQUIREMENTS, with GitHub serving TAGS (REPO-TAG) and FAIL's suite failing."""
     fake = tmp_path / "fake"
     fake.mkdir()
@@ -252,7 +254,7 @@ def suites(tmp_path: Path, tags: list[str], deselect: str = "", fail: str = "") 
             tar.add(src.parent, arcname=repo_tag)
     out = tmp_path / ".asv" / "compat" / "3.12-suites"
     out.mkdir(parents=True)
-    (out / "requirements.txt").write_text(REQUIREMENTS)
+    (out / "requirements.txt").write_text(requirements or REQUIREMENTS)
     script = (REPO / "scripts" / "compat-suites.sh").read_text()
     if deselect:
         script = script.replace("<<'EOF'\nEOF", f"<<'EOF'\n{deselect}\nEOF")
@@ -319,3 +321,11 @@ def test_suites_pass_when_every_package_passes(tmp_path: Path):
     rc, out = suites(tmp_path, tags)
     assert rc == 0
     assert (out / "suites.txt").read_text().count(" passed\n") == 7
+
+
+def test_suites_report_a_package_missing_from_the_set(tmp_path: Path):
+    # A resolve without bw_timex: no version to look a tag up for.
+    reqs = REQUIREMENTS.replace("bw-timex==1.4.1\n", "")
+    rc, out = suites(tmp_path, ["brightway2-data-4.8"], requirements=reqs)
+    assert rc == 1
+    assert (out / "suites.txt").read_text().splitlines()[-1] == "bw-timex not in the set"

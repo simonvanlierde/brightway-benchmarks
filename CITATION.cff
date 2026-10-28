@@ -11,6 +11,8 @@ authors:
 repository-code: "https://github.com/simonvanlierde/brightway-benchmarks"
 url: "https://simonvanlierde.github.io/brightway-benchmarks/"
 license: "BSD-3-Clause"
+# The concept DOI: it always resolves to the latest release.
+doi: "10.5281/zenodo.23727602"
 keywords:
   - "brightway"
   - "life cycle assessment"

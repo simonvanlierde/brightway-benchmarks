@@ -7,6 +7,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- A DOI for citing the project, 10.5281/zenodo.23727602, in `CITATION.cff` and as a README
+  badge. It always points at the latest release.
+
 ### Changed
 
 - The `floors` compat column raises ten declared floors found too low on Python 3.12 to the

@@ -86,7 +86,7 @@ stack-check subject:
     python3 scripts/release_report.py {{ subject }}
 
 # Today's PyPI releases of the Brightway set on PYTHON, then every case once at smoke size.
-# COLUMN: latest, floors, pre or conda-forge (see scripts/compat.sh).
+# COLUMN: latest, floors, pre, conda-forge or suites (see scripts/compat.sh).
 # 6g: every suite shares one pytest process here, not one process per case as under asv.
 compat python="3.12" column="latest":
     BWBENCH_TARGET={{ if column == "conda-forge" { "conda" } else { "box" } }} BWBENCH_MEM=${BWBENCH_MEM:-6g} scripts/box.sh scripts/compat.sh {{ python }} {{ column }}

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Do today's Brightway releases work together? Inside the box, or on a CI runner:
-# scripts/compat.sh PYTHON [latest|floors|pre|conda-forge]
+# scripts/compat.sh PYTHON [latest|floors|pre|conda-forge|suites]
 #
 # Installs PyPI releases of brightway25, bw_graph_tools and bw_timex into a fresh environment,
 # with none of the cutoffs or stack pins the asv runs use. The column picks the releases:
@@ -13,6 +13,8 @@
 #           PyPI by a feedstock merge and so breaks on its own. It installs the packages
 #           conda-forge has and leaves out the suites whose package it lacks; the set goes to
 #           pixi.toml and pixi.lock, and the Python packages in it to requirements.txt
+#   suites  like latest, plus what the Brightway packages' own tests need; then runs those
+#           tests instead of the benchmarks (scripts/compat-suites.sh)
 # Then runs every benchmark once at smoke size through the pytest adapter in
 # benchmarks/codspeed: each case runs and checks its result, and nothing is timed. A case the
 # releases cannot run fails rather than skips, unless BWBENCH_STRICT is set empty (the macOS
@@ -23,9 +25,9 @@ set -eu
 python=$1
 column=${2:-latest}
 case $column in
-latest | floors | pre | conda-forge) ;;
+latest | floors | pre | conda-forge | suites) ;;
 *)
-    echo "usage: scripts/compat.sh PYTHON [latest|floors|pre|conda-forge]" >&2
+    echo "usage: scripts/compat.sh PYTHON [latest|floors|pre|conda-forge|suites]" >&2
     exit 2
     ;;
 esac
@@ -90,9 +92,12 @@ uv venv --quiet --python "$python" "$venv"
 py=$venv/bin/python
 [ -e "$py" ] || py=$venv/Scripts/python.exe # a Windows venv
 reqs() { printf '%s\n' brightway25 bw_graph_tools bw_timex pytest pytest-codspeed==5.0.3; }
+# What the packages' `testing` extras add, less the coverage tools, which these runs leave off.
+testreqs() { reqs && printf '%s\n' bw_temporalis pytest-mock pyarrow fsspec setuptools packaging; }
 compile() { uv pip compile --quiet --no-header --python "$py" "$@" -; }
 case $column in
 latest) reqs | compile --no-annotate -o "$out/requirements.txt" ;;
+suites) testreqs | compile --no-annotate -o "$out/requirements.txt" ;;
 pre) reqs | compile --no-annotate --prerelease allow -o "$out/requirements.txt" ;;
 floors)
     reqs | compile --annotation-style line -o "$out/latest.txt"
@@ -130,4 +135,5 @@ EOF
 esac
 compile --no-annotate -o "$out/pylock.toml" <"$out/requirements.txt"
 uv pip install --quiet --python "$py" -r "$out/requirements.txt"
+[ "$column" != suites ] || exec sh scripts/compat-suites.sh "$py" "$out"
 BWBENCH_STRICT=${BWBENCH_STRICT-1} PYTHONPATH=benchmarks "$py" -m pytest -p no:cacheprovider --rootdir benchmarks/codspeed benchmarks/codspeed -v

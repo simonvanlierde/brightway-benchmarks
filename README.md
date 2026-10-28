@@ -144,16 +144,26 @@ A second argument picks the column, which sets what gets installed:
   installs the Brightway packages conda-forge has, and leaves out the bw_graph_tools and
   bw_timex cases, since neither package is on conda-forge yet. The set goes to `pixi.toml`
   and `pixi.lock`, and its Python packages to `requirements.txt`.
+- `suites`: like `latest`, plus what the packages' tests need, and then it runs the test
+  suites of bw2data, bw2calc, bw2io, bw_processing, matrix_utils, bw_graph_tools and
+  bw_timex instead of the benchmarks. A new release of pytest or NumPy that breaks a
+  package's tests shows here the day it comes out, before that package's own CI runs again.
+  The tests come from each package's GitHub tag for the installed version, since most
+  sdists leave them out. `.asv/compat/PYTHON-suites/suites.txt` says per package whether
+  it passed, with the failing tests, and `suites/PACKAGE.log` holds pytest's output.
+  A test that cannot pass in this run whatever the releases would be deselected in
+  `scripts/compat-suites.sh`, with its reason; none is so far. Linux only.
 
 For example, `just compat 3.12 floors`. bw_timex pulls in PyPardiso on Linux x86_64, so there
 bw2calc solves with PyPardiso, not SuperLU or UMFPACK. The versions each run resolved go to
 `.asv/compat/PYTHON-COLUMN/requirements.txt`, and the same set with each wheel's hash to
 `pylock.toml` beside it. The `compat` workflow runs `latest` every night
-on Linux with Python 3.12, 3.13 and 3.14 and on macOS and Windows with 3.12, `floors` on 3.12,
-`pre` on 3.14 and `conda-forge` on 3.12 on Linux, and lists the versions in each job's summary. On macOS and Windows it runs
+on Linux with Python 3.12, 3.13 and 3.14 and on macOS and Windows with 3.12, `floors`,
+`conda-forge` and `suites` on 3.12 on Linux and `pre` on 3.14, and lists the versions (and for
+`suites`, each package's result) in each job's summary. On macOS and Windows it runs
 on the runner itself, which cannot run the Linux box. On macOS the cases that need PyPardiso
-or UMFPACK skip instead of failing, since neither installs from PyPI there. `floors`, `pre`
-and `conda-forge` can fail without turning the run red, so check their jobs.
+or UMFPACK skip instead of failing, since neither installs from PyPI there. `floors`, `pre`,
+`conda-forge` and `suites` can fail without turning the run red, so check their jobs.
 
 The [site](https://simonvanlierde.com/brightway-benchmarks/#works-together) has a
 "works together today" table: how each job ended in the latest nightly run, and the last

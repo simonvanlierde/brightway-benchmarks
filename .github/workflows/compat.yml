@@ -19,7 +19,8 @@ jobs:
     name: ${{ matrix.column }} · Python ${{ matrix.python }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
-    # floors, pre and conda-forge report problems upstream, so they never turn the run red: a new
+    # floors, pre, conda-forge and suites report problems upstream, so they never turn the run
+    # red: a new
     # failure in latest must stand out.
     continue-on-error: ${{ matrix.column != 'latest' }}
     strategy:
@@ -37,6 +38,7 @@ jobs:
           - {column: pre, python: "3.14", os: ubuntu-latest}
           # The set from conda-forge with pixi, in its image (scripts/compat.sh).
           - {column: conda-forge, python: "3.12", os: ubuntu-latest}
+          - {column: suites, python: "3.12", os: ubuntu-latest}
     defaults:
       run:
         shell: bash # Windows too, where compat.sh runs under Git Bash
@@ -77,6 +79,7 @@ jobs:
             grep -iE '^(brightway25|bw|matrix|numpy|scipy|pandas|peewee|pypardiso)' "$OUT/requirements.txt" ||
               echo "no requirements.txt: the resolve failed"
             echo '```'
+            [ ! -e "$OUT/suites.txt" ] || { echo '```'; cat "$OUT/suites.txt"; echo '```'; }
           } >>"$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -7,6 +7,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The `floors` compat column raises ten declared floors found too low on Python 3.12 to the
+  oldest release that worked, so it runs every case again and catches the next one. They
+  are in bw2parameters, bw_processing, bw2data, bw2calc and bw_timex; `scripts/compat.sh`
+  lists them.
+
 ## [0.1.0] - 2026-10-28
 
 The first release. It times six Brightway packages over their released versions on seeded

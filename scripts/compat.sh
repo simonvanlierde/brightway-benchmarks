@@ -58,15 +58,15 @@ floors)
     # package that leaves it unbounded. Drop a line once that package's release raises it.
     cat >"$out/raised.txt" <<'EOF'
 astunparse>=1.6.3      # bw2parameters (brightway2-parameters#15): 1.1.0 pulls six 1.6.1
-pint>=0.18             # bw2parameters: 0.9 imports pkg_resources
+pint>=0.18             # bw2parameters: 0.9 imports pkg_resources (not bisected)
 fsspec>=2022.10.0      # bw_processing, bw2data, bw2calc: no dirfs before 2022.2, zip writes fail to 2022.8.2
 structlog>=20.2.0      # bw2data: structlog.contextvars
-voluptuous>=0.12.0     # bw2data: collections.Mapping
+voluptuous>=0.12.0     # bw2data: collections.Mapping in 0.11.5 (0.11.6 not tried)
 xarray>=2023.1.0       # bw2calc: 0.7.0 imports collections.Mapping (not bisected)
 threadpoolctl>=3.0.0   # bw2calc: ThreadpoolController
 ipython>=8.0           # bw_timex: 7.x uses asyncio.coroutine (not bisected)
 ipywidgets>=8.0        # bw_timex: collections.Mapping in 7.0 (not bisected)
-seaborn>=0.13          # bw_timex: matplotlib.cm.register_cmap
+seaborn>=0.13          # bw_timex: matplotlib.cm.register_cmap in 0.11 (0.12 not tried)
 EOF
     # --no-build: only versions with a wheel for this Python, as a user's install would pick.
     awk -F ' *# via ' -v pin="^($bw|pytest)" -v via="(^|, )($bw)" '

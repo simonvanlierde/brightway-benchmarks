@@ -133,7 +133,9 @@ A second argument picks the column, which sets what gets installed:
 - `floors`: the newest Brightway packages and test harness, with each package they depend on directly (NumPy,
   SciPy, pandas and so on) at the lowest version their declared bounds allow that has a
   wheel. A lower bound set too low fails here. The rest of the dependencies stay at their
-  latest, since their own floors say nothing about Brightway.
+  latest, since their own floors say nothing about Brightway. Floors already found too low
+  are raised to the oldest release that worked, so the run reaches the next one:
+  `scripts/compat.sh` lists each with the package that declares it.
 - `pre`: like `latest`, but pre-releases count too, so NumPy, SciPy and pandas betas show
   problems before their release.
 

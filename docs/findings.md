@@ -32,6 +32,7 @@ release from 2.0 to 3.1.0 changed these times. `JacobiGMRESLCA` (from 2.4.0) giv
 score in 150 ms, with a relative error of 1.4e-9, on the synthetic matrix only.
 
 Graph: [bw2calc, one score](https://simonvanlierde.com/brightway-benchmarks/bw2calc/index.html#bench_lca.SingleScore.time_first_score).
+Rerun: [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py).
 
 ### Keep the factorization for repeated solves
 
@@ -46,6 +47,7 @@ With UMFPACK, a second functional unit on the stored factorization takes 33.6 ms
 without.
 
 Graph: [bw2calc, second functional unit](https://simonvanlierde.com/brightway-benchmarks/bw2calc/index.html#bench_lca.NewDemand.time_redo_lci).
+Rerun: [`bench_lca.NewDemand`](../benchmarks/bench_bw2calc/bench_lca.py).
 
 ### UMFPACK's speed depends on its BLAS and its refinement step
 
@@ -76,6 +78,7 @@ comes from [`scripts/solver_factorize.py`](../scripts/solver_factorize.py) throu
 With refinement off, conda-forge's UMFPACK is about 30% slower per solve than the PyPI build.
 
 Graph: [bw2calc-conda, one score](https://simonvanlierde.com/brightway-benchmarks/bw2calc-conda/index.html#bench_lca.SingleScore.time_first_score).
+Rerun: [`bench_lca.NewDemandRefinement`](../benchmarks/bench_bw2calc/bench_lca.py).
 
 ### bw2calc 3.0.0 slowed `IterativeLCA` without PyPardiso, and 3.1.0 fixed it
 
@@ -95,6 +98,9 @@ A in 2.5.0 and 3.0.0, as did 3.0.0's `IterativeLCA`. 3.1.0 factorizes Aᵀ
 ([brightway2-calc#180](https://github.com/brightway-lca/brightway2-calc/pull/180)). Reported as
 [brightway2-calc#176](https://github.com/brightway-lca/brightway2-calc/issues/176).
 
+Rerun: [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py), and
+`just solver-lci umfpack ecoinvent 3.0.0` for `lci(factorize=True)`.
+
 ### Every new LCA object under PyPardiso searches for MKL again
 
 **From 3.0.0, each LCA object under PyPardiso makes a fresh solver, which searches the Python
@@ -104,12 +110,15 @@ install for the MKL library.** 3.1.0 still does.
 [haasad/PyPardiso#91](https://github.com/haasad/PyPardiso/pull/91) would find the library once
 ([#56](https://github.com/simonvanlierde/brightway-benchmarks/issues/56)).
 
+Rerun: `just codspeed bw2calc bw2calc==3.0.0 pypardiso`.
+
 ### Two upstream crashes skip cases
 
 `JacobiGMRESLCA` and `FastScoresOnlyMultiLCA` under PyPardiso free a factorization they never
 made ([brightway2-calc#157](https://github.com/brightway-lca/brightway2-calc/issues/157)).
 `IterativeLCA` passes `atol='legacy'` to SciPy's `cgs`, which the pinned SciPy rejects
 ([brightway2-calc#161](https://github.com/brightway-lca/brightway2-calc/pull/161#issuecomment-6140609983)).
+[`skip_known_crash`](../benchmarks/bench_bw2calc/bench_lca.py) lists both.
 
 ## bw2data
 
@@ -126,6 +135,7 @@ raw SQLite `executemany` took 10.4 s, and #270, the next commit, 15.4 s. These t
 asv's `--interleave-rounds`.
 
 Graph: [bw2data, database write](https://simonvanlierde.com/brightway-benchmarks/bw2data/index.html#bench_write.DatabaseWrite.time_write).
+Rerun: [`bench_write.DatabaseWrite`](../benchmarks/bench_bw2data/bench_write.py).
 
 ## bw_timex
 
@@ -146,6 +156,7 @@ In 1.3.0, a database block without a cached LU was factorized again on every sol
 block once.
 
 Graph: [bw_timex, time-explicit LCI](https://simonvanlierde.com/brightway-benchmarks/bw_timex/index.html#bench_timex.TimelineLCI.time_lci).
+Rerun: [`bench_timex.TimelineLCI`](../benchmarks/bench_bw_timex/bench_timex.py).
 
 ## bw_graph_tools
 
@@ -162,6 +173,7 @@ later.
 | EXIOBASE | 100 | over asv's 15-minute limit | 2.25 minutes |
 
 Graph: [bw_graph_tools, traversal](https://simonvanlierde.com/brightway-benchmarks/bw_graph_tools/index.html#bench_traversal.Traversal.time_traverse).
+Rerun: [`bench_traversal.Traversal`](../benchmarks/bench_bw_graph_tools/bench_traversal.py).
 
 ### Without PyPardiso, traversal is hundreds of times slower
 
@@ -174,6 +186,8 @@ At `max_calc=2`, a traversal takes 4.6 minutes with SuperLU, against 0.62 s with
 bw2calc 2.5.0, 234 of its 235 s go to factorizing A. On 3.1.0, which factorizes Aᵀ, it takes
 27.8 s. [bw_graph_tools#58](https://github.com/brightway-lca/bw_graph_tools/issues/58) proposes
 reusing the LCA's factorization.
+
+Rerun: [`bench_traversal.Traversal`](../benchmarks/bench_bw_graph_tools/bench_traversal.py).
 
 ## bw_processing and matrix_utils
 
@@ -189,14 +203,18 @@ on #113. [matrix_utils#48](https://github.com/brightway-lca/matrix_utils/pull/48
 to 695 and 404 ms. Since 0.6, matrix_utils itself builds 11% slower at 1,000 groups.
 
 Graph: [bw_processing, resource groups](https://simonvanlierde.com/brightway-benchmarks/bw_processing/index.html#bench_datapackage.Groups.time_groups).
+Rerun: [`bench_datapackage.Groups`](../benchmarks/bench_bw_processing/bench_datapackage.py) and
+[`bench_mapped_matrix.MappedMatrixBuild`](../benchmarks/bench_matrix_utils/bench_mapped_matrix.py).
 
 ### Smaller bw_processing findings
 
 - **bw_processing 1.6 iterates over 100,000 entries 24% faster**, from 309 to 234 ms.
+  Rerun: [`bench_datapackage.EntriesPath`](../benchmarks/bench_bw_processing/bench_datapackage.py).
 - **bw_processing stores processed exchange amounts as float32, which moves scores by about
   1e-7**
   ([bw_processing#112](https://github.com/brightway-lca/bw_processing/issues/112)). bw2data's score
-  check uses a reference with the same float32 amounts.
+  check uses a reference with the same float32 amounts. See
+  [`System.float32_reference`](../src/bwbench/synth.py).
 
 ## Across packages
 
@@ -222,3 +240,4 @@ stayed at 2.4.0 there until 3.1.0 landed on 2026-10-18. bw_graph_tools and bw_ti
 on conda-forge yet. Check the `conda-forge` row of the
 [works together today](https://simonvanlierde.com/brightway-benchmarks/#works-together) table
 before you install from there.
+Rerun: `just compat 3.12 conda-forge`.

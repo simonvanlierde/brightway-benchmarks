@@ -11,6 +11,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - docs/faster.md lists what to install or call to make Brightway faster, with the gain
   measured and the release it was measured on.
+- Each finding in docs/findings.md links the case, script or `just` recipe that reruns it, and
+  a test fails when one is missing.
 - A bw2calc case, `NewDemandRefinement`, that times `redo_lci` with UMFPACK's iterative
   refinement on (its default) and off (`UMFPACK_IRSTEP=0`). It records the refinement steps
   taken and checks the score against the reference either way. It runs only in the UMFPACK

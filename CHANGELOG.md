@@ -58,6 +58,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   are in bw2parameters, bw_processing, bw2data, bw2calc and bw_timex; `scripts/compat.sh`
   lists them.
 
+### Fixed
+
+- A run no longer fails after its benchmarks pass when an asv environment has lost its
+  interpreter, as happens when its uv cache is cleaned: the lock files skip that folder.
+
 ## [0.1.0] - 2026-10-28
 
 The first release. It times six Brightway packages over their released versions on seeded

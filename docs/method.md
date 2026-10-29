@@ -39,6 +39,11 @@ ecoinvent ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/5
 licence of your own, [`scripts/solver_factorize.py`](../scripts/solver_factorize.py) times each
 direct solver on the real matrix.
 
+`just bw2io-import synthetic smoke,ecoinvent` times bw2io's ecoSpold2 import without a licence:
+it writes a profile's system as ecoSpold2 files with bw2io's own `biosphere3` flows, so every
+exchange links, and prints each step's time and peak memory. `just bw2io-import RELEASE_FOLDER
+all` does the same on a licensed release, read-only.
+
 ## How the results stay reproducible
 
 - [asv](https://asv.readthedocs.io) runs every release of a package on one fixed set of

@@ -98,7 +98,12 @@ testpaths = ["tests"]
 # the box, where `just smoke` exercises them.
 [tool.coverage.run]
 source = ["src", "scripts"]
-omit = ["*/scripts/registry_vs_sqlite.py", "*/scripts/solver_factorize.py", "*/scripts/solver_lci.py"]
+omit = [
+  "*/scripts/bw2io_import.py",
+  "*/scripts/registry_vs_sqlite.py",
+  "*/scripts/solver_factorize.py",
+  "*/scripts/solver_lci.py",
+]
 branch = true
 patch = ["subprocess"]
 

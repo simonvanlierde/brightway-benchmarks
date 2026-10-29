@@ -37,7 +37,8 @@ bench subject range="" *args:
     scripts/box.sh scripts/asv.sh {{ subject }} run --skip-existing-successful {{ args }} {{ if range == "" { "HASHFILE:/src/asv/" + subject + ".hashes" } else { quote(range) } }}
 
 # Proves the harness, not the numbers. Results go to .asv/smoke/, never to results/ or the site.
-# One quick pass per subject at its oldest and latest release, smoke size; fails on any failure.
+# One quick pass per subject at its oldest and latest release, smoke size, and a bw2io import of
+# the smoke system written as ecoSpold2 files; fails on any failure.
 smoke:
     #!/usr/bin/env bash
     set -uo pipefail
@@ -50,6 +51,8 @@ smoke:
       done
     done
     python3 scripts/check_smoke.py .asv/smoke || status=1
+    # bw2io's import of the generated ecoSpold2 release, which must link every exchange.
+    just bw2io-import synthetic smoke || { echo "bw2io-import: exit $?"; status=1; }
     exit $status
 
 # Results go to .asv/noise/, never to results/ or the site. Sizes come from BWBENCH_* as usual.
@@ -115,6 +118,26 @@ results-commit:
 # 12 GB by default on plain docker: SuperLU on A at the ecoinvent size needs several.
 solver-lci solver size="smoke" bw2calc="3.1.0":
     BWBENCH_MEM="${BWBENCH_MEM:-12g}" scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --with bw2calc=={{ bw2calc }} --with threadpoolctl==3.7.0 --with pypardiso==0.4.7 --with scikit-umfpack==0.4.2 --with pyklu==0.2.0 python scripts/solver_lci.py {{ solver }} {{ size }}'
+
+# RELEASE: a licensed release folder (holding datasets/ and MasterData/), mounted read-only, with
+# dataset counts or `all` as SIZES (3000,all); or `synthetic`, with profiles as SIZES (smoke,ecoinvent).
+# 8 GB by default: a full import peaks at about 4.5 GB.
+# Time and peak memory of an ecoinvent import with bw2io 0.9.17 and bw2data 4.8, a fresh process per size.
+bw2io-import release sizes:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    run='PYTHONPATH=src uv run -q --no-project --python 3.12 --with bw2io==0.9.17 --with bw2data==4.8 python scripts/bw2io_import.py'
+    export BWBENCH_MEM="${BWBENCH_MEM:-8g}"
+    if [ {{ quote(release) }} = synthetic ]; then
+      exec scripts/box.sh sh -c "$run synthetic {{ quote(sizes) }}"
+    fi
+    # box.sh mounts only this repo, so a licensed release needs a plain docker run of its image.
+    scripts/box.sh true  # builds the image if it is missing
+    exec docker run --rm -i --init --name "tmp-bwbench-$$" --user "$(id -u):$(id -g)" --cap-drop ALL \
+      --security-opt no-new-privileges --pids-limit 4096 --memory "$BWBENCH_MEM" --memory-swap "$BWBENCH_MEM" \
+      --cpus "${BWBENCH_CPUS:-2}" \
+      -v "$PWD":/src:ro -v "$PWD/.asv":/src/.asv -v "$(realpath {{ quote(release) }})":/ecoinvent:ro -w /src \
+      "bwbench-box:$(cksum <docker/Dockerfile | cut -d' ' -f1)" scripts/in-box.sh sh -c "$run /ecoinvent {{ quote(sizes) }}"
 
 # A SQLite project against sentier-brightway's Parquet registry (the format of bw2data #290, which
 # stays outside bw2data). size: smoke | ecoinvent; solver: superlu | pypardiso.

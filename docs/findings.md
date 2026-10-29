@@ -63,8 +63,8 @@ which doesn't change the score.**
 
 What it means for you: install scikit-umfpack from conda-forge, which links OpenBLAS, or link
 OpenBLAS or MKL when you build it. bw2calc can't turn refinement (`UMFPACK_IRSTEP`) off yet.
-[brightway2-calc#184](https://github.com/brightway-lca/brightway2-calc/issues/184) proposes
-it, which would make repeated solves on reference BLAS or OpenBLAS about 3 times faster.
+[brightway2-calc#186](https://github.com/brightway-lca/brightway2-calc/pull/186) does, which
+makes repeated solves on reference BLAS or OpenBLAS about 3 times faster.
 
 The history builds scikit-umfpack, which has no PyPI wheels, on Debian's reference BLAS.
 `bw2calc-conda` runs the suite on conda-forge's builds instead. There, on bw2calc 2.4.0 and

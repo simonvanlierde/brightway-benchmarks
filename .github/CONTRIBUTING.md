@@ -14,7 +14,7 @@ the package, release, case and database size, and the `just` command.
 You need [uv](https://docs.astral.sh/uv/), [just](https://just.systems) and, for the
 benchmarks themselves, Docker. Run `uv sync` once, and `prek install` to install the git
 hooks with [prek](https://github.com/j178/prek). `just --list` shows every task, and the
-README's [Running it](../README.md#running-it) explains the benchmark recipes.
+[docs/running.md](../docs/running.md) explains the benchmark recipes.
 
 ## Checks
 
@@ -39,7 +39,7 @@ request:
 
 `just smoke` builds the benchmark box and runs every benchmark once at the oldest and
 latest release of its package. Run it when you change a benchmark, `scripts/` or
-`docker/`. It runs Brightway's code only inside a throwaway container (`scripts/box.sh`).
+`docker/`.
 
 ## Tests
 
@@ -70,8 +70,7 @@ review` job in `checks` blocks a pull request that adds a vulnerable one.
 
 The packages under test are not dependencies. Their releases are listed in
 `asv/<package>.hashes`, and the dependencies they run on are fixed in
-`asv/<package>.stack.txt`, which only a person moves (README, "How the results stay
-reproducible").
+`asv/<package>.stack.txt`, which only a person moves ([docs/method.md](../docs/method.md#how-the-results-stay-reproducible)).
 
 ## Commits and pull requests
 
@@ -119,8 +118,8 @@ needed write access.
   `just site`. The recipes start the benchmark box.
 - **The benchmark box** (`scripts/box.sh`, `docker/Dockerfile`) is a throwaway container that
   installs each Brightway release from PyPI through asv and runs the cases in
-  `benchmarks/`. It mounts the repository read-only, drops every capability and limits
-  processes, memory and CPUs. Results come out as files in `results/`.
+  `benchmarks/`; the [assurance case](../docs/assurance-case.md#trust-boundaries) says what it
+  may touch. Results come out as files in `results/`.
 - **The generator** (`src/bwbench`) builds the seeded synthetic databases and the reference
   scores the cases are checked against.
 - **`just results-commit`** copies `results/` to the `results` branch, and the `site`

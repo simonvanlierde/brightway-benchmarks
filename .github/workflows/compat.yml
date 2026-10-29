@@ -1,6 +1,6 @@
 name: compat
 
-# `just compat` per column, Python and OS (see the README). Unlike smoke.yml it follows new upstream releases.
+# `just compat` per column, Python and OS (see docs/running.md). Unlike smoke.yml it follows new upstream releases.
 
 on:
   schedule:

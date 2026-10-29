@@ -21,7 +21,7 @@
 // Benchmark pins are moved by hand, never by a bot: asv/*.json, asv/*.stack.txt, the
 // cutoff in scripts/in-box.sh, the asv and asv_runner versions in scripts/asv.sh, and the
 // box image's digest in docker/Dockerfile (it fixes the Python every result ran on).
-// Moving any of them changes every result (README, "How the results stay reproducible").
+// Moving any of them changes every result (docs/method.md, "How the results stay reproducible").
 // Of those, only asv/ and the Dockerfile sit where a Renovate manager looks.
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',

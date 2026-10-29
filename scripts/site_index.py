@@ -15,7 +15,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
-# What each history times, in LCA terms; the README's "What is measured" table says the same.
+DOCS = f"{REPO}/blob/main/docs"
+# What each history times, in LCA terms; docs/method.md has the full table.
 ABOUT = {
     "bw2calc": "One score, a second functional unit, many functional units at once, and Monte Carlo"
     " draws, with each direct solver (SuperLU, PyPardiso, UMFPACK) and the iterative ones.",
@@ -83,19 +84,11 @@ def compat_section(status_file: Path) -> str:
         )
     return f"""
 <h2 id="works-together">Works together today</h2>
-<p>Each night the <code>compat</code> workflow installs the newest Brightway releases from PyPI
-on each Python and runs every case once on a small database (<code>latest</code>), and again with
-Brightway's dependencies at their lowest allowed versions (<code>floors</code>) or with
-pre-releases (<code>pre</code>). <code>conda-forge</code> installs the same set from
-conda-forge with pixi, leaving out the cases of packages conda-forge does not have yet
-(bw_graph_tools and bw_timex); its <code>pixi.toml</code> and <code>pixi.lock</code> install
-it with <code>pixi install --frozen</code>. <code>suites</code> runs each Brightway package's
-own tests on the newest releases instead. The table shows how each job ended in the
-<a href="{e(status["run"])}">run of {e(status["date"])}</a>, and the last set that passed. Its
-<code>requirements.txt</code> works as a constraints file, as in
-<code>uv pip install brightway25 -c requirements.txt</code>; <code>pylock.toml</code> pins
-the same set with each wheel's hash for that operating system. Both include pytest, which the
-run needs. A set is kept for 90 days.</p>
+<p>Each night the <code>compat</code> workflow installs the newest Brightway releases and runs
+every case once on a small database, in the columns <a href="{DOCS}/running.md#compat">running.md</a>
+describes. The table shows how each job ended in the <a href="{e(status["run"])}">run of
+{e(status["date"])}</a> and the last set that passed, which
+<code>uv pip install brightway25 -c requirements.txt</code> installs.</p>
 <div class="wide"><table class="compat">
 <thead><tr><th>Python</th><th>OS</th><th>Column</th><th>Latest run</th><th>Last green</th><th>brightway25</th>
 <th>bw2calc</th><th>bw2data</th><th>bw2io</th><th>numpy</th><th>Files</th></tr></thead>
@@ -149,7 +142,7 @@ of ecoinvent, so no licensed data is involved.</p>
 
 <p>Start with <a href="bw2calc/index.html#bench_lca.SingleScore.time_first_score">bw2calc's
 time for one score</a> on the ecoinvent-sized database, per solver, across every release since 2.0.
-What the histories show so far is in the <a href="{REPO}#results-so-far">README</a>.</p>
+What the histories show so far is in <a href="{DOCS}/findings.md">the findings</a>.</p>
 
 <h2>Histories</h2>
 <ul class="subjects">
@@ -157,17 +150,12 @@ What the histories show so far is in the <a href="{REPO}#results-so-far">README<
 </ul>
 {compat_section(site / "compat" / "status.json")}
 <h2>Reading the graphs</h2>
-<ul>
-<li>Each point is one release. Lower is faster.</li>
-<li>Each line is one environment. For bw2calc the environment name says the solver:
-<code>pypardiso</code>, <code>scikit-umfpack</code>, or neither for SciPy's SuperLU. A name with
-<code>BWBENCH_SOLVER</code> is an experimental solver patched into bw2calc: <code>klu</code>
-(KLU, through pyklu) or <code>umfpack-T</code> (UMFPACK factorizing Aᵀ).</li>
-<li>Only the package changes along a line. Its dependencies stay fixed, so a step is the
-package's own change.</li>
-<li>Every timing ran one thread, pinned to one set of CPU cores. Compare points within a
-line, not times between machines.</li>
-</ul>
+<p>Each point is one release, lower is faster, and each line is one environment. For bw2calc
+the name says the solver: <code>pypardiso</code>, <code>scikit-umfpack</code>, neither for SciPy's
+SuperLU, or <code>BWBENCH_SOLVER</code> for an
+<a href="{DOCS}/running.md#experimental-solvers">experimental one</a>. Only the package changes
+along a line, so compare points within a line, not between machines
+(<a href="{DOCS}/method.md">method and noise floor</a>).</p>
 </main>
 <footer>Code, method and caveats: <a href="{REPO}">{REPO.removeprefix("https://")}</a>.
 Built {datetime.now(UTC):%Y-%m-%d}.</footer>

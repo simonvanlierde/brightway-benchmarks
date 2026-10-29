@@ -39,7 +39,7 @@ request:
 
 `just smoke` builds the benchmark box and runs every benchmark once at the oldest and
 latest release of its package. Run it when you change a benchmark, `scripts/` or
-`docker/`. It runs Brightway's code only inside a throwaway container (`scripts/box.sh`).
+`docker/`.
 
 ## Tests
 
@@ -118,8 +118,8 @@ needed write access.
   `just site`. The recipes start the benchmark box.
 - **The benchmark box** (`scripts/box.sh`, `docker/Dockerfile`) is a throwaway container that
   installs each Brightway release from PyPI through asv and runs the cases in
-  `benchmarks/`. It mounts the repository read-only, drops every capability and limits
-  processes, memory and CPUs. Results come out as files in `results/`.
+  `benchmarks/`; the [assurance case](../docs/assurance-case.md#trust-boundaries) says what it
+  may touch. Results come out as files in `results/`.
 - **The generator** (`src/bwbench`) builds the seeded synthetic databases and the reference
   scores the cases are checked against.
 - **`just results-commit`** copies `results/` to the `results` branch, and the `site`

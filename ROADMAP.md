@@ -9,7 +9,9 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
 
 - **A more faithful `ecoinvent` profile.** Its LU fill is too high, so SuperLU times on it
   overstate real ecoinvent ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
-  The next step is to measure how long the copied input lists are.
+  In ecoinvent a long input list draws from other regions far more than a short one, and the
+  profile's lists are about as local at every length. The next step is a generator step that
+  follows ecoinvent here.
 - **More solver columns for bw2calc:** NVIDIA cuDSS behind a GPU opt-in, kept out of the default
   run, and Apple's Accelerate LU on macOS.
 - **Scaling cells for bw_processing:** how the time to read a datapackage grows with the number of

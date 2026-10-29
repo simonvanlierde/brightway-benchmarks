@@ -15,12 +15,13 @@ reference score, so a release that slows a calculation or changes a score shows 
 The benchmarks run on synthetic databases that copy ecoinvent's structure, so anyone can rerun
 them and the results can be published.
 
-The history of every case is on the
+Every case's history is on the
 [benchmark pages](https://simonvanlierde.com/brightway-benchmarks/).
 
 ## Results so far
 
-All findings are in [docs/findings.md](docs/findings.md). Four that matter to most users:
+[Make your Brightway faster](docs/faster.md) says what to install or call. Four findings for
+most users:
 
 - [The solver sets the time for one score.](docs/findings.md#the-solver-sets-the-time-for-one-score) On an ecoinvent-sized database,
   UMFPACK on OpenBLAS takes 2.63 s, PyPardiso 10.0 s and SciPy's SuperLU 27.7 s.

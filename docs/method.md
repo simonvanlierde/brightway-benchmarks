@@ -41,7 +41,10 @@ direct solver on the real matrix.
 
 `just bw2io-import synthetic smoke,ecoinvent` times bw2io's ecoSpold2 import without a licence:
 it writes a profile's system as ecoSpold2 files with bw2io's own `biosphere3` flows, so every
-exchange links, and prints each step's time and peak memory. `just bw2io-import RELEASE_FOLDER
+exchange links, and prints each step's time and peak memory. Padding elementary exchanges,
+properties, uncertainties, comments and parameters at ecoinvent 3.12's means per dataset make
+the files about as heavy as the real ones (137 KB a dataset), without changing the system's
+matrices. `just bw2io-import RELEASE_FOLDER
 all` does the same on a licensed release, read-only.
 
 ## How the results stay reproducible

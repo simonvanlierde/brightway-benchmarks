@@ -85,8 +85,8 @@ def synthetic(size: str, root: Path) -> tuple[Path, dict]:
     from bwbench.synth import system  # noqa: PLC0415
 
     s = system(size)
-    expect = {"datasets": s.profile.products, "exchanges": s.tech_rows.size + s.bio_rows.size, "unlinked": 0}
-    return write_ecospold(s, root, biosphere3_flows()), expect
+    expect = {"datasets": s.profile.products, "unlinked": 0}
+    return root, expect | {"exchanges": write_ecospold(s, root, biosphere3_flows())}
 
 
 def one(release: str, size: str) -> dict:  # noqa: PLR0915 - one import, step by step

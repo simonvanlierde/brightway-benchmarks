@@ -9,6 +9,15 @@
     "numpy": "2.5.3",
     "scipy": "1.18.1"
   },
+  "ecospold": {
+    "per_dataset": "means over the release's dataset files, measured 2026-10-29",
+    "bytes": 137000,
+    "elementary_exchanges": 20.9,
+    "properties": 210,
+    "lognormal_uncertainties": 25,
+    "comments": 76,
+    "parameters": 1.9
+  },
   "stats": {
     "products": 26533,
     "entries": 311662,

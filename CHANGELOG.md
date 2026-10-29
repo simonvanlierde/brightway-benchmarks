@@ -9,6 +9,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A bw2calc case, `NewDemandRefinement`, that times `redo_lci` with UMFPACK's iterative
+  refinement on (its default) and off (`UMFPACK_IRSTEP=0`). It records the refinement steps
+  taken and checks the score against the reference either way. It runs only in the UMFPACK
+  environment.
 - A DOI for citing the project, 10.5281/zenodo.23727602, in `CITATION.cff` and as a README
   badge. It always points at the latest release.
 - A roadmap (ROADMAP.md), a governance page that says who decides and what happens if the

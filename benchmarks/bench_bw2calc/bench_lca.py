@@ -163,6 +163,65 @@ def redo_lci(size: str, cls: str) -> BenchSetup:
     return run, against_reference
 
 
+def umfpack_context(lca: bc.LCA) -> object:
+    """The ``UmfpackContext`` inside bw2calc's ``lu_solver`` closure; asv skips the case without one.
+
+    UMFPACK's controls (``context.control``) and its report of the last solve (``context.info``)
+    are only reachable there, since ``lu_solver`` returns a bare function (bw2calc 3.1.0).
+    """
+    cells = (c.cell_contents for c in getattr(getattr(lca, "solver", None), "__closure__", None) or ())
+    found = next((c for c in cells if type(c).__name__ == "UmfpackContext"), None)
+    if found is None or os.environ.get("BWBENCH_SOLVER"):
+        raise NotImplementedError(f"bw2calc {bc.__version__} does not solve with its own UMFPACK context here")
+    return found
+
+
+def refinement_steps(steps: float) -> float:
+    """The steps of iterative refinement UMFPACK took in the timed solve."""
+    return steps
+
+
+@bench(
+    {"size": SIZES, "refinement": ["on", "off"]},
+    track={"refinement_steps": refinement_steps},
+    error="relative_error",
+    asv="NewDemandRefinement",
+    fresh_solver=False,
+    timeout=600,
+)
+def redo_lci_refinement(size: str, refinement: str) -> BenchSetup:
+    """``redo_lci`` with UMFPACK's iterative refinement on (its default) or off (``UMFPACK_IRSTEP=0``).
+
+    Refinement re-reads the matrix and takes one extra step per solve on reference BLAS, about
+    twice the time of a solve (brightway2-calc#184). The score must match the reference either way.
+    """
+    if not getattr(bc, "UMFPACK", False) or bc.PYPARDISO:
+        raise NotImplementedError("needs bw2calc to solve with UMFPACK, not PyPardiso or SuperLU")
+    skip_unless_factorizable(size, pardiso=False)
+    from scikits.umfpack import umfpack  # noqa: PLC0415
+
+    inventory, methods, refs, _ = packages(size)
+    lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]])
+    lca.lci(factorize=True)
+    lca.lcia()
+    context = umfpack_context(lca)
+    irstep, taken = umfpack.umfDefines["UMFPACK_IRSTEP"], umfpack.umfDefines["UMFPACK_IR_TAKEN"]
+    if refinement == "off":
+        context.control[irstep] = 0.0
+
+    def run() -> float:
+        lca.redo_lci({1: 1})
+        return float(context.info[taken])
+
+    def against_reference(steps: float) -> float:
+        if refinement == "off" and steps != 0:
+            raise AssertionError(f"refinement is off, but UMFPACK took {steps:.0f} steps")
+        score = float((lca.characterization_matrix @ lca.inventory).sum())
+        return check(score, refs[1][0], DIRECT_RTOL, f"second-demand score, refinement {refinement}")
+
+    return run, against_reference
+
+
 @bench({"size": SIZES, "demands": [1, 3, 10, 30], "variant": ["MultiLCA", "forward", "adjoint"]}, asv="MultiScores")
 def scores(size: str, demands: int, variant: str) -> BenchSetup:
     """Many demands against three methods, with MultiLCA and FastScoresOnlyMultiLCA.

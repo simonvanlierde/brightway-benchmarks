@@ -89,7 +89,8 @@ Brightway's dependencies at their lowest allowed versions (<code>floors</code>) 
 pre-releases (<code>pre</code>). <code>conda-forge</code> installs the same set from
 conda-forge with pixi, leaving out the cases of packages conda-forge does not have yet
 (bw_graph_tools and bw_timex); its <code>pixi.toml</code> and <code>pixi.lock</code> install
-it with <code>pixi install --frozen</code>. The table shows how each job ended in the
+it with <code>pixi install --frozen</code>. <code>suites</code> runs each Brightway package's
+own tests on the newest releases instead. The table shows how each job ended in the
 <a href="{e(status["run"])}">run of {e(status["date"])}</a>, and the last set that passed. Its
 <code>requirements.txt</code> works as a constraints file, as in
 <code>uv pip install brightway25 -c requirements.txt</code>; <code>pylock.toml</code> pins

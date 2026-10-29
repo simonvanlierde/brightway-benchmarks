@@ -25,7 +25,7 @@ JOB = re.compile(r"(?P<column>[\w-]+) · Python (?P<python>[\d.]+) on (?P<os>\S+
 GREEN = "compat-green-"
 # The files a set may hold: pylock.toml from PyPI, pixi.toml and pixi.lock from conda-forge.
 FILES = ("requirements.txt", "pylock.toml", "pixi.toml", "pixi.lock")
-COLUMNS = ("latest", "floors", "pre", "conda-forge")
+COLUMNS = ("latest", "floors", "pre", "conda-forge", "suites")
 # The versions the table shows, as uv's requirements.txt names them.
 SHOWN = ("brightway25", "bw2calc", "bw2data", "bw2io", "numpy")
 

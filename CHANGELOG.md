@@ -22,6 +22,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the last set that passed, with a `pixi.toml` and `pixi.lock` to install it.
 - CI fails when test coverage drops below 80%. Coverage now counts the scripts the tests run
   as subprocesses, leaving out the three that only run inside the benchmark box.
+- A `suites` compat column (`just compat 3.12 suites`) runs the test suites of bw2data,
+  bw2calc, bw2io, bw_processing, matrix_utils, bw_graph_tools and bw_timex against the
+  newest releases, every night on Python 3.12. A dependency release that breaks a package's
+  own tests shows up the next morning, with the failing tests in the job summary, even when
+  that package's CI has not run since. Like `floors` and `pre`, it does not turn the run red.
 
 ### Changed
 

@@ -2,6 +2,7 @@
 
 import shutil
 import subprocess
+import tarfile
 from pathlib import Path
 
 import pytest
@@ -192,3 +193,139 @@ def test_a_windows_venv_runs_its_scripts_python(repo: Path):
     log = (repo / "log").read_text()
     assert "Scripts/python.exe" in log
     assert log.splitlines()[-1].startswith("python -m pytest")
+
+
+def test_suites_installs_the_test_needs_and_runs_the_package_suites(repo: Path):
+    (repo / "scripts" / "compat-suites.sh").write_text('echo "suites $*" >>"$LOG"\n')
+    out = compat(repo, "suites")
+    assert out.returncode == 0, out.stderr
+    only, _lock = compiles(repo)
+    assert {"brightway25", "bw_timex", "pytest-mock", "bw_temporalis"} <= set(only.splitlines()[1:])
+    log = (repo / "log").read_text().splitlines()
+    assert log[-1].endswith("/bin/python .asv/compat/3.13-suites")  # the suites, not the benchmarks
+    assert not any(line.startswith("python") for line in log)
+
+
+# Serves $FAKE/REPO-TAG.tar.gz for a tag's archive URL, else fails like curl -f on a 404.
+CURL = """#!/bin/sh
+for a; do case $a in -o) next=1 ;; *) [ -z "${next-}" ] || { dest=$a; next=; }; url=$a ;; esac; done
+repo=${url#https://github.com/brightway-lca/}; repo=${repo%%/*}
+src=$FAKE/$repo-${url##*/}
+[ -e "$src" ] && cp "$src" "$dest" || exit 22
+"""
+
+# Runs as the env's python from inside the package's folder: logs what it saw, and fails the
+# suite of the package named in $FAKE/fail.
+PYTHON = """#!/bin/sh
+[ "$1" != -c ] || exec python3 "$@"
+here=$(basename "$PWD")
+echo "$here $* files=$(ls | tr '\\n' ' ')ini=$(tr '\\n' ';' <pytest.ini)" >>"$LOG"
+[ "$here" = "$(cat "$FAKE/fail" 2>/dev/null)" ] || exit 0
+echo "FAILED tests/test_e2e.py::test_alpha - TypeError: nested"
+echo "ERROR tests/test_io.py::test_beta"
+exit 1
+"""
+
+
+# A package's pytest settings: compat-suites.sh keeps only testpaths.
+PYPROJECT = """[tool.pytest.ini_options]
+addopts = "--cov"
+testpaths = ["tests/*.py", "tests/sub/*.py"]
+"""
+
+
+def suites(
+    tmp_path: Path, tags: list[str], deselect: str = "", fail: str = "", requirements: str = ""
+) -> tuple[int, Path]:
+    """Run compat-suites.sh on REQUIREMENTS, with GitHub serving TAGS (REPO-TAG) and FAIL's suite failing."""
+    fake = tmp_path / "fake"
+    fake.mkdir()
+    (fake / "fail").write_text(fail)
+    for name, body in (("curl", CURL), ("python", PYTHON)):
+        (fake / name).write_text(body)
+        (fake / name).chmod(0o755)
+    for repo_tag in tags:
+        src = tmp_path / "src" / f"{repo_tag}" / "tests"
+        src.mkdir(parents=True)
+        (src / "test_it.py").write_text("")
+        (src.parent / "pyproject.toml").write_text(PYPROJECT)
+        (src.parent / "src").mkdir()  # a source tree, which must not shadow the installed package
+        with tarfile.open(fake / f"{repo_tag}.tar.gz", "w:gz") as tar:
+            tar.add(src.parent, arcname=repo_tag)
+    out = tmp_path / ".asv" / "compat" / "3.12-suites"
+    out.mkdir(parents=True)
+    (out / "requirements.txt").write_text(requirements or REQUIREMENTS)
+    script = (REPO / "scripts" / "compat-suites.sh").read_text()
+    if deselect:
+        script = script.replace("<<'EOF'\nEOF", f"<<'EOF'\n{deselect}\nEOF")
+    (tmp_path / "compat-suites.sh").write_text(script)
+    rc = subprocess.run(
+        ["/bin/sh", "compat-suites.sh", fake / "python", ".asv/compat/3.12-suites"],
+        cwd=tmp_path,
+        env={"PATH": f"{fake}:/usr/bin:/bin", "FAKE": str(fake), "LOG": str(tmp_path / "log")},
+        capture_output=True,
+        text=True,
+        check=False,
+    ).returncode
+    return rc, out
+
+
+REQUIREMENTS = """\
+bw2data==4.8
+bw2calc==3.1.0
+bw2io==0.9.17
+bw-processing==1.6
+matrix-utils==0.9
+bw-graph-tools==0.10
+bw-timex==1.4.1
+numpy==2.5.4
+"""
+
+
+def test_suites_reports_each_package_and_the_failing_tests(tmp_path: Path):
+    tags = [
+        "brightway2-data-4.8",
+        "brightway2-calc-3.1.0",
+        # brightway2-io has no tag for its version
+        "bw_processing-1.6",
+        "matrix_utils-0.9",
+        "bw_graph_tools-0.10",
+        "bw_timex-v1.4.1",  # bw_timex tags with a v
+    ]
+    deselect = "bw-timex tests/test_e2e.py::test_x[a-b]  # needs the network"
+    rc, out = suites(tmp_path, tags, deselect=deselect, fail="bw-timex")
+    assert rc == 1
+    assert (out / "suites.txt").read_text() == (
+        "bw2data 4.8 passed\n"
+        "bw2calc 3.1.0 passed\n"
+        "bw2io 0.9.17 no tag\n"
+        "bw-processing 1.6 passed\n"
+        "matrix-utils 0.9 passed\n"
+        "bw-graph-tools 0.10 passed\n"
+        "bw-timex 1.4.1 failed\n"
+        "    FAILED tests/test_e2e.py::test_alpha\n"
+        "    ERROR tests/test_io.py::test_beta\n"
+    )
+    log = (tmp_path / "log").read_text().splitlines()
+    # Only tests/ and pyproject.toml are unpacked, and of its pytest settings only testpaths applies.
+    ini = "ini=[pytest];testpaths = tests/*.py tests/sub/*.py;"
+    assert log[0] == f"bw2data -m pytest -p no:cacheprovider -rfE files=pyproject.toml pytest.ini tests {ini}"
+    assert log[-1].startswith("bw-timex -m pytest -p no:cacheprovider -rfE --deselect tests/test_e2e.py::test_x[a-b] ")
+    assert (out / "suites" / "bw-timex.log").exists()
+    assert not (out / "suites" / "bw-timex").exists()  # the unpacked tests go once they ran
+
+
+def test_suites_pass_when_every_package_passes(tmp_path: Path):
+    tags = ["brightway2-data-4.8", "brightway2-calc-3.1.0", "brightway2-io-0.9.17", "bw_processing-1.6"]
+    tags += ["matrix_utils-0.9", "bw_graph_tools-0.10", "bw_timex-v1.4.1"]
+    rc, out = suites(tmp_path, tags)
+    assert rc == 0
+    assert (out / "suites.txt").read_text().count(" passed\n") == 7
+
+
+def test_suites_report_a_package_missing_from_the_set(tmp_path: Path):
+    # A resolve without bw_timex: no version to look a tag up for.
+    reqs = REQUIREMENTS.replace("bw-timex==1.4.1\n", "")
+    rc, out = suites(tmp_path, ["brightway2-data-4.8"], requirements=reqs)
+    assert rc == 1
+    assert (out / "suites.txt").read_text().splitlines()[-1] == "bw-timex not in the set"

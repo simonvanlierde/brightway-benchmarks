@@ -9,6 +9,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A table of what moved in each package's latest release: every case whose time or memory
+  changed more than 5% since the release before, per environment, including cases that failed
+  before and run now. It is on the site's front page, and `just release-changes bw2calc`
+  prints it as Markdown to paste into an upstream issue. A row says "stack moved" when the
+  two releases ran on different fixed dependencies.
 - A bw2calc case, `NewDemandRefinement`, that times `redo_lci` with UMFPACK's iterative
   refinement on (its default) and off (`UMFPACK_IRSTEP=0`). It records the refinement steps
   taken and checks the score against the reference either way. It runs only in the UMFPACK

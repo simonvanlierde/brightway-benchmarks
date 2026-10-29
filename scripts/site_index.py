@@ -14,6 +14,8 @@ import urllib.parse
 from datetime import UTC, datetime
 from pathlib import Path
 
+from release_changes import HEADER, THRESHOLD, changes
+
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
 DOCS = f"{REPO}/blob/main/docs"
 # What each history times, in LCA terms; docs/method.md has the full table.
@@ -99,6 +101,31 @@ describes. The table shows how each job ended in the <a href="{e(status["run"])}
 """
 
 
+def changes_section(results: Path) -> str:
+    """Per subject, the cases that moved in its latest release, from release_changes.py."""
+    e = html.escape
+    tables = []
+    for s in subjects:
+        rows = changes(results, s) if (results / s).is_dir() and Path(f"asv/{s}.hashes").exists() else []
+        if rows:
+            head = "".join(f"<th>{e(h)}</th>" for h in HEADER)
+            body = "\n".join("<tr>" + "".join(f"<td>{e(c)}</td>" for c in r.cells()) + "</tr>" for r in rows)
+            tables.append(
+                f'<h3>{e(s)}</h3>\n<div class="wide"><table class="compat">\n<thead><tr>{head}</tr></thead>'
+                f"\n<tbody>\n{body}\n</tbody>\n</table></div>"
+            )
+    if not tables:
+        return ""
+    return f"""
+<h2 id="latest-release">What moved in the latest release</h2>
+<p>Each case whose time or memory moved more than {THRESHOLD:.0%} between the newest two releases
+with results, per environment; run-to-run noise on the benchmark machine is under 2%. A
+subject not listed had no such case. "Stack moved" marks a pair that ran on different fixed
+dependencies, so part of the change may not be the package's own.</p>
+{"\n".join(tables)}
+"""
+
+
 own(site / "index.html").write_text(f"""<!doctype html>
 <html lang="en">
 <head>
@@ -150,6 +177,7 @@ To speed up your own calculations, see <a href="{DOCS}/faster.md">what to instal
 {items}
 </ul>
 {compat_section(site / "compat" / "status.json")}
+{changes_section(Path("results"))}
 <h2>Reading the graphs</h2>
 <p>Each point is one release, lower is faster, and each line is one environment. For bw2calc
 the name says the solver: <code>pypardiso</code>, <code>scikit-umfpack</code>, neither for SciPy's

@@ -34,6 +34,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The README is now a short overview. What the benchmarks found, with what each finding means
+  for you and its upstream issue, moved to docs/findings.md; what is measured and how far to
+  trust a step to docs/method.md; and how to run the benchmarks and compat checks, with every
+  `BWBENCH_*` variable, to docs/running.md.
 - The `floors` compat column raises twelve declared floors found too low on Python 3.12 to
   the oldest release that passes, so it runs every case again and catches the next one. They
   are in bw2parameters, bw_processing, bw2data, bw2calc and bw_timex; `scripts/compat.sh`

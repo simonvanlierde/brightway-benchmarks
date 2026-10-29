@@ -46,16 +46,9 @@ dependency that does not affect this project.
 boundaries and the controls at each. The project has no server, no accounts and no secrets of its own. The likely problems, and
 what stops each:
 
-- **A Brightway release or one of its dependencies runs harmful code.** asv installs every
-  release it times, so that code runs only in the benchmark box: a container with the
-  repository mounted read-only, every capability dropped, `no-new-privileges`, and limits on
-  processes, memory and CPUs (`scripts/box.sh`). The exceptions are the macOS and Windows
-  jobs of the `compat` workflow and the `codspeed` workflow, which run on a throwaway
-  GitHub-hosted runner with a read-only token. `codspeed` also holds an OIDC token for its
-  upload, which cannot pass for `release.yml` (CONTRIBUTING.md names it in the verify step).
-  The box's home folder is new on every run, and uv and pip read no config file, so a release
-  cannot leave config for later runs. Its package caches (uv, pip, rattler) and the generated
-  datapackages stay in `.asv/` between runs.
+- **A Brightway release or one of its dependencies runs harmful code.** That code runs only
+  in the benchmark box or on a throwaway GitHub-hosted runner; the
+  [assurance case](../docs/assurance-case.md#trust-boundaries) lists what each may touch.
 - **A compromised dependency of this project.** `uv.lock` pins the tree, Renovate holds a
   new release back for 7 days, `uv audit` checks the lock on every pull request, and the
   Docker base image and every GitHub Action are pinned by digest or commit.

@@ -99,8 +99,8 @@ if [ "$cmd" = run ]; then
         env=$(dirname "$info")
         # A folder of an older stack is no longer used, and its packages are not what ran.
         grep -q "\"BWBENCH_STACK\": *\"$stack\"" "$info" || continue
-        # A folder built outside the box (oss-bench links uv's own Python under /cache) has no
-        # interpreter here, and asv did not run it in this call.
+        # A folder whose interpreter is gone (uv's own Python, deleted with a cleaned uv cache)
+        # did not run in this call either.
         [ -x "$env/bin/python" ] || continue
         # A conda environment has no lock: its versions file lists its packages as
         # name-version-build (the build names the BLAS). PEP 751 describes PyPI files only.

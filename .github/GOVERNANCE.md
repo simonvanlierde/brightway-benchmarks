@@ -13,7 +13,7 @@ can change the repository, the published results and the releases.
   [CONTRIBUTING.md](CONTRIBUTING.md) describes. The maintainer says yes, asks for changes, or says
   no with a reason, in the open on that issue or pull request.
 - A finding that changes how a result should be read, such as a caveat on a database profile,
-  gets its own issue, and the README links it.
+  gets its own issue, and [docs/findings.md](../docs/findings.md) links it.
 - The maintainer enforces the [code of conduct](CODE_OF_CONDUCT.md).
 
 ## Access

@@ -14,7 +14,7 @@ the package, release, case and database size, and the `just` command.
 You need [uv](https://docs.astral.sh/uv/), [just](https://just.systems) and, for the
 benchmarks themselves, Docker. Run `uv sync` once, and `prek install` to install the git
 hooks with [prek](https://github.com/j178/prek). `just --list` shows every task, and the
-README's [Running it](../README.md#running-it) explains the benchmark recipes.
+[docs/running.md](../docs/running.md) explains the benchmark recipes.
 
 ## Checks
 
@@ -70,8 +70,7 @@ review` job in `checks` blocks a pull request that adds a vulnerable one.
 
 The packages under test are not dependencies. Their releases are listed in
 `asv/<package>.hashes`, and the dependencies they run on are fixed in
-`asv/<package>.stack.txt`, which only a person moves (README, "How the results stay
-reproducible").
+`asv/<package>.stack.txt`, which only a person moves ([docs/method.md](../docs/method.md#how-the-results-stay-reproducible)).
 
 ## Commits and pull requests
 

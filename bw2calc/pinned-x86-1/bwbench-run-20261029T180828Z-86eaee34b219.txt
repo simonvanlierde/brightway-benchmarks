@@ -1,0 +1,8 @@
+commit 86eaee34b219ab7d5326dc6cd9622b519e5a3725
+generator 3
+f64f48712c85abad2046795613e304090312d7feb83aa554f87835282dab23c7  .asv/../results/bw2calc/benchmarks.json
+a4563428eabc8520ce41519d8e894715f149031ddc7ed6995d9dd99fc6c92464  .asv/../results/bw2calc/pinned-x86-1/pylock.c7741cf55906a33ec58cfdeeb5b04d91.toml
+1e1b024c3d098e9062a2ec8bb8746924c2c73cf39f917b77932930c1d3026003  .asv/../results/bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACK75149e5a.json
+27eafd0c578453845ea73c900e68f0c6ee1d82d7cf771a3f9988e62bdd24e743  .asv/../results/bw2calc/pinned-x86-1/pylock.b6a7c3fd3beb9108d8c9a39f33d16f5a.toml
+5cfc62ea56a8801c0f7fd86bb9f87173367d9f9a17d049fbd9d4278a9b41afa2  .asv/../results/bw2calc/pinned-x86-1/machine.json
+e0c3899dcdc276319cf222256e9576ddffab97f3a80defece3fc5e3cdbd70187  .asv/../results/bw2calc/pinned-x86-1/pylock.db1949d9ae0574311c94357f68378d4f.toml

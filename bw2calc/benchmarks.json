@@ -26,7 +26,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'smoke'"
             ],
             [
                 "10"
@@ -123,6 +123,75 @@
                 "'LCA'",
                 "'IterativeLCA'",
                 "'JacobiGMRESLCA'"
+            ]
+        ],
+        "timeout": 600,
+        "type": "track",
+        "unit": "unit",
+        "version": "3-05303220"
+    },
+    "bench_lca.NewDemandRefinement.time_redo_lci_refinement": {
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "min_run_count": 2,
+        "name": "bench_lca.NewDemandRefinement.time_redo_lci_refinement",
+        "number": 1,
+        "param_names": [
+            "size",
+            "refinement"
+        ],
+        "params": [
+            [
+                "'ecoinvent'"
+            ],
+            [
+                "'on'",
+                "'off'"
+            ]
+        ],
+        "repeat": 0,
+        "rounds": 2,
+        "sample_time": 0.01,
+        "timeout": 600,
+        "type": "time",
+        "unit": "seconds",
+        "version": "3-05303220",
+        "warmup_time": 0
+    },
+    "bench_lca.NewDemandRefinement.track_refinement_steps": {
+        "code": "class <locals>:\n    def track(self: Any, *args: Any) -> float:\n        return fn(self.prepared[bench_name]())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "name": "bench_lca.NewDemandRefinement.track_refinement_steps",
+        "param_names": [
+            "size",
+            "refinement"
+        ],
+        "params": [
+            [
+                "'ecoinvent'"
+            ],
+            [
+                "'on'",
+                "'off'"
+            ]
+        ],
+        "timeout": 600,
+        "type": "track",
+        "unit": "unit",
+        "version": "3-05303220"
+    },
+    "bench_lca.NewDemandRefinement.track_relative_error": {
+        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        prepared = self.prepared[bench_name]\n        return prepared.verify(prepared())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "name": "bench_lca.NewDemandRefinement.track_relative_error",
+        "param_names": [
+            "size",
+            "refinement"
+        ],
+        "params": [
+            [
+                "'ecoinvent'"
+            ],
+            [
+                "'on'",
+                "'off'"
             ]
         ],
         "timeout": 600,

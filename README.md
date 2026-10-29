@@ -8,21 +8,19 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23727602.svg)](https://doi.org/10.5281/zenodo.23727602)
 
 How fast is [Brightway](https://docs.brightway.dev), and does it still give the right answer?
-This repository times the calculations an LCA practitioner runs every day, across
-Brightway's released versions: an LCI and LCIA, many functional units at once, Monte Carlo.
-It also checks every result against an independent reference score. A release that makes a
-calculation slower, or quietly changes a score, shows up here.
+This repository times everyday LCA calculations across Brightway's releases: an LCI and LCIA,
+many functional units at once, Monte Carlo. It checks every result against an independent
+reference score, so a release that slows a calculation or changes a score shows up here.
 
-No licensed data is used. The benchmarks run on synthetic databases that copy the structure
-of ecoinvent, so anyone can rerun them and the results can be published.
+The benchmarks run on synthetic databases that copy ecoinvent's structure, so anyone can rerun
+them and the results can be published.
 
 The history of every case is on the
 [benchmark pages](https://simonvanlierde.com/brightway-benchmarks/).
 
 ## Results so far
 
-All findings, with their numbers and upstream issues, are in [docs/findings.md](docs/findings.md).
-Four that matter to most users:
+All findings are in [docs/findings.md](docs/findings.md). Four that matter to most users:
 
 - [The solver sets the time for one score.](docs/findings.md#the-solver-sets-the-time-for-one-score) On an ecoinvent-sized database,
   UMFPACK on OpenBLAS takes 2.63 s, PyPardiso 10.0 s and SciPy's SuperLU 27.7 s.
@@ -53,9 +51,8 @@ just compat 3.13                           # today's releases together on Python
 
 ## More
 
-- [Findings](docs/findings.md): what the histories show, for Brightway users and maintainers
-- [Method](docs/method.md): what is measured, the synthetic databases, and how reproducible
-  the results are
+- [Findings](docs/findings.md): what the histories show
+- [Method](docs/method.md): what is measured, the synthetic databases, the noise floor
 - [Running](docs/running.md): every recipe, the compat columns and the `BWBENCH_*` variables
 - [CONTRIBUTING.md](.github/CONTRIBUTING.md): checks, tests and how to sign off commits
 - [SECURITY.md](.github/SECURITY.md) and the [assurance case](docs/assurance-case.md)

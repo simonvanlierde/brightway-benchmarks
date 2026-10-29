@@ -22,8 +22,10 @@ up under its commit, `a71ede78`.
 **UMFPACK and PyPardiso give a score about 3 times faster than SciPy's SuperLU, and UMFPACK on
 OpenBLAS about 10 times.**
 
-What it means for you: install PyPardiso on x86_64, or scikit-umfpack from conda-forge
-anywhere. With neither, bw2calc falls back to SuperLU.
+What it means for you: the fastest is scikit-umfpack from conda-forge, then PyPardiso on
+x86_64. bw2calc uses PyPardiso whenever it is installed, so for conda-forge's UMFPACK leave
+PyPardiso out (bw_timex pulls it in on Linux x86_64). With neither, bw2calc falls back to
+SuperLU.
 
 | Solver | Time for one score with `LCA`, every release |
 | --- | --- |
@@ -45,7 +47,7 @@ Graph: [bw2calc, one score](https://simonvanlierde.com/brightway-benchmarks/bw2c
 releases the times vary by 0.3% with every solver, so that is the smallest step the history
 can show. Here "vary" is the interquartile range (the middle half of the points) relative to
 the median. A point from a single round can stray by more: two outliers came back in line
-when rerun with two rounds.
+when rerun with two rounds. A single PyPardiso round can come out about 10% slow.
 
 Graph: [bw2calc, one score](https://simonvanlierde.com/brightway-benchmarks/bw2calc/index.html#bench_lca.SingleScore.time_first_score).
 
@@ -54,8 +56,11 @@ Graph: [bw2calc, one score](https://simonvanlierde.com/brightway-benchmarks/bw2c
 **A second functional unit on a solved system takes milliseconds, against seconds for the
 first.** Warming up before the first score changes nothing: only a kept factorization helps.
 
-What it means for you: to score many functional units on one technosphere, factorize once
-with `lca.lci(factorize=True)`, then call `lca.redo_lci(demand)` for each one.
+What it means for you: to score many functional units on one technosphere with UMFPACK or
+SuperLU, factorize once with `lca.lci(factorize=True)`, then call `lca.redo_lci(demand)` for
+each one. Do this on bw2calc 3.1.0 or later: before it, `factorize=True` factorized A, which is
+much slower (see below). Under PyPardiso bw2calc ignores `factorize=True`, since PyPardiso keeps
+its own factorization.
 
 | Case | Time |
 | --- | --- |
@@ -71,10 +76,10 @@ factorization before every timed first score, so the history times a real first 
 
 Graph: [bw2calc, second functional unit](https://simonvanlierde.com/brightway-benchmarks/bw2calc/index.html#bench_lca.NewDemand.time_redo_lci).
 
-### UMFPACK's iterative refinement costs about two thirds of each repeated solve
+### UMFPACK's iterative refinement costs most of each repeated solve
 
-**UMFPACK spends about two thirds of each solve on iterative refinement, and the score is the
-same without it.** By default UMFPACK corrects each solution with extra solves. On the
+**On reference BLAS and OpenBLAS, UMFPACK spends about two thirds of each solve on iterative
+refinement, and the score is the same without it.** By default UMFPACK corrects each solution with extra solves. On the
 ecoinvent matrix the score doesn't change without that correction.
 
 What it means for you: nothing to do yet. bw2calc doesn't expose the setting
@@ -83,7 +88,8 @@ What it means for you: nothing to do yet. bw2calc doesn't expose the setting
 turning it off, which would make repeated solves about 3 times faster on reference BLAS or
 OpenBLAS.
 
-One solve on the real ecoinvent 3.12 matrix:
+One solve of Aᵀx = b on the real ecoinvent 3.12 matrix, timed by UMFPACK itself (the
+`NewDemandRefinement` case checks it through bw2calc's own solver at the synthetic sizes):
 
 | BLAS | Refinement on (default) | Refinement off |
 | --- | --- | --- |
@@ -96,10 +102,11 @@ both settings and checks the score against the reference either way.
 
 ### bw2calc 3.0.0 slowed `IterativeLCA` without PyPardiso, and 3.1.0 fixed it
 
-**bw2calc 3.0.0 made `IterativeLCA` and `lci(factorize=True)` about 5 times slower with UMFPACK
-and about 9 times slower with SuperLU. 3.1.0 is back to 2.5.0's times.**
+**bw2calc 3.0.0 made `IterativeLCA` about 5 times slower with UMFPACK and about 9 times slower
+with SuperLU. 3.1.0 is back to 2.5.0's times, and also makes `lci(factorize=True)` fast for
+the first time.**
 
-What it means for you: if you run bw2calc 3.0.0 without PyPardiso, upgrade to 3.1.0.
+What it means for you: without PyPardiso, use bw2calc 3.1.0 or later.
 
 | Case | Solver | 2.5.0 | 3.0.0 | 3.1.0 |
 | --- | --- | --- | --- | --- |
@@ -109,8 +116,9 @@ What it means for you: if you run bw2calc 3.0.0 without PyPardiso, upgrade to 3.
 | `LCA.lci(factorize=True)` | SuperLU | | 237 s | 27.7 s |
 
 For SuperLU and UMFPACK, the transposed technosphere matrix Aᵀ factorizes several times faster
-than A itself. `LCA`'s one score already took the fast way. In 3.0.0, `IterativeLCA` and
-`lci(factorize=True)` call `factorized(matrix.tocsc())`, which factorizes A
+than A itself. `LCA`'s one score already took the fast way. `lci(factorize=True)` called
+`factorized(matrix.tocsc())`, which factorizes A, in 2.5.0 as in 3.0.0, and 3.0.0's
+`IterativeLCA` did the same
 ([source](https://github.com/brightway-lca/brightway2-calc/blob/3.0.0/src/bw2calc/iterative_lca.py#L388)).
 3.1.0 factorizes Aᵀ wherever it factorizes once and solves many times
 ([brightway2-calc#180](https://github.com/brightway-lca/brightway2-calc/pull/180)). asv's 600 s
@@ -134,8 +142,9 @@ conda-forge's builds, a solve on a stored factorization is slower.**
 
 What it means for you: install scikit-umfpack from conda-forge, which links OpenBLAS. If you
 build it yourself, link OpenBLAS or MKL, not reference BLAS. If you mostly re-solve a stored
-factorization, the PyPI build is a little faster there, though most of that solve is UMFPACK's
-[iterative refinement](#umfpacks-iterative-refinement-costs-about-two-thirds-of-each-repeated-solve).
+factorization on OpenBLAS, the PyPI build is a little faster there. Most of each repeated
+solve is UMFPACK's
+[iterative refinement](#umfpacks-iterative-refinement-costs-most-of-each-repeated-solve).
 
 scikit-umfpack has no wheels on PyPI, so it builds against the system's SuiteSparse. In the
 benchmark image that links Debian's reference BLAS, and the history's UMFPACK line uses it.
@@ -166,9 +175,11 @@ core, two rounds):
 | OpenBLAS (conda-forge) | 0.66 s | 24 ms |
 | MKL (conda-forge) | 0.63 s | 24 ms |
 
-A later run that times UMFPACK's own solve shows why: with refinement off, one solve takes 3.7 ms
-on the PyPI build and 4.8 ms on both conda-forge builds. So conda-forge's UMFPACK is about 30%
-slower per solve, and refinement takes up most of the rest (see the refinement finding above).
+This run solves through bw2calc's `lu_solver`. The refinement finding above times UMFPACK's
+solve of Aᵀx = b directly, so its milliseconds differ from these; compare within one table,
+not across. There, with refinement off, conda-forge's UMFPACK is about 30% slower per solve
+than the PyPI build (4.8 against 3.7 ms), and MKL re-solves fastest with refinement on, since
+it takes no refinement step.
 
 Graph: [bw2calc-conda, one score](https://simonvanlierde.com/brightway-benchmarks/bw2calc-conda/index.html#bench_lca.SingleScore.time_first_score).
 
@@ -192,7 +203,7 @@ the link, and runs again in the releases with the fix:
 
 - `JacobiGMRESLCA` and `FastScoresOnlyMultiLCA` under PyPardiso free a factorization they never
   made ([brightway2-calc#157](https://github.com/brightway-lca/brightway2-calc/issues/157)).
-- `IterativeLCA` passes `atol='legacy'` to SciPy's `cgs`, which the fixed SciPy rejects
+- `IterativeLCA` passes `atol='legacy'` to SciPy's `cgs`, which the pinned SciPy rejects
   ([a comment on brightway2-calc#161](https://github.com/brightway-lca/brightway2-calc/pull/161#issuecomment-6140609983)).
 
 ## bw2data
@@ -201,7 +212,7 @@ The history holds bw2data from 4.6 to 4.8.
 
 ### bw2data 4.7 lost the faster database write
 
-**bw2data 4.7 undid the 32% faster write that #268 had added two commits earlier. Reported as
+**bw2data 4.7 undid #268, which had cut the write time by 32% two commits earlier. Reported as
 [brightway2-data#306](https://github.com/brightway-lca/brightway2-data/issues/306).**
 
 What it means for you: nothing to do yet.
@@ -210,20 +221,20 @@ fast write back.
 
 | bw2data | Writing an ecoinvent-sized database |
 | --- | --- |
-| 4.6.2 | 15.4 s |
-| #268, raw SQLite `executemany` | 10.5 s |
+| 4.6.2 | 15.3 s |
+| #268, raw SQLite `executemany` | 10.4 s |
+| #270, the next commit | 15.4 s |
 | 4.7 | 15.3 s |
 | 4.8 | 15.1 s |
 
 The next commit after #268, #270 ("Fix unclosed sqlite3 connections"), took that code path
-out again. 4.8 still writes with peewee's batches. Its small gain comes from #298, which skips
-`VACUUM` when the database was empty. These times come from asv's `--interleave-rounds`, which
-runs each round through all the commits. Runs that timed one commit after another drifted
-between commits: one put 4.6.2 at 21.2 s.
+out again. 4.8 still writes with peewee's batches, within noise of 4.7. These times come from
+asv's `--interleave-rounds`, which runs each round through all the commits (4.8 in a second
+such run). Runs that timed one commit after another drifted between commits: one put 4.6.2 at
+21.2 s.
 
-The score after the write matches the reference in every release. The reference rounds
-amounts to float32, as bw_processing stores them
-([bw_processing#112](https://github.com/brightway-lca/bw_processing/issues/112)).
+The score after the write matches the reference in every release (the reference uses
+[float32 amounts](#amounts-are-stored-as-float32)).
 
 Graph: [bw2data, database write](https://simonvanlierde.com/brightway-benchmarks/bw2data/index.html#bench_write.DatabaseWrite.time_write).
 
@@ -307,7 +318,8 @@ Graph: [bw_graph_tools, traversal](https://simonvanlierde.com/brightway-benchmar
 ### A bw_graph_tools test fails with PyPardiso
 
 **bw_graph_tools 0.10's `test_only_one_node_error_message` fails when PyPardiso is installed.**
-The compat `suites` column found it.
+The compat `suites` column found it. Not reported upstream: an unreleased fix branch,
+`fix/pardiso-single-activity-technosphere`, is already on bw_graph_tools.
 
 ## bw_processing and matrix_utils
 

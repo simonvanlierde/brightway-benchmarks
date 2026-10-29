@@ -28,8 +28,8 @@ Four that matter to most users:
   UMFPACK on OpenBLAS takes 2.63 s, PyPardiso 10.0 s and SciPy's SuperLU 27.7 s.
 - [bw2calc 3.0.0 made `IterativeLCA` about 5 times slower with UMFPACK](docs/findings.md#bw2calc-300-slowed-iterativelca-without-pypardiso-and-310-fixed-it), and
   about 9 times with SuperLU. 3.1.0 fixed it.
-- [bw2data 4.7 lost a 32% faster database write](docs/findings.md#bw2data-47-lost-the-faster-database-write) that an earlier commit had
-  added.
+- [bw2data 4.7 lost a faster database write](docs/findings.md#bw2data-47-lost-the-faster-database-write): an earlier commit had
+  cut its time by 32%.
 - [bw_timex 1.3.0 made the time-explicit LCI about 19 times slower.](docs/findings.md#bw_timex-130-made-the-time-explicit-lci-about-19-times-slower) 1.3.2
   fixed it, and 1.4.0 is faster again.
 
@@ -37,17 +37,13 @@ Four that matter to most users:
 
 Each night the newest Brightway releases are installed together and every case runs once. The
 site's [works together today](https://simonvanlierde.com/brightway-benchmarks/#works-together)
-table links the last set that passed. Download its `requirements.txt` and use it as
-constraints:
-
-```sh
-uv pip install brightway25 -c requirements.txt
-```
+table links the last set that passed; [docs/running.md](docs/running.md#install-a-set-that-works)
+says how to install it.
 
 ## Run it yourself
 
-You need Docker and [just](https://just.systems). Brightway's code runs only in a throwaway
-container ([assurance case](docs/assurance-case.md)).
+You need Docker and [just](https://just.systems). Brightway's code runs in a throwaway
+container, never on your machine ([assurance case](docs/assurance-case.md)).
 
 ```sh
 just smoke                                 # every package's oldest and latest release, small database

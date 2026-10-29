@@ -114,7 +114,7 @@ The column sets what gets installed:
 - `conda-forge`: the same set from conda-forge, installed with pixi in its container image. It
   installs the Brightway packages conda-forge has, and leaves out the bw_graph_tools and
   bw_timex cases, since neither package is on conda-forge yet. The set goes to `pixi.toml` and
-  `pixi.lock`, and its Python packages to `requirements.txt`.
+  `pixi.lock`, and its Python packages to `requirements.txt`. Linux only.
 - `suites`: like `latest`, plus what the packages' tests need. Then it runs the test suites of
   bw2data, bw2calc, bw2io, bw_processing, matrix_utils, bw_graph_tools and bw_timex instead of
   the benchmarks. A new release of pytest or NumPy that breaks a package's tests shows here the
@@ -129,7 +129,8 @@ SuperLU or UMFPACK.
 Each run writes to `.asv/compat/PYTHON-COLUMN/`:
 
 - `requirements.txt`: the versions the run resolved.
-- `pylock.toml`: the same set with each wheel's hash.
+- `pylock.toml`: the same set with each wheel's hash, for that job's operating system. Both
+  files include pytest.
 - For `suites`, `suites.txt` says per package whether it passed, with the failing tests, and
   `suites/PACKAGE.log` holds pytest's output. A test that cannot pass in this run whatever the
   releases would be deselected in `scripts/compat-suites.sh`, with its reason. None is so far.

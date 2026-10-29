@@ -15,7 +15,7 @@ history. What the histories show is in [findings.md](findings.md). How to run th
 | bw_timex | The time-explicit LCI as the timeline grows |
 
 bw2calc runs each case with the direct solvers (PyPardiso, UMFPACK, SuperLU) and with its
-iterative solvers. bw2calc's first score and bw2data's write also record peak memory.
+iterative solvers.
 
 ### Every score is checked
 

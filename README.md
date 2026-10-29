@@ -24,13 +24,13 @@ The history of every case is on the
 All findings, with their numbers and upstream issues, are in [docs/findings.md](docs/findings.md).
 Four that matter to most users:
 
-- [The solver sets the time for one score.](docs/findings.md) On an ecoinvent-sized database,
+- [The solver sets the time for one score.](docs/findings.md#the-solver-sets-the-time-for-one-score) On an ecoinvent-sized database,
   UMFPACK on OpenBLAS takes 2.63 s, PyPardiso 10.0 s and SciPy's SuperLU 27.7 s.
-- [bw2calc 3.0.0 made `IterativeLCA` about 5 times slower with UMFPACK](docs/findings.md), and
+- [bw2calc 3.0.0 made `IterativeLCA` about 5 times slower with UMFPACK](docs/findings.md#bw2calc-300-slowed-iterativelca-without-pypardiso-and-310-fixed-it), and
   about 9 times with SuperLU. 3.1.0 fixed it.
-- [bw2data 4.7 lost a 32% faster database write](docs/findings.md) that an earlier commit had
+- [bw2data 4.7 lost a 32% faster database write](docs/findings.md#bw2data-47-lost-the-faster-database-write) that an earlier commit had
   added.
-- [bw_timex 1.3.0 made the time-explicit LCI about 19 times slower.](docs/findings.md) 1.3.2
+- [bw_timex 1.3.0 made the time-explicit LCI about 19 times slower.](docs/findings.md#bw_timex-130-made-the-time-explicit-lci-about-19-times-slower) 1.3.2
   fixed it, and 1.4.0 is faster again.
 
 ## Install a set that works

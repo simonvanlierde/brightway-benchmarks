@@ -84,6 +84,11 @@ stack-check subject:
     -BWBENCH_MACHINE=stack scripts/box.sh scripts/asv.sh {{ subject }} run --quick "HASHFILE:/src/asv/{{ subject }}.hashes"
     python3 scripts/release_report.py {{ subject }}
 
+# Tags resolve through asv's clone of the upstream repository in .asv/SUBJECT, which `just bench` makes.
+# Cases that moved more than 5% between SUBJECT's newest two releases in results/, as Markdown.
+release-changes subject:
+    python3 scripts/release_changes.py {{ subject }} results
+
 # Today's PyPI releases of the Brightway set on PYTHON, then every case once at smoke size.
 # COLUMN: latest, floors, pre, conda-forge or suites (docs/running.md, "Compat").
 # 6g: every suite shares one pytest process here, not one process per case as under asv.

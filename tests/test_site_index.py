@@ -1,5 +1,6 @@
 """scripts/site_index.py on a site folder with one asv subject and one stray folder."""
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -69,3 +70,22 @@ def test_refuses_a_subject_folder_that_links_out(tmp_path: Path):
     run = subprocess.run([sys.executable, SCRIPT, site], capture_output=True, text=True, check=False)
     assert run.returncode != 0
     assert (outside / "index.html").read_text() == NAV
+
+
+def test_lists_what_moved_in_the_latest_release(tmp_path: Path):
+    site = tmp_path / "site"
+    (site / "bw2calc").mkdir(parents=True)
+    (site / "bw2calc" / "index.html").write_text(NAV)
+    # Raw commits as releases: with no asv mirror to look tags up in, each stands for itself.
+    old, new = "aaaaaaaa" + "0" * 32, "bbbbbbbb" + "0" * 32
+    (tmp_path / "asv").mkdir()
+    (tmp_path / "asv" / "bw2calc.hashes").write_text(f"{old}\n{new}\n")
+    machine = tmp_path / "results" / "bw2calc" / "m"
+    machine.mkdir(parents=True)
+    for commit, seconds in ((old, 45.0), (new, 9.05)):
+        result = {"commit_hash": commit, "env_name": "uv-py3.12", "results": {"bench_lca.A.time_x": [[seconds]]}}
+        (machine / f"{commit[:8]}-uv-py3.12.json").write_text(json.dumps(result))
+    subprocess.run([sys.executable, SCRIPT, site], cwd=tmp_path, check=True, capture_output=True)
+    page = (site / "index.html").read_text()
+    assert '<h2 id="latest-release">' in page
+    assert "<td>A.time_x</td><td></td><td>45</td><td>9.05</td><td>0.20</td>" in page

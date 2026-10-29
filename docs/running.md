@@ -11,6 +11,7 @@ just smoke                       # each package's oldest and latest release, sma
 just bench bw2calc               # every bw2calc release listed in asv/bw2calc.hashes
 just bench bw2data "4.7^!" -e    # one release; extra arguments go to asv
 just site                        # build the history pages in site/
+just release-changes bw2calc     # what moved in bw2calc's latest release, as a Markdown table
 just results-commit              # keep results/ on the local results branch, for publishing
 just solver-lci klu ecoinvent    # bw2calc 3.1.0's own lci() with one solver, KLU here
 just codspeed bw2calc pypardiso  # one suite under CodSpeed's CPU simulation (instruction counts)

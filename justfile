@@ -125,14 +125,15 @@ bw2io-import release sizes:
     run='PYTHONPATH=src uv run -q --no-project --python 3.12 --with bw2io==0.9.17 --with bw2data==4.8 python scripts/bw2io_import.py'
     export BWBENCH_MEM="${BWBENCH_MEM:-8g}"
     if [ {{ quote(release) }} = synthetic ]; then
-      exec scripts/box.sh sh -c "$run synthetic {{ sizes }}"
+      exec scripts/box.sh sh -c "$run synthetic {{ quote(sizes) }}"
     fi
     # box.sh mounts only this repo, so a licensed release needs a plain docker run of its image.
     scripts/box.sh true  # builds the image if it is missing
-    exec docker run --rm -i --init --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
-      --pids-limit 4096 --memory "$BWBENCH_MEM" --memory-swap "$BWBENCH_MEM" \
+    exec docker run --rm -i --init --name "tmp-bwbench-$$" --user "$(id -u):$(id -g)" --cap-drop ALL \
+      --security-opt no-new-privileges --pids-limit 4096 --memory "$BWBENCH_MEM" --memory-swap "$BWBENCH_MEM" \
+      --cpus "${BWBENCH_CPUS:-2}" \
       -v "$PWD":/src:ro -v "$PWD/.asv":/src/.asv -v "$(realpath {{ quote(release) }})":/ecoinvent:ro -w /src \
-      "bwbench-box:$(cksum <docker/Dockerfile | cut -d' ' -f1)" scripts/in-box.sh sh -c "$run /ecoinvent {{ sizes }}"
+      "bwbench-box:$(cksum <docker/Dockerfile | cut -d' ' -f1)" scripts/in-box.sh sh -c "$run /ecoinvent {{ quote(sizes) }}"
 
 # A SQLite project against sentier-brightway's Parquet registry (the format of bw2data #290, which
 # stays outside bw2data). size: smoke | ecoinvent; solver: superlu | pypardiso.

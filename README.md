@@ -66,6 +66,12 @@ share more of their consumers. [#54](https://github.com/simonvanlierde/brightway
 With a licence of your own, [`scripts/solver_factorize.py`](scripts/solver_factorize.py) times
 each direct solver on the real ecoinvent matrix instead, and prints timings only.
 
+`just bw2io-import synthetic smoke,ecoinvent` times an import with bw2io's ecoSpold2 importer
+and needs no licence: it writes a profile's system as ecoSpold2 files whose elementary flows
+are those of bw2io's own `biosphere3`, so every exchange links. Each step's time and peak
+memory come out as one JSON line per size. `just bw2io-import RELEASE_FOLDER all` does the
+same on a licensed ecoinvent release, read-only.
+
 ## Running it
 
 You need Docker and [just](https://just.systems); `just results-commit` also needs rsync and

@@ -9,6 +9,15 @@ Open an [issue](https://github.com/simonvanlierde/brightway-benchmarks/issues). 
 say what you ran, what you expected and what happened. For a result that looks wrong, name
 the package, release, case and database size, and the `just` command.
 
+## Report a finding
+
+Each `###` entry in [docs/findings.md](../docs/findings.md) says how to rerun it. It links
+the case (for example [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py)) or
+the script in `scripts/`, or names the `just` recipe. A probe on licensed ecoinvent data still
+links its script. Link the upstream issue, and link the finding back from that issue.
+`tests/test_findings.py` fails on an entry without a rerun, or with a path or recipe that
+doesn't exist.
+
 ## Set up
 
 You need [uv](https://docs.astral.sh/uv/), [just](https://just.systems) and, for the

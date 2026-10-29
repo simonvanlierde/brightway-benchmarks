@@ -89,6 +89,7 @@ class Profile:
     hub_cap: int = 1100  # most draws one supplier is expected to get
     back: float = 0.15  # share of drawn inputs from anywhere in the order: they close the loops
     same_region: float = 0.23  # share of drawn inputs from the consumer's region
+    same_region_by_length: tuple[float, ...] = ()  # same_region per OVERLAP_BANDS band of the consumer's list length
     same_sector: float = 0.28  # the same for its sector
     regions: int = 20
     sectors: int = 40
@@ -492,7 +493,11 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
     for _ in range(5):
         weight = np.minimum(weight, p.hub_cap * weight.sum() / max(cols.size, 1))
     pool = rng.random(cols.size)
-    pool = np.where(pool < p.same_region, 1, np.where(pool < p.same_region + p.same_sector, 2, 0))
+    region = p.same_region
+    if p.same_region_by_length:  # short lists buy locally, long ones across regions, as in ecoinvent
+        band = np.searchsorted([low for low, _ in OVERLAP_BANDS[1:]], k[cols], side="right")
+        region = np.asarray(p.same_region_by_length)[band]
+    pool = np.where(pool < region, 1, np.where(pool < region + p.same_sector, 2, 0))
     groups = (np.zeros(n, dtype=np.int64), rng.integers(0, p.regions, n), rng.integers(0, p.sectors, n))
     rows = np.empty(cols.size, dtype=np.int64)
     found = np.empty(cols.size, dtype=bool)

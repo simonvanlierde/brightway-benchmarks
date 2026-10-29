@@ -162,5 +162,13 @@
       "COLAMD": 0.22236460257038404,
       "MMD_AT_PLUS_A": 0.2243998040176384
     }
+  },
+  "same_location_by_length": {
+    "_note": "share of a product's inputs from its own location, per band of its input-list length (off the diagonal), 2026-10-29",
+    "2-4": 0.414,
+    "5-16": 0.316,
+    "17-64": 0.21,
+    "65-256": 0.128,
+    "257+": 0.122
   }
 }

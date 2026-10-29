@@ -93,6 +93,20 @@ def test_market_lists_draw_from_their_family_pool():
     assert np.unique(got[cols == 1]).size == 18  # never one supplier twice: the length stays
 
 
+def test_same_region_by_length_follows_its_curve():
+    curve = (0.6, 0.4, 0.2, 0.1, 0.05)  # one share per band of OVERLAP_BANDS
+    s = system("ecoinvent", products=6000, same_region_by_length=curve)
+    assert s.region is not None
+    a = (s.technosphere() != 0).tocoo()
+    off = a.row != a.col
+    rows, cols = a.row[off], a.col[off]
+    length = np.bincount(cols, minlength=s.profile.products)[cols]
+    local = s.region[rows] == s.region[cols]
+    for (low, high), want in zip(synth.OVERLAP_BANDS[:3], curve, strict=False):
+        m = (length >= low) & (length <= high)
+        assert local[m].mean() == pytest.approx(want, abs=0.06)
+
+
 def test_bw2data_form_has_every_exchange():
     s = system("smoke")
     bio, tech, cfs = as_bw2data(s)

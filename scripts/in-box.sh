@@ -23,5 +23,6 @@ export OPENBLAS_NUM_THREADS="$threads" MKL_NUM_THREADS="$threads" OMP_NUM_THREAD
 export PYTHONHASHSEED=0 PYTHONFAULTHANDLER=1
 # asv's clones are owned by the host uid, which has no passwd entry in the container.
 # -C /: a worktree's .git file points outside the mount, and git would die on it from /src.
-git -C / config --global --get safe.directory >/dev/null || git -C / config --global --add safe.directory "*"
+# The conda image has no git and needs none.
+! command -v git >/dev/null || git -C / config --global --get safe.directory >/dev/null || git -C / config --global --add safe.directory "*"
 exec "$@"

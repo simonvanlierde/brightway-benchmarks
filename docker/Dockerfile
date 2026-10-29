@@ -22,5 +22,9 @@ RUN apt-get update \
  && (codspeed setup || true) \
  && valgrind --version
 
+# The conda-forge compat column (`just compat 3.12 conda-forge`): pixi on Ubuntu, nothing from
+# PyPI. Pinned by digest (looked up 2026-10-29).
+FROM ghcr.io/prefix-dev/pixi:0.82.0@sha256:e6cca082e52de275f4e6fb4e6648522f30e4ed334fed37378cde393e07405200 AS conda
+
 # The default build: the box alone.
 FROM box

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Do today's Brightway releases work together? Inside the box, or on a CI runner:
-# scripts/compat.sh PYTHON [latest|floors|pre]
+# scripts/compat.sh PYTHON [latest|floors|pre|conda-forge]
 #
 # Installs PyPI releases of brightway25, bw_graph_tools and bw_timex into a fresh environment,
 # with none of the cutoffs or stack pins the asv runs use. The column picks the releases:
@@ -9,6 +9,10 @@
 #           directly at the lowest version their declared bounds allow that has a wheel, so a
 #           lower bound set too low shows up
 #   pre     like latest, but pre-releases count too (NumPy, SciPy and pandas betas)
+#   conda-forge  the same set from conda-forge with pixi (Linux, in the pixi image), which trails
+#           PyPI by a feedstock merge and so breaks on its own. It installs the packages
+#           conda-forge has and leaves out the suites whose package it lacks; the set goes to
+#           pixi.toml and pixi.lock, and the Python packages in it to requirements.txt
 # Then runs every benchmark once at smoke size through the pytest adapter in
 # benchmarks/codspeed: each case runs and checks its result, and nothing is timed. A case the
 # releases cannot run fails rather than skips, unless BWBENCH_STRICT is set empty (the macOS
@@ -19,9 +23,9 @@ set -eu
 python=$1
 column=${2:-latest}
 case $column in
-latest | floors | pre) ;;
+latest | floors | pre | conda-forge) ;;
 *)
-    echo "usage: scripts/compat.sh PYTHON [latest|floors|pre]" >&2
+    echo "usage: scripts/compat.sh PYTHON [latest|floors|pre|conda-forge]" >&2
     exit 2
     ;;
 esac
@@ -35,6 +39,53 @@ unset UV_EXCLUDE_NEWER PIP_UPLOADED_PRIOR_TO
 export UV_NO_CONFIG=1
 # Smoke sizes and the default solver, whatever the calling shell exports.
 unset BWBENCH_SIZES BWBENCH_MC_SIZES BWBENCH_TIMEX_SIZES BWBENCH_WRITE_SIZES BWBENCH_SOLVER BWBENCH_SOLVERS
+if [ "$column" = conda-forge ]; then
+    # brightway25's Brightway dependencies that conda-forge has, PyPardiso as bw_timex brings it
+    # on Linux, and the test harness. Add a package here once it lands on conda-forge.
+    mkdir -p "$venv"
+    cat >"$venv/pixi.toml" <<EOF
+[workspace]
+name = "bwbench-compat"
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+python = "$python.*"
+bw2analyzer = "*"
+bw2calc = "*"
+bw2data = "*"
+bw2io = "*"
+bw2parameters = "*"
+bw_migrations = "*"
+bw_processing = "*"
+ecoinvent_interface = "*"
+matrix_utils = "*"
+mrio_common_metadata = "*"
+randonneur = "*"
+randonneur_data = "*"
+stats_arrays = "*"
+pypardiso = "*"
+pytest = "*"
+pytest-codspeed = "==5.0.3"
+EOF
+    pixi lock --quiet --no-config --manifest-path "$venv/pixi.toml"
+    cp "$venv/pixi.toml" "$venv/pixi.lock" "$out/"
+    pixi install --quiet --no-config --frozen --manifest-path "$venv/pixi.toml"
+    py=$venv/.pixi/envs/default/bin/python
+    # The Python packages in the set, named as uv names them, for the job summary and the site.
+    "$py" -c 'import importlib.metadata as m, re
+print("\n".join(sorted({re.sub("[-_.]+", "-", d.name).lower() + "==" + d.version for d in m.distributions()})))' \
+        >"$out/requirements.txt"
+    # The suites whose package conda-forge lacks (as are brightway25, bw_simapro_csv and
+    # multifunctional). Drop a name once it lands there.
+    set --
+    for suite in bw_graph_tools bw_timex; do
+        echo "compat.sh: $suite is not on conda-forge, its cases are left out" >&2
+        set -- "$@" "--ignore=benchmarks/codspeed/test_$suite.py"
+    done
+    exec env BWBENCH_STRICT="${BWBENCH_STRICT-1}" PYTHONPATH=benchmarks "$py" -m pytest -p no:cacheprovider \
+        --rootdir benchmarks/codspeed benchmarks/codspeed "$@" -v
+fi
 uv venv --quiet --python "$python" "$venv"
 py=$venv/bin/python
 [ -e "$py" ] || py=$venv/Scripts/python.exe # a Windows venv

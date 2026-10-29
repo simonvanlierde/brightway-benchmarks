@@ -80,13 +80,13 @@ def test_box_rebuilds_the_image_when_the_dockerfile_changes(box: tuple[Path, Pat
     assert built_tag() != first
 
 
-def run_in_box(tmp_path: Path, command: str) -> tuple[int, str]:
+def run_in_box(tmp_path: Path, command: str, path: str = "/usr/bin:/bin") -> tuple[int, str]:
     """in-box.sh with /src moved into a scratch folder, running a shell command: its pid and stdout."""
     script = tmp_path / "in-box.sh"
     script.write_text((REPO / "scripts" / "in-box.sh").read_text().replace("/src", str(tmp_path)))
     with subprocess.Popen(
         ["/bin/sh", str(script), "sh", "-c", command],
-        env={"PATH": "/usr/bin:/bin", "HOME": str(tmp_path), "TMPDIR": str(tmp_path)},
+        env={"PATH": path, "HOME": str(tmp_path), "TMPDIR": str(tmp_path)},
         stdout=subprocess.PIPE,
         text=True,
     ) as proc:
@@ -98,6 +98,16 @@ def test_in_box_execs_the_command(tmp_path: Path):
     # The command must replace in-box.sh, so signals sent to the box reach it directly.
     pid, out = run_in_box(tmp_path, "echo $$")
     assert out.strip() == str(pid)
+
+
+def test_in_box_runs_without_git(tmp_path: Path):
+    # The conda image (the conda-forge compat column) has no git.
+    bin_ = tmp_path / "bin"
+    bin_.mkdir()
+    for tool in ("sh", "mktemp"):
+        (bin_ / tool).symlink_to(shutil.which(tool, path="/usr/bin:/bin") or tool)
+    _, out = run_in_box(tmp_path, "echo ran", path=str(bin_))
+    assert out == "ran\n"
 
 
 def test_in_box_config_does_not_outlive_the_run(tmp_path: Path):

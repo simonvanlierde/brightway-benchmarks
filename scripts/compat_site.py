@@ -5,7 +5,7 @@ Usage: compat_site.py SITE_DIR.
 
 Asks GitHub (through `gh`) for the newest completed `compat` run on main and how each of its
 jobs ended, then for each job the newest `compat-green-*` artifact from main: the set of a
-job that passed. Writes each set's requirements.txt and pylock.toml to
+job that passed. Writes each set's requirements.txt and lock files to
 SITE_DIR/compat/COLUMN-PYTHON-OS/ and a summary to SITE_DIR/compat/status.json. Artifacts
 expire after 90 days, so a job red for longer has no last green set. Needs `actions: read`.
 """
@@ -21,10 +21,11 @@ from pathlib import Path
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "simonvanlierde/brightway-benchmarks")
 # compat.yml's job name and green artifact name; tests/test_compat_site.py checks both there.
-JOB = re.compile(r"(?P<column>\w+) · Python (?P<python>[\d.]+) on (?P<os>\S+)")
+JOB = re.compile(r"(?P<column>[\w-]+) · Python (?P<python>[\d.]+) on (?P<os>\S+)")
 GREEN = "compat-green-"
-FILES = ("requirements.txt", "pylock.toml")
-COLUMNS = ("latest", "floors", "pre")
+# The files a set may hold: pylock.toml from PyPI, pixi.toml and pixi.lock from conda-forge.
+FILES = ("requirements.txt", "pylock.toml", "pixi.toml", "pixi.lock")
+COLUMNS = ("latest", "floors", "pre", "conda-forge")
 # The versions the table shows, as uv's requirements.txt names them.
 SHOWN = ("brightway25", "bw2calc", "bw2data", "bw2io", "numpy")
 
@@ -73,14 +74,16 @@ def main(site: Path) -> None:
         if a := green.get(cell):
             with zipfile.ZipFile(io.BytesIO(gh(f"repos/{REPO}/actions/artifacts/{a['id']}/zip"))) as z:
                 own(site, out / cell).mkdir(parents=True, exist_ok=True)
-                # Only these two names are read, so an entry's path never leaves out / cell.
-                for name in FILES:
+                # Only FILES are read, so an entry's path never leaves out / cell.
+                files = [name for name in FILES if name in z.namelist()]
+                for name in files:
                     own(site, out / cell / name).write_bytes(z.read(name))
                 reqs = z.read("requirements.txt").decode()
             last = {
                 "date": a["created_at"][:10],
                 "run": f"https://github.com/{REPO}/actions/runs/{a['workflow_run']['id']}",
                 "dir": f"compat/{cell}",
+                "files": files,
                 "versions": versions(reqs),
             }
         cells.append({**m.groupdict(), "today": job["conclusion"], "green": last})

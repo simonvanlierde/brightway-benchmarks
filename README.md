@@ -138,22 +138,30 @@ A second argument picks the column, which sets what gets installed:
   `scripts/compat.sh` lists each with the package that declares it.
 - `pre`: like `latest`, but pre-releases count too, so NumPy, SciPy and pandas betas show
   problems before their release.
+- `conda-forge`: the same set from conda-forge, installed with pixi in its container image.
+  conda-forge gets each release only once its feedstock merges the update, so this column
+  breaks on its own: bw2calc stayed at 2.4.0 there until 3.1.0 landed on 2026-10-18. It
+  installs the Brightway packages conda-forge has, and leaves out the bw_graph_tools and
+  bw_timex cases, since neither package is on conda-forge yet. The set goes to `pixi.toml`
+  and `pixi.lock`, and its Python packages to `requirements.txt`.
 
 For example, `just compat 3.12 floors`. bw_timex pulls in PyPardiso on Linux x86_64, so there
 bw2calc solves with PyPardiso, not SuperLU or UMFPACK. The versions each run resolved go to
 `.asv/compat/PYTHON-COLUMN/requirements.txt`, and the same set with each wheel's hash to
 `pylock.toml` beside it. The `compat` workflow runs `latest` every night
-on Linux with Python 3.12, 3.13 and 3.14 and on macOS and Windows with 3.12, `floors` on 3.12
-and `pre` on 3.14, and lists the versions in each job's summary. On macOS and Windows it runs
+on Linux with Python 3.12, 3.13 and 3.14 and on macOS and Windows with 3.12, `floors` on 3.12,
+`pre` on 3.14 and `conda-forge` on 3.12 on Linux, and lists the versions in each job's summary. On macOS and Windows it runs
 on the runner itself, which cannot run the Linux box. On macOS the cases that need PyPardiso
-or UMFPACK skip instead of failing, since neither installs from PyPI there. `floors` and `pre`
-can fail without turning the run red, so check their jobs.
+or UMFPACK skip instead of failing, since neither installs from PyPI there. `floors`, `pre`
+and `conda-forge` can fail without turning the run red, so check their jobs.
 
 The [site](https://simonvanlierde.com/brightway-benchmarks/#works-together) has a
 "works together today" table: how each job ended in the latest nightly run, and the last
 set that passed, with its Brightway and NumPy versions and its `requirements.txt` and
 `pylock.toml`. To install a set known to work, use its `requirements.txt` as constraints, as
-in `uv pip install brightway25 -c requirements.txt`. The `site` workflow rebuilds the page
+in `uv pip install brightway25 -c requirements.txt`. For the `conda-forge` row, download its
+`pixi.toml` and `pixi.lock` into one folder and run `pixi install --frozen` there; a package
+conda-forge does not have reads "not on conda-forge" in that row. The `site` workflow rebuilds the page
 daily after the nightly run, and a set is kept for 90 days, as long as GitHub keeps the workflow's artifacts.
 
 ## Results so far

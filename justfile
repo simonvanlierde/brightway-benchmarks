@@ -26,8 +26,8 @@ hooks:
     prek run -a
 
 # --- benchmarks --------------------------------------------------------------
-# Everything below runs in a throwaway `tmp-bwbench-*` container (scripts/box.sh):
-# Brightway's code never runs on the host. BWBENCH_* variables set sizes and labels.
+# Everything below runs in the benchmark box, a throwaway `tmp-bwbench-*` container
+# (docs/assurance-case.md). docs/running.md lists the BWBENCH_* variables.
 
 # A rerun skips what already succeeded, so a backfill that stopped partway picks up where it
 # was, if BWBENCH_MACHINE (or the CPU slot that names the machine, as box-e0) is the same.
@@ -70,8 +70,7 @@ noise subject runs="10":
     done
     uv run --no-project --with numpy==2.5.3 python scripts/noise_summary.py ".asv/noise/{{ subject }}"
 
-# After a new upstream release: add it to asv/SUBJECT.hashes, move the cutoff in scripts/in-box.sh,
-# run `just stack SUBJECT`, then `just stack-check SUBJECT` and drop the releases that no longer run.
+# After a new upstream release, follow docs/running.md ("Add a release").
 # Resolve SUBJECT's fixed stack (its latest release's dependencies at the cutoff) into asv/.
 stack subject:
     scripts/box.sh scripts/stack.sh {{ subject }}
@@ -91,7 +90,7 @@ release-changes subject:
     python3 scripts/release_changes.py {{ subject }} results
 
 # Today's PyPI releases of the Brightway set on PYTHON, then every case once at smoke size.
-# COLUMN: latest, floors, pre, conda-forge or suites (see scripts/compat.sh).
+# COLUMN: latest, floors, pre, conda-forge or suites (docs/running.md, "Compat").
 # 6g: every suite shares one pytest process here, not one process per case as under asv.
 compat python="3.12" column="latest":
     BWBENCH_TARGET={{ if column == "conda-forge" { "conda" } else { "box" } }} BWBENCH_MEM=${BWBENCH_MEM:-6g} scripts/box.sh scripts/compat.sh {{ python }} {{ column }}

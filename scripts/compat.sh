@@ -2,25 +2,9 @@
 # Do today's Brightway releases work together? Inside the box, or on a CI runner:
 # scripts/compat.sh PYTHON [latest|floors|pre|conda-forge|suites]
 #
-# Installs PyPI releases of brightway25, bw_graph_tools and bw_timex into a fresh environment,
-# with none of the cutoffs or stack pins the asv runs use. The column picks the releases:
-#   latest  the newest release of everything (the default)
-#   floors  the newest Brightway packages and test harness, with each package they depend on
-#           directly at the lowest version their declared bounds allow that has a wheel, so a
-#           lower bound set too low shows up
-#   pre     like latest, but pre-releases count too (NumPy, SciPy and pandas betas)
-#   conda-forge  the same set from conda-forge with pixi (Linux, in the pixi image), which trails
-#           PyPI by a feedstock merge and so breaks on its own. It installs the packages
-#           conda-forge has and leaves out the suites whose package it lacks; the set goes to
-#           pixi.toml and pixi.lock, and the Python packages in it to requirements.txt
-#   suites  like latest, plus what the Brightway packages' own tests need; then runs those
-#           tests instead of the benchmarks (scripts/compat-suites.sh)
-# Then runs every benchmark once at smoke size through the pytest adapter in
-# benchmarks/codspeed: each case runs and checks its result, and nothing is timed. A case the
-# releases cannot run fails rather than skips, unless BWBENCH_STRICT is set empty (the macOS
-# job: a solver its wheels lack is a platform gap, not a release problem). The resolved set
-# goes to .asv/compat/PYTHON-COLUMN/requirements.txt, and as a PEP 751 lock (wheel URLs and
-# hashes) to pylock.toml beside it, before the cases run, so a failing set is on record too.
+# docs/running.md ("Compat") says what each column installs and what a run writes. The
+# resolved set goes to .asv/compat/PYTHON-COLUMN/ before the cases run, so a failing set is on
+# record too.
 set -eu
 python=$1
 column=${2:-latest}

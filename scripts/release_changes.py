@@ -3,8 +3,9 @@
 
 For each environment in RESULTS_DIR/SUBJECT, compares the newest two releases in
 asv/SUBJECT.hashes that have results there, and prints the cases whose value moved by more
-than ``THRESHOLD``, as a Markdown table. A case that failed (asv's null) or was skipped
-(NaN) on one side and ran on the other is listed too. ``track_`` cases count errors or
+than ``THRESHOLD``, as a Markdown table. A case that failed (asv's null) on one side and ran
+on the other is listed too, and so is one that ran before and is skipped now; one skipped
+before and running now is new, not a change, so it is left out. ``track_`` cases count errors or
 steps, not time or memory, so they are left out.
 
 An environment's name ends in the hash of its fixed dependency stack (scripts/asv.sh). The
@@ -71,6 +72,10 @@ def changes(results: Path, subject: str, threshold: float = THRESHOLD) -> list[C
     folder = results / subject
     tags = Path(f"asv/{subject}.hashes").read_text().split()
     order = {sha(Path(".asv") / subject, t): t for t in tags}
+    unresolved = [t for c, t in order.items() if c == t[:8]]  # sha() falls back to the tag itself
+    if unresolved:  # a missing or stale mirror would otherwise compare older releases unannounced
+        missing = ", ".join(unresolved)
+        print(f"release_changes: .asv/{subject} lacks {missing}; `just bench {subject}` refreshes it", file=sys.stderr)
     stack_file = Path(f"asv/{subject}.stack.txt")
     current = hashlib.sha256(stack_file.read_bytes()).hexdigest()[:8] if stack_file.exists() else ""
     meta = folder / "benchmarks.json"
@@ -117,6 +122,8 @@ def compare(old: dict, new: dict, units: dict, threshold: float) -> list[tuple]:
         for label, x, y in zip(labels, before, after, strict=False):
             ran_x, ran_y = x is not None and not math.isnan(x), y is not None and not math.isnan(y)
             if not ran_x and not ran_y:
+                continue
+            if x is not None and math.isnan(x):  # skipped in the older release: a new case, not a change
                 continue
             ratio = y / x if ran_x and ran_y and x else None
             if ratio is not None and abs(ratio - 1) <= threshold:

@@ -87,6 +87,13 @@ def test_a_failed_case_that_runs_again_is_listed(module: ModuleType, tmp_path: P
     ]
 
 
+def test_a_case_new_in_the_latest_release_is_not_a_change(module: ModuleType, tmp_path: Path):
+    env = "uv-py3.12" + STACK
+    write(tmp_path, result("2.000000", env, [27.6, float("nan")], [5e8, 5e8], [0.0, 0.0]))
+    write(tmp_path, result("3.000000", env, [27.7, 27.9], [5e8, 5e8], [0.0, 0.0]))
+    assert module.changes(tmp_path / "results", "s", 0.05) == []
+
+
 def test_flags_a_dependency_stack_that_moved_between_releases(module: ModuleType, tmp_path: Path):
     write(tmp_path, result("2.000000", "uv-py3.12-BWBENCH_STACKaaaa1111", [1.0, 1.0], [5e8, 5e8], [0.0, 0.0]))
     write(tmp_path, result("3.000000", "uv-py3.12-BWBENCH_STACKbbbb2222", [2.0, 1.0], [5e8, 5e8], [0.0, 0.0]))

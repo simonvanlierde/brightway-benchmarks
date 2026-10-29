@@ -90,7 +90,16 @@ def test_files_as_heavy_as_ecoinvent(tmp_path: Path):
     # abs=1: a few smoke datasets have fewer than 25 exchanges to put one on
     assert mean(".//es:lognormal") == pytest.approx(want["lognormal_uncertainties"], abs=1)
     assert mean(".//es:pedigreeMatrix") == mean(".//es:lognormal")
-    assert mean(".//es:comment") == pytest.approx(want["comments"], abs=1)
+    # Comments at ecoinvent's count and length per kind: bw2io keeps their text in memory. Counted
+    # over datasets with room for them: a smoke dataset can have fewer exchanges than comments.
+    for kind, child, (count, chars) in [
+        *((kind, "comment", v) for kind, v in want["comments"].items()),
+        ("generalComment", "text", want["general_comment"]),
+    ]:
+        room = [r for r in roots if kind == "generalComment" or len(r.findall(f".//es:{kind}", NS)) > count]
+        texts = [e.text or "" for r in room for e in r.iterfind(f".//es:{kind}/es:{child}", NS)]
+        assert len(texts) / len(room) == pytest.approx(count, abs=1), kind
+        assert sum(map(len, texts)) / len(texts) == pytest.approx(chars, rel=0.05), kind
     assert mean(".//es:parameter") == pytest.approx(want["parameters"], abs=0.1)
     assert mean(".//es:lognormal[@mu='-inf']") == 0  # set_lognormal_loc_value takes log(|amount|)
     ids = {e.attrib["elementaryExchangeId"] for r in roots for e in r.iterfind(".//es:elementaryExchange", NS)}

@@ -134,7 +134,8 @@ conda-forge's builds, a solve on a stored factorization is slower.**
 
 What it means for you: install scikit-umfpack from conda-forge, which links OpenBLAS. If you
 build it yourself, link OpenBLAS or MKL, not reference BLAS. If you mostly re-solve a stored
-factorization, the PyPI build is a little faster there.
+factorization, the PyPI build is a little faster there, though most of that solve is UMFPACK's
+[iterative refinement](#umfpacks-iterative-refinement-costs-about-two-thirds-of-each-repeated-solve).
 
 scikit-umfpack has no wheels on PyPI, so it builds against the system's SuiteSparse. In the
 benchmark image that links Debian's reference BLAS, and the history's UMFPACK line uses it.
@@ -164,6 +165,10 @@ core, two rounds):
 | Reference BLAS (PyPI build) | 1.79 s | 16.5 ms |
 | OpenBLAS (conda-forge) | 0.66 s | 24 ms |
 | MKL (conda-forge) | 0.63 s | 24 ms |
+
+A later run that times UMFPACK's own solve shows why: with refinement off, one solve takes 3.7 ms
+on the PyPI build and 4.8 ms on both conda-forge builds. So conda-forge's UMFPACK is about 30%
+slower per solve, and refinement takes up most of the rest (see the refinement finding above).
 
 Graph: [bw2calc-conda, one score](https://simonvanlierde.com/brightway-benchmarks/bw2calc-conda/index.html#bench_lca.SingleScore.time_first_score).
 
@@ -396,6 +401,7 @@ Every issue and pull request this work filed upstream, with its status on 2026-1
 | matrix_utils | [matrix_utils#48](https://github.com/brightway-lca/matrix_utils/pull/48) | Building a matrix from many groups | open |
 | bw_graph_tools | [bw_graph_tools#55](https://github.com/brightway-lca/bw_graph_tools/pull/55) | All unit scores from one transposed solve | closed |
 | bw_graph_tools | [bw_graph_tools#58](https://github.com/brightway-lca/bw_graph_tools/issues/58) | The same, reusing the LCA's factorization | open |
+| bw_graph_tools | [bw_graph_tools#56](https://github.com/brightway-lca/bw_graph_tools/issues/56) | A reused `CachingSolver` returns stale scores after the method changes | open |
 | bw_timex | [bw_timex#244](https://github.com/brightway-lca/bw_timex/pull/244) | The timeline's matrix entries as one vector per matrix | merged |
 | bw_timex | [bw_timex#246](https://github.com/brightway-lca/bw_timex/pull/246) | Floors | open |
 | bw_timex | [bw_timex#247](https://github.com/brightway-lca/bw_timex/issues/247) | Tests fail under pytest 9.2 | open |

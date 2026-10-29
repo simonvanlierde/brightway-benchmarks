@@ -192,8 +192,9 @@ def refinement_steps(steps: float) -> float:
 def redo_lci_refinement(size: str, refinement: str) -> BenchSetup:
     """``redo_lci`` with UMFPACK's iterative refinement on (its default) or off (``UMFPACK_IRSTEP=0``).
 
-    Refinement re-reads the matrix and takes one extra step per solve on reference BLAS, about
-    twice the time of a solve (brightway2-calc#184). The score must match the reference either way.
+    On ecoinvent 3.12 with reference BLAS, UMFPACK takes one refinement step per solve, and a solve
+    takes 10.5 ms with it against 3.7 ms without (brightway2-calc#184). MKL takes none. The score
+    must match the reference either way.
     """
     if not getattr(bc, "UMFPACK", False) or bc.PYPARDISO:
         raise NotImplementedError("needs bw2calc to solve with UMFPACK, not PyPardiso or SuperLU")

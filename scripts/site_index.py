@@ -169,7 +169,8 @@ of ecoinvent, so no licensed data is involved.</p>
 
 <p>Start with <a href="bw2calc/index.html#bench_lca.SingleScore.time_first_score">bw2calc's
 time for one score</a> on the ecoinvent-sized database, per solver, across every release since 2.0.
-What the histories show so far is in <a href="{DOCS}/findings.md">the findings</a>.</p>
+What the histories show so far is in <a href="{DOCS}/findings.md">the findings</a>.
+To speed up your own calculations, see <a href="{DOCS}/faster.md">what to install or call</a>.</p>
 
 <h2>Histories</h2>
 <ul class="subjects">

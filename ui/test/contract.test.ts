@@ -44,7 +44,7 @@ describe("loadIndex", () => {
   });
 
   it("refuses a link that is not http or https", async () => {
-    const index = await fixture("index.json");
+    const index = (await fixture("index.json")) as unknown as BenchmarkIndex;
     for (const bad of [
       { ...index, project: { ...index.project, url: "javascript:alert(1)" } },
       { ...index, project: { ...index.project, links: [{ name: "x", url: "javascript:alert(1)" }] } },

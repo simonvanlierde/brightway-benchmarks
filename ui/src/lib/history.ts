@@ -38,6 +38,24 @@ export function axisLabels(bench: Benchmark): string[][] {
   return bench.params.map((axis) => axis.labels ?? axis.values);
 }
 
+/** The shown label of each of VALUES, one per axis of BENCH. */
+export function paramLabels(bench: Benchmark, values: string[]): string[] {
+  return bench.params.map((axis, i) => {
+    const v = values[i] ?? "";
+    return axis.labels?.[axis.values.indexOf(v)] ?? v;
+  });
+}
+
+/** A commit's name: its release, or its short hash. */
+export function commitName(c: { id: string; release?: string | undefined }): string {
+  return c.release ?? c.id.slice(0, 8);
+}
+
+/** A release change's noise threshold, as the tables and the tip show it. */
+export function noiseText(c: { threshold?: number | undefined }): string {
+  return `±${((c.threshold ?? 0) * 100).toFixed(1)}%`;
+}
+
 /** The parameter values VIEW picks for BENCH: each axis's first value where the URL names none it has. */
 export function pickParams(bench: Benchmark, wanted: string[]): string[] {
   return bench.params.map((axis, i) => {
@@ -112,7 +130,7 @@ export function lines(
         {
           commit: commit.id,
           at,
-          label: commit.release ?? commit.id.slice(0, 8),
+          label: commitName(commit),
           released: commit.release !== undefined,
           date: commit.date.slice(0, 10),
           env: c.environment,
@@ -216,9 +234,8 @@ export function latestChanges(index: BenchmarkIndex): LatestChange[] {
     const bench = c && benches.get(c.benchmark);
     const group = bench && groups.get(bench.group);
     if (!c || !bench || !group || change.method !== "release" || newest.get(group.id) !== change.commit) continue;
-    const name = (id: string) => commits.get(id)?.release ?? id.slice(0, 8);
-    const labels = axisLabels(bench);
-    const params = c.params.map((v, i) => labels[i]?.[bench.params[i]?.values.indexOf(v) ?? -1] ?? v);
+    const name = (id: string) => commitName(commits.get(id) ?? { id });
+    const params = paramLabels(bench, c.params);
     const env = envs.get(c.environment) ?? c.environment;
     const way = verdict(change.ratio, measures.get(change.measure)?.better);
     out.push({ change, group, bench, params, env, from: name(change.baseline), to: name(change.commit), way });

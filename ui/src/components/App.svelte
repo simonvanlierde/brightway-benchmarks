@@ -11,10 +11,13 @@ import {
   axisLabels,
   breakable,
   changesFor,
+  commitName,
   format,
   type Line,
   latestChanges,
   lines as linesOf,
+  noiseText,
+  paramLabels,
   percent,
   pickParams,
   pText,
@@ -23,9 +26,12 @@ import {
   verdict,
   writeView,
 } from "../lib/history";
-import HistoryChart from "./HistoryChart.svelte";
 
 let { base }: { base: string } = $props();
+
+// Fetched with the first chart, so the start page does not load Plot.
+let chartModule: Promise<typeof import("./HistoryChart.svelte")> | undefined;
+const chart = () => (chartModule ??= import("./HistoryChart.svelte"));
 
 let index = $state<BenchmarkIndex>();
 let error = $state<string>();
@@ -131,17 +137,10 @@ const shown = $derived<Line[]>(
 );
 const changes = $derived(index && measureId && machine ? changesFor(index, shown, measureId, machine.id) : []);
 const paramText = $derived(
-  bench
-    ? bench.params
-        .map((a, i) => `${a.name} ${axisLabels(bench)[i]?.[a.values.indexOf(params[i] ?? "")] ?? params[i]}`)
-        .join(", ")
-    : "",
+  bench ? bench.params.map((a, i) => `${a.name} ${paramLabels(bench, params)[i]}`).join(", ") : "",
 );
 const commits = $derived(index && bench ? index.commits.filter((c) => c.group === bench.group) : []);
-const label = (id: string) => {
-  const c = index?.commits.find((x) => x.id === id);
-  return c?.release ?? id.slice(0, 8);
-};
+const label = (id: string) => commitName(index?.commits.find((x) => x.id === id) ?? { id });
 const short = (caseId: string) => shown.find((l) => l.case === caseId)?.short ?? caseId;
 const latest = $derived(index ? latestChanges(index) : []);
 const exported = $derived(index?.changes !== undefined);
@@ -153,25 +152,19 @@ const HINTS: Record<ContractError["kind"], string> = {
     "The data does not have the shape the schema gives: export it again with the exporter that matches this site.",
 };
 const unit = $derived(measure?.unit ?? "");
-const tableRows = $derived(
-  commits
-    .map((c) => ({
-      c,
-      cells: shown.map((l) => l.points.find((p) => p.commit === c.id)),
-    }))
-    .filter((r) => r.cells.some((x) => x)),
-);
+let tableOpen = $state(false);
+const tableRows = $derived.by(() => {
+  const byCommit = shown.map((l) => new Map(l.points.map((p) => [p.commit, p])));
+  return commits.map((c) => ({ c, cells: byCommit.map((m) => m.get(c.id)) })).filter((r) => r.cells.some((x) => x));
+});
 const filename = $derived(
   bench ? `${bench.name}-${params.map((p) => p.replace(/[^\w.-]+/g, "")).join("-")}`.replace(/-+$/, "") : "chart",
 );
 const title = $derived(bench ? `${bench.name}${paramText ? ` (${paramText})` : ""}` : "");
 
-/** A release change's noise threshold, as the tables show it. */
-const noise = (c: { threshold?: number }) => `±${((c.threshold ?? 0) * 100).toFixed(1)}%`;
-
 function setParam(i: number, value: string) {
   if (!bench) return;
-  const labels = axisLabels(bench).map((ls, j) => ls[bench.params[j]?.values.indexOf(params[j] ?? "") ?? 0] ?? "");
+  const labels = paramLabels(bench, params);
   labels[i] = value;
   go({ ...view, params: labels });
 }
@@ -277,7 +270,7 @@ $effect(() => {
                     </th>
                     <td class="num">
                       <span class={row.way}>{percent(row.change.ratio)} {row.way}</span><br />
-                      <span class="quiet">noise {noise(row.change)}</span>
+                      <span class="quiet">noise {noiseText(row.change)}</span>
                     </td>
                     <td class="wrap">{row.env}</td>
                     <td class="nowrap">{row.from} → {row.to}</td>
@@ -311,7 +304,7 @@ $effect(() => {
                 <label for="axis-{i}">{axis.name}</label>
                 <select
                   id="axis-{i}"
-                  value={labels[axis.values.indexOf(params[i] ?? "")]}
+                  value={paramLabels(bench, params)[i]}
                   onchange={(e) => setParam(i, e.currentTarget.value)}
                 >
                   {#each labels as l (l)}<option>{l}</option>{/each}
@@ -353,7 +346,13 @@ $effect(() => {
             </p>
           {/if}
           <figure>
-            <HistoryChart lines={shown} {changes} {unit} better={measure?.better} {title} {filename} />
+            {#await chart()}
+              <div class="skeleton" aria-busy="true"><span class="sr">Loading the chart…</span></div>
+            {:then { default: HistoryChart }}
+              <HistoryChart lines={shown} {changes} {unit} better={measure?.better} {title} {filename} />
+            {:catch reason}
+              <div class="empty" role="alert"><p>The chart did not load: {String(reason)}</p></div>
+            {/await}
             <figcaption>
               {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment{measure?.bounds
                 ? `; shaded: ${measure.bounds}`
@@ -388,7 +387,7 @@ $effect(() => {
                       <td class="num {way}">{percent(c.ratio)} {way}</td>
                       <td class="wrap">{short(c.case)}</td>
                       <td class="nowrap">
-                        {c.method === "release" ? `release vs. noise ${noise(c)}` : `level shift (Otava), ${pText(c.pvalue)}`}
+                        {c.method === "release" ? `release vs. noise ${noiseText(c)}` : `level shift (Otava), ${pText(c.pvalue)}`}
                       </td>
                     </tr>
                   {/each}
@@ -397,8 +396,9 @@ $effect(() => {
             </div>
           {/if}
 
-          <details class="data">
+          <details class="data" bind:open={tableOpen}>
             <summary>Data table: {tableRows.length} releases × {shown.length} environments</summary>
+            {#if tableOpen}<!-- built on opening: a large table is slow to render -->
             <!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region must take focus to scroll by keyboard -->
             <div class="scroll" role="region" aria-label="Data table" tabindex="0">
               <table>
@@ -415,7 +415,7 @@ $effect(() => {
                 <tbody>
                   {#each tableRows as row (row.c.id)}
                     <tr>
-                      <th scope="row">{row.c.release ?? row.c.id.slice(0, 8)}</th>
+                      <th scope="row">{commitName(row.c)}</th>
                       <td class="nowrap">{row.c.date.slice(0, 10)}</td>
                       {#each row.cells as p, j (j)}
                         <td class="num">
@@ -437,6 +437,7 @@ $effect(() => {
                 {#if l.short !== l.name}<dt>{l.short}</dt><dd class="mono">{l.name}</dd>{/if}
               {/each}
             </dl>
+            {/if}
           </details>
         {/if}
       {/if}

@@ -1,7 +1,7 @@
 <script lang="ts">
 import * as Plot from "@observablehq/plot";
 import type { Change } from "../lib/contract";
-import { format, type Line, percent, scaleFor, sig, ticksFor, verdict } from "../lib/history";
+import { format, type Line, noiseText, percent, scaleFor, sig, ticksFor, verdict } from "../lib/history";
 
 let {
   lines,
@@ -58,11 +58,8 @@ const changeAt = $derived.by(() => {
 
 function words(change: Change): string {
   const way = verdict(change.ratio, better);
-  const what = way === "worse" ? "worse" : way === "better" ? "better" : "moved";
-  if (change.method === "release") {
-    return `${percent(change.ratio)} ${what} (noise ±${((change.threshold ?? 0) * 100).toFixed(1)}%)`;
-  }
-  return `level shift ${percent(change.ratio)} ${what}`;
+  if (change.method === "release") return `${percent(change.ratio)} ${way} (noise ${noiseText(change)})`;
+  return `level shift ${percent(change.ratio)} ${way}`;
 }
 
 function describe(step: (typeof steps)[number]): string {
@@ -214,11 +211,10 @@ function download() {
   URL.revokeObjectURL(a.href);
 }
 
-const said = $derived(active === null ? "" : (tipsText(active) ?? ""));
-function tipsText(i: number): string | undefined {
-  const step = steps[i];
-  return step ? describe(step).replaceAll("\n", "; ") : undefined;
-}
+const said = $derived.by(() => {
+  const step = active === null ? undefined : steps[active];
+  return step ? describe(step).replaceAll("\n", "; ") : "";
+});
 </script>
 
 <div class="legend-host" bind:this={legend}></div>

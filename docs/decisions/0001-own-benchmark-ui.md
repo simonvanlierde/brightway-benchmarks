@@ -32,7 +32,7 @@ data.
   LayerChart and in Observable Plot.
 - Changes are found in the night job, not in the browser: a change between releases counts
   only when it is larger than that case's measured noise, and Apache Otava marks change points
-  along each series. Not built yet: noise, change points and the night job.
+  along each series. The exporter finds both; running it in the night job is not built yet.
 - It serves maintainers first (what changed, and is it noise), then users (what to install),
   then readers of the study.
 - It runs beside asv's pages until it shows everything they show, plus two weeks of night runs

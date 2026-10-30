@@ -19,6 +19,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `just ui-data OUT` writes the results as the data a new benchmark UI reads: an `index.json`
   and one report per commit in Bencher Metric Format. ui/schema/ describes both, and the tests
   check the output against it. The UI itself is in ui/, with its own changelog.
+- `just ui-data` also lists what changed along each series: moves between two releases that are
+  larger than the case's own noise, and Apache Otava's change points. It needs uv, which runs
+  Otava in an environment of its own ([scripts/export_ui.py](scripts/export_ui.py)).
 - `just bw2io-import` times an import with bw2io's ecoSpold2 importer (bw2io 0.9.17, bw2data
   4.8) and prints each step's time and peak memory. `just bw2io-import synthetic
   smoke,ecoinvent` needs no licence: it writes the synthetic database as ecoSpold2 files whose

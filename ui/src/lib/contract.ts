@@ -7,6 +7,7 @@ import type { BenchmarkReport } from "./report.gen";
 
 export type { BenchmarkIndex, BenchmarkReport };
 export type Report = BenchmarkIndex["reports"][number];
+export type Change = NonNullable<BenchmarkIndex["changes"]>[number];
 
 export const FORMAT_VERSION = 1;
 export const REPORT_FORMATS: readonly string[] = ["bmf/v0"];
@@ -57,6 +58,7 @@ export function checkReferences(index: BenchmarkIndex): void {
     machines: ids(index.machines),
     environments: ids(index.environments),
     benchmarks: ids(index.benchmarks),
+    cases: ids(index.cases),
     commits: new Set(index.commits.map((c) => `${c.group}/${c.id}`)),
   };
   const need = (kind: keyof typeof defined, id: string, where: string) => {
@@ -82,6 +84,14 @@ export function checkReferences(index: BenchmarkIndex): void {
     need("groups", r.group, `reports[${i}].group`);
     need("machines", r.machine, `reports[${i}].machine`);
     need("commits", `${r.group}/${r.commit}`, `reports[${i}].commit`);
+  });
+  const caseGroup = new Map(index.cases.map((c) => [c.id, index.benchmarks.find((b) => b.id === c.benchmark)?.group]));
+  index.changes?.forEach((c, i) => {
+    need("cases", c.case, `changes[${i}].case`);
+    need("machines", c.machine, `changes[${i}].machine`);
+    need("measures", c.measure, `changes[${i}].measure`);
+    need("commits", `${caseGroup.get(c.case)}/${c.commit}`, `changes[${i}].commit`);
+    need("commits", `${caseGroup.get(c.case)}/${c.baseline}`, `changes[${i}].baseline`);
   });
 }
 

@@ -8,6 +8,15 @@ id across releases, and a commit gets one value per environment, on the stack ``
 ``time`` cases become latency in ns, with asv's 99% interval as bounds where it holds the value;
 ``peakmemory`` cases become peak memory in bytes. Other types, failed and skipped cases are left
 out, and so is a benchmark whose parameters don't match benchmarks.json, with one warning.
+
+The index also lists ``changes``, found here so the UI computes none. Along each series (one case
+on one machine in one measure, oldest commit first) two methods run:
+
+- ``release``: between each two releases in a row, a change counts when new / old moves by more
+  than the case's noise allows: ``NOISE_TIMES`` times the larger of the two results' spread
+  (asv's interquartile range over the median), and never less than ``NOISE_FLOOR``.
+- ``change-point``: Apache Otava's change points (scripts/change_points.py, run through uv), where
+  the mean level moved by more than ``NOISE_FLOOR``.
 """
 
 import ast
@@ -16,6 +25,8 @@ import itertools
 import json
 import math
 import re
+import shutil
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -39,6 +50,11 @@ MEASURE_INFO = [  # asv gives a time's median and a peak memory's highest reside
     {"id": "peak-memory", "name": "Peak memory", "unit": "B", "better": "lower", "statistic": "max"},
 ]
 REPORT_FORMAT = "bmf/v0"
+# Pinned run-to-run noise is 0.4 to 1.5% (just noise), and asv's spread within one run does not
+# see it, so no change under 2% counts. Three spreads keeps a noisy case's jitter out.
+NOISE_FLOOR = 0.02
+NOISE_TIMES = 3
+CHANGE_POINTS = Path(__file__).with_name("change_points.py")
 
 
 def slug(name: str) -> str:
@@ -61,8 +77,14 @@ def runs(folder: Path) -> dict[tuple[str, str], list[dict]]:
     return {key: [stacks[pick(stacks, current)] for _, stacks in sorted(envs.items())] for key, envs in found.items()}
 
 
-def metrics(data: dict, kinds: dict[str, str]) -> list[tuple[str, tuple[str, ...], str, dict]]:
-    """(case, parameter values, measure, BMF metric) for each value in one asv result file."""
+def metrics(
+    data: dict, kinds: dict[str, str], spread: dict | None = None
+) -> list[tuple[str, tuple[str, ...], str, dict]]:
+    """(case, parameter values, measure, BMF metric) for each value in one asv result file.
+
+    SPREAD, if given, gets each value's interquartile range over the value, keyed by (case,
+    parameter values), where asv recorded the quartiles.
+    """
     out = []
     columns = data.get("result_columns", ["result", "params"])
     for name, row in data["results"].items():
@@ -74,6 +96,7 @@ def metrics(data: dict, kinds: dict[str, str]) -> list[tuple[str, tuple[str, ...
         sets = list(itertools.product(*params)) if params else [()]
         values = cell["result"] if isinstance(cell["result"], list) else [cell["result"]]
         lower, upper = cell.get("stats_ci_99_a"), cell.get("stats_ci_99_b")
+        q25, q75 = cell.get("stats_q_25"), cell.get("stats_q_75")
         for i, (point, value) in enumerate(zip(sets, values, strict=False)):
             if value is None or math.isnan(value):
                 continue
@@ -81,6 +104,9 @@ def metrics(data: dict, kinds: dict[str, str]) -> list[tuple[str, tuple[str, ...
             a, b = (lower[i], upper[i]) if lower and upper else (None, None)
             if a is not None and b is not None and math.isfinite(a) and math.isfinite(b) and a <= value <= b:
                 metric |= {"lower_value": a * scale, "upper_value": b * scale}
+            lo, hi = (q25[i], q75[i]) if q25 and q75 and i < min(len(q25), len(q75)) else (None, None)
+            if spread is not None and value > 0 and lo is not None and hi is not None and math.isfinite(hi - lo):
+                spread[name, point] = (hi - lo) / value
             out.append((name, point, measure, metric))
     return out
 
@@ -105,14 +131,20 @@ class Catalog:
     cases: dict[str, dict] = field(default_factory=dict)
     warned: set[tuple[str, str]] = field(default_factory=set)
 
-    def report(self, subject: str, files: list[dict], info: dict[str, dict]) -> dict[str, dict]:
-        """One BMF report from the result files of one commit on one machine, one stack each."""
+    def report(
+        self, subject: str, files: list[dict], info: dict[str, dict], spread: dict[str, float] | None = None
+    ) -> dict[str, dict]:
+        """One BMF report from the result files of one commit on one machine, one stack each.
+
+        SPREAD, if given, gets each case's spread (see ``metrics``) by case id.
+        """
         group, kinds = slug(subject), {k: v.get("type", "") for k, v in info.items()}
         report: dict[str, dict] = {}
         for data in files:
             env = STACK.sub("", data["env_name"])
             env_id = slug(f"{subject}/{env}")
-            for name, point, measure, metric in metrics(data, kinds):
+            spreads: dict[tuple[str, tuple[str, ...]], float] = {}
+            for name, point, measure, metric in metrics(data, kinds, spreads):
                 names = info[name].get("param_names", [])
                 if len(point) != len(names):  # the values would land on the wrong axes
                     if (subject, name) not in self.warned:
@@ -145,6 +177,8 @@ class Catalog:
                 if case["id"] in report:  # two stacks of one environment: one would overwrite the other
                     sys.exit(f"export_ui: {key} twice in one report")
                 report[case["id"]] = {measure: metric}
+                if spread is not None and (name, point) in spreads:
+                    spread[case["id"]] = spreads[name, point]
         return report
 
     def order(self, subject: str, info: dict[str, dict]) -> None:
@@ -167,9 +201,74 @@ def label(value: str) -> str:
         return value
 
 
+# (case, machine, measure) -> one (commit, value, spread or None) per commit, oldest first
+Series = dict[tuple[str, str, str], list[tuple[str, float, float | None]]]
+
+
+def release_changes(series: Series, released: set[str]) -> list[dict]:
+    """Moves between two releases in a row that are larger than the case's noise (module docstring)."""
+    out = []
+    for (case, machine, measure), points in series.items():
+        kept = [p for p in points if p[0] in released]
+        for (old, a, sa), (new, b, sb) in itertools.pairwise(kept):
+            threshold = max(NOISE_FLOOR, NOISE_TIMES * max(sa or 0, sb or 0))
+            if a > 0 and abs(b / a - 1) > threshold:
+                out.append(
+                    change(case, machine, measure, old, new, b / a, "release") | {"threshold": round(threshold, 4)}
+                )
+    return out
+
+
+def otava(values: list[list[float]]) -> list[list[dict]]:
+    """scripts/change_points.py on each series of VALUES, in Otava's own environment."""
+    uv = shutil.which("uv")
+    if uv is None:
+        sys.exit("export_ui: change points need uv (https://docs.astral.sh/uv/)")
+    run = subprocess.run(  # noqa: S603 - our own script, with JSON on stdin
+        [uv, "run", "--quiet", "--script", str(CHANGE_POINTS), str(NOISE_FLOOR)],
+        input=json.dumps(values),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if run.returncode:
+        sys.exit(f"export_ui: change_points.py exited {run.returncode}: {run.stderr.strip()}")
+    return json.loads(run.stdout)
+
+
+def change_points(series: Series) -> list[dict]:
+    """Otava's change points along each series (module docstring)."""
+    keys = list(series)
+    found = otava([[v for _, v, _ in series[k]] for k in keys])
+    out = []
+    for (case, machine, measure), points in zip(keys, found, strict=True):
+        commits = [c for c, _, _ in series[case, machine, measure]]
+        for p in points:
+            i = p["index"]
+            out.append(
+                change(case, machine, measure, commits[i - 1], commits[i], p["ratio"], "change-point")
+                | {"pvalue": float(f"{p['pvalue']:.3g}")}
+            )
+    return out
+
+
+def change(case: str, machine: str, measure: str, baseline: str, commit: str, ratio: float, method: str) -> dict:
+    """One entry of the index's changes."""
+    return {
+        "case": case,
+        "machine": machine,
+        "measure": measure,
+        "commit": commit,
+        "baseline": baseline,
+        "ratio": round(ratio, 4),
+        "method": method,
+    }
+
+
 def export(results: Path, out: Path) -> dict:
     """Write the index and reports, and return the index."""
     groups, commits, reports = [], [], []
+    series: Series = {}
     machines: dict[str, dict] = {}
     catalog = Catalog()
     for meta in sorted(results.glob("*/benchmarks.json")):
@@ -180,11 +279,14 @@ def export(results: Path, out: Path) -> dict:
         groups.append({"id": group, "name": subject} | ({"url": conf["project_url"]} if "project_url" in conf else {}))
         info = {k: v for k, v in json.loads(meta.read_text()).items() if isinstance(v, dict)}  # skips "version"
         dates: dict[str, int] = {}
+        found: list[tuple[str, str, dict, dict]] = []  # (machine id, commit, report, spread)
         for (machine, commit), files in sorted(runs(meta.parent).items()):
-            report = catalog.report(subject, files, info)
+            spread: dict[str, float] = {}
+            report = catalog.report(subject, files, info, spread)
             if not report:
                 continue
             machine_id = machines.setdefault(machine, {"id": slug(machine), "name": machine})["id"]
+            found.append((machine_id, commit, report, spread))
             dates[commit] = max(dates.get(commit, 0), *(f["date"] for f in files))
             path = f"reports/{group}/{machine_id}/{commit}.json"
             write(out / path, report)
@@ -196,6 +298,12 @@ def export(results: Path, out: Path) -> dict:
         for commit, date in sorted(dates.items(), key=lambda c: (c[1], c[0])):
             tag = tags.get(commit[:8])
             commits.append({"id": commit, "group": group, "date": iso(date)} | ({"release": tag} if tag else {}))
+        order = {c: (d, c) for c, d in dates.items()}
+        for machine_id, commit, report, spread in sorted(found, key=lambda f: order[f[1]]):
+            for case, metric in report.items():
+                for measure, m in metric.items():
+                    series.setdefault((case, machine_id, measure), []).append((commit, m["value"], spread.get(case)))
+    released = {c["id"] for c in commits if "release" in c}
     index = {
         "format_version": 1,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
@@ -208,6 +316,7 @@ def export(results: Path, out: Path) -> dict:
         "cases": list(catalog.cases.values()),
         "commits": commits,
         "reports": reports,
+        "changes": release_changes(series, released) + change_points(series),
     }
     write(out / "index.json", index)
     return index

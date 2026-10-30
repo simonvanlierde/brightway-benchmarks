@@ -111,6 +111,7 @@ site:
     scripts/site_index.py site
 
 # Write the UI's data from results/ to OUT (scripts/export_ui.py says what it reads).
+# Needs uv: change points come from Apache Otava, in an environment of its own.
 ui-data out:
     python3 scripts/export_ui.py results {{ out }}
 

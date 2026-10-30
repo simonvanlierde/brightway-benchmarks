@@ -182,6 +182,36 @@
           "commit": { "type": "string" }
         }
       }
+    },
+    "changes": {
+      "description": "Where a series moved, found before the data was written, oldest first within a series. A series is one case on one machine in one measure.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["case", "machine", "measure", "commit", "baseline", "ratio", "method"],
+        "properties": {
+          "case": { "$ref": "#/$defs/id" },
+          "machine": { "$ref": "#/$defs/id" },
+          "measure": { "$ref": "#/$defs/id" },
+          "commit": { "description": "The first commit at the new level.", "type": "string" },
+          "baseline": { "description": "The commit it is compared with.", "type": "string" },
+          "ratio": {
+            "description": "The new level over the old: the two values for release, the two means for change-point.",
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "method": {
+            "description": "release: two releases in a row, against the case's noise. change-point: a shift in the series' mean.",
+            "enum": ["release", "change-point"]
+          },
+          "threshold": {
+            "description": "release only: how far the ratio could move from 1 as noise.",
+            "type": "number",
+            "minimum": 0
+          },
+          "pvalue": { "description": "change-point only: the significance test's p-value.", "type": "number" }
+        }
+      }
     }
   },
   "$defs": {

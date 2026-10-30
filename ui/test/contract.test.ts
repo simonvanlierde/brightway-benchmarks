@@ -158,6 +158,15 @@ describe("checkReferences", () => {
           if (i.reports[0]) i.reports[0].commit = "gone";
         },
       ],
+      ...(["case", "machine", "measure", "commit", "baseline"] as const).map(
+        (key) =>
+          [
+            `changes[0].${key}`,
+            (i: BenchmarkIndex) => {
+              if (i.changes?.[0]) i.changes[0][key] = "gone";
+            },
+          ] as [string, (i: BenchmarkIndex) => void],
+      ),
     ];
     for (const [where, edit] of breaks) {
       const index = (await fixture("index.json")) as unknown as BenchmarkIndex;

@@ -51,7 +51,10 @@ def schema(name: str) -> Validator:
 def export_ui(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.syspath_prepend(str(ROOT / "scripts"))
     # Imported by name, so that its own `from release_changes import STACK` resolves.
-    return importlib.import_module("export_ui")
+    module = importlib.import_module("export_ui")
+    # Otava runs in an environment of its own; test_change_points_through_uv runs it for real.
+    monkeypatch.setattr(module, "otava", lambda values: [[] for _ in values])
+    return module
 
 
 def layout(tmp_path: Path, files: dict[str, dict], stack: str = "", info: dict = INFO) -> Path:
@@ -342,3 +345,71 @@ def test_the_schema_checks_formats():
     index = json.loads((ROOT / "ui" / "test" / "fixtures" / "data" / "index.json").read_text())
     with pytest.raises(ValidationError, match="is not a 'date-time'"):
         schema("index").validate(index | {"generated_at": "yesterday"})
+
+
+def test_a_release_change_counts_only_beyond_the_case_noise(export_ui: ModuleType):
+    released = {"a", "b", "c", "d", "e"}
+    series = {
+        ("quiet", "m", "latency"): [("a", 1.0, 0.001), ("b", 1.03, 0.001), ("x", 2.0, None), ("c", 1.031, 0.001)],
+        ("noisy", "m", "latency"): [("a", 1.0, 0.03), ("b", 1.05, 0.03), ("c", 1.2, 0.01)],
+        ("memory", "m", "peak-memory"): [("d", 100.0, None), ("e", 101.0, None)],
+    }
+    found = {(c["case"], c["baseline"], c["commit"]): c for c in export_ui.release_changes(series, released)}
+    # 3% is above the 2% floor; b to c skips x, which is no release, and moved 0.1%.
+    assert found["quiet", "a", "b"] | {"ratio": 1.03} == {
+        "case": "quiet",
+        "machine": "m",
+        "measure": "latency",
+        "commit": "b",
+        "baseline": "a",
+        "ratio": 1.03,
+        "method": "release",
+        "threshold": 0.02,
+    }
+    # A 5% move is within three spreads of 3%; 1.05 to 1.2 is beyond them.
+    assert found["noisy", "b", "c"]["threshold"] == pytest.approx(0.09)
+    assert set(found) == {("quiet", "a", "b"), ("noisy", "b", "c")}  # memory moved 1%, under the floor
+
+
+def test_changes_land_in_the_index_with_their_commits(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    columns = [*COLUMNS, "stats_q_25", "stats_q_75"]
+    commits = [("11" * 20, 1.0), ("22" * 20, 1.0), ("33" * 20, 1.5)]
+    files = {}
+    for i, (c, v) in enumerate(commits):
+        data = result(c, "a" + STACK, (i + 1) * 1_000_000, [v, None], ([v, None], [v, None]))
+        data["result_columns"] = columns
+        data["results"][TIME] += [[v * 0.99, None], [v * 1.01, None]]  # a 2% spread
+        files[f"m/{c[:8]}-a"] = data
+    results = layout(tmp_path, files)
+    (results.parent / "asv" / "s.hashes").write_text("".join(f"{c}\n" for c, _ in commits))
+    seen = []
+
+    def otava(values: list[list[float]]) -> list[list[dict]]:
+        seen.extend(values)
+        return [[{"index": 2, "ratio": 1.5, "pvalue": 1.234e-5}] if v[-1] == 1.5e9 else [] for v in values]
+
+    monkeypatch.setattr(export_ui, "otava", otava)
+    index, _ = run(export_ui, results, monkeypatch)
+    schema("index").validate(index)
+    assert [1e9, 1e9, 1.5e9] in seen  # each series oldest first
+    (case,) = [c["id"] for c in index["cases"] if c["params"] == ["'ecoinvent'", "'LCA'"] and "time" in c["id"]]
+    mine = sorted((c["method"], c["baseline"][:2], c["commit"][:2]) for c in index["changes"] if c["case"] == case)
+    assert mine == [("change-point", "22", "33"), ("release", "22", "33")]
+    (release,) = [c for c in index["changes"] if c["case"] == case and c["method"] == "release"]
+    assert release["threshold"] == pytest.approx(0.06)  # three times the 2% spread
+    (point,) = [c for c in index["changes"] if c["method"] == "change-point"]
+    assert point["pvalue"] == 1.23e-5
+
+
+@pytest.mark.skipif(shutil.which("uv") is None, reason="Otava runs through uv")
+def test_change_points_through_uv(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.syspath_prepend(str(ROOT / "scripts"))
+    module = importlib.import_module("export_ui")
+    step = [1.0, 1.01, 0.99, 1.0, 1.3, 1.29, 1.31, 1.3]
+    flat = [1.0, 1.0, 1.0, 1.01, 1.01, 1.01]  # Otava finds this 1% step; under 2%, it does not count
+    found = module.otava([step, flat, []])
+    assert [[p["index"] for p in s] for s in found] == [[4], [], []]
+    assert found[0][0]["ratio"] == pytest.approx(1.3, abs=0.01)
+    assert found[0][0]["pvalue"] < 0.001

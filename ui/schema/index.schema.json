@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/simonvanlierde/brightway-benchmarks/ui/schema/index.schema.json",
+  "title": "BenchmarkIndex",
+  "description": "index.json: what the reports hold. Every id is a stable slug, so a link to it survives a re-export. A report's metrics are in the file `reports[].path` names, in the format `reports[].format` names (see report.schema.json).",
+  "type": "object",
+  "required": [
+    "format_version",
+    "generated_at",
+    "project",
+    "groups",
+    "measures",
+    "machines",
+    "environments",
+    "benchmarks",
+    "cases",
+    "commits",
+    "reports"
+  ],
+  "properties": {
+    "format_version": {
+      "description": "Raised when a reader of an older version would misread the file.",
+      "const": 1
+    },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "project": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "links": { "type": "array", "items": { "$ref": "#/$defs/link" } }
+      }
+    },
+    "groups": {
+      "description": "What the benchmarks are grouped by on the page, such as the package they time.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "links": { "type": "array", "items": { "$ref": "#/$defs/link" } }
+        }
+      }
+    },
+    "measures": {
+      "description": "What a metric measures. The id is the measure's key in each report.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "unit"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "name": { "type": "string" },
+          "unit": { "description": "The unit of every value, such as ns or B.", "type": "string" }
+        }
+      }
+    },
+    "machines": {
+      "description": "Where the reports ran. Results from two machines are never pooled.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": { "id": { "$ref": "#/$defs/id" }, "name": { "type": "string" } }
+      }
+    },
+    "environments": {
+      "description": "The software a case ran in, such as a Python version and its packages.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "group", "name"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "group": { "$ref": "#/$defs/id" },
+          "name": { "type": "string" }
+        }
+      }
+    },
+    "benchmarks": {
+      "description": "One timed function, with the parameter axes it runs over.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "group", "name", "measure", "params"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "group": { "$ref": "#/$defs/id" },
+          "name": { "type": "string" },
+          "measure": { "$ref": "#/$defs/id" },
+          "params": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "values"],
+              "properties": {
+                "name": { "type": "string" },
+                "values": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "cases": {
+      "description": "One benchmark at one parameter set in one environment: one line on a chart. Its id is its key in each report.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "benchmark", "environment", "params"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "benchmark": { "$ref": "#/$defs/id" },
+          "environment": { "$ref": "#/$defs/id" },
+          "params": {
+            "description": "One value per axis in the benchmark's params, in the same order.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "noise": {
+            "description": "Machine id to the case's run-to-run spread on that machine, relative to its value (0.01 is 1%). A change smaller than this is noise.",
+            "type": "object",
+            "additionalProperties": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "commits": {
+      "description": "Each commit with results, oldest first within a group. A release is a commit with a tag.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "group", "date"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[0-9a-f]{7,64}$" },
+          "group": { "$ref": "#/$defs/id" },
+          "date": { "description": "The commit's date.", "type": "string", "format": "date-time" },
+          "release": { "description": "The release tag, if the commit is a release.", "type": "string" }
+        }
+      }
+    },
+    "reports": {
+      "description": "One file of metrics per commit, group and machine.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "format", "group", "machine", "commit"],
+        "properties": {
+          "path": {
+            "description": "Relative to index.json.",
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9/._-]*\\.json$"
+          },
+          "format": { "description": "The file's format and its version.", "const": "bmf/v0" },
+          "group": { "$ref": "#/$defs/id" },
+          "machine": { "$ref": "#/$defs/id" },
+          "commit": { "type": "string" }
+        }
+      }
+    },
+    "change_points": {
+      "description": "Where a case's series shifts, found offline, not in the browser.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["case", "machine", "commit", "p_value"],
+        "properties": {
+          "case": { "$ref": "#/$defs/id" },
+          "machine": { "$ref": "#/$defs/id" },
+          "commit": { "description": "The first commit after the shift.", "type": "string" },
+          "p_value": { "type": "number", "minimum": 0, "maximum": 1 },
+          "ratio": { "description": "The mean after the shift over the mean before.", "type": "number" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 64 },
+    "link": {
+      "type": "object",
+      "required": ["name", "url"],
+      "properties": { "name": { "type": "string" }, "url": { "type": "string", "format": "uri" } }
+    }
+  }
+}

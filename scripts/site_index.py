@@ -173,6 +173,9 @@ time for one score</a> on the ecoinvent-sized database, per solver, across every
 What the histories show so far is in <a href="{DOCS}/findings.md">the findings</a>.
 To speed up your own calculations, see <a href="{DOCS}/faster.md">what to install or call</a>.</p>
 
+<p>A new viewer for the same histories, with what moved in each latest release, is in
+<a href="ui/">preview</a>. These pages stay until it covers them.</p>
+
 <h2>Histories</h2>
 <ul class="subjects">
 {items}

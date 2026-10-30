@@ -7,3 +7,8 @@ extend-ignore-re = [
 
 [default.extend-words]
 intoto = "intoto" # in-toto attestation bundles, `.intoto.jsonl`
+
+[files]
+extend-exclude = [
+  "ui/test/fixtures/real/", # exported benchmark data: hashes and ids, not prose
+]

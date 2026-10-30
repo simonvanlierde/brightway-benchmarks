@@ -126,7 +126,9 @@ def iso(ms: int) -> str:
 def write(path: Path, data: dict) -> None:
     """DATA as compact JSON; NaN is not JSON, so it fails here rather than in the browser."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, separators=(",", ":"), allow_nan=False))
+    path.write_text(
+        json.dumps(data, separators=(",", ":"), allow_nan=False) + "\n"
+    )  # a final newline, as the end-of-file hook wants
 
 
 @dataclass

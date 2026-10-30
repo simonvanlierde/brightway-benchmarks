@@ -13,6 +13,7 @@ just bench bw2data "4.7^!" -e    # one release; extra arguments go to asv
 just site                        # build the history pages in site/
 just release-changes bw2calc     # what moved in bw2calc's latest release, as a Markdown table
 just ui-data site/data           # results/ as the data the UI in ui/ reads
+just ui-serve                    # build the UI and serve it on 127.0.0.1:4400, to look at a change
 just results-commit              # keep results/ on the local results branch, for publishing
 just solver-lci klu ecoinvent    # bw2calc 3.1.0's own lci() with one solver, KLU here
 just codspeed bw2calc pypardiso  # one suite under CodSpeed's CPU simulation (instruction counts)

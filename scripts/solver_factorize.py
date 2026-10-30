@@ -3,7 +3,7 @@ r"""Factorize and solve real ecoinvent's A with each direct solver bw2calc can u
     docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/src:ro -v RELEASE_FOLDER:/ecoinvent:ro \
         -w /src IMAGE scripts/in-box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 \
         --with bw2calc==3.1.0 --with threadpoolctl==3.7.0 --with pypardiso==0.4.7 \
-        --with scikit-umfpack==0.4.2 --with pyklu==0.2.0 python scripts/solver_factorize.py [--pardiso]'
+        --with scikit-umfpack==0.4.2 --with pyklu==0.2.0 python scripts/solver_factorize.py [--pardiso] [--cudss]'
 
 IMAGE is the box image ``scripts/box.sh`` builds, and RELEASE_FOLDER a licensed ecoinvent
 release (its ``datasets/`` folder of ecospold2 files), mounted read-only. ``box.sh`` mounts
@@ -11,13 +11,20 @@ only this repo, hence the plain ``docker run``.
 
 Builds A as ``scripts/measure_stats.py`` does, then times SuperLU and UMFPACK through
 bw2calc's own ``spsolve`` and ``lu_solver``, KLU through pyklu if installed, and with ``--pardiso``
-PyPardiso: one factorization (median of 3) and one solve (median of 5) each. Checks every
+PyPardiso: one factorization (median of 3) and one solve (median of 5) each; PyPardiso
+also a refactorization that reuses its analysis. Checks every
 solution's backward error and its score against UMFPACK's. Prints timings and fill only:
 no dataset, name or amount, plus which BLAS is loaded.
 
 To time conda-forge's builds, run the script with the python of an asv ``rattler`` environment
 (``.asv/env/bw2calc-conda/*/bin/python``, which has no pyklu) in place of ``uv run``, still
 with ``PYTHONPATH=src``.
+
+``--cudss`` adds NVIDIA's cuDSS on the GPU (add ``--gpus all`` to ``docker run``): plan and
+factorize, then a second factorization with the plan reused, as a Monte Carlo draw does. It needs
+``nvmath-python[cu12]==1.0.0`` and ``nvidia-cudss-cu12==0.8.0.10`` in a real venv (``uv venv``
+plus ``uv pip install``, then that venv's python): under ``uv run --with``, nvmath cannot find
+the CUDA libraries.
 """
 
 # First, so the BLAS thread pin lands before numpy loads (bwbench warns otherwise).
@@ -71,7 +78,38 @@ def timed[T](f: Callable[[], T], reps: int = 3) -> tuple[float, T]:
     return statistics.median(times), out
 
 
-def main() -> None:
+def time_cudss(a: sparse.csr_matrix, b: np.ndarray) -> tuple[float, Solve, str]:
+    """Time cuDSS (through nvmath-python) on ``a``: plan and factorize, then factorize again.
+
+    The second is a Monte Carlo draw: new values in the same pattern, so the plan (the
+    reordering) is reused. Host arrays in and out, so the transfers are timed too.
+    """
+    import logging  # noqa: PLC0415
+
+    import nvmath.sparse.advanced as sa  # noqa: PLC0415
+
+    logging.getLogger().setLevel(logging.ERROR)  # nvmath warns on every reset_operands(a=...)
+    # The CUDA context and library load once per process: keep them out of every timing.
+    w = sa.DirectSolver(sparse.identity(100, format="csr"), np.ones(100))
+    w.plan(), w.factorize(), w.free()
+
+    def first() -> sa.DirectSolver:
+        d = sa.DirectSolver(a, b)
+        d.plan()
+        d.factorize()
+        return d
+
+    s, d = timed(first)
+
+    def refactorize() -> None:
+        d.reset_operands(a=a.copy())
+        d.factorize()
+
+    again, _ = timed(refactorize)
+    return s, lambda r: (d.reset_operands(b=r), d.solve())[1], f" refactorize {again:.3f} s"
+
+
+def main() -> None:  # noqa: PLR0915  (one block per solver)
     """Time each solver on the release mounted at /ecoinvent and print the results."""
     import bw2calc.utils as bu  # noqa: PLC0415
 
@@ -134,7 +172,17 @@ def main() -> None:
             return p
 
         s, p = timed(pardiso)
-        report("PARDISO pypardiso (A)", s, lambda r: p.solve(a, r))
+
+        def refactorize() -> None:
+            # Phase 22: the numeric factorization only, the analysis reused, as cuDSS's refactorize.
+            p.set_phase(22)
+            p._call_pardiso(a, np.zeros((n, 1)))  # noqa: SLF001  (factorize() always runs phase 12)
+
+        again, _ = timed(refactorize)
+        report("PARDISO pypardiso (A)", s, lambda r: p.solve(a, r), f" refactorize {again:.3f} s")
+
+    if "--cudss" in sys.argv:
+        report(f"cuDSS nvmath {version('nvidia-cudss-cu12')} (A)", *time_cudss(a, b))
 
     # Backward error |Ax - b| / (|A| |x| + |b|) (inf norms), and the score's distance from UMFPACK's.
     norm_a = abs(a).sum(axis=1).max()

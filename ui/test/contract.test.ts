@@ -1,6 +1,13 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import { ContractError, folder, loadIndex, loadReport } from "../src/lib/contract";
+import {
+  type BenchmarkIndex,
+  ContractError,
+  checkReferences,
+  folder,
+  loadIndex,
+  loadReport,
+} from "../src/lib/contract";
 
 const BASE = "https://data.test/ui/";
 const FIXTURES = new URL("fixtures/data/", import.meta.url);
@@ -81,5 +88,84 @@ describe("loadReport", () => {
 describe("folder", () => {
   it("resolves a relative base against the page", () => {
     expect(String(folder("data", "https://site.test/bench/index.html"))).toBe("https://site.test/bench/data/");
+  });
+});
+
+describe("checkReferences", () => {
+  it("passes the fixture index", async () => {
+    const index = await loadIndex(BASE, serve());
+    expect(() => checkReferences(index)).not.toThrow();
+  });
+
+  it("names an id that a record points at but the index does not define", async () => {
+    const index = (await fixture("index.json")) as unknown as BenchmarkIndex;
+    const [first] = index.cases;
+    if (first) first.benchmark = "gone";
+    expect(() => checkReferences(index)).toThrow(/cases\[0\]\.benchmark: no benchmarks entry "gone"/);
+    await expect(loadIndex(BASE, serve({ "index.json": JSON.stringify(index) }))).rejects.toThrow(ContractError);
+  });
+
+  it("checks every kind of reference", async () => {
+    const breaks: [string, (i: BenchmarkIndex) => void][] = [
+      [
+        "benchmarks[0].measures[0]",
+        (i) => {
+          if (i.benchmarks[0]) i.benchmarks[0].measures = ["gone"];
+        },
+      ],
+      [
+        "benchmarks[0].group",
+        (i) => {
+          if (i.benchmarks[0]) i.benchmarks[0].group = "gone";
+        },
+      ],
+      [
+        "environments[0].group",
+        (i) => {
+          if (i.environments[0]) i.environments[0].group = "gone";
+        },
+      ],
+      [
+        "cases[0].environment",
+        (i) => {
+          if (i.cases[0]) i.cases[0].environment = "gone";
+        },
+      ],
+      [
+        "cases[0].noise.gone",
+        (i) => {
+          if (i.cases[0]) i.cases[0].noise = { gone: 0.01 };
+        },
+      ],
+      [
+        "commits[0].group",
+        (i) => {
+          if (i.commits[0]) i.commits[0].group = "gone";
+        },
+      ],
+      [
+        "reports[0].machine",
+        (i) => {
+          if (i.reports[0]) i.reports[0].machine = "gone";
+        },
+      ],
+      [
+        "reports[0].commit",
+        (i) => {
+          if (i.reports[0]) i.reports[0].commit = "gone";
+        },
+      ],
+      [
+        "change_points[0].case",
+        (i) => {
+          if (i.change_points?.[0]) i.change_points[0].case = "gone";
+        },
+      ],
+    ];
+    for (const [where, edit] of breaks) {
+      const index = (await fixture("index.json")) as unknown as BenchmarkIndex;
+      edit(index);
+      expect(() => checkReferences(index), where).toThrow(`${where}:`);
+    }
   });
 });

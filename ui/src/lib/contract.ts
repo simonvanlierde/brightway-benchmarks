@@ -44,7 +44,50 @@ function valid<T>(check: ValidateFunction<T>, data: unknown, url: URL): T {
   throw new ContractError(`${url}: ${ajv.errorsText(check.errors)}`);
 }
 
-/** BASE/index.json, checked against the schema. */
+/** Throw a ContractError for an id a record points at that the index does not define. */
+export function checkReferences(index: BenchmarkIndex): void {
+  const ids = (records: { id: string }[]) => new Set(records.map((r) => r.id));
+  const defined = {
+    groups: ids(index.groups),
+    measures: ids(index.measures),
+    machines: ids(index.machines),
+    environments: ids(index.environments),
+    benchmarks: ids(index.benchmarks),
+    cases: ids(index.cases),
+    commits: new Set(index.commits.map((c) => `${c.group}/${c.id}`)),
+  };
+  const need = (kind: keyof typeof defined, id: string, where: string) => {
+    if (!defined[kind].has(id)) throw new ContractError(`${where}: no ${kind} entry "${id}"`);
+  };
+  index.environments.forEach((e, i) => {
+    need("groups", e.group, `environments[${i}].group`);
+  });
+  index.benchmarks.forEach((b, i) => {
+    need("groups", b.group, `benchmarks[${i}].group`);
+    b.measures.forEach((m, j) => {
+      need("measures", m, `benchmarks[${i}].measures[${j}]`);
+    });
+  });
+  index.cases.forEach((c, i) => {
+    need("benchmarks", c.benchmark, `cases[${i}].benchmark`);
+    need("environments", c.environment, `cases[${i}].environment`);
+    for (const machine of Object.keys(c.noise ?? {})) need("machines", machine, `cases[${i}].noise.${machine}`);
+  });
+  index.commits.forEach((c, i) => {
+    need("groups", c.group, `commits[${i}].group`);
+  });
+  index.reports.forEach((r, i) => {
+    need("groups", r.group, `reports[${i}].group`);
+    need("machines", r.machine, `reports[${i}].machine`);
+    need("commits", `${r.group}/${r.commit}`, `reports[${i}].commit`);
+  });
+  (index.change_points ?? []).forEach((p, i) => {
+    need("cases", p.case, `change_points[${i}].case`);
+    need("machines", p.machine, `change_points[${i}].machine`);
+  });
+}
+
+/** BASE/index.json, checked against the schema and for dangling ids. */
 export async function loadIndex(base: string | URL, fetcher: typeof fetch = fetch): Promise<BenchmarkIndex> {
   const url = new URL("index.json", folder(base));
   const data = await getJson(url, fetcher);
@@ -54,6 +97,7 @@ export async function loadIndex(base: string | URL, fetcher: typeof fetch = fetc
     throw new ContractError(`${url}: format_version ${version}, this UI reads ${FORMAT_VERSION}`);
   }
   const index = valid(checkIndex, data, url);
+  checkReferences(index);
   return { ...index, reports: index.reports.filter((r) => REPORT_FORMATS.includes(r.format)) };
 }
 

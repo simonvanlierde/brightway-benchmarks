@@ -8,7 +8,7 @@
 export type Id = string;
 
 /**
- * index.json: what the reports hold. Every id is a stable slug, so a link to it survives a re-export. A report's metrics are in the file `reports[].path` names, in the format `reports[].format` names (see report.schema.json).
+ * index.json: what the reports hold. Every id is a stable slug, so a link to it survives a re-export. A report's metrics are in the file `reports[].path` names, in the format `reports[].format` names (see report.schema.json). Ids must resolve, which JSON Schema cannot check: each group, measure, machine, environment, benchmark and case a record names is one the index defines, a report's commit is a commit of its group, and a report's keys are case ids.
  */
 export interface BenchmarkIndex {
   /**

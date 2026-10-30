@@ -422,6 +422,18 @@ details.data summary {
   font-size: 0.875rem;
   padding: 4px 0;
 }
+.envs {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 16px;
+  margin: 16px 0 0;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+.envs dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
 .empty {
   border: 1px dashed var(--axis);
   border-radius: 12px;

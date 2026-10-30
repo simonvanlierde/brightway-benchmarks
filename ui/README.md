@@ -57,6 +57,10 @@ Reports have Bencher Metric Format's shape, but their keys are case ids ending i
 they are not for upload to Bencher. A case's id includes its environment's name, which holds
 the pinned versions, so a pin bump starts a new series.
 
+An environment's optional `label` is the name to show, such as the solver it runs; the full name
+stays under the data table. A measure's optional `bounds` says what a metric's lower and upper
+values are, and the chart's caption repeats it.
+
 The index's optional `changes` are worked out before the data is written, not in the browser:
 the UI only draws them. This repository's exporter finds them with a noise threshold between
 releases and with Apache Otava ([scripts/export_ui.py](../scripts/export_ui.py)).

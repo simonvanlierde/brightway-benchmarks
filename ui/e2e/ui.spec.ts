@@ -71,14 +71,14 @@ test("the keyboard reads each release, and the pointer shows the same tip", asyn
   await page.keyboard.press("ArrowRight");
   await expect(said).toContainText("2.0.1 ·");
   await page.keyboard.press("End");
-  await expect(said).toContainText("default:");
-  await expect(page.locator(".chart svg [data-mark='tip']").filter({ hasText: "default:" })).toHaveCount(1);
+  await expect(said).toContainText("SuperLU:");
+  await expect(page.locator(".chart svg [data-mark='tip']").filter({ hasText: "SuperLU:" })).toHaveCount(1);
   await page.keyboard.press("Escape");
   await expect(said).toHaveText("");
   const box = await page.locator(".chart svg").boundingBox();
   if (!box) throw new Error("no chart");
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 4 });
-  await expect(page.locator(".chart svg [data-mark='tip']").filter({ hasText: "default:" })).toHaveCount(1);
+  await expect(page.locator(".chart svg [data-mark='tip']").filter({ hasText: "SuperLU:" })).toHaveCount(1);
   await expect(page.locator(".chart svg g[aria-label]")).toHaveCount(0);
 });
 

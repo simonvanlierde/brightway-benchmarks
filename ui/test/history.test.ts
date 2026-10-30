@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { BenchmarkIndex, BenchmarkReport } from "../src/lib/contract";
 import {
   changesFor,
+  displayNames,
   format,
   latestChanges,
   lines,
@@ -58,6 +59,16 @@ describe("shortNames", () => {
 
   it("keeps a lone environment's whole name", () => {
     expect(shortNames(["py3.12"])).toEqual(["py3.12"]);
+  });
+
+  it("uses the data's labels when they tell every environment apart", () => {
+    const envs = [
+      { name: "uv-py3.12-pypardiso", label: "PyPardiso" },
+      { name: "uv-py3.12", label: "SuperLU" },
+    ];
+    expect(displayNames(envs)).toEqual(["PyPardiso", "SuperLU"]);
+    expect(displayNames([envs[0] ?? { name: "" }, { name: "uv-py3.12" }])).toEqual(["pypardiso", "default"]);
+    expect(displayNames(envs.map((e) => ({ ...e, label: "same" })))).toEqual(["pypardiso", "default"]);
   });
 
   it("keeps whole names when the short ones would clash", () => {

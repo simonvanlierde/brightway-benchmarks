@@ -316,7 +316,9 @@ $effect(() => {
           <figure>
             <HistoryChart lines={shown} {changes} {unit} better={measure?.better} {title} {filename} />
             <figcaption>
-              {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment; shaded: asv's 99% interval.
+              {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment{measure?.bounds
+                ? `; shaded: ${measure.bounds}`
+                : ""}.
               A ring marks a release that moved beyond the case's noise (red worse, green better); a dashed line marks a
               level shift that Apache Otava found along the series.
             </figcaption>
@@ -343,7 +345,7 @@ $effect(() => {
                       <th scope="row" class="nowrap">{label(c.baseline)} → {label(c.commit)}</th>
                       <td class="num {way}">{percent(c.ratio)} {way}</td>
                       <td class="wrap">{short(c.case)}</td>
-                      <td>
+                      <td class="nowrap">
                         {c.method === "release" ? `release vs. noise ${noise(c)}` : `level shift (Otava), p = ${c.pvalue ?? "?"}`}
                       </td>
                     </tr>
@@ -358,7 +360,9 @@ $effect(() => {
             <!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region must take focus to scroll by keyboard -->
             <div class="scroll" role="region" aria-label="Data table" tabindex="0">
               <table>
-                <caption>{title}, {measure?.name ?? ""} on {machine?.name}. Interval: asv's 99% interval.</caption>
+                <caption>
+                  {title}, {measure?.name ?? ""} on {machine?.name}.{measure?.bounds ? ` Range: ${measure.bounds}.` : ""}
+                </caption>
                 <thead>
                   <tr>
                     <th scope="col">Release</th>
@@ -386,6 +390,11 @@ $effect(() => {
                 </tbody>
               </table>
             </div>
+            <dl class="envs">
+              {#each shown as l (l.case)}
+                {#if l.short !== l.name}<dt>{l.short}</dt><dd class="mono">{l.name}</dd>{/if}
+              {/each}
+            </dl>
           </details>
         {/if}
       {/if}

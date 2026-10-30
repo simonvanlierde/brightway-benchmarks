@@ -21,3 +21,5 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   themes, fits a phone, and is checked against WCAG 2.2 AA in browser tests.
 - `changes` in the index (optional, so `format_version` stays 1): where a series moved, by
   release against its noise or as a change point.
+- Optional `label` on environments and `bounds` on measures in the index: the name to show for
+  an environment, and what a metric's lower and upper values are.

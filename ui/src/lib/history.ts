@@ -58,6 +58,13 @@ export function shortNames(names: string[]): string[] {
   return new Set(short).size === short.length ? short : names;
 }
 
+/** What to call each environment: the labels the data gives when they tell all of them apart, else shortNames. */
+export function displayNames(envs: { name: string; label?: string }[]): string[] {
+  const labels = envs.map((e) => e.label);
+  if (labels.every((l): l is string => Boolean(l)) && new Set(labels).size === labels.length) return labels;
+  return shortNames(envs.map((e) => e.name));
+}
+
 export interface Point {
   commit: string;
   /** Position along the x axis: the commit's place in its group, oldest first. */
@@ -87,13 +94,14 @@ export function lines(
   reports: Map<string, BenchmarkReport>,
 ): Line[] {
   const commits = index.commits.filter((c) => c.group === bench.group);
-  const envNames = new Map(index.environments.map((e) => [e.id, e.name]));
+  const envs = new Map(index.environments.map((e) => [e.id, e]));
   const cases = index.cases.filter(
     (c) => c.benchmark === bench.id && c.params.length === params.length && c.params.every((p, i) => p === params[i]),
   );
   const found = cases.map((c) => ({
     env: c.environment,
-    name: envNames.get(c.environment) ?? c.environment,
+    name: envs.get(c.environment)?.name ?? c.environment,
+    label: envs.get(c.environment)?.label,
     case: c.id,
     points: commits.flatMap((commit, at): Point[] => {
       const metric = reports.get(commit.id)?.[c.id]?.[measure];
@@ -113,8 +121,8 @@ export function lines(
     }),
   }));
   const kept = found.filter((l) => l.points.length > 0).sort((a, b) => a.name.localeCompare(b.name));
-  const short = shortNames(kept.map((l) => l.name));
-  return kept.map((l, i) => ({ ...l, short: short[i] ?? l.name }));
+  const short = displayNames(kept.map((l) => (l.label ? { name: l.name, label: l.label } : { name: l.name })));
+  return kept.map(({ label: _, ...l }, i) => ({ ...l, short: short[i] ?? l.name }));
 }
 
 /** The changes on LINES in MEASURE on MACHINE. */
@@ -192,7 +200,7 @@ export function latestChanges(index: BenchmarkIndex): LatestChange[] {
   const envs = new Map<string, string>();
   for (const g of index.groups) {
     const mine = index.environments.filter((e) => e.group === g.id);
-    const short = shortNames(mine.map((e) => e.name));
+    const short = displayNames(mine);
     mine.forEach((e, i) => {
       envs.set(e.id, short[i] ?? e.name);
     });

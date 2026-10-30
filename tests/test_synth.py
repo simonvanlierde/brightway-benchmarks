@@ -107,6 +107,28 @@ def test_same_region_by_length_follows_its_curve():
         assert local[m].mean() == pytest.approx(want, abs=0.06)
 
 
+def test_sector_markets_share_one_pool_across_regions():
+    def jaccard(market_by: str) -> float:
+        """Mean input-list Jaccard of two long lists in one sector and different regions."""
+        s = system("ecoinvent", products=6000, markets=1.0, market_by=market_by)
+        assert s.region is not None
+        assert s.sector is not None
+        x = (s.technosphere() != 0).astype(np.float64).tolil()
+        x.setdiag(0)
+        x = x.tocsc()
+        x.eliminate_zeros()
+        length = np.diff(x.indptr)
+        long = np.flatnonzero(length >= s.profile.market_min)
+        q = x[:, long]
+        shared = (q.T @ q).toarray()
+        jac = shared / (length[long][:, None] + length[long][None, :] - shared)
+        sector, region = s.sector[long], s.region[long]
+        pair = (sector[:, None] == sector[None, :]) & (region[:, None] != region[None, :])
+        return float(jac[pair].mean())
+
+    assert jaccard("sector") > 2 * jaccard("region")  # 0.18 against 0.075 at seed 0
+
+
 def test_bw2data_form_has_every_exchange():
     s = system("smoke")
     bio, tech, cfs = as_bw2data(s)

@@ -99,8 +99,9 @@ class Profile:
     copy_zipf: float = 2.1  # runs have 1 + Zipf(copy_zipf) products: mostly pairs, a few dozens
     copy_max: int = 60  # caps the longest runs
     copy_keep: float = 1.0  # share of the template's list a run member takes; it keeps the rest of its own
-    markets: float = 0.0  # share of a long input list drawn from its region's pool, as markets of one product do
+    markets: float = 0.0  # share of a long input list drawn from its pool (market_by), as markets of one product do
     market_min: int = 17  # shortest input list (in draws) that counts as a market
+    market_by: str = "region"  # whose pool a market draws from: its region's, or its sector's across regions
     amount_sigma: float = 3.5  # lognormal spread of input amounts within a column, before units
     units: float = 0.3  # standard deviation of log10 of each product's unit
     radius: float = 0.78  # spectral radius of X
@@ -507,8 +508,9 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
 
     rows, cols, pool = rows[found], cols[found], pool[found]
     # Not the inputs every seller's first consumer takes: without them some suppliers would sell to nobody.
-    if p.markets:  # a region's markets share one pool; draws from the consumer's own sector stay its own
-        rows[pool != 2] = _market_lists(rng, rows[pool != 2], cols[pool != 2], groups[1], p)
+    if p.markets:  # one pool per region or sector; draws from the consumer's own sector (region) stay its own
+        own = {"region": 2, "sector": 1}[p.market_by]
+        rows[pool != own] = _market_lists(rng, rows[pool != own], cols[pool != own], groups[3 - own], p)
     if p.bundles:
         cols, rows = _copy_lists(rng, cols, rows, p, p.bundles)
     if p.copies:

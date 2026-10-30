@@ -147,3 +147,10 @@ def test_cli_prints_a_markdown_table(tmp_path: Path):
     assert lines[2:] == [
         "| m/uv-py3.12 | 2.0 → 3.0 | SingleScore.time_first_score | 'ecoinvent', 'LCA' | 1 s | 2 s | 2.00 |"
     ]
+
+
+def test_a_commit_listed_by_its_hash_needs_no_mirror(module: ModuleType, tmp_path: Path, capsys: pytest.CaptureFixture):
+    commit = "106d62717c8867012fd9a91a46726c66c898f162"  # asv names its results by the hash itself
+    (tmp_path / "asv" / "s.hashes").write_text(f"1.0\n{commit}\n")
+    module.changes(tmp_path / "results", "s")
+    assert "lacks" not in capsys.readouterr().err

@@ -1,0 +1,8 @@
+# Its own workspace root, so ui/ can move into a repository of its own.
+# Resolve only releases at least two weeks old, transitive ones included.
+minimumReleaseAge: 20160
+# A security fix may land sooner: fast-uri 3.1.9 (ajv's) fixes GHSA-w74x-v6f9-j3xg and
+# GHSA-wjr9-j795-jxcr. Drop both lines on or after 2026-11-02, when it is two weeks old.
+minimumReleaseAgeExclude: [fast-uri@3.1.9]
+overrides:
+  fast-uri: 3.1.9

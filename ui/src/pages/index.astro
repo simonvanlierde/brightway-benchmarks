@@ -1,0 +1,20 @@
+---
+import BenchmarkList from "../components/BenchmarkList.svelte";
+
+const base = import.meta.env.PUBLIC_DATA_URL ?? "data/";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Benchmarks</title>
+  </head>
+  <body>
+    <main>
+      <h1>Benchmarks</h1>
+      <BenchmarkList client:load base={base} />
+    </main>
+  </body>
+</html>

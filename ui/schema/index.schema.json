@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:benchmark-ui:schema:index:1",
+  "title": "BenchmarkIndex",
+  "description": "index.json: what the reports hold. Ids are stable slugs, and each id a record names must be one the index defines; a report's commit must be one of its group's. Each report is the file at `reports[].path`, in the format `reports[].format` names.",
+  "type": "object",
+  "required": [
+    "format_version",
+    "generated_at",
+    "project",
+    "groups",
+    "measures",
+    "machines",
+    "environments",
+    "benchmarks",
+    "cases",
+    "commits",
+    "reports"
+  ],
+  "properties": {
+    "format_version": {
+      "description": "Raised for any change but an added optional field, which readers ignore.",
+      "const": 1
+    },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "project": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "links": { "type": "array", "items": { "$ref": "#/$defs/link" } }
+      }
+    },
+    "groups": {
+      "description": "What the page groups benchmarks by, such as the package they time.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "name": { "type": "string" },
+          "url": { "type": "string", "format": "uri" }
+        }
+      }
+    },
+    "measures": {
+      "description": "The id is the measure's key in reports.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "unit"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "name": { "type": "string" },
+          "unit": { "description": "Such as ns or B.", "type": "string" },
+          "better": { "description": "Which way is an improvement.", "enum": ["lower", "higher"] },
+          "statistic": {
+            "description": "How a value sums up its samples, such as median or max.",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "machines": {
+      "description": "Results from two machines are never pooled.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": { "id": { "$ref": "#/$defs/id" }, "name": { "type": "string" } }
+      }
+    },
+    "environments": {
+      "description": "What a case ran in, such as a Python version and its packages.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "group", "name"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "group": { "$ref": "#/$defs/id" },
+          "name": { "type": "string" }
+        }
+      }
+    },
+    "benchmarks": {
+      "description": "One timed function and the parameter axes it runs over.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "group", "name", "measures", "params"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "group": { "$ref": "#/$defs/id" },
+          "name": { "type": "string" },
+          "measures": {
+            "description": "The measure ids its metrics use.",
+            "type": "array",
+            "items": { "$ref": "#/$defs/id" },
+            "minItems": 1
+          },
+          "params": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "values"],
+              "properties": {
+                "name": { "type": "string" },
+                "values": {
+                  "description": "As cases give them, in display order.",
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "labels": {
+                  "description": "How to show each value; without it, show the values.",
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "cases": {
+      "description": "One benchmark at one parameter set in one environment: one line on a chart. The id is its key in reports.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "benchmark", "environment", "params"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "benchmark": { "$ref": "#/$defs/id" },
+          "environment": { "$ref": "#/$defs/id" },
+          "params": {
+            "description": "One value per axis of the benchmark, in the same order.",
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "commits": {
+      "description": "Commits with results, oldest first within a group.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "group", "date"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[0-9a-f]{7,64}$" },
+          "group": { "$ref": "#/$defs/id" },
+          "date": { "type": "string", "format": "date-time" },
+          "release": {
+            "description": "The name to show if the commit is a release, such as its tag; not an id.",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "reports": {
+      "description": "One file per commit, group and machine.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "format", "group", "machine", "commit"],
+        "properties": {
+          "path": {
+            "description": "Relative to index.json, never above it.",
+            "type": "string",
+            "pattern": "^(?!.*\\.\\.)[a-z0-9][a-z0-9/._-]*\\.json$"
+          },
+          "format": {
+            "description": "Format and version, such as bmf/v0. Readers skip formats they don't know.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+/v[0-9]+$"
+          },
+          "group": { "$ref": "#/$defs/id" },
+          "machine": { "$ref": "#/$defs/id" },
+          "commit": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 64 },
+    "link": {
+      "type": "object",
+      "required": ["name", "url"],
+      "properties": { "name": { "type": "string" }, "url": { "type": "string", "format": "uri" } }
+    }
+  }
+}

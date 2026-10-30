@@ -20,7 +20,7 @@ unlinked counts. Never a dataset's name or amount.
 A numbered size is a seeded random sample of the release's dataset files, the same for every
 bw2io release. bw2io's ``delete_exchanges_missing_activity`` deletes inputs from outside the
 sample, so a subset writes fewer exchanges per dataset; the full release must link. The
-synthetic release must link at every size and import exactly the system's exchanges.
+synthetic release must link at every size and import the exchanges the writer reports.
 
     python scripts/bw2io_import.py RELEASE SIZES [PYTHON...]   # driver; default PYTHON: this one
     python scripts/bw2io_import.py --one RELEASE SIZE          # one import, in this interpreter
@@ -85,8 +85,8 @@ def synthetic(size: str, root: Path) -> tuple[Path, dict]:
     from bwbench.synth import system  # noqa: PLC0415
 
     s = system(size)
-    expect = {"datasets": s.profile.products, "exchanges": s.tech_rows.size + s.bio_rows.size, "unlinked": 0}
-    return write_ecospold(s, root, biosphere3_flows()), expect
+    expect = {"datasets": s.profile.products, "unlinked": 0}
+    return root, expect | {"exchanges": write_ecospold(s, root, biosphere3_flows())}
 
 
 def one(release: str, size: str) -> dict:  # noqa: PLR0915 - one import, step by step

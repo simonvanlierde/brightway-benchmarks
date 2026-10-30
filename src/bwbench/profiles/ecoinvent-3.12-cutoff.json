@@ -9,6 +9,44 @@
     "numpy": "2.5.3",
     "scipy": "1.18.1"
   },
+  "ecospold": {
+    "per_dataset": "means over the release's dataset files, measured 2026-10-29; pairs are [mean count, mean characters]; bytes is file size",
+    "bytes": 137000,
+    "elementary_exchanges": 20.9,
+    "properties": 210,
+    "lognormal_uncertainties": 25,
+    "comments": {
+      "property": [
+        37.95,
+        84
+      ],
+      "elementaryExchange": [
+        14.15,
+        205
+      ],
+      "intermediateExchange": [
+        12.78,
+        167
+      ],
+      "uncertainty": [
+        7.48,
+        91
+      ],
+      "parameter": [
+        1.75,
+        288
+      ]
+    },
+    "general_comment": [
+      4.36,
+      286
+    ],
+    "review_details": [
+      3.59,
+      4442
+    ],
+    "parameters": 1.9
+  },
   "stats": {
     "products": 26533,
     "entries": 311662,

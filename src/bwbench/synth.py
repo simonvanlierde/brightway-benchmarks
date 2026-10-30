@@ -134,6 +134,9 @@ PROFILES: dict[str, Profile] = {
     "regional": replace(ECOINVENT, products=250_000),
     # The earlier generator at about ecoinvent's size: L+U fills to about 60% of a dense matrix.
     "stress-random": Profile(products=20_000, flows=4_000, builder="random", inputs=8),
+    # USEEIO 1.1, the real system (bwbench.useeio). Its data come from a pinned archive, so
+    # the generator's version says nothing about it and `profile_version` leaves it out.
+    "useeio": Profile(products=388, flows=1_871, builder="useeio", methods=3, target="USEEIO-1.1"),
 }
 
 
@@ -273,6 +276,13 @@ def system(name: str, *, seed: int = 0, uncertain: bool = False, **overrides: ob
 # Keyed on the resolved profile, not its name, so an edited profile never returns a stale system.
 @functools.lru_cache(maxsize=4)  # benchmark setups ask for the same system before every sample
 def _build(name: str, p: Profile, seed: int, uncertain: bool) -> System:  # noqa: FBT001
+    if p.builder == "useeio":
+        from bwbench import useeio  # noqa: PLC0415 - it imports this module
+
+        if uncertain:
+            msg = "USEEIO has no uncertainty here: its Monte Carlo case is not defined"
+            raise NotImplementedError(msg)
+        return useeio.system(p, seed)
     rng = np.random.default_rng(seed)
     n = p.products
     region = sector = None
@@ -621,7 +631,8 @@ def profile_version() -> str:
     It covers every registered profile, not the ones a run selects, so runs over different
     sizes share one history. asv drops results whose version differs.
     """
-    return f"{GENERATOR_VERSION}-{_short_hash(sorted((n, p.digest()) for n, p in PROFILES.items()), 8)}"
+    generated = sorted((n, p.digest()) for n, p in PROFILES.items() if p.builder != "useeio")
+    return f"{GENERATOR_VERSION}-{_short_hash(generated, 8)}"
 
 
 def load(folder: Path) -> Packages:

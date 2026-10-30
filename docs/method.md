@@ -50,6 +50,20 @@ Review text, which bw2io skips, makes up the rest. At `ecoinvent` size the impor
 against 4.5 GB for the real release. `just bw2io-import RELEASE_FOLDER all` does the same on a
 licensed release, read-only.
 
+## The real database
+
+`BWBENCH_SIZES=useeio` runs the cases on USEEIO 1.1, the US EPA's input-output model: 388
+commodities, 1,871 flows, and three of its impact categories (GCC, ACID, ETOX). It is
+public domain, a US government work. It is the project archive that
+`bw2io.install_project("USEEIO-1.1")` fetches from
+[files.brightway.dev](https://files.brightway.dev/USEEIO-1.1.tar.gz), downloaded once into the
+cache and checked against a pinned SHA-256 ([`src/bwbench/useeio.py`](../src/bwbench/useeio.py)).
+The harness reads the matrices from the archive's processed datapackages and only renumbers their
+ids, so the values are the model's own. Its reference scores come from a solve with no Brightway
+code, like the synthetic ones. It is small, so it times a real structure with negative inputs and
+duplicate exchanges, not the cost of a large factorization. Only timings are published, never scores.
+It has no Monte Carlo case.
+
 ## How the results stay reproducible
 
 - [asv](https://asv.readthedocs.io) runs every release of a package on one fixed set of

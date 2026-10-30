@@ -31,6 +31,7 @@ HEADER = ("environment", "releases", "case", "parameters", "old", "new", "new / 
 THRESHOLD = 0.05  # pinned run-to-run noise is 0.4 to 1.5% (just noise)
 GB = 1e9
 STACK = re.compile(r"-BWBENCH_STACK([0-9a-f]+)")
+SHA = re.compile(r"[0-9a-f]{40}")
 
 
 @dataclass(frozen=True)
@@ -72,7 +73,8 @@ def changes(results: Path, subject: str, threshold: float = THRESHOLD) -> list[C
     folder = results / subject
     tags = Path(f"asv/{subject}.hashes").read_text().split()
     order = {sha(Path(".asv") / subject, t): t for t in tags}
-    unresolved = [t for c, t in order.items() if c == t[:8]]  # sha() falls back to the tag itself
+    # sha() falls back to the tag itself; a commit listed by its full hash needs no mirror
+    unresolved = [t for c, t in order.items() if c == t[:8] and not SHA.fullmatch(t)]
     if unresolved:  # a missing or stale mirror would otherwise compare older releases unannounced
         missing = ", ".join(unresolved)
         print(f"release_changes: .asv/{subject} lacks {missing}; `just bench {subject}` refreshes it", file=sys.stderr)

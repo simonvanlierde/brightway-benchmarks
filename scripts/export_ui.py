@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-from release_changes import STACK
+from release_changes import SHA, STACK
 from release_report import sha
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
@@ -47,7 +47,6 @@ MEASURE_INFO = [
     {"id": "peak-memory", "name": "Peak memory", "unit": "B"},
 ]
 REPORT_FORMAT = "bmf/v0"
-SHA = re.compile(r"[0-9a-f]{40}")
 
 
 def slug(name: str) -> str:

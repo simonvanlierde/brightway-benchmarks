@@ -10,7 +10,7 @@ function tokens(block: string): Record<string, string> {
 }
 
 const light = tokens(css.slice(0, css.indexOf("@media")));
-const dark = tokens(css.slice(css.indexOf(':root[data-theme="dark"]'), css.indexOf("* {")));
+const dark = tokens(css.slice(css.indexOf("@media (prefers-color-scheme: dark)"), css.indexOf("* {")));
 
 function luminance(hex: string): number {
   const [r, g, b] = [1, 3, 5].map((i) => {

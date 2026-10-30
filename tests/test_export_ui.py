@@ -473,8 +473,8 @@ def test_environments_are_labelled_by_their_solver_and_blas(export_ui: ModuleTyp
     assert export_ui.solver_labels(conda) == ["UMFPACK, MKL", "PyPardiso, MKL", "UMFPACK, OpenBLAS", "SuperLU"]
     # No solver pinned anywhere: the names differ in something else, so no labels.
     assert export_ui.solver_labels(["uv-py3.12-bw_processing1.6", "uv-py3.12-bw_processinggit"]) is None
-    # Two that would read the same keep their names.
-    assert export_ui.solver_labels(["a-pypardiso", "b-pypardiso"]) is None
+    # Two that read the same: the UI sees the clash and shows their full names.
+    assert export_ui.solver_labels(["a-pypardiso", "b-pypardiso"]) == ["PyPardiso", "PyPardiso"]
 
 
 def test_the_label_lands_in_the_index(export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

@@ -82,14 +82,8 @@ def runs(folder: Path) -> dict[tuple[str, str], list[dict]]:
     return {key: [stacks[pick(stacks, current)] for _, stacks in sorted(envs.items())] for key, envs in found.items()}
 
 
-def metrics(
-    data: dict, kinds: dict[str, str], spread: dict | None = None
-) -> list[tuple[str, tuple[str, ...], str, dict]]:
-    """(case, parameter values, measure, BMF metric) for each value in one asv result file.
-
-    SPREAD, if given, gets each value's interquartile range over the value, keyed by (case,
-    parameter values), where asv recorded the quartiles.
-    """
+def metrics(data: dict, kinds: dict[str, str]) -> list[tuple[str, tuple[str, ...], str, dict]]:
+    """(case, parameter values, measure, BMF metric) for each value in one asv result file."""
     out = []
     columns = data.get("result_columns", ["result", "params"])
     for name, row in data["results"].items():
@@ -110,10 +104,15 @@ def metrics(
             a, b = (q25[i], q75[i]) if q25 and q75 and i < min(len(q25), len(q75)) else (None, None)
             if a is not None and b is not None and math.isfinite(a) and math.isfinite(b) and 0 <= a <= value <= b:
                 metric |= {"lower_value": a * scale, "upper_value": b * scale}
-                if spread is not None and value > 0:
-                    spread[name, point] = (b - a) / value
             out.append((name, point, measure, metric))
     return out
+
+
+def spread(metric: dict) -> float | None:
+    """The middle half of the samples over the value, where the metric has its quartiles."""
+    if "lower_value" not in metric or metric["value"] <= 0:
+        return None
+    return (metric["upper_value"] - metric["lower_value"]) / metric["value"]
 
 
 def iso(ms: int) -> str:
@@ -138,20 +137,14 @@ class Catalog:
     cases: dict[str, dict] = field(default_factory=dict)
     warned: set[tuple[str, str]] = field(default_factory=set)
 
-    def report(
-        self, subject: str, files: list[dict], info: dict[str, dict], spread: dict[str, float] | None = None
-    ) -> dict[str, dict]:
-        """One BMF report from the result files of one commit on one machine, one stack each.
-
-        SPREAD, if given, gets each case's spread (see ``metrics``) by case id.
-        """
+    def report(self, subject: str, files: list[dict], info: dict[str, dict]) -> dict[str, dict]:
+        """One BMF report from the result files of one commit on one machine, one stack each."""
         group, kinds = slug(subject), {k: v.get("type", "") for k, v in info.items()}
         report: dict[str, dict] = {}
         for data in files:
             env = STACK.sub("", data["env_name"])
             env_id = slug(f"{subject}/{env}")
-            spreads: dict[tuple[str, tuple[str, ...]], float] = {}
-            for name, point, measure, metric in metrics(data, kinds, spreads):
+            for name, point, measure, metric in metrics(data, kinds):
                 names = info[name].get("param_names", [])
                 if len(point) != len(names):  # the values would land on the wrong axes
                     if (subject, name) not in self.warned:
@@ -184,8 +177,6 @@ class Catalog:
                 if case["id"] in report:  # two stacks of one environment: one would overwrite the other
                     sys.exit(f"export_ui: {key} twice in one report")
                 report[case["id"]] = {measure: metric}
-                if spread is not None and (name, point) in spreads:
-                    spread[case["id"]] = spreads[name, point]
         return report
 
     def order(self, subject: str, info: dict[str, dict]) -> None:
@@ -214,8 +205,8 @@ BLAS = [(re.compile(r"(^|-)(libblas_=__)?mkl"), "MKL"), (re.compile(r"openblas")
 def solver_labels(names: list[str]) -> list[str] | None:
     """A solver name for each environment in NAMES, with its BLAS where the name pins one.
 
-    None when no name pins a solver, so the labels would tell nothing apart, or when two
-    environments would get the same label.
+    None when no name pins a solver, so the labels would tell nothing apart. Labels that clash
+    are fine here: the UI then shows the full names.
     """
     if not any(rx.search(n) for n in names for rx, _ in SOLVERS):
         return None
@@ -224,7 +215,7 @@ def solver_labels(names: list[str]) -> list[str] | None:
         solver = next((text for rx, text in SOLVERS if rx.search(n)), "SuperLU")
         blas = next((text for rx, text in BLAS if rx.search(n)), None)
         labels.append(f"{solver}, {blas}" if blas else solver)
-    return labels if len(set(labels)) == len(labels) else None
+    return labels
 
 
 def label(value: str) -> str:
@@ -326,14 +317,13 @@ def export(results: Path, out: Path) -> dict:
         groups.append({"id": group, "name": subject} | ({"url": conf["project_url"]} if "project_url" in conf else {}))
         info = {k: v for k, v in json.loads(meta.read_text()).items() if isinstance(v, dict)}  # skips "version"
         dates: dict[str, int] = {}
-        found: list[tuple[str, str, dict, dict]] = []  # (machine id, commit, report, spread)
+        found: list[tuple[str, str, dict]] = []  # (machine id, commit, report)
         for (machine, commit), files in sorted(runs(meta.parent).items()):
-            spread: dict[str, float] = {}
-            report = catalog.report(subject, files, info, spread)
+            report = catalog.report(subject, files, info)
             if not report:
                 continue
             machine_id = machines.setdefault(machine, {"id": slug(machine), "name": machine})["id"]
-            found.append((machine_id, commit, report, spread))
+            found.append((machine_id, commit, report))
             dates[commit] = max(dates.get(commit, 0), *(f["date"] for f in files))
             path = f"reports/{group}/{machine_id}/{commit}.json"
             write(out / path, report)
@@ -349,10 +339,10 @@ def export(results: Path, out: Path) -> dict:
             tag = tags.get(commit[:8])
             commits.append({"id": commit, "group": group, "date": iso(date)} | ({"release": tag} if tag else {}))
         order = {c: (d, c) for c, d in dates.items()}
-        for machine_id, commit, report, spread in sorted(found, key=lambda f: order[f[1]]):
+        for machine_id, commit, report in sorted(found, key=lambda f: order[f[1]]):
             for case, metric in report.items():
                 for measure, m in metric.items():
-                    series.setdefault((case, machine_id, measure), []).append((commit, m["value"], spread.get(case)))
+                    series.setdefault((case, machine_id, measure), []).append((commit, m["value"], spread(m)))
     released = {c["id"] for c in commits if "release" in c}
     index = {
         "format_version": 1,

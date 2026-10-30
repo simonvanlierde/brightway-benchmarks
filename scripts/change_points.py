@@ -2,6 +2,13 @@
 # /// script
 # requires-python = ">=3.12,<3.14"
 # dependencies = ["apache-otava==0.8.0"]
+#
+# [tool.uv]
+# # Otava's CLI, database and Slack parts; compute_change_points needs none of them.
+# exclude-dependencies = [
+#   "configargparse", "dateparser", "google-cloud-bigquery", "pg8000", "pystache",
+#   "python-dateutil", "requests", "ruamel-yaml", "slack-sdk", "tabulate", "validators",
+# ]
 # ///
 """Apache Otava's change points in each series: ``uv run scripts/change_points.py < SERIES``.
 

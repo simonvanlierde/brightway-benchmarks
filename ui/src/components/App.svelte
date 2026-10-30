@@ -1,7 +1,15 @@
 <script lang="ts">
-import { type BenchmarkIndex, type BenchmarkReport, loadIndex, loadReport, type Report } from "../lib/contract";
+import {
+  type BenchmarkIndex,
+  type BenchmarkReport,
+  ContractError,
+  loadIndex,
+  loadReport,
+  type Report,
+} from "../lib/contract";
 import {
   axisLabels,
+  breakable,
   changesFor,
   format,
   type Line,
@@ -9,6 +17,7 @@ import {
   lines as linesOf,
   percent,
   pickParams,
+  pText,
   readView,
   type View,
   verdict,
@@ -20,9 +29,11 @@ let { base }: { base: string } = $props();
 
 let index = $state<BenchmarkIndex>();
 let error = $state<string>();
+let errorKind = $state<ContractError["kind"]>("invalid");
 let view = $state<View>(readView(location.search));
 let reports = $state<Map<string, BenchmarkReport>>();
 let reportError = $state<string>();
+let missing = $state(0); // reports that did not load; the chart draws the rest
 const cache = new Map<string, Promise<BenchmarkReport>>();
 // The rail is a disclosure on a phone and always open beside the view on a wide screen.
 const WIDE = "(min-width: 60rem)";
@@ -44,6 +55,7 @@ $effect(() => {
     },
     (reason: unknown) => {
       error = String(reason);
+      errorKind = reason instanceof ContractError ? reason.kind : "missing";
     },
   );
   const back = () => {
@@ -90,7 +102,8 @@ $effect(() => {
   let current = true;
   reports = undefined;
   reportError = undefined;
-  Promise.all(
+  missing = 0;
+  Promise.allSettled(
     list.map((r) => {
       let p = cache.get(r.path);
       if (!p) {
@@ -100,14 +113,14 @@ $effect(() => {
       }
       return p.then((data) => [r.commit, data] as const);
     }),
-  ).then(
-    (pairs) => {
-      if (current) reports = new Map(pairs);
-    },
-    (reason: unknown) => {
-      if (current) reportError = String(reason);
-    },
-  );
+  ).then((settled) => {
+    if (!current) return;
+    const pairs = settled.flatMap((s) => (s.status === "fulfilled" ? [s.value] : []));
+    const failed = settled.flatMap((s) => (s.status === "rejected" ? [String(s.reason)] : []));
+    missing = failed.length;
+    if (pairs.length === 0) reportError = failed[0] ?? "no reports";
+    else reports = new Map(pairs);
+  });
   return () => {
     current = false;
   };
@@ -131,6 +144,14 @@ const label = (id: string) => {
 };
 const short = (caseId: string) => shown.find((l) => l.case === caseId)?.short ?? caseId;
 const latest = $derived(index ? latestChanges(index) : []);
+const exported = $derived(index?.changes !== undefined);
+const worse = $derived(latest.filter((r) => r.way === "worse").length);
+const HINTS: Record<ContractError["kind"], string> = {
+  missing: "Check that index.json is in the data folder this site was built with, then reload.",
+  version: "The data is in a newer or older format than this page reads: rebuild the site, or export the data again.",
+  invalid:
+    "The data does not have the shape the schema gives: export it again with the exporter that matches this site.",
+};
 const unit = $derived(measure?.unit ?? "");
 const tableRows = $derived(
   commits
@@ -161,6 +182,7 @@ $effect(() => {
 });
 </script>
 
+<a class="skip" href="#main">Skip to the results</a>
 <header class="top">
   <div class="top-inner">
     <h1><a href={location.pathname} onclick={(e) => follow(e, { params: [] })}>{index?.project.name ?? "Benchmarks"}</a></h1>
@@ -176,16 +198,15 @@ $effect(() => {
 
 <div class="frame">
   {#if error}
-    <main class="view">
+    <main class="view" id="main" tabindex="-1">
       <div class="empty" role="alert">
         <p><strong>The benchmark data did not load.</strong></p>
         <p class="mono">{error}</p>
-        <p>Check that <code>index.json</code> is in the data folder this site was built with, then reload.</p>
+        <p>{HINTS[errorKind]}</p>
       </div>
     </main>
   {:else if !index}
-    <div></div>
-    <main class="view" aria-busy="true">
+    <main class="view" id="main" tabindex="-1" aria-busy="true">
       <p aria-live="polite">Loading the benchmarks…</p>
       <div class="skeleton"></div>
     </main>
@@ -205,7 +226,8 @@ $effect(() => {
                 <a
                   href={writeView(next)}
                   aria-current={b.id === bench?.id ? "page" : undefined}
-                  onclick={(e) => follow(e, next)}>{b.name}</a
+                  onclick={(e) => follow(e, next)}
+                  >{#each breakable(b.name) as part, k (k)}{part}<wbr />{/each}</a
                 >
               </li>
             {/each}
@@ -214,7 +236,7 @@ $effect(() => {
       </details>
     </nav>
 
-    <main class="view">
+    <main class="view" id="main" tabindex="-1">
       {#if !bench}
         <header>
           <h2>What moved in the latest releases</h2>
@@ -223,12 +245,17 @@ $effect(() => {
             case's measured noise, which the exporter worked out from each run's spread.
           </p>
         </header>
-        {#if latest.length === 0}
+        {#if !exported}
+          <p class="empty">Changes were not exported with this data, so there is nothing to compare here.</p>
+        {:else if latest.length === 0}
           <p class="empty">Nothing moved beyond its noise in any package's latest release.</p>
         {:else}
-          <div class="scroll gap">
+          <!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region must take focus to scroll by keyboard -->
+          <div class="scroll gap" role="region" aria-label="Latest changes" tabindex="0">
             <table>
-              <caption>{latest.length} cases moved beyond their noise, largest change first.</caption>
+              <caption>
+                {worse} worse, {latest.length - worse} better, beyond their noise; worse first, then the largest change.
+              </caption>
               <thead>
                 <tr>
                   <th scope="col">Benchmark</th>
@@ -239,17 +266,17 @@ $effect(() => {
               </thead>
               <tbody>
                 {#each latest as row, i (i)}
-                  {@const m = index.measures.find((x) => x.id === row.change.measure)}
-                  {@const way = verdict(row.change.ratio, m?.better)}
                   {@const next = { bench: row.bench.id, params: row.params, measure: row.change.measure }}
                   <tr>
                     <th scope="row" class="wrap">
                       <span class="quiet">{row.group.name}</span><br />
-                      <a href={writeView(next)} onclick={(e) => follow(e, next)}>{row.bench.name}</a>
+                      <a href={writeView(next)} onclick={(e) => follow(e, next)}
+                        >{#each breakable(row.bench.name) as part, k (k)}{part}<wbr />{/each}</a
+                      >
                       {#if row.params.length}<br /><span class="quiet">{row.params.join(", ")}</span>{/if}
                     </th>
                     <td class="num">
-                      <span class={way}>{percent(row.change.ratio)} {way}</span><br />
+                      <span class={row.way}>{percent(row.change.ratio)} {row.way}</span><br />
                       <span class="quiet">noise {noise(row.change)}</span>
                     </td>
                     <td class="wrap">{row.env}</td>
@@ -262,7 +289,7 @@ $effect(() => {
         {/if}
       {:else}
         <header>
-          <h2>{bench.name}</h2>
+          <h2>{#each breakable(bench.name) as part, k (k)}{part}<wbr />{/each}</h2>
           <p>
             {#if group?.url}<a href={group.url}>{group.name}</a>{:else}{group?.name}{/if}
             · {measure?.name ?? measureId}{measure?.statistic ? `, ${measure.statistic}` : ""}{measure?.better
@@ -274,16 +301,23 @@ $effect(() => {
         <div class="controls">
           {#each bench.params as axis, i (axis.name)}
             {@const labels = axisLabels(bench)[i] ?? []}
-            <div class="field">
-              <label for="axis-{i}">{axis.name}</label>
-              <select
-                id="axis-{i}"
-                value={labels[axis.values.indexOf(params[i] ?? "")]}
-                onchange={(e) => setParam(i, e.currentTarget.value)}
-              >
-                {#each labels as l (l)}<option>{l}</option>{/each}
-              </select>
-            </div>
+            {#if labels.length === 1}
+              <div class="field">
+                <span class="label">{axis.name}</span>
+                <span class="fixed">{labels[0]}</span>
+              </div>
+            {:else}
+              <div class="field">
+                <label for="axis-{i}">{axis.name}</label>
+                <select
+                  id="axis-{i}"
+                  value={labels[axis.values.indexOf(params[i] ?? "")]}
+                  onchange={(e) => setParam(i, e.currentTarget.value)}
+                >
+                  {#each labels as l (l)}<option>{l}</option>{/each}
+                </select>
+              </div>
+            {/if}
           {/each}
           {#if bench.measures.length > 1}
             <div class="field">
@@ -313,6 +347,11 @@ $effect(() => {
             value above.
           </p>
         {:else}
+          {#if missing > 0}
+            <p class="empty" role="status">
+              {missing} of {wanted.length} reports did not load, so their releases are missing below.
+            </p>
+          {/if}
           <figure>
             <HistoryChart lines={shown} {changes} {unit} better={measure?.better} {title} {filename} />
             <figcaption>
@@ -325,10 +364,13 @@ $effect(() => {
           </figure>
 
           <h3 id="changes-h">Changes</h3>
-          {#if changes.length === 0}
+          {#if !exported}
+            <p class="quiet">Changes were not exported with this data.</p>
+          {:else if changes.length === 0}
             <p class="quiet">Nothing moved beyond its noise here.</p>
           {:else}
-            <div class="scroll">
+            <!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region must take focus to scroll by keyboard -->
+            <div class="scroll" role="region" aria-label="Changes" tabindex="0">
               <table aria-labelledby="changes-h">
                 <thead>
                   <tr>
@@ -346,7 +388,7 @@ $effect(() => {
                       <td class="num {way}">{percent(c.ratio)} {way}</td>
                       <td class="wrap">{short(c.case)}</td>
                       <td class="nowrap">
-                        {c.method === "release" ? `release vs. noise ${noise(c)}` : `level shift (Otava), p = ${c.pvalue ?? "?"}`}
+                        {c.method === "release" ? `release vs. noise ${noise(c)}` : `level shift (Otava), ${pText(c.pvalue)}`}
                       </td>
                     </tr>
                   {/each}

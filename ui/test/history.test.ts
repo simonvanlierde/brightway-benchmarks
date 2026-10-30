@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import type { BenchmarkIndex, BenchmarkReport } from "../src/lib/contract";
 import {
+  breakable,
   changesFor,
   displayNames,
   format,
@@ -9,9 +10,11 @@ import {
   lines,
   percent,
   pickParams,
+  pText,
   readView,
   shortNames,
   sig,
+  ticksFor,
   verdict,
   writeView,
 } from "../src/lib/history";
@@ -103,11 +106,37 @@ describe("lines", () => {
   });
 });
 
+describe("ticksFor", () => {
+  it("prefers points with a release name, spread evenly, and keeps the last", () => {
+    const steps = ["1.0", "aaaa1111", "1.1", "bbbb2222", "1.2", "1.3", "1.4"].map((label) => ({
+      label,
+      released: !/^[0-9a-f]{8}$/.test(label),
+    }));
+    expect(ticksFor(steps, 3)).toEqual(["1.0", "1.2", "1.4"]);
+    expect(ticksFor(steps, 20)).toEqual(["1.0", "1.1", "1.2", "1.3", "1.4"]);
+    expect(ticksFor([{ label: "aaaa1111", released: false }], 3)).toEqual(["aaaa1111"]);
+  });
+});
+
+describe("breakable", () => {
+  it("cuts after dots and underscores, losing nothing", () => {
+    expect(breakable("bench_lca.MultiScores.time_scores")).toEqual([
+      "bench_",
+      "lca.",
+      "MultiScores.",
+      "time_",
+      "scores",
+    ]);
+    expect(breakable("plain")).toEqual(["plain"]);
+  });
+});
+
 describe("latestChanges", () => {
   it("lists the moves into each group's newest release", async () => {
     const [index] = await fixture();
     const [first, ...rest] = latestChanges(index);
     expect(rest).toEqual([]);
+    expect(first?.way).toBe("better"); // 2 s to 1 s, and lower is better
     expect([first?.from, first?.to, first?.params, first?.env, first?.bench.name]).toEqual([
       "1.0",
       "1.1",
@@ -126,6 +155,12 @@ describe("numbers", () => {
     expect(verdict(1.2, undefined)).toBe("moved");
   });
 
+  it("shows a tiny p-value as a bound, not as zero", () => {
+    expect(pText(0)).toBe("p < 0.001");
+    expect(pText(0.0123)).toBe("p = 0.012");
+    expect(pText(undefined)).toBe("p unknown");
+  });
+
   it("rounds percents to whole numbers from 2% up", () => {
     expect(percent(1.123)).toBe("+12%");
     expect(percent(0.916)).toBe("−8%");
@@ -140,5 +175,20 @@ describe("numbers", () => {
     expect(format(3, "runs")).toBe("3.00 runs");
     expect(sig(1234.5)).toBe("1235");
     expect(sig(0.001234)).toBe("0.00123");
+  });
+});
+
+describe("latestChanges order", () => {
+  it("puts worse before better, then the larger move first", async () => {
+    const [index] = await fixture();
+    const [change] = index.changes ?? [];
+    if (!change) throw new Error("no change");
+    index.changes = [0.5, 1.1, 0.95, 1.4].map((ratio) => ({ ...change, ratio }));
+    expect(latestChanges(index).map((r) => [r.way, r.change.ratio])).toEqual([
+      ["worse", 1.4],
+      ["worse", 1.1],
+      ["better", 0.5],
+      ["better", 0.95],
+    ]);
   });
 });

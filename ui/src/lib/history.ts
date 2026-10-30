@@ -70,6 +70,8 @@ export interface Point {
   /** Position along the x axis: the commit's place in its group, oldest first. */
   at: number;
   label: string;
+  /** Whether the commit has a release name, which the axis prefers to show. */
+  released: boolean;
   date: string;
   env: string;
   value: number;
@@ -111,6 +113,7 @@ export function lines(
           commit: commit.id,
           at,
           label: commit.release ?? commit.id.slice(0, 8),
+          released: commit.release !== undefined,
           date: commit.date.slice(0, 10),
           env: c.environment,
           value: metric.value,
@@ -187,9 +190,10 @@ export interface LatestChange {
   env: string;
   from: string;
   to: string;
+  way: ReturnType<typeof verdict>;
 }
 
-/** The release changes into each group's newest release, largest first, for the start page. */
+/** The release changes into each group's newest release for the start page: worse first, then by size. */
 export function latestChanges(index: BenchmarkIndex): LatestChange[] {
   const commits = new Map(index.commits.map((c) => [c.id, c]));
   const newest = new Map<string, string>();
@@ -197,6 +201,7 @@ export function latestChanges(index: BenchmarkIndex): LatestChange[] {
   const cases = new Map(index.cases.map((c) => [c.id, c]));
   const benches = new Map(index.benchmarks.map((b) => [b.id, b]));
   const groups = new Map(index.groups.map((g) => [g.id, g]));
+  const measures = new Map(index.measures.map((m) => [m.id, m]));
   const envs = new Map<string, string>();
   for (const g of index.groups) {
     const mine = index.environments.filter((e) => e.group === g.id);
@@ -215,7 +220,29 @@ export function latestChanges(index: BenchmarkIndex): LatestChange[] {
     const labels = axisLabels(bench);
     const params = c.params.map((v, i) => labels[i]?.[bench.params[i]?.values.indexOf(v) ?? -1] ?? v);
     const env = envs.get(c.environment) ?? c.environment;
-    out.push({ change, group, bench, params, env, from: name(change.baseline), to: name(change.commit) });
+    const way = verdict(change.ratio, measures.get(change.measure)?.better);
+    out.push({ change, group, bench, params, env, from: name(change.baseline), to: name(change.commit), way });
   }
-  return out.sort((a, b) => Math.abs(Math.log(b.change.ratio)) - Math.abs(Math.log(a.change.ratio)));
+  const rank = { worse: 0, moved: 1, better: 2 };
+  const size = (r: LatestChange) => Math.abs(Math.log(r.change.ratio));
+  return out.sort((a, b) => rank[a.way] - rank[b.way] || size(b) - size(a));
+}
+
+/** TEXT cut after each "." and "_", so a long dotted or snake_case name can break there (<wbr>). */
+export function breakable(text: string): string[] {
+  return text.split(/(?<=[._])/);
+}
+
+/** Up to MOST tick labels, evenly spaced, from the release-named points if there are any. */
+export function ticksFor(steps: { label: string; released: boolean }[], most: number): string[] {
+  const named = steps.filter((s) => s.released);
+  const pool = (named.length > 1 ? named : steps).map((s) => s.label);
+  const every = Math.max(1, Math.ceil(pool.length / Math.max(2, most)));
+  return pool.filter((_, i) => i % every === 0 || i === pool.length - 1);
+}
+
+/** A p-value as the tables show it: "p < 0.001" below that, else two significant figures. */
+export function pText(p: number | undefined): string {
+  if (p === undefined) return "p unknown";
+  return p < 0.001 ? "p < 0.001" : `p = ${p.toPrecision(2)}`;
 }

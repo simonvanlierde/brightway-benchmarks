@@ -1,7 +1,7 @@
 <script lang="ts">
 import * as Plot from "@observablehq/plot";
 import type { Change } from "../lib/contract";
-import { format, type Line, percent, scaleFor, sig, verdict } from "../lib/history";
+import { format, type Line, percent, scaleFor, sig, ticksFor, verdict } from "../lib/history";
 
 let {
   lines,
@@ -82,9 +82,10 @@ $effect(() => {
   const domain = lines.map((l) => l.short);
   const colours = domain.map((_, i) => v(`--s${(i % SLOTS) + 1}`));
   const labels = steps.map((s) => s[0]?.label ?? "");
-  const most = Math.max(2, Math.floor(width / 72));
-  const every = Math.ceil(labels.length / most);
-  const ticks = labels.filter((_, i) => i % every === 0 || i === labels.length - 1);
+  const ticks = ticksFor(
+    steps.map((s) => ({ label: s[0]?.label ?? "", released: s[0]?.released ?? false })),
+    Math.floor(width / 72),
+  );
   const data = points.map((p) => ({
     ...p,
     y: p.value / divisor,
@@ -101,6 +102,7 @@ $effect(() => {
   const pad = (high - low) * 0.15 || Math.abs(high) * 0.05 || 1;
   const yDomain = [Math.max(0, low - pad), high + pad];
   const valueAt = new Map(points.map((p) => [`${p.commit}/${p.short}`, p.value / divisor]));
+  // Rings at one release grow by a step each, so rings on lines that coincide stay apart.
   const flagged = [...changeAt.entries()].flatMap(([commit, cs]) =>
     cs
       .filter((c) => c.change.method === "release")
@@ -109,8 +111,12 @@ $effect(() => {
         y: valueAt.get(`${commit}/${c.short}`),
         way: verdict(c.change.ratio, better),
       }))
-      .filter((f) => f.y !== undefined),
+      .filter((f) => f.y !== undefined)
+      .map((f, tier) => ({ ...f, tier })),
   );
+  const tiers = [...new Set(flagged.map((f) => f.tier))];
+  const ring = (d: { way: string }) =>
+    d.way === "worse" ? v("--worse") : d.way === "better" ? v("--better") : v("--ink");
   const shifts = [
     ...new Set(
       [...changeAt.entries()]
@@ -139,24 +145,14 @@ $effect(() => {
       Plot.text(shifts, { x: (d: string) => d, frameAnchor: "top", dy: -14, text: () => "shift", fill: v("--ink-2") }),
       Plot.areaY(data, { x: "label", y1: "lo", y2: "hi", z: "short", fill: "short", fillOpacity: 0.12, clip: true }),
       Plot.lineY(data, { x: "label", y: "y", z: "short", stroke: "short", strokeWidth: 2 }),
-      Plot.dot(data, {
-        x: "label",
-        y: "y",
-        fill: "short",
-        symbol: "short",
-        r: 4,
-        stroke: v("--surface"),
-        strokeWidth: 1,
-      }),
-      Plot.dot(flagged, {
-        x: "label",
-        y: "y",
-        r: 9,
-        fill: "none",
-        strokeWidth: 2,
-        stroke: (d: { way: string }) =>
-          d.way === "worse" ? v("--worse") : d.way === "better" ? v("--better") : v("--ink"),
-      }),
+      // Outlined, so a symbol under another of a different shape still shows.
+      Plot.dot(data, { x: "label", y: "y", fill: "none", stroke: "short", symbol: "short", r: 4, strokeWidth: 1.5 }),
+      ...tiers.map((t) =>
+        Plot.dot(
+          flagged.filter((f) => f.tier === t),
+          { x: "label", y: "y", r: 9 + 4 * t, fill: "none", strokeWidth: 2, stroke: ring },
+        ),
+      ),
       picked ? Plot.ruleX([picked.label], { stroke: v("--ink"), strokeOpacity: 0.4 }) : null,
       Plot.tip(tips, Plot.pointerX({ x: "label", y: "y", title: "text", fill: v("--surface"), stroke: v("--axis") })),
       picked
@@ -164,7 +160,6 @@ $effect(() => {
             x: "label",
             y: "y",
             title: "text",
-            anchor: "bottom",
             fill: v("--surface"),
             stroke: v("--axis"),
           })

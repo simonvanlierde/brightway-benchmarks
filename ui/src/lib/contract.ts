@@ -21,6 +21,13 @@ const checkReport = ajv.compile<BenchmarkReport>(reportSchema);
 /** The data is missing, or does not have the shape ui/schema/ gives. */
 export class ContractError extends Error {
   override name = "ContractError";
+  /** missing: no file at the URL; version: a format this UI does not read; invalid: the wrong shape. */
+  readonly kind: "missing" | "version" | "invalid";
+
+  constructor(message: string, kind: ContractError["kind"] = "invalid", options?: ErrorOptions) {
+    super(message, options);
+    this.kind = kind;
+  }
 }
 
 /** BASE as a folder URL. A relative BASE needs a page, or FROM, to resolve against. */
@@ -34,9 +41,9 @@ async function getJson(url: URL, fetcher: typeof fetch): Promise<unknown> {
   try {
     response = await fetcher(url);
   } catch (error) {
-    throw new ContractError(`${url}: ${error}`, { cause: error });
+    throw new ContractError(`${url}: ${error}`, "missing", { cause: error });
   }
-  if (!response.ok) throw new ContractError(`${url}: HTTP ${response.status}`);
+  if (!response.ok) throw new ContractError(`${url}: HTTP ${response.status}`, "missing");
   try {
     return await response.json();
   } catch (error) {
@@ -102,7 +109,7 @@ export async function loadIndex(base: string | URL, fetcher: typeof fetch = fetc
   // Checked before the schema, so a newer file says so instead of failing on some field.
   const version = (data as { format_version?: unknown } | null)?.format_version;
   if (version !== FORMAT_VERSION) {
-    throw new ContractError(`${url}: format_version ${version}, this UI reads ${FORMAT_VERSION}`);
+    throw new ContractError(`${url}: format_version ${version}, this UI reads ${FORMAT_VERSION}`, "version");
   }
   const index = valid(checkIndex, data, url);
   checkReferences(index);

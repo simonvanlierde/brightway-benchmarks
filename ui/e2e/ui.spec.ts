@@ -115,14 +115,64 @@ test("a missing data folder says what went wrong", async ({ page }) => {
   await page.route("**/data/index.json", (route) => route.fulfill({ status: 404, body: "" }));
   await page.goto("./");
   await expect(page.getByRole("alert")).toContainText("HTTP 404");
+  await expect(page.getByRole("alert")).toContainText("Check that index.json is in the data folder");
 });
 
-for (const scheme of ["light", "dark"] as const) {
+test("a newer format says so, in the main column", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.route("**/data/index.json", async (route) => {
+    const index = await (await route.fetch()).json();
+    await route.fulfill({ json: { ...index, format_version: 99 } });
+  });
+  await page.goto("./");
+  await expect(page.getByRole("alert")).toContainText("format_version 99");
+  await expect(page.getByRole("alert")).toContainText("newer or older format");
+  const box = await page.getByRole("alert").boundingBox();
+  expect(box?.x ?? 0).toBeGreaterThan(300); // beside the rail's column, not in it
+});
+
+test("one missing report leaves the rest of the chart", async ({ page }) => {
+  let first = true;
+  await page.route("**/data/reports/bw2calc-*/**", (route) => {
+    if (!first) return route.continue();
+    first = false;
+    return route.fulfill({ status: 404, body: "" });
+  });
+  await chart(page, IMPORT);
+  await expect(page.getByRole("status")).toContainText("1 of 15 reports did not load");
+});
+
+test("data without changes says they were not exported", async ({ page }) => {
+  await page.route("**/data/index.json", async (route) => {
+    const { changes: _, ...index } = await (await route.fetch()).json();
+    await route.fulfill({ json: index });
+  });
+  await page.goto("./");
+  await expect(page.getByText("Changes were not exported")).toBeVisible();
+});
+
+test("a skip link leads to the results, and a one-value axis is plain text", async ({ page }) => {
+  await chart(page, SCORES);
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("link", { name: "Skip to the results" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#main")).toBeFocused();
+  await expect(page.getByLabel("size", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".fixed")).toHaveText("ecoinvent");
+});
+
+for (const [scheme, width] of [
+  ["light", 1280],
+  ["dark", 1280],
+  ["light", 375],
+  ["dark", 375],
+] as const) {
   for (const [where, url] of [
     ["start", "./"],
     ["benchmark", SCORES],
   ] as const) {
-    test(`axe: no WCAG 2.2 AA violations, ${where}, ${scheme}`, async ({ page }) => {
+    test(`axe: no WCAG 2.2 AA violations, ${where}, ${scheme}, ${width} px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
       await page.emulateMedia({ colorScheme: scheme });
       if (where === "start") {
         await page.goto(url);

@@ -43,6 +43,14 @@ describe("loadIndex", () => {
     );
   });
 
+  it("says what kind of failure it was, for the page's hint", async () => {
+    const kind = (fetcher: typeof fetch) => loadIndex(BASE, fetcher).catch((e: ContractError) => e.kind);
+    const index = await fixture("index.json");
+    expect(await kind(serve({ "index.json": JSON.stringify({ ...index, format_version: 99 }) }))).toBe("version");
+    expect(await kind(serve({ "index.json": JSON.stringify({ ...index, cases: "changed" }) }))).toBe("invalid");
+    expect(await kind((async () => new Response("", { status: 404 })) as unknown as typeof fetch)).toBe("missing");
+  });
+
   it("refuses an index that breaks the schema", async () => {
     const index = await fixture("index.json");
     delete index.cases;

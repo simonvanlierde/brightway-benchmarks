@@ -110,6 +110,11 @@ site:
     scripts/compat_site.py site
     scripts/site_index.py site
 
+# Reads results/ (a checkout of the `results` branch), asv/ and asv's mirrors in .asv/.
+# Write the UI's data to OUT: index.json and one report per commit, in the shapes ui/schema/ gives.
+ui-data out:
+    python3 scripts/export_ui.py results {{ out }}
+
 # Commit results/ to the local `results` branch for the site; refuses results that name this host.
 results-commit:
     scripts/results-commit.sh

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/simonvanlierde/brightway-benchmarks/ui/schema/report.schema.json",
+  "$id": "urn:benchmark-ui:schema:report:1",
   "title": "BenchmarkReport",
   "description": "One report: Bencher Metric Format v0 (https://bencher.dev/v0/bmf.json, as published on 2026-10-30), restated in draft 2020-12. BMF has no room for a version inside the file, so index.json gives it as the report's `format`, bmf/v0. Keys are case ids, then measure ids, from index.json.",
   "type": "object",

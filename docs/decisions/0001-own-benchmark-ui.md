@@ -48,3 +48,8 @@ data.
 - We now maintain a frontend: accessibility (WCAG 2.2 AA, a table behind every chart, keyboard
   use), light and dark themes, phone widths, browser tests and a size budget, all from the
   first release.
+
+Note added on 2026-10-30:
+
+- After `ui/` moves into its own repository, this repository keeps a pinned copy of the schema
+  and checks the `format_version` of the files it writes against it.

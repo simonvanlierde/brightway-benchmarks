@@ -234,14 +234,19 @@ def test_the_export_follows_the_schema(export_ui: ModuleType, tmp_path: Path, mo
     ]
 
 
-def test_the_ui_fixtures_follow_the_schema():
-    # The UI's tests read these through its own validator; this one keeps both readings in step.
-    data = ROOT / "ui" / "test" / "fixtures" / "data"
+@pytest.mark.parametrize("folder", ["data", "real"])
+def test_the_ui_fixtures_follow_the_schema(folder: str):
+    # The UI's tests read these through its own validator; this one keeps both readings in step,
+    # and catches a tool that rewrote an id in one file but not the others.
+    data = ROOT / "ui" / "test" / "fixtures" / folder
     index = json.loads((data / "index.json").read_text())
     schema("index").validate(index)
     check = schema("report")
+    cases = {c["id"] for c in index["cases"]}
     for report in index["reports"]:
-        check.validate(json.loads((data / report["path"]).read_text()))
+        body = json.loads((data / report["path"]).read_text())
+        check.validate(body)
+        assert body.keys() <= cases, report["path"]
 
 
 def test_a_parameter_count_mismatch_is_skipped_with_one_warning(

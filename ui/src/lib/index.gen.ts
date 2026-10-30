@@ -81,7 +81,14 @@ export interface BenchmarkIndex {
     measures: [Id, ...Id[]];
     params: {
       name: string;
+      /**
+       * The values as cases give them, in the order to show them.
+       */
       values: string[];
+      /**
+       * How to show each value, in the same order. Without it, show the values.
+       */
+      labels?: string[];
     }[];
   }[];
   /**

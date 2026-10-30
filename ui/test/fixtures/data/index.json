@@ -19,7 +19,7 @@
       "group": "pkg-1a2b3c4d5e6f",
       "name": "bench.Solve.time_solve",
       "measures": ["latency"],
-      "params": [{ "name": "size", "values": ["'small'", "'large'"] }]
+      "params": [{ "name": "size", "values": ["'small'", "'large'"], "labels": ["small", "large"] }]
     }
   ],
   "cases": [

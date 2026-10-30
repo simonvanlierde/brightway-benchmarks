@@ -19,6 +19,7 @@ Release tags come from asv/SUBJECT.hashes and resolve through asv's mirror of th
 repository, .asv/SUBJECT. asv/ and .asv/ are read from the working directory.
 """
 
+import ast
 import hashlib
 import itertools
 import json
@@ -175,6 +176,25 @@ class Catalog:
                 report[case["id"]] = {measure: metric}
         return report
 
+    def order(self, subject: str, info: dict[str, dict]) -> None:
+        """Sort SUBJECT's axis values as benchmarks.json lists them, the rest as they came, and label them."""
+        for (s, name), bench in self.benchmarks.items():
+            if s != subject:
+                continue
+            listed = info[name].get("params", [])
+            for i, axis in enumerate(bench["params"]):
+                known = listed[i] if i < len(listed) else []
+                axis["values"].sort(key=lambda v, known=known: known.index(v) if v in known else len(known))
+                axis["labels"] = [label(v) for v in axis["values"]]
+
+
+def label(value: str) -> str:
+    """A parameter value as asv writes it (Python's repr), shown plainly: 'LCA' as LCA."""
+    try:
+        return str(ast.literal_eval(value))
+    except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError):
+        return value
+
 
 def export(results: Path, out: Path) -> dict:
     """Write OUT/index.json and OUT/reports/ from RESULTS, and return the index."""
@@ -200,6 +220,7 @@ def export(results: Path, out: Path) -> dict:
             reports.append(
                 {"path": path, "format": REPORT_FORMAT, "group": group, "machine": machine_id, "commit": commit}
             )
+        catalog.order(subject, info)
         tags = releases(subject)
         for commit, date in sorted(dates.items(), key=lambda c: (c[1], c[0])):
             tag = tags.get(commit[:8])

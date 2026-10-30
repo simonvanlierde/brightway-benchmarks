@@ -111,7 +111,16 @@
               "required": ["name", "values"],
               "properties": {
                 "name": { "type": "string" },
-                "values": { "type": "array", "items": { "type": "string" } }
+                "values": {
+                  "description": "The values as cases give them, in the order to show them.",
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "labels": {
+                  "description": "How to show each value, in the same order. Without it, show the values.",
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
               }
             }
           }

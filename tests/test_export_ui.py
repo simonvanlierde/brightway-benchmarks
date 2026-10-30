@@ -217,8 +217,8 @@ def test_the_export_follows_the_schema(export_ui: ModuleType, tmp_path: Path, mo
     }
     # The axes hold the values that ran: IterativeLCA failed in every commit.
     assert index["benchmarks"][0]["params"] == [
-        {"name": "size", "values": ["'ecoinvent'"]},
-        {"name": "cls", "values": ["'LCA'"]},
+        {"name": "size", "values": ["'ecoinvent'"], "labels": ["ecoinvent"]},
+        {"name": "cls", "values": ["'LCA'"], "labels": ["LCA"]},
     ]
 
 
@@ -287,3 +287,31 @@ def test_a_release_tag_resolves_through_the_mirror(
     index, _ = run(export_ui, results, monkeypatch)
     assert [(c["id"], c.get("release")) for c in index["commits"]] == [(commit, "1.0")]
     assert capsys.readouterr().err == "export_ui: .asv/s lacks 2.0; `just bench s` refreshes it\n"
+
+
+def test_axes_follow_benchmarks_json_and_show_plain_values(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    files = {f"m/{'11' * 4}-a": result("11" * 20, "a" + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))}
+    files["m/11111111-a"]["results"][TIME][1] = [["'ecoinvent'"], ["'LCA'", "'IterativeLCA'", "<lambda>"]]
+    files["m/11111111-a"]["results"][TIME] = [[1.0, 2.0, 3.0], files["m/11111111-a"]["results"][TIME][1]]
+    # benchmarks.json lists the axes in their own order, with a size that never ran here.
+    params = [["'smoke'", "'ecoinvent'"], ["'IterativeLCA'", "'LCA'"]]
+    info = INFO | {TIME: {"type": "time", "param_names": NAMES, "params": params}}
+    index, _ = run(export_ui, layout(tmp_path, files, info=info), monkeypatch)
+    (time,) = [b for b in index["benchmarks"] if b["name"] == TIME]
+    assert time["params"] == [
+        {"name": "size", "values": ["'ecoinvent'"], "labels": ["ecoinvent"]},
+        # Listed values first, in benchmarks.json's order; then the rest as they came. Text that
+        # is not a Python literal is shown as it is.
+        {
+            "name": "cls",
+            "values": ["'IterativeLCA'", "'LCA'", "<lambda>"],
+            "labels": ["IterativeLCA", "LCA", "<lambda>"],
+        },
+    ]
+    assert {tuple(c["params"]) for c in index["cases"] if c["benchmark"] == time["id"]} == {
+        ("'ecoinvent'", "'LCA'"),
+        ("'ecoinvent'", "'IterativeLCA'"),
+        ("'ecoinvent'", "<lambda>"),
+    }

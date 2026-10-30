@@ -12,6 +12,7 @@ from types import ModuleType
 
 import pytest
 from jsonschema import Draft202012Validator, ValidationError
+from jsonschema.protocols import Validator
 
 GIT = shutil.which("git") or "git"
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,7 +40,7 @@ def result(commit: str, env: str, date: int, first: list, ci: tuple[list, list])
     return {"commit_hash": commit, "env_name": env, "date": date, "result_columns": COLUMNS, "results": res}
 
 
-def schema(name: str) -> Draft202012Validator:
+def schema(name: str) -> Validator:
     """A validator for ui/schema/NAME.schema.json that checks formats such as date-time too."""
     return Draft202012Validator(
         json.loads((SCHEMA / f"{name}.schema.json").read_text()), format_checker=Draft202012Validator.FORMAT_CHECKER

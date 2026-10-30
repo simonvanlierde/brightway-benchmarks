@@ -10,11 +10,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - `just ui-data OUT` writes the results as the data a new benchmark UI reads: an `index.json`
-  of benchmarks, parameters, environments, machines, commits and releases, and one report per
-  commit in Bencher Metric Format. ui/schema/ describes both, and the tests check the output
-  against it.
-- ui/ holds the start of that UI, a static Astro and Svelte site. For now it lists the
-  benchmarks in the index; ui/README.md says how to build it.
+  and one report per commit in Bencher Metric Format. ui/schema/ describes both, and the tests
+  check the output against it. The UI itself is in ui/, with its own changelog.
 - `just bw2io-import` times an import with bw2io's ecoSpold2 importer (bw2io 0.9.17, bw2data
   4.8) and prints each step's time and peak memory. `just bw2io-import synthetic
   smoke,ecoinvent` needs no licence: it writes the synthetic database as ecoSpold2 files whose
@@ -68,8 +65,6 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - A run no longer fails after its benchmarks pass when an asv environment has lost its
   interpreter, as happens when its uv cache is cleaned: the lock files skip that folder.
-- `just release-changes` again warns when asv's mirror of a package lacks a release tag. It
-  used to read git's error text as a commit and compare the wrong releases without a word.
 
 ## [0.1.0] - 2026-10-28
 

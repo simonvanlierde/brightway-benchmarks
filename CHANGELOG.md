@@ -13,6 +13,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   of benchmarks, parameters, environments, machines, commits and releases, and one report per
   commit in Bencher Metric Format. ui/schema/ describes both, and the tests check the output
   against it.
+- ui/ holds the start of that UI, a static Astro and Svelte site. For now it lists the
+  benchmarks in the index; ui/README.md says how to build it.
 - `just bw2io-import` times an import with bw2io's ecoSpold2 importer (bw2io 0.9.17, bw2data
   4.8) and prints each step's time and peak memory. `just bw2io-import synthetic
   smoke,ecoinvent` needs no licence: it writes the synthetic database as ecoSpold2 files whose

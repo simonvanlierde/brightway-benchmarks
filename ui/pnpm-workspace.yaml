@@ -1,0 +1,3 @@
+# Its own workspace root, so ui/ can move into a repository of its own.
+# Resolve only releases at least two weeks old, transitive ones included.
+minimumReleaseAge: 20160

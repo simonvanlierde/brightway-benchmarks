@@ -203,3 +203,13 @@ def test_the_export_follows_the_schema(export_ui: ModuleType, tmp_path: Path, mo
         {"name": "size", "values": ["'ecoinvent'"]},
         {"name": "cls", "values": ["'LCA'"]},
     ]
+
+
+def test_the_ui_fixtures_follow_the_schema():
+    # The UI's tests read these through its own validator; this one keeps both readings in step.
+    data = ROOT / "ui" / "test" / "fixtures" / "data"
+    index = json.loads((data / "index.json").read_text())
+    Draft202012Validator(json.loads((SCHEMA / "index.schema.json").read_text())).validate(index)
+    check = Draft202012Validator(json.loads((SCHEMA / "report.schema.json").read_text()))
+    for report in index["reports"]:
+        check.validate(json.loads((data / report["path"]).read_text()))

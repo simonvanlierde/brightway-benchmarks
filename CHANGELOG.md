@@ -9,6 +9,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- When a `floors`, `pre`, `conda-forge` or `suites` compat job fails, its summary and artifact now
+  hold a draft of an upstream issue: the failed test IDs (or the resolve error), the versions, the
+  pins that changed since the job's last green set, and the run URL. Posting it is left to a person.
 - `BWBENCH_SIZES=useeio` runs the bw2calc cases on USEEIO 1.1, a real database (US EPA,
   public domain, 388 commodities), fetched once by a pinned SHA-256 and checked against a
   reference solve. Only timings are kept ([method](docs/method.md#the-real-database)).

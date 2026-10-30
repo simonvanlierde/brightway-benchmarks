@@ -27,6 +27,11 @@ from bwbench import check
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
 
+
+class NotApplicable(NotImplementedError):  # noqa: N818
+    """The case does not apply to this environment's solver; a skip even where BWBENCH_STRICT is set."""
+
+
 UNCHECKED = object()  # an ``expect`` that says on purpose that the result is not checked
 # What a setup returns: ``(run, expect)``. Not named `Setup`: asv finds `setup` in a
 # benchmark module ignoring case, and would call it.

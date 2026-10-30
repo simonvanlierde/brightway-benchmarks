@@ -3,7 +3,7 @@
 
 For each environment in RESULTS_DIR/SUBJECT, compares the newest two releases in
 asv/SUBJECT.hashes that have results there, and prints the cases whose value moved by more
-than ``THRESHOLD``, as a Markdown table. A case that failed (asv's null) on one side and ran
+than their noise allows (``noise_threshold``), as a Markdown table. A case that failed (asv's null) on one side and ran
 on the other is listed too, and so is one that ran before and is skipped now; one skipped
 before and running now is new, not a change, so it is left out. ``track_`` cases count errors or
 steps, not time or memory, so they are left out.
@@ -29,7 +29,10 @@ from pathlib import Path
 from release_report import sha
 
 HEADER = ("environment", "releases", "case", "parameters", "old", "new", "new / old")
-THRESHOLD = 0.05  # pinned run-to-run noise is 0.4 to 1.5% (just noise)
+# Pinned run-to-run noise is 0.4 to 1.5% (just noise), and asv's spread within one run does not
+# see it, so no change under 2% counts. Three spreads keeps a noisy case's jitter out.
+NOISE_FLOOR = 0.02
+NOISE_TIMES = 3
 GB = 1e9
 STACK = re.compile(r"-BWBENCH_STACK([0-9a-f]+)")
 SHA = re.compile(r"[0-9a-f]{40}")
@@ -69,6 +72,28 @@ def show(value: float | None, unit: str) -> str:
     return f"{text} s" if unit == "seconds" else text
 
 
+def noise_threshold(*spreads: float | None) -> float:
+    """How far new / old may move from 1 as noise: NOISE_TIMES the larger spread, at least NOISE_FLOOR.
+
+    A spread is asv's interquartile range over the value; None where asv recorded no quartiles.
+    """
+    return max(NOISE_FLOOR, NOISE_TIMES * max((s or 0.0 for s in spreads), default=0.0))
+
+
+def spreads(row: list, columns: list[str]) -> list[float | None]:
+    """Each parameter set's interquartile range over its value, from one case's row in an asv file."""
+    cell = dict(zip(columns, row, strict=False))
+    values = cell.get("result")
+    values = values if isinstance(values, list) else [values]
+    q25, q75 = cell.get("stats_q_25") or [], cell.get("stats_q_75") or []
+    out: list[float | None] = []
+    for i, v in enumerate(values):
+        a, b = (q25[i], q75[i]) if i < min(len(q25), len(q75)) else (None, None)
+        ok = v and a is not None and b is not None and math.isfinite(a) and math.isfinite(b) and 0 <= a <= b
+        out.append((b - a) / v if ok else None)
+    return out
+
+
 def current_stack(subject: str) -> str:
     """The hash of asv/SUBJECT.stack.txt, as scripts/asv.sh puts it in environment names, or ""."""
     path = Path(f"asv/{subject}.stack.txt")
@@ -101,8 +126,8 @@ def releases(subject: str, tool: str) -> dict[str, str]:
     return out
 
 
-def changes(results: Path, subject: str, threshold: float = THRESHOLD) -> list[Change]:
-    """The cases that moved more than THRESHOLD in each environment's newest release."""
+def changes(results: Path, subject: str) -> list[Change]:
+    """The cases that moved more than their noise allows in each environment's newest release."""
     folder = results / subject
     order = releases(subject, "release_changes")
     tags = list(order.values())
@@ -129,13 +154,13 @@ def changes(results: Path, subject: str, threshold: float = THRESHOLD) -> list[C
         old, new = by_tag[old_tag], by_tag[new_tag]
         shared = old.keys() & new.keys()
         old_stack, new_stack = (pick(shared, current),) * 2 if shared else (pick(old, current), pick(new, current))
-        rows = compare(old[old_stack], new[new_stack], units, threshold)
+        rows = compare(old[old_stack], new[new_stack], units)
         out.extend(Change(f"{machine}/{env}", old_tag, new_tag, not shared, *row) for row in rows)
     return out
 
 
-def compare(old: dict, new: dict, units: dict, threshold: float) -> list[tuple]:
-    """(case, params, old, new, ratio) for each parameter set of each case that moved."""
+def compare(old: dict, new: dict, units: dict) -> list[tuple]:
+    """(case, params, old, new, ratio) for each parameter set of each case that moved beyond its noise."""
     rows = []
     for name in sorted(old["results"].keys() & new["results"].keys()):
         if name.rsplit(".", 1)[-1].startswith("track_"):
@@ -147,14 +172,17 @@ def compare(old: dict, new: dict, units: dict, threshold: float) -> list[tuple]:
         after = b[0] if isinstance(b[0], list) else [b[0]]
         if b[1:2] != a[1:2]:  # the parameters changed, so the values do not line up
             continue
-        for label, x, y in zip(labels, before, after, strict=False):
+        sa = spreads(a, old.get("result_columns", ["result", "params"]))
+        sb = spreads(b, new.get("result_columns", ["result", "params"]))
+        pad = [None] * len(labels)  # a file without quartiles has no spreads
+        for label, x, y, ka, kb in zip(labels, before, after, sa + pad, sb + pad, strict=False):
             ran_x, ran_y = x is not None and not math.isnan(x), y is not None and not math.isnan(y)
             if not ran_x and not ran_y:
                 continue
             if x is not None and math.isnan(x):  # skipped in the older release: a new case, not a change
                 continue
             ratio = y / x if ran_x and ran_y and x else None
-            if ratio is not None and abs(ratio - 1) <= threshold:
+            if ratio is not None and abs(ratio - 1) <= noise_threshold(ka, kb):
                 continue
             unit = units.get(name, "")
             rows.append((name.split(".", 1)[1], label, show(x, unit), show(y, unit), ratio))

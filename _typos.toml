@@ -8,3 +8,8 @@ extend-ignore-re = [
 [default.extend-words]
 intoto = "intoto" # in-toto attestation bundles, `.intoto.jsonl`
 fo = "fo"         # fsspec's file-object keyword, `fsspec.filesystem("zip", fo=...)`
+
+[files]
+extend-exclude = [
+  "ui/test/fixtures/real/", # exported benchmark data: hashes and ids, not prose
+]

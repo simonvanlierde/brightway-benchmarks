@@ -7,6 +7,7 @@ import type { BenchmarkReport } from "./report.gen";
 
 export type { BenchmarkIndex, BenchmarkReport };
 export type Report = BenchmarkIndex["reports"][number];
+export type Change = NonNullable<BenchmarkIndex["changes"]>[number];
 
 export const FORMAT_VERSION = 1;
 export const REPORT_FORMATS: readonly string[] = ["bmf/v0"];
@@ -20,6 +21,13 @@ const checkReport = ajv.compile<BenchmarkReport>(reportSchema);
 /** The data is missing, or does not have the shape ui/schema/ gives. */
 export class ContractError extends Error {
   override name = "ContractError";
+  /** missing: no file at the URL; version: a format this UI does not read; invalid: the wrong shape. */
+  readonly kind: "missing" | "version" | "invalid";
+
+  constructor(message: string, kind: ContractError["kind"] = "invalid", options?: ErrorOptions) {
+    super(message, options);
+    this.kind = kind;
+  }
 }
 
 /** BASE as a folder URL. A relative BASE needs a page, or FROM, to resolve against. */
@@ -33,9 +41,9 @@ async function getJson(url: URL, fetcher: typeof fetch): Promise<unknown> {
   try {
     response = await fetcher(url);
   } catch (error) {
-    throw new ContractError(`${url}: ${error}`, { cause: error });
+    throw new ContractError(`${url}: ${error}`, "missing", { cause: error });
   }
-  if (!response.ok) throw new ContractError(`${url}: HTTP ${response.status}`);
+  if (!response.ok) throw new ContractError(`${url}: HTTP ${response.status}`, "missing");
   try {
     return await response.json();
   } catch (error) {
@@ -57,6 +65,7 @@ export function checkReferences(index: BenchmarkIndex): void {
     machines: ids(index.machines),
     environments: ids(index.environments),
     benchmarks: ids(index.benchmarks),
+    cases: ids(index.cases),
     commits: new Set(index.commits.map((c) => `${c.group}/${c.id}`)),
   };
   const need = (kind: keyof typeof defined, id: string, where: string) => {
@@ -83,6 +92,14 @@ export function checkReferences(index: BenchmarkIndex): void {
     need("machines", r.machine, `reports[${i}].machine`);
     need("commits", `${r.group}/${r.commit}`, `reports[${i}].commit`);
   });
+  const caseGroup = new Map(index.cases.map((c) => [c.id, index.benchmarks.find((b) => b.id === c.benchmark)?.group]));
+  index.changes?.forEach((c, i) => {
+    need("cases", c.case, `changes[${i}].case`);
+    need("machines", c.machine, `changes[${i}].machine`);
+    need("measures", c.measure, `changes[${i}].measure`);
+    need("commits", `${caseGroup.get(c.case)}/${c.commit}`, `changes[${i}].commit`);
+    need("commits", `${caseGroup.get(c.case)}/${c.baseline}`, `changes[${i}].baseline`);
+  });
 }
 
 /** BASE/index.json, checked against the schema and for dangling ids. */
@@ -92,7 +109,7 @@ export async function loadIndex(base: string | URL, fetcher: typeof fetch = fetc
   // Checked before the schema, so a newer file says so instead of failing on some field.
   const version = (data as { format_version?: unknown } | null)?.format_version;
   if (version !== FORMAT_VERSION) {
-    throw new ContractError(`${url}: format_version ${version}, this UI reads ${FORMAT_VERSION}`);
+    throw new ContractError(`${url}: format_version ${version}, this UI reads ${FORMAT_VERSION}`, "version");
   }
   const index = valid(checkIndex, data, url);
   checkReferences(index);

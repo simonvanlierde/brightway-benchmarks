@@ -120,4 +120,4 @@ exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
 include = ["src", "tests"]
 
 [tool.ty.analysis]
-allowed-unresolved-imports = ["bw_processing", "bw2calc", "pypardiso.**", "scikits.**", "PyKLU"]
+allowed-unresolved-imports = ["bw_processing", "bw2calc", "pypardiso.**", "scikits.**", "PyKLU", "otava.**"]

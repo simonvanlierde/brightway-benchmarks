@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "files": { "includes": ["**", "!dist", "!.astro"] },
+  "files": { "includes": ["**", "!dist", "!.astro", "!test/fixtures/real", "!test-results", "!playwright-report"] },
   "formatter": { "indentStyle": "space", "lineWidth": 120 },
   "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "overrides": [

@@ -48,6 +48,10 @@ export interface BenchmarkIndex {
      * How a value sums up its samples, such as median or max.
      */
     statistic?: string;
+    /**
+     * What a metric's lower and upper values are, in words to show, such as "the middle half of the samples".
+     */
+    bounds?: string;
   }[];
   /**
    * Results from two machines are never pooled.
@@ -63,6 +67,10 @@ export interface BenchmarkIndex {
     id: Id;
     group: Id;
     name: string;
+    /**
+     * A short name to show, such as the solver it runs; without it, show a short form of the name.
+     */
+    label?: string;
   }[];
   /**
    * One timed function and the parameter axes it runs over.
@@ -128,6 +136,38 @@ export interface BenchmarkIndex {
     group: Id;
     machine: Id;
     commit: string;
+  }[];
+  /**
+   * Where a series moved, found before the data was written, oldest first within a series. A series is one case on one machine in one measure.
+   */
+  changes?: {
+    case: Id;
+    machine: Id;
+    measure: Id;
+    /**
+     * The first commit at the new level.
+     */
+    commit: string;
+    /**
+     * The commit it is compared with.
+     */
+    baseline: string;
+    /**
+     * The new level over the old: the two values for release, the two means for change-point.
+     */
+    ratio: number;
+    /**
+     * release: two releases in a row, against the case's noise. change-point: a shift in the series' mean.
+     */
+    method: "release" | "change-point";
+    /**
+     * release only: how far the ratio could move from 1 as noise.
+     */
+    threshold?: number;
+    /**
+     * change-point only: the significance test's p-value.
+     */
+    pvalue?: number;
   }[];
 }
 export interface Link {

@@ -43,6 +43,25 @@ describe("loadIndex", () => {
     );
   });
 
+  it("refuses a link that is not http or https", async () => {
+    const index = (await fixture("index.json")) as unknown as BenchmarkIndex;
+    for (const bad of [
+      { ...index, project: { ...index.project, url: "javascript:alert(1)" } },
+      { ...index, project: { ...index.project, links: [{ name: "x", url: "javascript:alert(1)" }] } },
+      { ...index, groups: index.groups.map((g: object) => ({ ...g, url: "javascript:alert(1)" })) },
+    ]) {
+      await expect(loadIndex(BASE, serve({ "index.json": JSON.stringify(bad) }))).rejects.toThrow(/pattern/);
+    }
+  });
+
+  it("says what kind of failure it was, for the page's hint", async () => {
+    const kind = (fetcher: typeof fetch) => loadIndex(BASE, fetcher).catch((e: ContractError) => e.kind);
+    const index = await fixture("index.json");
+    expect(await kind(serve({ "index.json": JSON.stringify({ ...index, format_version: 99 }) }))).toBe("version");
+    expect(await kind(serve({ "index.json": JSON.stringify({ ...index, cases: "changed" }) }))).toBe("invalid");
+    expect(await kind((async () => new Response("", { status: 404 })) as unknown as typeof fetch)).toBe("missing");
+  });
+
   it("refuses an index that breaks the schema", async () => {
     const index = await fixture("index.json");
     delete index.cases;
@@ -158,6 +177,15 @@ describe("checkReferences", () => {
           if (i.reports[0]) i.reports[0].commit = "gone";
         },
       ],
+      ...(["case", "machine", "measure", "commit", "baseline"] as const).map(
+        (key) =>
+          [
+            `changes[0].${key}`,
+            (i: BenchmarkIndex) => {
+              if (i.changes?.[0]) i.changes[0][key] = "gone";
+            },
+          ] as [string, (i: BenchmarkIndex) => void],
+      ),
     ];
     for (const [where, edit] of breaks) {
       const index = (await fixture("index.json")) as unknown as BenchmarkIndex;

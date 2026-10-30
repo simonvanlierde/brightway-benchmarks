@@ -26,12 +26,12 @@ KINDS = {  # asv's benchmark type, as in benchmarks.json
     "bench_lca.SingleScore.track_relative_error": "track",
 }
 INFO = {k: {"type": t, "param_names": NAMES} for k, t in KINDS.items()}
-COLUMNS = ["result", "params", "version", "started_at", "duration", "stats_ci_99_a", "stats_ci_99_b"]
+COLUMNS = ["result", "params", "version", "started_at", "duration", "stats_q_25", "stats_q_75"]
 TIME = "bench_lca.SingleScore.time_first_score"
 
 
 def result(commit: str, env: str, date: int, first: list, ci: tuple[list, list]) -> dict:
-    """An asv result file with a time case (with its 99% interval), peak memory and a track case."""
+    """An asv result file with a time case (with its quartiles), peak memory and a track case."""
     res = {
         TIME: [first, PARAMS, "v", 0, 1.0, *ci],
         "bench_lca.SingleScore.peakmem_first_score": [[5e8, 6e8], PARAMS],
@@ -51,7 +51,10 @@ def schema(name: str) -> Validator:
 def export_ui(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.syspath_prepend(str(ROOT / "scripts"))
     # Imported by name, so that its own `from release_changes import STACK` resolves.
-    return importlib.import_module("export_ui")
+    module = importlib.import_module("export_ui")
+    # Otava runs in an environment of its own; test_change_points_through_uv runs it for real.
+    monkeypatch.setattr(module, "otava", lambda values: [[] for _ in values])
+    return module
 
 
 def layout(tmp_path: Path, files: dict[str, dict], stack: str = "", info: dict = INFO) -> Path:
@@ -97,7 +100,7 @@ def value(index: dict, report: dict, params: list[str], env: str, measure: str =
 def test_one_metric_per_case_parameters_and_environment(export_ui: ModuleType):
     data = result("ab" * 20, "uv-py3.12-umfpack" + STACK, 0, [9.05, None], ([9.0, None], [9.1, None]))
     out = export_ui.metrics(data, KINDS)
-    # Seconds become latency in nanoseconds, with asv's 99% interval as the bounds.
+    # Seconds become latency in nanoseconds, with the samples' quartiles as the bounds.
     first = [m for n, p, _, m in out if n == TIME and p == ("'ecoinvent'", "'LCA'")]
     assert first == [{"value": pytest.approx(9.05e9), "lower_value": 9.0e9, "upper_value": pytest.approx(9.1e9)}]
     # A failed case (None) has no metric; peak memory is its own measure; track_ cases are left out.
@@ -231,14 +234,29 @@ def test_the_export_follows_the_schema(export_ui: ModuleType, tmp_path: Path, mo
     ]
 
 
-def test_the_ui_fixtures_follow_the_schema():
-    # The UI's tests read these through its own validator; this one keeps both readings in step.
-    data = ROOT / "ui" / "test" / "fixtures" / "data"
+@pytest.mark.parametrize("folder", ["data", "real"])
+def test_the_ui_fixtures_follow_the_schema(folder: str):
+    # The UI's tests read these through its own validator; this one keeps both readings in step,
+    # and catches a tool that rewrote an id in one file but not the others.
+    data = ROOT / "ui" / "test" / "fixtures" / folder
     index = json.loads((data / "index.json").read_text())
     schema("index").validate(index)
     check = schema("report")
+    cases = {c["id"] for c in index["cases"]}
     for report in index["reports"]:
-        check.validate(json.loads((data / report["path"]).read_text()))
+        body = json.loads((data / report["path"]).read_text())
+        check.validate(body)
+        assert body.keys() <= cases, report["path"]
+    # Changes come grouped by series, each oldest first; and no report file is left unlisted.
+    order = {(c["group"], c["id"]): (c["date"], c["id"]) for c in index["commits"]}
+    group = {c["id"]: b["group"] for c in index["cases"] for b in index["benchmarks"] if b["id"] == c["benchmark"]}
+    keys = [
+        ((c["case"], c["machine"], c["measure"]), order[group[c["case"]], c["commit"]])
+        for c in index.get("changes", [])
+    ]
+    assert keys == sorted(keys)
+    listed = {data / r["path"] for r in index["reports"]}
+    assert set((data / "reports").rglob("*.json")) <= listed
 
 
 def test_a_parameter_count_mismatch_is_skipped_with_one_warning(
@@ -342,3 +360,139 @@ def test_the_schema_checks_formats():
     index = json.loads((ROOT / "ui" / "test" / "fixtures" / "data" / "index.json").read_text())
     with pytest.raises(ValidationError, match="is not a 'date-time'"):
         schema("index").validate(index | {"generated_at": "yesterday"})
+
+
+def test_a_release_change_counts_only_beyond_the_case_noise(export_ui: ModuleType):
+    released = {"a", "b", "c", "d", "e"}
+    series = {
+        ("quiet", "m", "latency"): [("a", 1.0, 0.001), ("b", 1.03, 0.001), ("x", 2.0, None), ("c", 1.031, 0.001)],
+        ("noisy", "m", "latency"): [("a", 1.0, 0.03), ("b", 1.05, 0.03), ("c", 1.2, 0.01)],
+        ("memory", "m", "peak-memory"): [("d", 100.0, None), ("e", 101.0, None)],
+    }
+    found = {(c["case"], c["baseline"], c["commit"]): c for c in export_ui.release_changes(series, released)}
+    # 3% is above the 2% floor; b to c skips x, which is no release, and moved 0.1%.
+    assert found["quiet", "a", "b"] | {"ratio": 1.03} == {
+        "case": "quiet",
+        "machine": "m",
+        "measure": "latency",
+        "commit": "b",
+        "baseline": "a",
+        "ratio": 1.03,
+        "method": "release",
+        "threshold": 0.02,
+    }
+    # A 5% move is within three spreads of 3%; 1.05 to 1.2 is beyond them.
+    assert found["noisy", "b", "c"]["threshold"] == pytest.approx(0.09)
+    assert set(found) == {("quiet", "a", "b"), ("noisy", "b", "c")}  # memory moved 1%, under the floor
+
+
+def test_changes_land_in_the_index_with_their_commits(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    commits = [("11" * 20, 1.0), ("22" * 20, 1.0), ("33" * 20, 1.5)]
+    files = {
+        f"m/{c[:8]}-a": result(c, "a" + STACK, (i + 1) * 1_000_000, [v, None], ([v * 0.99, None], [v * 1.01, None]))
+        for i, (c, v) in enumerate(commits)  # a 2% spread
+    }
+    results = layout(tmp_path, files)
+    (results.parent / "asv" / "s.hashes").write_text("".join(f"{c}\n" for c, _ in commits))
+    seen = []
+
+    def otava(values: list[list[float]]) -> list[list[dict]]:
+        seen.extend(values)
+        return [[{"index": 2, "ratio": 1.5, "pvalue": 1.234e-5}] if v[-1] == 1.5e9 else [] for v in values]
+
+    monkeypatch.setattr(export_ui, "otava", otava)
+    index, _ = run(export_ui, results, monkeypatch)
+    schema("index").validate(index)
+    assert [1e9, 1e9, 1.5e9] in seen  # each series oldest first
+    (case,) = [c["id"] for c in index["cases"] if c["params"] == ["'ecoinvent'", "'LCA'"] and "time" in c["id"]]
+    mine = sorted((c["method"], c["baseline"][:2], c["commit"][:2]) for c in index["changes"] if c["case"] == case)
+    assert mine == [("change-point", "22", "33"), ("release", "22", "33")]
+    (release,) = [c for c in index["changes"] if c["case"] == case and c["method"] == "release"]
+    assert release["threshold"] == pytest.approx(0.06)  # three times the 2% spread
+    (point,) = [c for c in index["changes"] if c["method"] == "change-point"]
+    assert point["pvalue"] == 1.23e-5
+    # One series, oldest change first, the release change before the change point at a commit.
+    assert [c["method"] for c in index["changes"] if c["case"] == case] == ["change-point", "release"]
+
+
+def test_changes_are_oldest_first_within_each_series(export_ui: ModuleType):
+    series = {("c", "m", "latency"): [("a", 1.0, None), ("b", 2.0, None), ("c", 4.0, None)]}
+    late = export_ui.change("c", "m", "latency", "b", "c", 2.0, "release")
+    early = export_ui.change("c", "m", "latency", "a", "b", 2.0, "change-point")
+    assert export_ui.ordered([late, early], series) == [early, late]
+
+
+def test_an_earlier_export_leaves_no_report_behind(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    files = {"m/11111111-a": result("11" * 20, "a" + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))}
+    results = layout(tmp_path, files)
+    stale = results.parent / "out" / "reports" / "old" / "gone.json"
+    stale.parent.mkdir(parents=True)
+    stale.write_text("{}")
+    run(export_ui, results, monkeypatch)
+    assert not stale.exists()
+
+
+@pytest.mark.skipif(shutil.which("uv") is None, reason="Otava runs through uv")
+def test_change_points_through_uv(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.syspath_prepend(str(ROOT / "scripts"))
+    module = importlib.import_module("export_ui")
+    step = [1.0, 1.01, 0.99, 1.0, 1.3, 1.29, 1.31, 1.3]
+    flat = [1.0, 1.0, 1.0, 1.01, 1.01, 1.01]  # Otava finds this 1% step; under 2%, it does not count
+    found = module.otava([step, flat, []])
+    assert [[p["index"] for p in s] for s in found] == [[4], [], []]
+    assert found[0][0]["ratio"] == pytest.approx(1.3, abs=0.01)
+    assert found[0][0]["pvalue"] < 0.001
+
+
+def test_a_quartile_below_zero_is_no_bound(export_ui: ModuleType):
+    data = result("ab" * 20, "e", 0, [1.0, 2.0], ([-0.5, 1.9], [1.5, 2.1]))
+    out = {p: m for n, p, _, m in export_ui.metrics(data, KINDS) if n == TIME}
+    assert out[("'ecoinvent'", "'LCA'")] == {"value": 1e9}  # a time is never negative
+    assert out[("'ecoinvent'", "'IterativeLCA'")]["lower_value"] == pytest.approx(1.9e9)
+
+
+def test_environments_are_labelled_by_their_solver_and_blas(export_ui: ModuleType):
+    names = [
+        "uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu",
+        "uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1",
+        "uv-py3.12-numpy2.5.3-scikit-umfpack-scipy1.18.1",
+        "uv-py3.12-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_SOLVERumfpack-T",
+        "uv-py3.12-numpy2.5.3-scipy1.18.1",
+    ]
+    assert export_ui.solver_labels(names) == ["KLU", "PyPardiso", "UMFPACK", "UMFPACK on Aᵀ", "SuperLU"]
+    conda = [
+        "rattler-py3.12-libblas_=__mkl-mkl2026.1.0-numpy2.5.3-scikit-umfpack0.4.2-scipy1.18.1",
+        "rattler-py3.12-mkl2026.1.0-numpy2.5.3-pypardiso0.4.7-scipy1.18.1",
+        "rattler-py3.12-libblas_=__openblas-numpy2.5.3-scikit-umfpack0.4.2-scipy1.18.1",
+        "rattler-py3.12-numpy2.5.3-scipy1.18.1",
+    ]
+    assert export_ui.solver_labels(conda) == ["UMFPACK, MKL", "PyPardiso, MKL", "UMFPACK, OpenBLAS", "SuperLU"]
+    # No solver pinned anywhere: the names differ in something else, so no labels.
+    assert export_ui.solver_labels(["uv-py3.12-bw_processing1.6", "uv-py3.12-bw_processinggit"]) is None
+    # Two that read the same: the UI sees the clash and shows their full names.
+    assert export_ui.solver_labels(["a-pypardiso", "b-pypardiso"]) == ["PyPardiso", "PyPardiso"]
+
+
+def test_the_label_lands_in_the_index(export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    files = {
+        f"m/11111111-{i}": result("11" * 20, env + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))
+        for i, env in enumerate(["uv-py3.12-pypardiso", "uv-py3.12"])
+    }
+    index, _ = run(export_ui, layout(tmp_path, files), monkeypatch)
+    schema("index").validate(index)
+    assert {e["name"]: e.get("label") for e in index["environments"]} == {
+        "uv-py3.12-pypardiso": "PyPardiso",
+        "uv-py3.12": "SuperLU",
+    }
+
+
+def test_a_commit_hash_that_is_not_a_hash_stops_the_export(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    files = {"m/11111111-a": result("../../escape", "a" + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))}
+    with pytest.raises(SystemExit, match="not a full hash"):
+        run(export_ui, layout(tmp_path, files), monkeypatch)

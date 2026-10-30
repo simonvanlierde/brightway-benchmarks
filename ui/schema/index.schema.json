@@ -29,7 +29,7 @@
       "properties": {
         "name": { "type": "string" },
         "description": { "type": "string" },
-        "url": { "type": "string", "format": "uri" },
+        "url": { "type": "string", "format": "uri", "pattern": "^https?://" },
         "links": { "type": "array", "items": { "$ref": "#/$defs/link" } }
       }
     },
@@ -42,7 +42,7 @@
         "properties": {
           "id": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
-          "url": { "type": "string", "format": "uri" }
+          "url": { "type": "string", "format": "uri", "pattern": "^https?://" }
         }
       }
     },
@@ -59,6 +59,10 @@
           "better": { "description": "Which way is an improvement.", "enum": ["lower", "higher"] },
           "statistic": {
             "description": "How a value sums up its samples, such as median or max.",
+            "type": "string"
+          },
+          "bounds": {
+            "description": "What a metric's lower and upper values are, in words to show, such as \"the middle half of the samples\".",
             "type": "string"
           }
         }
@@ -82,7 +86,11 @@
         "properties": {
           "id": { "$ref": "#/$defs/id" },
           "group": { "$ref": "#/$defs/id" },
-          "name": { "type": "string" }
+          "name": { "type": "string" },
+          "label": {
+            "description": "A short name to show, such as the solver it runs; without it, show a short form of the name.",
+            "type": "string"
+          }
         }
       }
     },
@@ -182,6 +190,36 @@
           "commit": { "type": "string" }
         }
       }
+    },
+    "changes": {
+      "description": "Where a series moved, found before the data was written, oldest first within a series. A series is one case on one machine in one measure.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["case", "machine", "measure", "commit", "baseline", "ratio", "method"],
+        "properties": {
+          "case": { "$ref": "#/$defs/id" },
+          "machine": { "$ref": "#/$defs/id" },
+          "measure": { "$ref": "#/$defs/id" },
+          "commit": { "description": "The first commit at the new level.", "type": "string" },
+          "baseline": { "description": "The commit it is compared with.", "type": "string" },
+          "ratio": {
+            "description": "The new level over the old: the two values for release, the two means for change-point.",
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "method": {
+            "description": "release: two releases in a row, against the case's noise. change-point: a shift in the series' mean.",
+            "enum": ["release", "change-point"]
+          },
+          "threshold": {
+            "description": "release only: how far the ratio could move from 1 as noise.",
+            "type": "number",
+            "minimum": 0
+          },
+          "pvalue": { "description": "change-point only: the significance test's p-value.", "type": "number" }
+        }
+      }
     }
   },
   "$defs": {
@@ -189,7 +227,10 @@
     "link": {
       "type": "object",
       "required": ["name", "url"],
-      "properties": { "name": { "type": "string" }, "url": { "type": "string", "format": "uri" } }
+      "properties": {
+        "name": { "type": "string" },
+        "url": { "type": "string", "format": "uri", "pattern": "^https?://" }
+      }
     }
   }
 }

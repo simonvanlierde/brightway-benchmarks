@@ -30,7 +30,12 @@ export function folder(base: string | URL, from: string | undefined = globalThis
 }
 
 async function getJson(url: URL, fetcher: typeof fetch): Promise<unknown> {
-  const response = await fetcher(url);
+  let response: Response;
+  try {
+    response = await fetcher(url);
+  } catch (error) {
+    throw new ContractError(`${url}: ${error}`, { cause: error });
+  }
   if (!response.ok) throw new ContractError(`${url}: HTTP ${response.status}`);
   try {
     return await response.json();

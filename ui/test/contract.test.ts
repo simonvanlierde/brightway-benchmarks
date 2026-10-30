@@ -56,6 +56,15 @@ describe("loadIndex", () => {
     await expect(loadIndex(BASE, serve({ "index.json": JSON.stringify(index) }))).rejects.toThrow(ContractError);
   });
 
+  it("names the URL when the fetch itself fails", async () => {
+    const offline = (async () => {
+      throw new TypeError("Failed to fetch");
+    }) as typeof fetch;
+    const failure = loadIndex(BASE, offline);
+    await expect(failure).rejects.toThrow(ContractError);
+    await expect(failure).rejects.toThrow(/data\.test\/ui\/index\.json: .*Failed to fetch/);
+  });
+
   it("says which URL is missing", async () => {
     await expect(loadIndex("https://data.test/none/", serve())).rejects.toThrow(/none\/index\.json: HTTP 404/);
   });

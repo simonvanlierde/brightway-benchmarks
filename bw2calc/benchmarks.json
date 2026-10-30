@@ -26,7 +26,7 @@
         ],
         "params": [
             [
-                "'smoke'"
+                "'useeio'"
             ],
             [
                 "10"
@@ -57,7 +57,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'useeio'"
             ],
             [
                 "1",
@@ -91,7 +91,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'useeio'"
             ],
             [
                 "'LCA'",
@@ -117,7 +117,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'useeio'"
             ],
             [
                 "'LCA'",
@@ -141,7 +141,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'useeio'"
             ],
             [
                 "'on'",
@@ -166,7 +166,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'useeio'"
             ],
             [
                 "'on'",
@@ -187,7 +187,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'useeio'"
             ],
             [
                 "'on'",
@@ -208,7 +208,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'useeio'"
             ],
             [
                 "'LCA'",
@@ -232,7 +232,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'useeio'"
             ],
             [
                 "'LCA'",
@@ -258,7 +258,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'useeio'"
             ],
             [
                 "'LCA'",

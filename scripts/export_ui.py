@@ -12,7 +12,8 @@ environment on several stacks, the current stack (the hash of asv/SUBJECT.stack.
 the lowest hash, as in scripts/release_changes.py. A benchmark's measure comes from its asv
 ``type`` in benchmarks.json: ``time`` is latency in nanoseconds, with asv's 99% interval as the
 bounds, and ``peakmemory`` peak memory in bytes. Other types, such as ``track``, are left out, as
-are failed and skipped cases.
+are failed and skipped cases. A benchmark whose results have more or fewer parameters than
+benchmarks.json names is skipped, with one warning.
 
 Release tags come from asv/SUBJECT.hashes and resolve through asv's mirror of the upstream
 repository, .asv/SUBJECT. asv/ and .asv/ are read from the working directory.
@@ -130,6 +131,7 @@ class Catalog:
     envs: dict[tuple[str, str], dict] = field(default_factory=dict)
     benchmarks: dict[tuple[str, str], dict] = field(default_factory=dict)
     cases: dict[str, dict] = field(default_factory=dict)
+    skipped: set[tuple[str, str]] = field(default_factory=set)  # (subject, benchmark) already warned about
 
     def report(self, subject: str, files: list[dict], info: dict[str, dict]) -> dict[str, dict]:
         """One BMF report from the result files of one commit on one machine, one stack each."""
@@ -139,13 +141,21 @@ class Catalog:
             env = STACK.sub("", data["env_name"])
             env_id = slug(f"{subject}/{env}")
             for name, point, measure, metric in metrics(data, kinds):
-                axes = [{"name": n, "values": []} for n in info[name].get("param_names", [])]
+                names = info[name].get("param_names", [])
+                if len(point) != len(names):  # the values would land on the wrong axes
+                    if (subject, name) not in self.skipped:
+                        self.skipped.add((subject, name))
+                        print(
+                            f"export_ui: {subject} {name} has {len(point)} parameters where benchmarks.json"
+                            f" names {len(names)}; skipped",
+                            file=sys.stderr,
+                        )
+                    continue
+                axes = [{"name": n, "values": []} for n in names]
                 bench = self.benchmarks.setdefault(
                     (subject, name),
                     {"id": slug(f"{subject}/{name}"), "group": group, "name": name, "measure": measure, "params": axes},
                 )
-                if len(point) != len(bench["params"]):
-                    sys.exit(f"export_ui: {subject} {name} has {len(point)} parameters, benchmarks.json names others")
                 for axis, value in zip(bench["params"], point, strict=True):
                     if value not in axis["values"]:
                         axis["values"].append(value)

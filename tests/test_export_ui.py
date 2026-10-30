@@ -213,3 +213,30 @@ def test_the_ui_fixtures_follow_the_schema():
     check = Draft202012Validator(json.loads((SCHEMA / "report.schema.json").read_text()))
     for report in index["reports"]:
         check.validate(json.loads((data / report["path"]).read_text()))
+
+
+def test_a_parameter_count_mismatch_is_skipped_with_one_warning(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    files = {
+        f"m/{c[:8]}-a": result(c, "a" + STACK, date, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))
+        for c, date in [("11" * 20, 1_000_000), ("22" * 20, 2_000_000)]
+    }
+    info = INFO | {TIME: {"type": "time", "param_names": ["size"]}}  # the results have two
+    index, reports = run(export_ui, layout(tmp_path, files, info=info), monkeypatch)
+    assert [b["name"] for b in index["benchmarks"]] == ["bench_lca.SingleScore.peakmem_first_score"]
+    assert all(len(r) == 2 for r in reports.values())  # peak memory's two parameter sets
+    warnings = capsys.readouterr().err.splitlines()
+    assert warnings == [f"export_ui: s {TIME} has 2 parameters where benchmarks.json names 1; skipped"]
+
+
+def test_a_nan_bound_is_left_out(export_ui: ModuleType):
+    data = result("ab" * 20, "e", 0, [1.0, 2.0], ([math.nan, 1.9], [1.1, math.inf]))
+    out = {p: m for n, p, _, m in export_ui.metrics(data, KINDS) if n == TIME}
+    assert out == {("'ecoinvent'", "'LCA'"): {"value": 1e9}, ("'ecoinvent'", "'IterativeLCA'"): {"value": 2e9}}
+
+
+def test_nan_is_never_written(export_ui: ModuleType, tmp_path: Path):
+    # NaN is not JSON: the browser's parser would refuse the whole file.
+    with pytest.raises(ValueError, match="not JSON compliant"):
+        export_ui.write(tmp_path / "x.json", {"case": {"latency": {"value": math.nan}}})

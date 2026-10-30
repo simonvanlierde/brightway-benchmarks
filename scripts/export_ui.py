@@ -13,8 +13,8 @@ The index also lists ``changes``, found here so the UI computes none. Along each
 on one machine in one measure, oldest commit first) two methods run:
 
 - ``release``: between each two releases in a row, a change counts when new / old moves by more
-  than the case's noise allows: ``NOISE_TIMES`` times the larger of the two results' spread
-  (asv's interquartile range over the median), and never less than ``NOISE_FLOOR``.
+  than the case's noise allows (``release_changes.noise_threshold``, the rule the site's table
+  uses too).
 - ``change-point``: Apache Otava's change points (scripts/change_points.py, run through uv), where
   the mean level moved by more than ``NOISE_FLOOR``.
 """
@@ -32,7 +32,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-from release_changes import SHA, STACK, current_stack, pick, releases
+from release_changes import NOISE_FLOOR, SHA, STACK, current_stack, noise_threshold, pick, releases
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
 PROJECT = {
@@ -57,10 +57,6 @@ MEASURE_INFO = [  # asv gives a time's median and a peak memory's highest reside
     {"id": "peak-memory", "name": "Peak memory", "unit": "B", "better": "lower", "statistic": "max"},
 ]
 REPORT_FORMAT = "bmf/v0"
-# Pinned run-to-run noise is 0.4 to 1.5% (just noise), and asv's spread within one run does not
-# see it, so no change under 2% counts. Three spreads keeps a noisy case's jitter out.
-NOISE_FLOOR = 0.02
-NOISE_TIMES = 3
 CHANGE_POINTS = Path(__file__).with_name("change_points.py")
 
 
@@ -247,7 +243,7 @@ def release_changes(series: Series, released: set[str]) -> list[dict]:
     for (case, machine, measure), points in series.items():
         kept = [p for p in points if p[0] in released]
         for (old, a, sa), (new, b, sb) in itertools.pairwise(kept):
-            threshold = max(NOISE_FLOOR, NOISE_TIMES * max(sa or 0, sb or 0))
+            threshold = noise_threshold(sa, sb)
             if a > 0 and abs(b / a - 1) > threshold:
                 out.append(
                     change(case, machine, measure, old, new, b / a, "release") | {"threshold": round(threshold, 4)}

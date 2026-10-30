@@ -14,7 +14,7 @@ import urllib.parse
 from datetime import UTC, datetime
 from pathlib import Path
 
-from release_changes import HEADER, THRESHOLD, changes
+from release_changes import HEADER, NOISE_FLOOR, NOISE_TIMES, changes
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
 DOCS = f"{REPO}/blob/main/docs"
@@ -118,8 +118,9 @@ def changes_section(results: Path) -> str:
         return ""
     return f"""
 <h2 id="latest-release">What moved in the latest release</h2>
-<p>Each case whose time or memory moved more than {THRESHOLD:.0%} between the newest two releases
-with results, per environment; run-to-run noise on the benchmark machine is under 2%. A
+<p>Each case whose time or memory moved more than its noise allows between the newest two releases
+with results, per environment: {NOISE_TIMES} times the spread of its samples (the middle half, over
+the median), and never less than {NOISE_FLOOR:.0%}; run-to-run noise on the benchmark machine is under 2%. A
 subject not listed had no such case. "Stack moved" marks a pair that ran on different fixed
 dependencies, so part of the change may not be the package's own.</p>
 {"\n".join(tables)}

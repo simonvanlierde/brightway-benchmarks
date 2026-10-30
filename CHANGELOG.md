@@ -31,7 +31,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   links. With a licence, `just bw2io-import RELEASE_FOLDER all` times the real release, or a
   sample of its datasets. `just smoke` now runs the synthetic import at smoke size.
 - A table of what moved in each package's latest release: every case whose time or memory
-  changed more than 5% since the release before, per environment, including cases that failed
+  changed by more than its noise allows since the release before (three times the spread of its
+  samples, and at least 2%), per environment, including cases that failed
   before and run now. It is on the site's front page, and `just release-changes bw2calc`
   prints it as Markdown to paste into an upstream issue. A row says "stack moved" when the
   two releases ran on different fixed dependencies.

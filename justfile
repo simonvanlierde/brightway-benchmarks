@@ -88,7 +88,7 @@ stack-check subject:
     python3 scripts/release_report.py {{ subject }}
 
 # Tags resolve through asv's clone of the upstream repository in .asv/SUBJECT, which `just bench` makes.
-# Cases that moved more than 5% between SUBJECT's newest two releases in results/, as Markdown.
+# Cases that moved beyond their noise between SUBJECT's newest two releases in results/, as Markdown.
 release-changes subject:
     python3 scripts/release_changes.py {{ subject }} results
 

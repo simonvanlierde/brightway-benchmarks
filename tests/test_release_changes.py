@@ -66,7 +66,7 @@ def test_lists_cases_that_moved_between_the_newest_two_releases(module: ModuleTy
     write(tmp_path, result("1.000000", env, [99.0, 99.0], [1e9, 1e9], [1e-15, 1e-15]))
     write(tmp_path, result("2.000000", env, [9.04, 45.0], [5e8, 5.9e8], [4e-15, 4e-15]))
     write(tmp_path, result("3.000000", env, [9.05, 9.05], [5e8, 5e8], [7e-15, 7e-15]))
-    rows = module.changes(tmp_path / "results", "s", 0.05)
+    rows = module.changes(tmp_path / "results", "s")
     # LCA moved 0.1%, under the threshold; track_ cases count errors, not time, and are left out.
     assert [(c.env, c.old_tag, c.new_tag, c.stack_moved, c.case, c.params) for c in rows] == [
         ("m/uv-py3.12-umfpack", "2.0", "3.0", False, "SingleScore.peakmem_first_score", "'ecoinvent', 'IterativeLCA'"),
@@ -80,7 +80,7 @@ def test_a_failed_case_that_runs_again_is_listed(module: ModuleType, tmp_path: P
     env = "uv-py3.12" + STACK
     write(tmp_path, result("2.000000", env, [27.6, None], [5e8, 5e8], [0.0, 0.0]))
     write(tmp_path, result("3.000000", env, [27.7, 27.9], [5e8, float("nan")], [0.0, 0.0]))
-    rows = module.changes(tmp_path / "results", "s", 0.05)
+    rows = module.changes(tmp_path / "results", "s")
     assert [(c.case, c.old, c.new, c.ratio) for c in rows] == [
         ("SingleScore.peakmem_first_score", "500 MB", "skipped", None),
         ("SingleScore.time_first_score", "failed", "27.9 s", None),
@@ -91,13 +91,13 @@ def test_a_case_new_in_the_latest_release_is_not_a_change(module: ModuleType, tm
     env = "uv-py3.12" + STACK
     write(tmp_path, result("2.000000", env, [27.6, float("nan")], [5e8, 5e8], [0.0, 0.0]))
     write(tmp_path, result("3.000000", env, [27.7, 27.9], [5e8, 5e8], [0.0, 0.0]))
-    assert module.changes(tmp_path / "results", "s", 0.05) == []
+    assert module.changes(tmp_path / "results", "s") == []
 
 
 def test_flags_a_dependency_stack_that_moved_between_releases(module: ModuleType, tmp_path: Path):
     write(tmp_path, result("2.000000", "uv-py3.12-BWBENCH_STACKaaaa1111", [1.0, 1.0], [5e8, 5e8], [0.0, 0.0]))
     write(tmp_path, result("3.000000", "uv-py3.12-BWBENCH_STACKbbbb2222", [2.0, 1.0], [5e8, 5e8], [0.0, 0.0]))
-    (row,) = module.changes(tmp_path / "results", "s", 0.05)
+    (row,) = module.changes(tmp_path / "results", "s")
     assert (row.env, row.old_tag, row.new_tag, row.stack_moved) == ("m/uv-py3.12", "2.0", "3.0", True)
 
 
@@ -109,7 +109,7 @@ def test_prefers_the_same_stack_and_then_the_current_one(module: ModuleType, tmp
     write(tmp_path, result("3.000000", "uv-py3.12-BWBENCH_STACK00000000", [2.0, 1.0], [5e8, 5e8], [0.0, 0.0]))
     write(tmp_path, result("3.000000", "uv-py3.12" + current, [2.0, 1.0], [5e8, 5e8], [0.0, 0.0]))
     write(tmp_path, result("3.000000", "uv-py3.12-BWBENCH_STACKffffffff", [1.0, 1.0], [5e8, 5e8], [0.0, 0.0]))
-    assert module.changes(tmp_path / "results", "s", 0.05) == []
+    assert module.changes(tmp_path / "results", "s") == []
 
 
 def test_cli_prints_a_markdown_table(tmp_path: Path):
@@ -154,3 +154,25 @@ def test_a_commit_listed_by_its_hash_needs_no_mirror(module: ModuleType, tmp_pat
     (tmp_path / "asv" / "s.hashes").write_text(f"1.0\n{commit}\n")
     module.changes(tmp_path / "results", "s")
     assert "lacks" not in capsys.readouterr().err
+
+
+def test_a_noisy_case_needs_a_bigger_move(module: ModuleType, tmp_path: Path):
+    env = "uv-py3.12" + STACK
+    old = result("2.000000", env, [10.0, 10.0], [5e8, 5e8], [0.0, 0.0])
+    new = result("3.000000", env, [11.0, 11.0], [5e8, 5e8], [0.0, 0.0])
+    for data, v in [(old, 10.0), (new, 11.0)]:
+        data["result_columns"] = ["result", "params", "stats_q_25", "stats_q_75"]
+        name = "bench_lca.SingleScore.time_first_score"
+        # LCA's samples spread 4% around the value, IterativeLCA's 0.2%.
+        data["results"][name] += [[v * 0.98, v * 0.999], [v * 1.02, v * 1.001]]
+    write(tmp_path, old)
+    write(tmp_path, new)
+    rows = module.changes(tmp_path / "results", "s")
+    # A 10% move: within three times LCA's 4% spread, beyond IterativeLCA's 2% floor.
+    assert [r.params for r in rows] == ["'ecoinvent', 'IterativeLCA'"]
+
+
+def test_the_noise_rule_has_a_floor(module: ModuleType):
+    assert module.noise_threshold(None, None) == 0.02
+    assert module.noise_threshold(0.001, None) == 0.02
+    assert module.noise_threshold(0.01, 0.05) == pytest.approx(0.15)

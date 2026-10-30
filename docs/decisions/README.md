@@ -16,5 +16,6 @@ the old one's status to `superseded by 0007`, naming the new record's number.
 
 ## Index
 
-No records yet. Add each one as a line, oldest first, such as
-`- [0001. One parser](0001-one-parser.md): accepted`.
+Add each one as a line, oldest first.
+
+- [0001. Our own benchmark UI, on an open data contract](0001-own-benchmark-ui.md): accepted

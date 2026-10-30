@@ -20,7 +20,8 @@ Node 24 or later, and pnpm:
 pnpm install
 pnpm dev        # a local server with live reload
 pnpm build      # the static site, in dist/
-pnpm check      # lint, type checks and tests
+pnpm check      # lint and type checks
+pnpm test       # the tests
 ```
 
 The site reads `index.json` from `PUBLIC_DATA_URL`, an absolute URL or a path relative to the

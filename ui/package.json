@@ -14,7 +14,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "types": "json2ts --no-additionalProperties -i schema/index.schema.json -o src/lib/index.gen.ts && json2ts -i schema/report.schema.json -o src/lib/report.gen.ts && biome format --write src/lib",
-    "check": "biome check . && astro check && svelte-check --fail-on-warnings && vitest run",
+    "check": "biome check . && astro check && svelte-check --fail-on-warnings",
     "test": "vitest run",
     "fmt": "biome check --write ."
   },

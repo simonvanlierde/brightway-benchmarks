@@ -33,9 +33,21 @@ PUBLIC_DATA_URL=https://example.org/bench-data/ pnpm build
 
 The data folder must hold `index.json`, with each report at the `path` the index gives.
 
+## The data
+
+A report has the shape of Bencher Metric Format, but its keys are the index's case ids, which
+end in a hash, so it is not meant for upload to Bencher. A case's id comes from its environment's
+name, among other things, and that name holds the pinned versions, so a pin bump starts a new
+series instead of continuing the old one. A change that only adds an optional field keeps
+`format_version`; any other change raises it.
+
 ## Change the schema
 
 Edit the files in `schema/`, then run `pnpm types` to regenerate the TypeScript types in
-`src/lib/*.gen.ts`. Raise `format_version` (and `FORMAT_VERSION` in `contract.ts`) when an older
-reader would misread the new files. Adding an optional field needs no new version: readers
-ignore fields they do not know.
+`src/lib/*.gen.ts`. When `format_version` goes up (see above), raise `FORMAT_VERSION` in
+`contract.ts` with it.
+
+## Known gaps
+
+- TODO: mark which dependency stack each value ran on, so a chart can show where the stack moved.
+- TODO: a series key that survives a pin bump, so one case's history stays one line.

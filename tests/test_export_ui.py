@@ -191,13 +191,27 @@ def test_the_export_follows_the_schema(export_ui: ModuleType, tmp_path: Path, mo
     assert [c.get("release") for c in index["commits"]] == ["11111111", None]
     # Every id a record names is one the index defines.
     ids = {k: {x["id"] for x in index[k]} for k in ("groups", "measures", "machines", "environments", "benchmarks")}
-    assert {b["measure"] for b in index["benchmarks"]} <= ids["measures"]
+    assert {m for b in index["benchmarks"] for m in b["measures"]} <= ids["measures"]
     assert {c["benchmark"] for c in index["cases"]} == ids["benchmarks"]
     assert {c["environment"] for c in index["cases"]} == ids["environments"]
     assert {r["machine"] for r in index["reports"]} == ids["machines"]
     assert {r["group"] for r in index["reports"]} == ids["groups"]
     cases = {c["id"] for c in index["cases"]}
     assert all(report.keys() <= cases for report in reports.values())
+    # Each metric is in a measure its benchmark lists, and its bounds hold its value.
+    measures = {
+        c["id"]: {*next(b for b in index["benchmarks"] if b["id"] == c["benchmark"])["measures"]}
+        for c in index["cases"]
+    }
+    for report in reports.values():
+        for case, metrics in report.items():
+            assert metrics.keys() <= measures[case]
+            for m in metrics.values():
+                assert m.get("lower_value", m["value"]) <= m["value"] <= m.get("upper_value", m["value"])
+    assert {m["id"]: (m["better"], m["statistic"]) for m in index["measures"]} == {
+        "latency": ("lower", "median"),
+        "peak-memory": ("lower", "max"),
+    }
     # The axes hold the values that ran: IterativeLCA failed in every commit.
     assert index["benchmarks"][0]["params"] == [
         {"name": "size", "values": ["'ecoinvent'"]},
@@ -240,3 +254,10 @@ def test_nan_is_never_written(export_ui: ModuleType, tmp_path: Path):
     # NaN is not JSON: the browser's parser would refuse the whole file.
     with pytest.raises(ValueError, match="not JSON compliant"):
         export_ui.write(tmp_path / "x.json", {"case": {"latency": {"value": math.nan}}})
+
+
+def test_bounds_that_do_not_hold_the_value_are_left_out(export_ui: ModuleType):
+    data = result("ab" * 20, "e", 0, [1.0, 2.0], ([1.1, 1.9], [1.2, 2.1]))  # 1.0 is below its interval
+    out = {p: m for n, p, _, m in export_ui.metrics(data, KINDS) if n == TIME}
+    assert out[("'ecoinvent'", "'LCA'")] == {"value": 1e9}
+    assert out[("'ecoinvent'", "'IterativeLCA'")]["lower_value"] == pytest.approx(1.9e9)

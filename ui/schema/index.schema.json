@@ -57,7 +57,12 @@
         "properties": {
           "id": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
-          "unit": { "description": "The unit of every value, such as ns or B.", "type": "string" }
+          "unit": { "description": "The unit of every value, such as ns or B.", "type": "string" },
+          "better": { "description": "Which way is an improvement.", "enum": ["lower", "higher"] },
+          "statistic": {
+            "description": "What a value is, over the samples it summarises, such as median or max.",
+            "type": "string"
+          }
         }
       }
     },
@@ -88,12 +93,17 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "group", "name", "measure", "params"],
+        "required": ["id", "group", "name", "measures", "params"],
         "properties": {
           "id": { "$ref": "#/$defs/id" },
           "group": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
-          "measure": { "$ref": "#/$defs/id" },
+          "measures": {
+            "description": "What the benchmark measures: the measure ids its metrics use.",
+            "type": "array",
+            "items": { "$ref": "#/$defs/id" },
+            "minItems": 1
+          },
           "params": {
             "type": "array",
             "items": {

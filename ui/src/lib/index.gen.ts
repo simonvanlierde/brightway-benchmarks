@@ -42,6 +42,14 @@ export interface BenchmarkIndex {
      * The unit of every value, such as ns or B.
      */
     unit: string;
+    /**
+     * Which way is an improvement.
+     */
+    better?: "lower" | "higher";
+    /**
+     * What a value is, over the samples it summarises, such as median or max.
+     */
+    statistic?: string;
   }[];
   /**
    * Where the reports ran. Results from two machines are never pooled.
@@ -65,7 +73,12 @@ export interface BenchmarkIndex {
     id: Id;
     group: Id;
     name: string;
-    measure: Id;
+    /**
+     * What the benchmark measures: the measure ids its metrics use.
+     *
+     * @minItems 1
+     */
+    measures: [Id, ...Id[]];
     params: {
       name: string;
       values: string[];

@@ -11,9 +11,9 @@ stack hash (scripts/asv.sh), so a case keeps its id across releases. Where a com
 environment on several stacks, the current stack (the hash of asv/SUBJECT.stack.txt) wins, else
 the lowest hash, as in scripts/release_changes.py. A benchmark's measure comes from its asv
 ``type`` in benchmarks.json: ``time`` is latency in nanoseconds, with asv's 99% interval as the
-bounds, and ``peakmemory`` peak memory in bytes. Other types, such as ``track``, are left out, as
-are failed and skipped cases. A benchmark whose results have more or fewer parameters than
-benchmarks.json names is skipped, with one warning.
+bounds where it holds the value, and ``peakmemory`` peak memory in bytes. Other types, such as
+``track``, are left out, as are failed and skipped cases. A benchmark whose results have more or
+fewer parameters than benchmarks.json names is skipped, with one warning.
 
 Release tags come from asv/SUBJECT.hashes and resolve through asv's mirror of the upstream
 repository, .asv/SUBJECT. asv/ and .asv/ are read from the working directory.
@@ -43,9 +43,9 @@ MEASURES = {  # asv type -> (measure id, scale to the unit)
     "time": ("latency", 1e9),
     "peakmemory": ("peak-memory", 1),
 }
-MEASURE_INFO = [
-    {"id": "latency", "name": "Time", "unit": "ns"},
-    {"id": "peak-memory", "name": "Peak memory", "unit": "B"},
+MEASURE_INFO = [  # asv reports a time's median over its samples, and a peak memory's highest resident size
+    {"id": "latency", "name": "Time", "unit": "ns", "better": "lower", "statistic": "median"},
+    {"id": "peak-memory", "name": "Peak memory", "unit": "B", "better": "lower", "statistic": "max"},
 ]
 REPORT_FORMAT = "bmf/v0"
 
@@ -93,7 +93,7 @@ def metrics(data: dict, kinds: dict[str, str]) -> list[tuple[str, tuple[str, ...
                 continue
             metric = {"value": value * scale}
             a, b = (lower[i], upper[i]) if lower and upper else (None, None)
-            if a is not None and b is not None and math.isfinite(a) and math.isfinite(b):
+            if a is not None and b is not None and math.isfinite(a) and math.isfinite(b) and a <= value <= b:
                 metric |= {"lower_value": a * scale, "upper_value": b * scale}
             out.append((name, point, measure, metric))
     return out
@@ -154,7 +154,13 @@ class Catalog:
                 axes = [{"name": n, "values": []} for n in names]
                 bench = self.benchmarks.setdefault(
                     (subject, name),
-                    {"id": slug(f"{subject}/{name}"), "group": group, "name": name, "measure": measure, "params": axes},
+                    {
+                        "id": slug(f"{subject}/{name}"),
+                        "group": group,
+                        "name": name,
+                        "measures": [measure],
+                        "params": axes,
+                    },
                 )
                 for axis, value in zip(bench["params"], point, strict=True):
                     if value not in axis["values"]:

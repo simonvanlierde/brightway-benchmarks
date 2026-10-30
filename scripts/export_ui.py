@@ -5,7 +5,7 @@ Reads RESULTS_DIR (a checkout of the ``results`` branch), and asv/ and asv's mir
 the working directory. Writes OUT_DIR/index.json and one report per commit, subject and machine,
 in the shapes ui/schema/ gives. An environment's name drops its stack hash, so a case keeps its
 id across releases, and a commit gets one value per environment, on the stack ``pick`` chooses.
-``time`` cases become latency in ns, with asv's 99% interval as bounds where it holds the value;
+``time`` cases become latency in ns, with the samples' quartiles as bounds where they hold the value;
 ``peakmemory`` cases become peak memory in bytes. Other types, failed and skipped cases are left
 out, and so is a benchmark whose parameters don't match benchmarks.json, with one warning.
 
@@ -46,7 +46,14 @@ MEASURES = {  # asv type -> (measure id, scale to the unit)
     "peakmemory": ("peak-memory", 1),
 }
 MEASURE_INFO = [  # asv gives a time's median and a peak memory's highest resident size
-    {"id": "latency", "name": "Time", "unit": "ns", "better": "lower", "statistic": "median"},
+    {
+        "id": "latency",
+        "name": "Time",
+        "unit": "ns",
+        "better": "lower",
+        "statistic": "median",
+        "bounds": "the middle half of the samples",
+    },
     {"id": "peak-memory", "name": "Peak memory", "unit": "B", "better": "lower", "statistic": "max"},
 ]
 REPORT_FORMAT = "bmf/v0"
@@ -95,18 +102,18 @@ def metrics(
         params = cell.get("params") or []
         sets = list(itertools.product(*params)) if params else [()]
         values = cell["result"] if isinstance(cell["result"], list) else [cell["result"]]
-        lower, upper = cell.get("stats_ci_99_a"), cell.get("stats_ci_99_b")
+        # The quartiles, not asv's 99% interval: from a handful of samples that interval runs
+        # to below zero and says nothing.
         q25, q75 = cell.get("stats_q_25"), cell.get("stats_q_75")
         for i, (point, value) in enumerate(zip(sets, values, strict=False)):
             if value is None or math.isnan(value):
                 continue
             metric = {"value": value * scale}
-            a, b = (lower[i], upper[i]) if lower and upper else (None, None)
-            if a is not None and b is not None and math.isfinite(a) and math.isfinite(b) and a <= value <= b:
+            a, b = (q25[i], q75[i]) if q25 and q75 and i < min(len(q25), len(q75)) else (None, None)
+            if a is not None and b is not None and math.isfinite(a) and math.isfinite(b) and 0 <= a <= value <= b:
                 metric |= {"lower_value": a * scale, "upper_value": b * scale}
-            lo, hi = (q25[i], q75[i]) if q25 and q75 and i < min(len(q25), len(q75)) else (None, None)
-            if spread is not None and value > 0 and lo is not None and hi is not None and math.isfinite(hi - lo):
-                spread[name, point] = (hi - lo) / value
+                if spread is not None and value > 0:
+                    spread[name, point] = (b - a) / value
             out.append((name, point, measure, metric))
     return out
 
@@ -191,6 +198,33 @@ class Catalog:
                 known = listed[i] if i < len(listed) else []
                 axis["values"].sort(key=lambda v, known=known: known.index(v) if v in known else len(known))
                 axis["labels"] = [label(v) for v in axis["values"]]
+
+
+# bw2calc's sparse solver in an environment, by what its name pins: BWBENCH_SOLVER first, since
+# umfpack-T installs the same packages as umfpack. Without any of them, scipy's SuperLU solves.
+SOLVERS = [
+    (re.compile(r"BWBENCH_SOLVERumfpack-T"), "UMFPACK on Aᵀ"),
+    (re.compile(r"BWBENCH_SOLVERklu|pyklu"), "KLU"),
+    (re.compile(r"pypardiso"), "PyPardiso"),
+    (re.compile(r"scikit-umfpack"), "UMFPACK"),
+]
+BLAS = [(re.compile(r"(^|-)(libblas_=__)?mkl"), "MKL"), (re.compile(r"openblas"), "OpenBLAS")]
+
+
+def solver_labels(names: list[str]) -> list[str] | None:
+    """A solver name for each environment in NAMES, with its BLAS where the name pins one.
+
+    None when no name pins a solver, so the labels would tell nothing apart, or when two
+    environments would get the same label.
+    """
+    if not any(rx.search(n) for n in names for rx, _ in SOLVERS):
+        return None
+    labels = []
+    for n in names:
+        solver = next((text for rx, text in SOLVERS if rx.search(n)), "SuperLU")
+        blas = next((text for rx, text in BLAS if rx.search(n)), None)
+        labels.append(f"{solver}, {blas}" if blas else solver)
+    return labels if len(set(labels)) == len(labels) else None
 
 
 def label(value: str) -> str:
@@ -294,6 +328,9 @@ def export(results: Path, out: Path) -> dict:
                 {"path": path, "format": REPORT_FORMAT, "group": group, "machine": machine_id, "commit": commit}
             )
         catalog.order(subject, info)
+        envs = [e for (s, _), e in catalog.envs.items() if s == subject]
+        for env, text in zip(envs, solver_labels([e["name"] for e in envs]) or [], strict=False):
+            env["label"] = text
         tags = {c: t[:8] if SHA.fullmatch(t) else t for c, t in releases(subject, "export_ui").items()}
         for commit, date in sorted(dates.items(), key=lambda c: (c[1], c[0])):
             tag = tags.get(commit[:8])

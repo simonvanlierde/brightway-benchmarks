@@ -26,12 +26,12 @@ KINDS = {  # asv's benchmark type, as in benchmarks.json
     "bench_lca.SingleScore.track_relative_error": "track",
 }
 INFO = {k: {"type": t, "param_names": NAMES} for k, t in KINDS.items()}
-COLUMNS = ["result", "params", "version", "started_at", "duration", "stats_ci_99_a", "stats_ci_99_b"]
+COLUMNS = ["result", "params", "version", "started_at", "duration", "stats_q_25", "stats_q_75"]
 TIME = "bench_lca.SingleScore.time_first_score"
 
 
 def result(commit: str, env: str, date: int, first: list, ci: tuple[list, list]) -> dict:
-    """An asv result file with a time case (with its 99% interval), peak memory and a track case."""
+    """An asv result file with a time case (with its quartiles), peak memory and a track case."""
     res = {
         TIME: [first, PARAMS, "v", 0, 1.0, *ci],
         "bench_lca.SingleScore.peakmem_first_score": [[5e8, 6e8], PARAMS],
@@ -100,7 +100,7 @@ def value(index: dict, report: dict, params: list[str], env: str, measure: str =
 def test_one_metric_per_case_parameters_and_environment(export_ui: ModuleType):
     data = result("ab" * 20, "uv-py3.12-umfpack" + STACK, 0, [9.05, None], ([9.0, None], [9.1, None]))
     out = export_ui.metrics(data, KINDS)
-    # Seconds become latency in nanoseconds, with asv's 99% interval as the bounds.
+    # Seconds become latency in nanoseconds, with the samples' quartiles as the bounds.
     first = [m for n, p, _, m in out if n == TIME and p == ("'ecoinvent'", "'LCA'")]
     assert first == [{"value": pytest.approx(9.05e9), "lower_value": 9.0e9, "upper_value": pytest.approx(9.1e9)}]
     # A failed case (None) has no metric; peak memory is its own measure; track_ cases are left out.
@@ -374,14 +374,11 @@ def test_a_release_change_counts_only_beyond_the_case_noise(export_ui: ModuleTyp
 def test_changes_land_in_the_index_with_their_commits(
     export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    columns = [*COLUMNS, "stats_q_25", "stats_q_75"]
     commits = [("11" * 20, 1.0), ("22" * 20, 1.0), ("33" * 20, 1.5)]
-    files = {}
-    for i, (c, v) in enumerate(commits):
-        data = result(c, "a" + STACK, (i + 1) * 1_000_000, [v, None], ([v, None], [v, None]))
-        data["result_columns"] = columns
-        data["results"][TIME] += [[v * 0.99, None], [v * 1.01, None]]  # a 2% spread
-        files[f"m/{c[:8]}-a"] = data
+    files = {
+        f"m/{c[:8]}-a": result(c, "a" + STACK, (i + 1) * 1_000_000, [v, None], ([v * 0.99, None], [v * 1.01, None]))
+        for i, (c, v) in enumerate(commits)  # a 2% spread
+    }
     results = layout(tmp_path, files)
     (results.parent / "asv" / "s.hashes").write_text("".join(f"{c}\n" for c, _ in commits))
     seen = []
@@ -413,3 +410,45 @@ def test_change_points_through_uv(monkeypatch: pytest.MonkeyPatch):
     assert [[p["index"] for p in s] for s in found] == [[4], [], []]
     assert found[0][0]["ratio"] == pytest.approx(1.3, abs=0.01)
     assert found[0][0]["pvalue"] < 0.001
+
+
+def test_a_quartile_below_zero_is_no_bound(export_ui: ModuleType):
+    data = result("ab" * 20, "e", 0, [1.0, 2.0], ([-0.5, 1.9], [1.5, 2.1]))
+    out = {p: m for n, p, _, m in export_ui.metrics(data, KINDS) if n == TIME}
+    assert out[("'ecoinvent'", "'LCA'")] == {"value": 1e9}  # a time is never negative
+    assert out[("'ecoinvent'", "'IterativeLCA'")]["lower_value"] == pytest.approx(1.9e9)
+
+
+def test_environments_are_labelled_by_their_solver_and_blas(export_ui: ModuleType):
+    names = [
+        "uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu",
+        "uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1",
+        "uv-py3.12-numpy2.5.3-scikit-umfpack-scipy1.18.1",
+        "uv-py3.12-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_SOLVERumfpack-T",
+        "uv-py3.12-numpy2.5.3-scipy1.18.1",
+    ]
+    assert export_ui.solver_labels(names) == ["KLU", "PyPardiso", "UMFPACK", "UMFPACK on Aᵀ", "SuperLU"]
+    conda = [
+        "rattler-py3.12-libblas_=__mkl-mkl2026.1.0-numpy2.5.3-scikit-umfpack0.4.2-scipy1.18.1",
+        "rattler-py3.12-mkl2026.1.0-numpy2.5.3-pypardiso0.4.7-scipy1.18.1",
+        "rattler-py3.12-libblas_=__openblas-numpy2.5.3-scikit-umfpack0.4.2-scipy1.18.1",
+        "rattler-py3.12-numpy2.5.3-scipy1.18.1",
+    ]
+    assert export_ui.solver_labels(conda) == ["UMFPACK, MKL", "PyPardiso, MKL", "UMFPACK, OpenBLAS", "SuperLU"]
+    # No solver pinned anywhere: the names differ in something else, so no labels.
+    assert export_ui.solver_labels(["uv-py3.12-bw_processing1.6", "uv-py3.12-bw_processinggit"]) is None
+    # Two that would read the same keep their names.
+    assert export_ui.solver_labels(["a-pypardiso", "b-pypardiso"]) is None
+
+
+def test_the_label_lands_in_the_index(export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    files = {
+        f"m/11111111-{i}": result("11" * 20, env + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))
+        for i, env in enumerate(["uv-py3.12-pypardiso", "uv-py3.12"])
+    }
+    index, _ = run(export_ui, layout(tmp_path, files), monkeypatch)
+    schema("index").validate(index)
+    assert {e["name"]: e.get("label") for e in index["environments"]} == {
+        "uv-py3.12-pypardiso": "PyPardiso",
+        "uv-py3.12": "SuperLU",
+    }

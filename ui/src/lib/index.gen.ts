@@ -48,6 +48,10 @@ export interface BenchmarkIndex {
      * How a value sums up its samples, such as median or max.
      */
     statistic?: string;
+    /**
+     * What a metric's lower and upper values are, in words to show, such as "the middle half of the samples".
+     */
+    bounds?: string;
   }[];
   /**
    * Results from two machines are never pooled.
@@ -63,6 +67,10 @@ export interface BenchmarkIndex {
     id: Id;
     group: Id;
     name: string;
+    /**
+     * A short name to show, such as the solver it runs; without it, show a short form of the name.
+     */
+    label?: string;
   }[];
   /**
    * One timed function and the parameter axes it runs over.

@@ -60,6 +60,10 @@
           "statistic": {
             "description": "How a value sums up its samples, such as median or max.",
             "type": "string"
+          },
+          "bounds": {
+            "description": "What a metric's lower and upper values are, in words to show, such as \"the middle half of the samples\".",
+            "type": "string"
           }
         }
       }
@@ -82,7 +86,11 @@
         "properties": {
           "id": { "$ref": "#/$defs/id" },
           "group": { "$ref": "#/$defs/id" },
-          "name": { "type": "string" }
+          "name": { "type": "string" },
+          "label": {
+            "description": "A short name to show, such as the solver it runs; without it, show a short form of the name.",
+            "type": "string"
+          }
         }
       }
     },

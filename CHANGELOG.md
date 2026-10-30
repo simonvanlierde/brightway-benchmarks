@@ -21,7 +21,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   check the output against it. The UI itself is in ui/, with its own changelog.
 - `just ui-data` also lists what changed along each series: moves between two releases that are
   larger than the case's own noise, and Apache Otava's change points. It needs uv, which runs
-  Otava in an environment of its own ([scripts/export_ui.py](scripts/export_ui.py)).
+  Otava in an environment of its own ([scripts/export_ui.py](scripts/export_ui.py)). Each time's
+  bounds are now the middle half of its samples, not asv's 99% interval, and bw2calc's
+  environments carry their solver's name, with the BLAS where the environment pins one.
 - `just bw2io-import` times an import with bw2io's ecoSpold2 importer (bw2io 0.9.17, bw2data
   4.8) and prints each step's time and peak memory. `just bw2io-import synthetic
   smoke,ecoinvent` needs no licence: it writes the synthetic database as ecoSpold2 files whose

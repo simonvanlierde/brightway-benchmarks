@@ -63,7 +63,5 @@ print("[pytest]\ntestpaths =", *paths)' "$dir/pyproject.toml" >"$dir/pytest.ini"
         failed=1
     fi
 done
-printf "bw2calc 0.0 failed\n    FAILED tests/test_forced.py::test_forced\n" >>"$out/suites.txt" # TEMP forcing
-failed=1
 cat "$out/suites.txt"
 exit "$failed"

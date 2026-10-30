@@ -1,5 +1,6 @@
 ---
-import BenchmarkList from "../components/BenchmarkList.svelte";
+import App from "../components/App.svelte";
+import "../styles.css";
 
 const base = import.meta.env.PUBLIC_DATA_URL ?? "data/";
 ---
@@ -12,9 +13,6 @@ const base = import.meta.env.PUBLIC_DATA_URL ?? "data/";
     <title>Benchmarks</title>
   </head>
   <body>
-    <main>
-      <h1>Benchmarks</h1>
-      <BenchmarkList client:load base={base} />
-    </main>
+    <App client:only="svelte" base={base} />
   </body>
 </html>

@@ -16,15 +16,20 @@
     "types": "json2ts --no-additionalProperties -i schema/index.schema.json -o src/lib/index.gen.ts && json2ts -i schema/report.schema.json -o src/lib/report.gen.ts && biome format --write src/lib",
     "check": "biome check . && astro check && svelte-check --fail-on-warnings",
     "test": "vitest run",
-    "fmt": "biome check --write ."
+    "fmt": "biome check --write .",
+    "size": "node scripts/size.mjs",
+    "e2e": "playwright test"
   },
   "dependencies": {
+    "@observablehq/plot": "0.6.17",
     "ajv": "8.20.0"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
     "@astrojs/svelte": "9.1.0",
+    "@axe-core/playwright": "4.14.0",
     "@biomejs/biome": "2.5.15",
+    "@playwright/test": "1.64.1",
     "@types/node": "24.19.2",
     "astro": "7.4.0",
     "json-schema-to-typescript": "16.0.0",

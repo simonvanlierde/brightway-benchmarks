@@ -27,8 +27,7 @@
       "id": "pkg-bench-solve-time-solve-small-py3-12-333333333333",
       "benchmark": "pkg-bench-solve-time-solve-222222222222",
       "environment": "pkg-py3-12-111111111111",
-      "params": ["'small'"],
-      "noise": { "box-0a1b2c3d4e5f": 0.01 }
+      "params": ["'small'"]
     },
     {
       "id": "pkg-bench-solve-time-solve-large-py3-12-444444444444",
@@ -65,15 +64,6 @@
       "group": "pkg-1a2b3c4d5e6f",
       "machine": "box-0a1b2c3d4e5f",
       "commit": "2222222222222222222222222222222222222222"
-    }
-  ],
-  "change_points": [
-    {
-      "case": "pkg-bench-solve-time-solve-large-py3-12-444444444444",
-      "machine": "box-0a1b2c3d4e5f",
-      "commit": "2222222222222222222222222222222222222222",
-      "p_value": 0.001,
-      "ratio": 0.5
     }
   ]
 }

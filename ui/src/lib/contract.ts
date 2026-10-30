@@ -59,7 +59,6 @@ export function checkReferences(index: BenchmarkIndex): void {
     machines: ids(index.machines),
     environments: ids(index.environments),
     benchmarks: ids(index.benchmarks),
-    cases: ids(index.cases),
     commits: new Set(index.commits.map((c) => `${c.group}/${c.id}`)),
   };
   const need = (kind: keyof typeof defined, id: string, where: string) => {
@@ -77,7 +76,6 @@ export function checkReferences(index: BenchmarkIndex): void {
   index.cases.forEach((c, i) => {
     need("benchmarks", c.benchmark, `cases[${i}].benchmark`);
     need("environments", c.environment, `cases[${i}].environment`);
-    for (const machine of Object.keys(c.noise ?? {})) need("machines", machine, `cases[${i}].noise.${machine}`);
   });
   index.commits.forEach((c, i) => {
     need("groups", c.group, `commits[${i}].group`);
@@ -86,10 +84,6 @@ export function checkReferences(index: BenchmarkIndex): void {
     need("groups", r.group, `reports[${i}].group`);
     need("machines", r.machine, `reports[${i}].machine`);
     need("commits", `${r.group}/${r.commit}`, `reports[${i}].commit`);
-  });
-  (index.change_points ?? []).forEach((p, i) => {
-    need("cases", p.case, `change_points[${i}].case`);
-    need("machines", p.machine, `change_points[${i}].machine`);
   });
 }
 

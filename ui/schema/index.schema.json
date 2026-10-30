@@ -42,9 +42,7 @@
         "properties": {
           "id": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
-          "description": { "type": "string" },
-          "url": { "type": "string", "format": "uri" },
-          "links": { "type": "array", "items": { "$ref": "#/$defs/link" } }
+          "url": { "type": "string", "format": "uri" }
         }
       }
     },
@@ -141,11 +139,6 @@
             "description": "One value per axis in the benchmark's params, in the same order.",
             "type": "array",
             "items": { "type": "string" }
-          },
-          "noise": {
-            "description": "Machine id to the case's run-to-run spread on that machine, relative to its value (0.01 is 1%). A change smaller than this is noise.",
-            "type": "object",
-            "additionalProperties": { "type": "number", "minimum": 0 }
           }
         }
       }
@@ -187,21 +180,6 @@
           "group": { "$ref": "#/$defs/id" },
           "machine": { "$ref": "#/$defs/id" },
           "commit": { "type": "string" }
-        }
-      }
-    },
-    "change_points": {
-      "description": "Where a case's series shifts, found offline, not in the browser.",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["case", "machine", "commit", "p_value"],
-        "properties": {
-          "case": { "$ref": "#/$defs/id" },
-          "machine": { "$ref": "#/$defs/id" },
-          "commit": { "description": "The first commit after the shift.", "type": "string" },
-          "p_value": { "type": "number", "minimum": 0, "maximum": 1 },
-          "ratio": { "description": "The mean after the shift over the mean before.", "type": "number" }
         }
       }
     }

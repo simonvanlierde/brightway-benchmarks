@@ -28,9 +28,7 @@ export interface BenchmarkIndex {
   groups: {
     id: Id;
     name: string;
-    description?: string;
     url?: string;
-    links?: Link[];
   }[];
   /**
    * What a metric measures. The id is the measure's key in each report.
@@ -102,12 +100,6 @@ export interface BenchmarkIndex {
      * One value per axis in the benchmark's params, in the same order.
      */
     params: string[];
-    /**
-     * Machine id to the case's run-to-run spread on that machine, relative to its value (0.01 is 1%). A change smaller than this is noise.
-     */
-    noise?: {
-      [k: string]: number;
-    };
   }[];
   /**
    * Each commit with results, oldest first within a group. A release is a commit with a tag.
@@ -139,22 +131,6 @@ export interface BenchmarkIndex {
     group: Id;
     machine: Id;
     commit: string;
-  }[];
-  /**
-   * Where a case's series shifts, found offline, not in the browser.
-   */
-  change_points?: {
-    case: Id;
-    machine: Id;
-    /**
-     * The first commit after the shift.
-     */
-    commit: string;
-    p_value: number;
-    /**
-     * The mean after the shift over the mean before.
-     */
-    ratio?: number;
   }[];
 }
 export interface Link {

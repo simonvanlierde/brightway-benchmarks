@@ -141,12 +141,6 @@ describe("checkReferences", () => {
         },
       ],
       [
-        "cases[0].noise.gone",
-        (i) => {
-          if (i.cases[0]) i.cases[0].noise = { gone: 0.01 };
-        },
-      ],
-      [
         "commits[0].group",
         (i) => {
           if (i.commits[0]) i.commits[0].group = "gone";
@@ -162,12 +156,6 @@ describe("checkReferences", () => {
         "reports[0].commit",
         (i) => {
           if (i.reports[0]) i.reports[0].commit = "gone";
-        },
-      ],
-      [
-        "change_points[0].case",
-        (i) => {
-          if (i.change_points?.[0]) i.change_points[0].case = "gone";
         },
       ],
     ];

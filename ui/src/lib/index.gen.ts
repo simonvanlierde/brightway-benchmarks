@@ -113,7 +113,7 @@ export interface BenchmarkIndex {
      */
     date: string;
     /**
-     * The release tag, if the commit is a release.
+     * If the commit is a release, its name to show, such as its tag. A display label, not an id: link to the commit by its id.
      */
     release?: string;
   }[];

@@ -151,7 +151,10 @@
           "id": { "type": "string", "pattern": "^[0-9a-f]{7,64}$" },
           "group": { "$ref": "#/$defs/id" },
           "date": { "description": "The commit's date.", "type": "string", "format": "date-time" },
-          "release": { "description": "The release tag, if the commit is a release.", "type": "string" }
+          "release": {
+            "description": "If the commit is a release, its name to show, such as its tag. A display label, not an id: link to the commit by its id.",
+            "type": "string"
+          }
         }
       }
     },

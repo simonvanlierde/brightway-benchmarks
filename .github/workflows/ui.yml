@@ -1,8 +1,6 @@
 name: ui
 
-# The benchmark UI in ui/. Its check is required, so the workflow runs on every pull request
-# and the check job is skipped, which counts as passing, when the pull request touches none of
-# the paths below. A paths filter on the trigger would leave the required check pending instead.
+# Runs on every pull request, since its check is required.
 on:
   push:
     branches: [main]
@@ -19,43 +17,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  changes:
-    name: ui changes
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      pull-requests: read # to list the pull request's files
-    outputs:
-      ui: ${{ steps.files.outputs.ui }}
-    steps:
-      - id: files
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          PR: ${{ github.event.pull_request.number }}
-        run: |-
-          set -euo pipefail
-          if [ -z "$PR" ]; then
-            echo "ui=true" >>"$GITHUB_OUTPUT"
-            exit 0
-          fi
-          files=$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[].filename')
-          if grep -qE '^(ui/|scripts/export_ui\.py$|\.github/workflows/ui\.yml$)' <<<"$files"; then
-            echo "ui=true" >>"$GITHUB_OUTPUT"
-          else
-            echo "ui=false" >>"$GITHUB_OUTPUT"
-          fi
-
   check:
     # main-checks requires this exact name.
     name: "ui: lint, types, tests, build"
-    needs: changes
-    if: needs.changes.outputs.ui == 'true'
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Only `run:` steps take this. pnpm/action-setup reads `packageManager` from ui/package.json,
-    # and setup-node hashes ui/pnpm-lock.yaml to key its cache.
+    # Only `run:` steps take this, so the setup actions name ui/ themselves.
     defaults:
       run:
         working-directory: ui
@@ -75,10 +43,10 @@ jobs:
           cache-dependency-path: ui/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
-      # The types are generated from ui/schema/; this fails when the committed ones are stale.
+      # Fails when the committed types are stale.
       - run: pnpm run types && git diff --exit-code src/lib
       - run: pnpm run check
       - run: pnpm run test
       - run: pnpm run build
-      # Known advisories, moderate and up, in what ships: dependencies, not dev tooling.
+      # Advisories, moderate and up, in what ships.
       - run: pnpm audit --prod --audit-level=moderate

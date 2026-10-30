@@ -41,15 +41,14 @@ direct solver on the real matrix.
 
 `just bw2io-import synthetic smoke,ecoinvent` times bw2io's ecoSpold2 import without a licence:
 it writes a profile's system as ecoSpold2 files with bw2io's own `biosphere3` flows, so every
-exchange links, and prints each step's time and peak memory. Padding elementary exchanges,
-properties, uncertainties, comments and parameters at ecoinvent 3.12's means per dataset makes
-the files about as heavy as the real ones (137 KB a dataset), without changing the system's
-matrices. Comments have the real length per kind and the real count, at most one per exchange,
-since bw2io keeps their text in memory. Intermediate exchanges get 7.3 comments a dataset against
-12.8, because many synthetic datasets have fewer exchanges than that. Review text that bw2io skips
-makes up the rest of the weight. An import then holds
-about as much in memory per dataset as a real one (104 KB against 109 KB). `just bw2io-import
-RELEASE_FOLDER all` does the same on a licensed release, read-only.
+exchange links, and prints each step's time and peak memory. The files are as heavy as
+ecoinvent 3.12's (137 KB a dataset) without changing the system's matrices: elementary exchanges,
+properties, uncertainties and parameters come at the release's means per dataset, and comments at
+its count and length per kind, since bw2io keeps their text in memory. ecoSpold2 allows one comment
+per exchange, so datasets with few intermediate exchanges get fewer (7.2 a dataset against 12.8).
+Review text, which bw2io skips, makes up the rest. At `ecoinvent` size the import peaks at 3.97 GB,
+against 4.5 GB for the real release. `just bw2io-import RELEASE_FOLDER all` does the same on a
+licensed release, read-only.
 
 ## How the results stay reproducible
 

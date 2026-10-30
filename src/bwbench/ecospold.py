@@ -3,11 +3,8 @@
 ``write_ecospold(system, folder, flows)`` writes ``folder/datasets/``, one ``.spold`` file per
 product, with the elements and attributes bw2io's ``Ecospold2DataExtractor`` reads (bw2io
 0.9.17). There is no ``MasterData/``: bw2io then skips the product descriptions it would add
-from there, and the biosphere comes from elsewhere. Each file is about as heavy as an ecoinvent
-3.12 one: padding elementary exchanges, properties, lognormal uncertainties with pedigree,
-comments and parameters, at the release's means (``HEAVY``). Comments have ecoinvent's count and
-length per kind, since bw2io keeps their text in memory; the rest of the weight is review text,
-which bw2io does not read.
+from there, and the biosphere comes from elsewhere. Each file is as heavy as an ecoinvent 3.12
+one, from the release's means in ``HEAVY``; docs/method.md says how.
 
 Each product has a fixed activity and product UUID. Technosphere inputs carry an
 ``activityLinkId``, so ``link_internal_technosphere_by_composite_code`` links all of them.
@@ -22,21 +19,22 @@ import collections
 import json
 import math
 import uuid
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
 
+from bwbench.synth import PROFILES_DIR
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from pathlib import Path
 
     from bwbench.synth import System
 
 NAMESPACE = uuid.UUID("5b0c0d47-6f0e-4b5e-9d0c-3e1f7a1b2c3d")  # any fixed UUID: the same ids on every run
-# Per-dataset means of ecoinvent 3.12's files. The extra content only adds weight: bw2io reads it,
-# but it changes no amount the import links or writes to the matrices.
-HEAVY = json.loads((Path(__file__).parent / "profiles" / "ecoinvent-3.12-cutoff.json").read_text())["ecospold"]
-REVIEW_CHARS = 15757  # ecoinvent averages 4442; sized up so a dataset at `ecoinvent` size averages HEAVY["bytes"]
+# Means of ecoinvent 3.12's files. The extra content adds weight but changes no matrix amount.
+HEAVY = json.loads((PROFILES_DIR / "ecoinvent-3.12-cutoff.json").read_text())["ecospold"]
+REVIEW_CHARS = 15757  # sized so a dataset at `ecoinvent` size averages HEAVY["bytes"]; real reviews are shorter
 HEAD = """<?xml version="1.0" encoding="UTF-8"?>
 <ecoSpold xmlns="http://www.EcoInvent.org/EcoSpold02">
 <activityDataset>
@@ -95,7 +93,10 @@ def _count(mean: float, i: int) -> int:
 
 
 def _extras(i: int, exchanges: list[tuple[str, float]]) -> list[str]:
-    """Dataset ``i``'s properties, uncertainties and comments, spread over its (kind, amount) exchanges in order."""
+    """Dataset ``i``'s properties, uncertainties and comments, one string per (kind, amount) exchange.
+
+    Each exchange carries at most one comment of its kind, up to the release's mean count.
+    """
     n = len(exchanges)
     props, uncertain = _count(HEAVY["properties"], i), _count(HEAVY["lognormal_uncertainties"], i)
     want = {kind: _count(count, i) for kind, (count, _) in HEAVY["comments"].items()}
@@ -123,8 +124,8 @@ def write_ecospold(system: System, folder: Path, flows: Sequence[str]) -> int:
 
     ``flows[j]`` is the UUID of biosphere flow ``j``; the first ``system.profile.flows`` hold the
     system's own exchanges, with its exact amounts, so on those flows the imported matrices equal
-    its own. The flows past them, when given, pad each dataset to ecoinvent's mean count of
-    elementary exchanges, with tiny amounts.
+    its own. The flows past them pad each dataset to ecoinvent's mean count of elementary
+    exchanges, with amounts under 1e-6, so an LCIA method must not characterise them.
     """
     if len(flows) < system.profile.flows:
         msg = f"the system has {system.profile.flows} flows, but only {len(flows)} UUIDs were given"
@@ -140,22 +141,22 @@ def write_ecospold(system: System, folder: Path, flows: Sequence[str]) -> int:
     out.mkdir(parents=True)
     written = 0
     for i in range(n):
-        # (template, fields, amount), the production exchange first
+        # (kind, template, fields, amount), the production exchange first
         exchanges = []
         for _, r, amount in tech[tech_at[i] : tech_at[i + 1]]:
             if r == i:
-                exchanges.insert(0, (PRODUCT, {"product": product[i], "i": i}, amount))
+                exchanges.insert(0, ("intermediateExchange", PRODUCT, {"product": product[i], "i": i}, amount))
             else:
-                exchanges.append((INPUT, {"product": product[r], "activity": activity[r], "i": r}, amount))
+                fields = {"product": product[r], "activity": activity[r], "i": r}
+                exchanges.append(("intermediateExchange", INPUT, fields, amount))
         emissions = [(r - off, a) for _, r, a in bio[bio_at[i] : bio_at[i + 1]]]
         pad = min(max(_count(HEAVY["elementary_exchanges"], i) - len(emissions), 0), spare)
         emissions += [(system.profile.flows + (i * 31 + k) % spare, 1e-9 * (k + 1)) for k in range(pad)]
-        exchanges += [(EMISSION, {"flow": flows[j], "j": j}, a) for j, a in emissions]
-        kinds = ["elementaryExchange" if t is EMISSION else "intermediateExchange" for t, *_ in exchanges]
-        extras = _extras(i, [(k, a) for k, (*_, a) in zip(kinds, exchanges, strict=True)])
+        exchanges += [("elementaryExchange", EMISSION, {"flow": flows[j], "j": j}, a) for j, a in emissions]
+        extras = _extras(i, [(k, a) for k, _, _, a in exchanges])
         general = "".join(GENERAL.format(k=k) for k in range(_count(HEAVY["general_comment"][0], i)))
         parts = [HEAD.format(activity=activity[i], i=i, general=general)]
-        parts += [t.format(amount=a, extra=x, **f) for (t, f, a), x in zip(exchanges, extras, strict=True)]
+        parts += [t.format(amount=a, extra=x, **f) for (_, t, f, a), x in zip(exchanges, extras, strict=True)]
         parts += [
             PARAMETER.format(
                 id=uuid.uuid5(NAMESPACE, f"parameter {i} {k}"),

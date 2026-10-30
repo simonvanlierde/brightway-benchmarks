@@ -10,7 +10,7 @@
     "scipy": "1.18.1"
   },
   "ecospold": {
-    "per_dataset": "means over the release's dataset files, measured 2026-10-29",
+    "per_dataset": "means over the release's dataset files, measured 2026-10-29; pairs are [mean count, mean characters]; bytes is file size",
     "bytes": 137000,
     "elementary_exchanges": 20.9,
     "properties": 210,

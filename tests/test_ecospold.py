@@ -1,4 +1,5 @@
-import json
+import math
+import re
 import uuid
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -7,10 +8,12 @@ import numpy as np
 import pytest
 from scipy import sparse
 
+from bwbench import ecospold
 from bwbench.ecospold import write_ecospold
-from bwbench.synth import PROFILES_DIR, system
+from bwbench.synth import system
 
 NS = {"es": "http://www.EcoInvent.org/EcoSpold02"}
+INTERMEDIATE_SHORTFALL = 5.6  # pinned: datasets with fewer exchanges than 12.78 get one comment each
 
 
 def fake_flows(n: int) -> list[str]:
@@ -62,7 +65,8 @@ def test_release_holds_the_system(tmp_path: Path):
 def test_same_system_same_files(tmp_path: Path):
     s, flows = system("smoke"), fake_flows(30)
     one, two = tmp_path / "1", tmp_path / "2"
-    write_ecospold(s, one, flows), write_ecospold(s, two, flows)
+    write_ecospold(s, one, flows)
+    write_ecospold(s, two, flows)
     names = sorted(p.name for p in (one / "datasets").iterdir())
     assert names == sorted(p.name for p in (two / "datasets").iterdir())
     assert all((one / "datasets" / n).read_bytes() == (two / "datasets" / n).read_bytes() for n in names)
@@ -78,7 +82,7 @@ def test_files_as_heavy_as_ecoinvent(tmp_path: Path):
     s = system("smoke")
     flows = fake_flows(s.profile.flows + 50)
     write_ecospold(s, tmp_path, flows)
-    want = json.loads((PROFILES_DIR / "ecoinvent-3.12-cutoff.json").read_text())["ecospold"]
+    want = ecospold.HEAVY
     roots = [ET.parse(f).getroot() for f in (tmp_path / "datasets").glob("*.spold")]  # noqa: S314 - files this test wrote
     n = len(roots)
 
@@ -90,8 +94,7 @@ def test_files_as_heavy_as_ecoinvent(tmp_path: Path):
     # abs=1: a few smoke datasets have fewer than 25 exchanges to put one on
     assert mean(".//es:lognormal") == pytest.approx(want["lognormal_uncertainties"], abs=1)
     assert mean(".//es:pedigreeMatrix") == mean(".//es:lognormal")
-    # Comments at ecoinvent's count and length per kind: bw2io keeps their text in memory. Counted
-    # over datasets with room for them: a smoke dataset can have fewer exchanges than comments.
+    # Smoke datasets can have fewer exchanges than comments, so count only datasets with room.
     for kind, child, (count, chars) in [
         *((kind, "comment", v) for kind, v in want["comments"].items()),
         ("generalComment", "text", want["general_comment"]),
@@ -101,7 +104,9 @@ def test_files_as_heavy_as_ecoinvent(tmp_path: Path):
         assert len(texts) / len(room) == pytest.approx(count, abs=1), kind
         assert sum(map(len, texts)) / len(texts) == pytest.approx(chars, rel=0.05), kind
     assert mean(".//es:parameter") == pytest.approx(want["parameters"], abs=0.1)
-    assert mean(".//es:lognormal[@mu='-inf']") == 0  # set_lognormal_loc_value takes log(|amount|)
+    lognormals = [e for r in roots for e in r.iterfind(".//es:lognormal", NS)]
+    # bw2io's set_lognormal_loc_value takes log(|amount|) as mu
+    assert all(abs(float(e.attrib["mu"]) - math.log(abs(float(e.attrib["meanValue"])))) < 1e-12 for e in lognormals)
     ids = {e.attrib["elementaryExchangeId"] for r in roots for e in r.iterfind(".//es:elementaryExchange", NS)}
     assert ids <= set(flows)
     assert ids - set(flows[: s.profile.flows])  # some padding, on the spare flows only
@@ -110,24 +115,17 @@ def test_files_as_heavy_as_ecoinvent(tmp_path: Path):
 @pytest.fixture(scope="module")
 def full_release(tmp_path_factory: pytest.TempPathFactory) -> dict:
     """Aggregates of the release at `ecoinvent` size, counted from each file's text as it is written (no disk)."""
-    import math  # noqa: PLC0415
-    import re  # noqa: PLC0415
-
-    from bwbench import ecospold  # noqa: PLC0415
-
     s = system("ecoinvent")
     flows = fake_flows(s.profile.flows + 3000)
     spare = set(flows[s.profile.flows :])
     comments = dict.fromkeys(ecospold.COMMENT, 0)
-    chars, mu_error, padding = 0, 0.0, 0.0
+    chars, padding = 0, 0.0
 
     def count(_path: Path, text: str, encoding: str | None = None) -> None:
-        nonlocal chars, mu_error, padding
+        nonlocal chars, padding
         chars += len(text)  # all ASCII, so characters are bytes
-        for kind, comment in ecospold.COMMENT.items():  # each kind's comment has its own length
+        for kind, comment in ecospold.COMMENT.items():
             comments[kind] += text.count(comment)
-        for mean, mu in re.findall(r'<lognormal meanValue="([^"]+)" mu="([^"]+)"', text):
-            mu_error = max(mu_error, abs(float(mu) - math.log(abs(float(mean)))))
         for flow, amount in re.findall(r'elementaryExchangeId="([^"]+)" \S+ amount="([^"]+)"', text):
             if flow in spare:
                 padding = max(padding, abs(float(amount)))
@@ -136,29 +134,19 @@ def full_release(tmp_path_factory: pytest.TempPathFactory) -> dict:
         m.setattr(Path, "write_text", count)
         write_ecospold(s, tmp_path_factory.mktemp("full"), flows)
     n = s.profile.products
-    return {"chars": chars, "mu_error": mu_error, "padding": padding, "comments": comments, "n": n}
+    return {"chars": chars, "padding": padding, "comments": comments, "n": n}
 
 
 def test_full_release_as_heavy_as_ecoinvent(full_release: dict):
-    want = json.loads((PROFILES_DIR / "ecoinvent-3.12-cutoff.json").read_text())["ecospold"]
-    assert full_release["chars"] / full_release["n"] == pytest.approx(want["bytes"], rel=0.01)
+    assert full_release["chars"] / full_release["n"] == pytest.approx(ecospold.HEAVY["bytes"], rel=0.01)
 
 
 def test_full_release_comments_per_kind(full_release: dict):
-    """The release's comment count per kind, at most one per exchange (ecoSpold2 allows one).
-
-    A synthetic dataset with fewer intermediate exchanges than ecoinvent's mean of 12.78 comments
-    gets one on each, so intermediate comments come to about 7.3 a dataset.
-    """
-    want = json.loads((PROFILES_DIR / "ecoinvent-3.12-cutoff.json").read_text())["ecospold"]["comments"]
+    """The release's comment count per kind, at most one per exchange (ecoSpold2 allows one)."""
     got = {kind: c / full_release["n"] for kind, c in full_release["comments"].items()}
-    shortfall = {"intermediateExchange": 5.6}
-    for kind, (count, _) in want.items():
+    shortfall = {"intermediateExchange": INTERMEDIATE_SHORTFALL}
+    for kind, (count, _) in ecospold.HEAVY["comments"].items():
         assert got[kind] == pytest.approx(count - shortfall.get(kind, 0), abs=0.1), kind
-
-
-def test_full_release_lognormal_mu(full_release: dict):
-    assert full_release["mu_error"] < 1e-12  # set_lognormal_loc_value takes log(|amount|) as mu
 
 
 def test_full_release_padding_is_tiny(full_release: dict):
@@ -166,7 +154,7 @@ def test_full_release_padding_is_tiny(full_release: dict):
 
 
 def test_bw2io_reads_every_exchange(tmp_path: Path):
-    """bw2io's extractor finds each written exchange and accepts every uncertainty (runs where bw2io is installed)."""
+    """bw2io's extractor finds each written exchange and accepts every uncertainty."""
     extractor = pytest.importorskip("bw2io.extractors.ecospold2").Ecospold2DataExtractor
     written = write_ecospold(system("smoke"), tmp_path, fake_flows(80))
     data = extractor.extract(tmp_path / "datasets", "synthetic", use_mp=False)

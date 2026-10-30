@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:benchmark-ui:schema:index:1",
   "title": "BenchmarkIndex",
-  "description": "index.json: what the reports hold. Every id is a stable slug, so a link to it survives a re-export. A report's metrics are in the file `reports[].path` names, in the format `reports[].format` names (see report.schema.json). Ids must resolve, which JSON Schema cannot check: each group, measure, machine, environment, benchmark and case a record names is one the index defines, a report's commit is a commit of its group, and a report's keys are case ids.",
+  "description": "index.json: what the reports hold. Ids are stable slugs, and each id a record names must be one the index defines; a report's commit must be one of its group's. Each report is the file at `reports[].path`, in the format `reports[].format` names.",
   "type": "object",
   "required": [
     "format_version",
@@ -19,7 +19,7 @@
   ],
   "properties": {
     "format_version": {
-      "description": "Raised when a reader of an older version would misread the file.",
+      "description": "Raised for any change but an added optional field, which readers ignore.",
       "const": 1
     },
     "generated_at": { "type": "string", "format": "date-time" },
@@ -34,7 +34,7 @@
       }
     },
     "groups": {
-      "description": "What the benchmarks are grouped by on the page, such as the package they time.",
+      "description": "What the page groups benchmarks by, such as the package they time.",
       "type": "array",
       "items": {
         "type": "object",
@@ -47,7 +47,7 @@
       }
     },
     "measures": {
-      "description": "What a metric measures. The id is the measure's key in each report.",
+      "description": "The id is the measure's key in reports.",
       "type": "array",
       "items": {
         "type": "object",
@@ -55,17 +55,17 @@
         "properties": {
           "id": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
-          "unit": { "description": "The unit of every value, such as ns or B.", "type": "string" },
+          "unit": { "description": "Such as ns or B.", "type": "string" },
           "better": { "description": "Which way is an improvement.", "enum": ["lower", "higher"] },
           "statistic": {
-            "description": "What a value is, over the samples it summarises, such as median or max.",
+            "description": "How a value sums up its samples, such as median or max.",
             "type": "string"
           }
         }
       }
     },
     "machines": {
-      "description": "Where the reports ran. Results from two machines are never pooled.",
+      "description": "Results from two machines are never pooled.",
       "type": "array",
       "items": {
         "type": "object",
@@ -74,7 +74,7 @@
       }
     },
     "environments": {
-      "description": "The software a case ran in, such as a Python version and its packages.",
+      "description": "What a case ran in, such as a Python version and its packages.",
       "type": "array",
       "items": {
         "type": "object",
@@ -87,7 +87,7 @@
       }
     },
     "benchmarks": {
-      "description": "One timed function, with the parameter axes it runs over.",
+      "description": "One timed function and the parameter axes it runs over.",
       "type": "array",
       "items": {
         "type": "object",
@@ -97,7 +97,7 @@
           "group": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
           "measures": {
-            "description": "What the benchmark measures: the measure ids its metrics use.",
+            "description": "The measure ids its metrics use.",
             "type": "array",
             "items": { "$ref": "#/$defs/id" },
             "minItems": 1
@@ -110,12 +110,12 @@
               "properties": {
                 "name": { "type": "string" },
                 "values": {
-                  "description": "The values as cases give them, in the order to show them.",
+                  "description": "As cases give them, in display order.",
                   "type": "array",
                   "items": { "type": "string" }
                 },
                 "labels": {
-                  "description": "How to show each value, in the same order. Without it, show the values.",
+                  "description": "How to show each value; without it, show the values.",
                   "type": "array",
                   "items": { "type": "string" }
                 }
@@ -126,7 +126,7 @@
       }
     },
     "cases": {
-      "description": "One benchmark at one parameter set in one environment: one line on a chart. Its id is its key in each report.",
+      "description": "One benchmark at one parameter set in one environment: one line on a chart. The id is its key in reports.",
       "type": "array",
       "items": {
         "type": "object",
@@ -136,7 +136,7 @@
           "benchmark": { "$ref": "#/$defs/id" },
           "environment": { "$ref": "#/$defs/id" },
           "params": {
-            "description": "One value per axis in the benchmark's params, in the same order.",
+            "description": "One value per axis of the benchmark, in the same order.",
             "type": "array",
             "items": { "type": "string" }
           }
@@ -144,7 +144,7 @@
       }
     },
     "commits": {
-      "description": "Each commit with results, oldest first within a group. A release is a commit with a tag.",
+      "description": "Commits with results, oldest first within a group.",
       "type": "array",
       "items": {
         "type": "object",
@@ -152,28 +152,28 @@
         "properties": {
           "id": { "type": "string", "pattern": "^[0-9a-f]{7,64}$" },
           "group": { "$ref": "#/$defs/id" },
-          "date": { "description": "The commit's date.", "type": "string", "format": "date-time" },
+          "date": { "type": "string", "format": "date-time" },
           "release": {
-            "description": "If the commit is a release, its name to show, such as its tag. A display label, not an id: link to the commit by its id.",
+            "description": "The name to show if the commit is a release, such as its tag; not an id.",
             "type": "string"
           }
         }
       }
     },
     "reports": {
-      "description": "One file of metrics per commit, group and machine.",
+      "description": "One file per commit, group and machine.",
       "type": "array",
       "items": {
         "type": "object",
         "required": ["path", "format", "group", "machine", "commit"],
         "properties": {
           "path": {
-            "description": "Relative to index.json, and never above it.",
+            "description": "Relative to index.json, never above it.",
             "type": "string",
             "pattern": "^(?!.*\\.\\.)[a-z0-9][a-z0-9/._-]*\\.json$"
           },
           "format": {
-            "description": "The file's format and its version, such as bmf/v0. A reader leaves out a report in a format it does not know.",
+            "description": "Format and version, such as bmf/v0. Readers skip formats they don't know.",
             "type": "string",
             "pattern": "^[a-z0-9]+/v[0-9]+$"
           },

@@ -8,13 +8,11 @@ import type { BenchmarkReport } from "./report.gen";
 export type { BenchmarkIndex, BenchmarkReport };
 export type Report = BenchmarkIndex["reports"][number];
 
-/** The index format this UI reads. */
 export const FORMAT_VERSION = 1;
-/** The report formats this UI reads. */
 export const REPORT_FORMATS: readonly string[] = ["bmf/v0"];
 
-// NOTE: formats (date-time, uri) are not checked here, to keep ajv-formats out of the page. The
-// exporter's tests check date-time against the same schema.
+// NOTE: formats go unchecked here, to keep ajv-formats out of the page. The exporter's tests
+// check date-time; uri is unchecked.
 const ajv = new Ajv2020({ allErrors: true, validateFormats: false });
 const checkIndex = ajv.compile<BenchmarkIndex>(indexSchema);
 const checkReport = ajv.compile<BenchmarkReport>(reportSchema);
@@ -24,7 +22,7 @@ export class ContractError extends Error {
   override name = "ContractError";
 }
 
-/** BASE as a folder URL. A relative BASE resolves against the page, so it needs a browser or FROM. */
+/** BASE as a folder URL. A relative BASE needs a page, or FROM, to resolve against. */
 export function folder(base: string | URL, from: string | undefined = globalThis.location?.href): URL {
   const text = String(base);
   return new URL(text.endsWith("/") ? text : `${text}/`, from);
@@ -50,7 +48,7 @@ function valid<T>(check: ValidateFunction<T>, data: unknown, url: URL): T {
   throw new ContractError(`${url}: ${ajv.errorsText(check.errors)}`);
 }
 
-/** Throw a ContractError for an id a record points at that the index does not define. */
+/** Throw when a record names an id the index does not define. */
 export function checkReferences(index: BenchmarkIndex): void {
   const ids = (records: { id: string }[]) => new Set(records.map((r) => r.id));
   const defined = {
@@ -101,7 +99,7 @@ export async function loadIndex(base: string | URL, fetcher: typeof fetch = fetc
   return { ...index, reports: index.reports.filter((r) => REPORT_FORMATS.includes(r.format)) };
 }
 
-/** One report the index lists, from BASE (the folder that holds index.json), checked against the schema. */
+/** One report the index lists, from BASE, checked against the schema. */
 export async function loadReport(
   base: string | URL,
   report: Report,

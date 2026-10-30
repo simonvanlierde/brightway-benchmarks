@@ -6,7 +6,7 @@
  */
 
 /**
- * One report: Bencher Metric Format v0 (https://bencher.dev/v0/bmf.json, as published on 2026-10-30), restated in draft 2020-12. BMF has no room for a version inside the file, so index.json gives it as the report's `format`, bmf/v0. Keys are case ids, then measure ids, from index.json.
+ * One report: Bencher Metric Format v0 (https://bencher.dev/v0/bmf.json as of 2026-10-30), in draft 2020-12. BMF has no version field, so index.json gives each report's format. Keys are case ids, then measure ids.
  */
 export interface BenchmarkReport {
   [k: string]: {

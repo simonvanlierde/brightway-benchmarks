@@ -20,8 +20,8 @@ Node 24 or later, and pnpm:
 pnpm install
 pnpm dev        # a local server with live reload
 pnpm build      # the static site, in dist/
-pnpm check      # lint and type checks
-pnpm test       # the tests
+pnpm check
+pnpm test
 ```
 
 The site reads `index.json` from `PUBLIC_DATA_URL`, an absolute URL or a path relative to the
@@ -35,19 +35,17 @@ The data folder must hold `index.json`, with each report at the `path` the index
 
 ## The data
 
-A report has the shape of Bencher Metric Format, but its keys are the index's case ids, which
-end in a hash, so it is not meant for upload to Bencher. A case's id comes from its environment's
-name, among other things, and that name holds the pinned versions, so a pin bump starts a new
-series instead of continuing the old one. A change that only adds an optional field keeps
-`format_version`; any other change raises it.
+Reports have Bencher Metric Format's shape, but their keys are case ids ending in a hash, so
+they are not for upload to Bencher. A case's id includes its environment's name, which holds
+the pinned versions, so a pin bump starts a new series.
 
 ## Change the schema
 
-Edit the files in `schema/`, then run `pnpm types` to regenerate the TypeScript types in
-`src/lib/*.gen.ts`. When `format_version` goes up (see above), raise `FORMAT_VERSION` in
-`contract.ts` with it.
+Edit `schema/`, then run `pnpm types` to regenerate `src/lib/*.gen.ts`. The `format_version`
+description in [index.schema.json](schema/index.schema.json) says when the version goes up;
+raise `FORMAT_VERSION` in `contract.ts` with it.
 
 ## Known gaps
 
-- TODO: mark which dependency stack each value ran on, so a chart can show where the stack moved.
-- TODO: a series key that survives a pin bump, so one case's history stays one line.
+- No mark of which dependency stack a value ran on, so a chart cannot show where it moved.
+- No series key that survives a pin bump.

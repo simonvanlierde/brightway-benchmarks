@@ -110,8 +110,7 @@ site:
     scripts/compat_site.py site
     scripts/site_index.py site
 
-# Reads results/ (a checkout of the `results` branch), asv/ and asv's mirrors in .asv/.
-# Write the UI's data to OUT: index.json and one report per commit, in the shapes ui/schema/ gives.
+# Write the UI's data from results/ to OUT (scripts/export_ui.py says what it reads).
 ui-data out:
     python3 scripts/export_ui.py results {{ out }}
 

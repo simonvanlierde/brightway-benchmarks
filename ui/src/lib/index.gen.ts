@@ -8,11 +8,11 @@
 export type Id = string;
 
 /**
- * index.json: what the reports hold. Every id is a stable slug, so a link to it survives a re-export. A report's metrics are in the file `reports[].path` names, in the format `reports[].format` names (see report.schema.json). Ids must resolve, which JSON Schema cannot check: each group, measure, machine, environment, benchmark and case a record names is one the index defines, a report's commit is a commit of its group, and a report's keys are case ids.
+ * index.json: what the reports hold. Ids are stable slugs, and each id a record names must be one the index defines; a report's commit must be one of its group's. Each report is the file at `reports[].path`, in the format `reports[].format` names.
  */
 export interface BenchmarkIndex {
   /**
-   * Raised when a reader of an older version would misread the file.
+   * Raised for any change but an added optional field, which readers ignore.
    */
   format_version: 1;
   generated_at: string;
@@ -23,7 +23,7 @@ export interface BenchmarkIndex {
     links?: Link[];
   };
   /**
-   * What the benchmarks are grouped by on the page, such as the package they time.
+   * What the page groups benchmarks by, such as the package they time.
    */
   groups: {
     id: Id;
@@ -31,13 +31,13 @@ export interface BenchmarkIndex {
     url?: string;
   }[];
   /**
-   * What a metric measures. The id is the measure's key in each report.
+   * The id is the measure's key in reports.
    */
   measures: {
     id: Id;
     name: string;
     /**
-     * The unit of every value, such as ns or B.
+     * Such as ns or B.
      */
     unit: string;
     /**
@@ -45,19 +45,19 @@ export interface BenchmarkIndex {
      */
     better?: "lower" | "higher";
     /**
-     * What a value is, over the samples it summarises, such as median or max.
+     * How a value sums up its samples, such as median or max.
      */
     statistic?: string;
   }[];
   /**
-   * Where the reports ran. Results from two machines are never pooled.
+   * Results from two machines are never pooled.
    */
   machines: {
     id: Id;
     name: string;
   }[];
   /**
-   * The software a case ran in, such as a Python version and its packages.
+   * What a case ran in, such as a Python version and its packages.
    */
   environments: {
     id: Id;
@@ -65,14 +65,14 @@ export interface BenchmarkIndex {
     name: string;
   }[];
   /**
-   * One timed function, with the parameter axes it runs over.
+   * One timed function and the parameter axes it runs over.
    */
   benchmarks: {
     id: Id;
     group: Id;
     name: string;
     /**
-     * What the benchmark measures: the measure ids its metrics use.
+     * The measure ids its metrics use.
      *
      * @minItems 1
      */
@@ -80,52 +80,49 @@ export interface BenchmarkIndex {
     params: {
       name: string;
       /**
-       * The values as cases give them, in the order to show them.
+       * As cases give them, in display order.
        */
       values: string[];
       /**
-       * How to show each value, in the same order. Without it, show the values.
+       * How to show each value; without it, show the values.
        */
       labels?: string[];
     }[];
   }[];
   /**
-   * One benchmark at one parameter set in one environment: one line on a chart. Its id is its key in each report.
+   * One benchmark at one parameter set in one environment: one line on a chart. The id is its key in reports.
    */
   cases: {
     id: Id;
     benchmark: Id;
     environment: Id;
     /**
-     * One value per axis in the benchmark's params, in the same order.
+     * One value per axis of the benchmark, in the same order.
      */
     params: string[];
   }[];
   /**
-   * Each commit with results, oldest first within a group. A release is a commit with a tag.
+   * Commits with results, oldest first within a group.
    */
   commits: {
     id: string;
     group: Id;
-    /**
-     * The commit's date.
-     */
     date: string;
     /**
-     * If the commit is a release, its name to show, such as its tag. A display label, not an id: link to the commit by its id.
+     * The name to show if the commit is a release, such as its tag; not an id.
      */
     release?: string;
   }[];
   /**
-   * One file of metrics per commit, group and machine.
+   * One file per commit, group and machine.
    */
   reports: {
     /**
-     * Relative to index.json, and never above it.
+     * Relative to index.json, never above it.
      */
     path: string;
     /**
-     * The file's format and its version, such as bmf/v0. A reader leaves out a report in a format it does not know.
+     * Format and version, such as bmf/v0. Readers skip formats they don't know.
      */
     format: string;
     group: Id;

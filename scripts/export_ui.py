@@ -1,22 +1,13 @@
 #!/usr/bin/env python3
 """asv results as the UI's data: ``export_ui.py RESULTS_DIR OUT_DIR``.
 
-Reads RESULTS_DIR (a checkout of the ``results`` branch) and writes OUT_DIR/index.json and one
-report per commit, subject and machine under OUT_DIR/reports/, in the shapes ui/schema/
-describes. Each subject is a group, each machine folder a machine of its own, so results from
-two machines are never pooled.
-
-A case is one benchmark at one parameter set in one environment. The environment drops its
-stack hash (scripts/asv.sh), so a case keeps its id across releases. Where a commit ran in one
-environment on several stacks, the current stack (the hash of asv/SUBJECT.stack.txt) wins, else
-the lowest hash, as in scripts/release_changes.py. A benchmark's measure comes from its asv
-``type`` in benchmarks.json: ``time`` is latency in nanoseconds, with asv's 99% interval as the
-bounds where it holds the value, and ``peakmemory`` peak memory in bytes. Other types, such as
-``track``, are left out, as are failed and skipped cases. A benchmark whose results have more or
-fewer parameters than benchmarks.json names is skipped, with one warning.
-
-Release tags come from asv/SUBJECT.hashes and resolve through asv's mirror of the upstream
-repository, .asv/SUBJECT. asv/ and .asv/ are read from the working directory.
+Reads RESULTS_DIR (a checkout of the ``results`` branch), and asv/ and asv's mirrors in .asv/ from
+the working directory. Writes OUT_DIR/index.json and one report per commit, subject and machine,
+in the shapes ui/schema/ gives. An environment's name drops its stack hash, so a case keeps its
+id across releases, and a commit gets one value per environment, on the stack ``pick`` chooses.
+``time`` cases become latency in ns, with asv's 99% interval as bounds where it holds the value;
+``peakmemory`` cases become peak memory in bytes. Other types, failed and skipped cases are left
+out, and so is a benchmark whose parameters don't match benchmarks.json, with one warning.
 """
 
 import ast
@@ -43,7 +34,7 @@ MEASURES = {  # asv type -> (measure id, scale to the unit)
     "time": ("latency", 1e9),
     "peakmemory": ("peak-memory", 1),
 }
-MEASURE_INFO = [  # asv reports a time's median over its samples, and a peak memory's highest resident size
+MEASURE_INFO = [  # asv gives a time's median and a peak memory's highest resident size
     {"id": "latency", "name": "Time", "unit": "ns", "better": "lower", "statistic": "median"},
     {"id": "peak-memory", "name": "Peak memory", "unit": "B", "better": "lower", "statistic": "max"},
 ]
@@ -59,7 +50,6 @@ def slug(name: str) -> str:
 def runs(folder: Path) -> dict[tuple[str, str], list[dict]]:
     """(machine, commit) -> one result file per environment, on the stack that wins."""
     current = current_stack(folder.name)
-    # (machine, commit) -> environment without its stack -> stack -> result
     found: dict[tuple[str, str], dict[str, dict[str, dict]]] = {}
     for path in folder.glob("*/*-*.json"):
         data = json.loads(path.read_text())
@@ -113,7 +103,7 @@ class Catalog:
     envs: dict[tuple[str, str], dict] = field(default_factory=dict)
     benchmarks: dict[tuple[str, str], dict] = field(default_factory=dict)
     cases: dict[str, dict] = field(default_factory=dict)
-    skipped: set[tuple[str, str]] = field(default_factory=set)  # (subject, benchmark) already warned about
+    warned: set[tuple[str, str]] = field(default_factory=set)
 
     def report(self, subject: str, files: list[dict], info: dict[str, dict]) -> dict[str, dict]:
         """One BMF report from the result files of one commit on one machine, one stack each."""
@@ -125,8 +115,8 @@ class Catalog:
             for name, point, measure, metric in metrics(data, kinds):
                 names = info[name].get("param_names", [])
                 if len(point) != len(names):  # the values would land on the wrong axes
-                    if (subject, name) not in self.skipped:
-                        self.skipped.add((subject, name))
+                    if (subject, name) not in self.warned:
+                        self.warned.add((subject, name))
                         print(
                             f"export_ui: {subject} {name} has {len(point)} parameters where benchmarks.json"
                             f" names {len(names)}; skipped",
@@ -178,7 +168,7 @@ def label(value: str) -> str:
 
 
 def export(results: Path, out: Path) -> dict:
-    """Write OUT/index.json and OUT/reports/ from RESULTS, and return the index."""
+    """Write the index and reports, and return the index."""
     groups, commits, reports = [], [], []
     machines: dict[str, dict] = {}
     catalog = Catalog()

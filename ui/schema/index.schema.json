@@ -29,7 +29,7 @@
       "properties": {
         "name": { "type": "string" },
         "description": { "type": "string" },
-        "url": { "type": "string", "format": "uri" },
+        "url": { "type": "string", "format": "uri", "pattern": "^https?://" },
         "links": { "type": "array", "items": { "$ref": "#/$defs/link" } }
       }
     },
@@ -42,7 +42,7 @@
         "properties": {
           "id": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
-          "url": { "type": "string", "format": "uri" }
+          "url": { "type": "string", "format": "uri", "pattern": "^https?://" }
         }
       }
     },
@@ -227,7 +227,7 @@
     "link": {
       "type": "object",
       "required": ["name", "url"],
-      "properties": { "name": { "type": "string" }, "url": { "type": "string", "format": "uri" } }
+      "properties": { "name": { "type": "string" }, "url": { "type": "string", "format": "uri", "pattern": "^https?://" } }
     }
   }
 }

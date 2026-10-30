@@ -488,3 +488,11 @@ def test_the_label_lands_in_the_index(export_ui: ModuleType, tmp_path: Path, mon
         "uv-py3.12-pypardiso": "PyPardiso",
         "uv-py3.12": "SuperLU",
     }
+
+
+def test_a_commit_hash_that_is_not_a_hash_stops_the_export(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    files = {"m/11111111-a": result("../../escape", "a" + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))}
+    with pytest.raises(SystemExit, match="not a full hash"):
+        run(export_ui, layout(tmp_path, files), monkeypatch)

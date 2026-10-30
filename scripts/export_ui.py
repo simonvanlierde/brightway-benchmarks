@@ -72,6 +72,8 @@ def runs(folder: Path) -> dict[tuple[str, str], list[dict]]:
     found: dict[tuple[str, str], dict[str, dict[str, dict]]] = {}
     for path in folder.glob("*/*-*.json"):
         data = json.loads(path.read_text())
+        if not SHA.fullmatch(data["commit_hash"]):  # it becomes part of a report's path
+            sys.exit(f"export_ui: {path}: commit_hash is not a full hash")
         stack = STACK.search(data["env_name"])
         env = found.setdefault((path.parent.name, data["commit_hash"]), {}).setdefault(
             STACK.sub("", data["env_name"]), {}

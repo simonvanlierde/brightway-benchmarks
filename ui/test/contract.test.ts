@@ -43,6 +43,17 @@ describe("loadIndex", () => {
     );
   });
 
+  it("refuses a link that is not http or https", async () => {
+    const index = await fixture("index.json");
+    for (const bad of [
+      { ...index, project: { ...index.project, url: "javascript:alert(1)" } },
+      { ...index, project: { ...index.project, links: [{ name: "x", url: "javascript:alert(1)" }] } },
+      { ...index, groups: index.groups.map((g: object) => ({ ...g, url: "javascript:alert(1)" })) },
+    ]) {
+      await expect(loadIndex(BASE, serve({ "index.json": JSON.stringify(bad) }))).rejects.toThrow(/pattern/);
+    }
+  });
+
   it("says what kind of failure it was, for the page's hint", async () => {
     const kind = (fetcher: typeof fetch) => loadIndex(BASE, fetcher).catch((e: ContractError) => e.kind);
     const index = await fixture("index.json");

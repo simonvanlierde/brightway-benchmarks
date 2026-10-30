@@ -4,6 +4,7 @@ import hashlib
 import importlib
 import json
 import math
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -315,3 +316,15 @@ def test_axes_follow_benchmarks_json_and_show_plain_values(
         ("'ecoinvent'", "'IterativeLCA'"),
         ("'ecoinvent'", "<lambda>"),
     }
+
+
+def test_a_name_without_letters_still_makes_an_id(export_ui: ModuleType):
+    assert re.fullmatch(r"x-[0-9a-f]{12}", export_ui.slug("!!!"))
+
+
+def test_parameter_values_with_commas_make_distinct_cases(export_ui: ModuleType):
+    data = result("ab" * 20, "e", 0, [1.0, 2.0, 3.0, 4.0], ([1.0] * 4, [4.0] * 4))
+    data["results"] = {TIME: [[1.0, 2.0, 3.0, 4.0], [["x, y", "x"], ["z", "y, z"]]]}
+    # Joined with ", ", (x, y; z) and (x; y, z) would read the same.
+    report = export_ui.Catalog().report("s", [data], INFO)
+    assert len(report) == 4

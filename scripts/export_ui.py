@@ -54,7 +54,7 @@ REPORT_FORMAT = "bmf/v0"
 def slug(name: str) -> str:
     """A stable id unique to NAME, at most 64 characters: its words, then a hash of all of it."""
     words = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:51].rstrip("-")
-    return f"{words}-{hashlib.sha256(name.encode()).hexdigest()[:12]}"
+    return f"{words or 'x'}-{hashlib.sha256(name.encode()).hexdigest()[:12]}"
 
 
 def runs(folder: Path) -> dict[tuple[str, str], list[dict]]:
@@ -167,7 +167,7 @@ class Catalog:
                     if value not in axis["values"]:
                         axis["values"].append(value)
                 self.envs.setdefault((subject, env), {"id": env_id, "group": group, "name": env})
-                key = f"{subject}/{name}({', '.join(point)}) [{env}]"
+                key = json.dumps([subject, name, list(point), env])  # unambiguous, whatever the values hold
                 case = self.cases.setdefault(
                     key, {"id": slug(key), "benchmark": bench["id"], "environment": env_id, "params": list(point)}
                 )

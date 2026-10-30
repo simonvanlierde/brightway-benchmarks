@@ -110,6 +110,12 @@ site:
     scripts/compat_site.py site
     scripts/site_index.py site
 
+# Build the viewer and serve it on 127.0.0.1:PORT with the committed real data, to look at a UI
+# change (a PR checked out with `gh pr checkout`). From a laptop: ssh -L PORT:localhost:PORT HOST.
+ui-serve port="4400":
+    # A local look only, so the host's pnpm may stand in for the pinned one (CI uses the pin).
+    cd ui && export npm_config_manage_package_manager_versions=false && pnpm install --frozen-lockfile && pnpm run build && node e2e/serve.mjs {{ port }}
+
 # Write the UI's data from results/ to OUT (scripts/export_ui.py says what it reads).
 # Needs uv: change points come from Apache Otava, in an environment of its own.
 ui-data out:

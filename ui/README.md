@@ -31,6 +31,10 @@ They serve `dist/` with [test/fixtures/real/](test/fixtures/real/) as its data: 
 `just ui-data` run on the public `results` branch. To refresh it, run `just ui-data` from a
 clone that has asv's mirrors in `.asv/` (they give the release names) into that folder.
 
+To look at a UI change, `just ui-serve` (port 4400 by default) builds the viewer and serves it
+with that same data. CI's `ui` job also keeps the browser tests' screenshots as the
+`ui-screenshots` artifact for 14 days: `gh run download <run id> -n ui-screenshots`.
+
 The site reads `index.json` from `PUBLIC_DATA_URL`, an absolute URL or a path relative to the
 page, `data/` by default. Set it at build time:
 

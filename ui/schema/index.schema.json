@@ -227,7 +227,10 @@
     "link": {
       "type": "object",
       "required": ["name", "url"],
-      "properties": { "name": { "type": "string" }, "url": { "type": "string", "format": "uri", "pattern": "^https?://" } }
+      "properties": {
+        "name": { "type": "string" },
+        "url": { "type": "string", "format": "uri", "pattern": "^https?://" }
+      }
     }
   }
 }

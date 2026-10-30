@@ -9,6 +9,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- `scripts/solver_factorize.py --cudss` times NVIDIA's cuDSS GPU solver on the real ecoinvent matrix: a
+  first factorization and one that reuses its analysis, as a Monte Carlo draw does. `--pardiso` now
+  times PARDISO's reuse too ([method](docs/method.md)).
 - When a `floors`, `pre`, `conda-forge` or `suites` compat job fails, its summary and artifact now
   hold a draft of an upstream issue: the failed test IDs (or the resolve error), the versions, the
   pins that changed since the job's last green set, and the run URL. Posting it is left to a person.

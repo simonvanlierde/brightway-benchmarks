@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  actions: read # the draft step fetches the job's last green set
 
 concurrency:
   group: ${{ github.workflow }}
@@ -81,6 +82,18 @@ jobs:
             echo '```'
             [ ! -e "$OUT/suites.txt" ] || { echo '```'; cat "$OUT/suites.txt"; echo '```'; }
           } >>"$GITHUB_STEP_SUMMARY"
+
+      # A red cell only shows in the site table, so draft the upstream issue text: what failed and
+      # which pins moved since the job's last green set. Posting it stays with a person.
+      - name: Issue draft
+        if: ${{ failure() && matrix.column != 'latest' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GREEN: compat-green-${{ matrix.column }}-${{ matrix.python }}-${{ matrix.os }}
+        run: |
+          mkdir -p "$OUT"
+          python3 scripts/compat_draft.py "$OUT" "$RUNNER_TEMP/prev-requirements.txt"
+          cat "$OUT/issue-draft.md" >>"$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}

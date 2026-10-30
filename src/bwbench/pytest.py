@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from bwbench.bench import Bench, benches
+from bwbench.bench import Bench, NotApplicable, benches
 
 
 def tests(namespace: dict[str, Any]) -> None:
@@ -36,7 +36,7 @@ def _test(b: Bench) -> Any:
             state["run"].verify(state["result"])
         except NotImplementedError as e:
             # The compat run sets BWBENCH_STRICT: there a case the installed releases cannot run is a failure.
-            if os.environ.get("BWBENCH_STRICT"):
+            if os.environ.get("BWBENCH_STRICT") and not isinstance(e, NotApplicable):
                 raise
             pytest.skip(str(e))
         finally:

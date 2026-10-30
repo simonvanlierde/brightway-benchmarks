@@ -112,7 +112,7 @@ workflow's artifacts.
 
 | Variable | Default | What it sets |
 | --- | --- | --- |
-| `BWBENCH_SIZES` | `smoke` | Database sizes: `smoke`, `ecoinvent`, `mc100k`, `regional`, `exiobase`, `stress-random` |
+| `BWBENCH_SIZES` | `smoke` | Database sizes: `smoke`, `ecoinvent`, `mc100k`, `regional`, `exiobase`, `stress-random`, `useeio` (real data, downloaded once; [method.md](method.md#the-real-database)) |
 | `BWBENCH_MC_SIZES` | `smoke` | Sizes for bw2calc's Monte Carlo |
 | `BWBENCH_WRITE_SIZES` | `smoke` | Sizes for bw2data's write |
 | `BWBENCH_TIMEX_SIZES` | `smoke` | Sizes for bw_timex |
@@ -128,7 +128,7 @@ workflow's artifacts.
 | `BWBENCH_MACHINE` | `box-<slot>` or `box` | asv machine name; resume needs the same one |
 | `BWBENCH_PRIVATE_NAMES` | empty | Names `just results-commit` refuses |
 | `BWBENCH_ROUNDLOG` | unset | Per-sample log; `just noise` sets it |
-| `BWBENCH_STRICT` | `1` in compat | Fail, not skip, a case that cannot run |
+| `BWBENCH_STRICT` | `1` in compat | Fail, not skip, a case the installed releases cannot run; a case for another solver still skips |
 | `BWBENCH_TARGET` | `box` | Dockerfile stage; recipes set it |
 | `BWBENCH_SOLVER` | unset | Experimental solver; its environment sets it |
 | `BWBENCH_STACK` | set by `scripts/asv.sh` | Stack hash; don't set it |

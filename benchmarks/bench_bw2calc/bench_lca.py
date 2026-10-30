@@ -20,7 +20,7 @@ from scipy.sparse.linalg import cgs
 
 from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, first_time, knob
 from bwbench.asv import classes
-from bwbench.bench import BenchSetup, bench
+from bwbench.bench import BenchSetup, NotApplicable, bench
 from bwbench.solvers import assert_reached
 from bwbench.synth import method_name, neumann_score, packages, skip_unless_factorizable
 
@@ -197,7 +197,7 @@ def redo_lci_refinement(size: str, refinement: str) -> BenchSetup:
     must match the reference either way.
     """
     if not getattr(bc, "UMFPACK", False) or bc.PYPARDISO:
-        raise NotImplementedError("needs bw2calc to solve with UMFPACK, not PyPardiso or SuperLU")
+        raise NotApplicable("needs bw2calc to solve with UMFPACK, not PyPardiso or SuperLU")
     skip_unless_factorizable(size, pardiso=False)
     from scikits.umfpack import umfpack  # noqa: PLC0415
 

@@ -13,7 +13,7 @@ import pytest
 import bwbench
 from bwbench import asv, synth
 from bwbench import pytest as bw_pytest
-from bwbench.bench import UNCHECKED, bench
+from bwbench.bench import UNCHECKED, NotApplicable, bench
 
 
 def module(**namespace: object) -> types.ModuleType:
@@ -213,6 +213,25 @@ def test_pytest_adapter_fails_unsupported_cases_when_strict(
     with pytest.raises(BaseException, match="no such class") as raised:
         namespace["test_unsupported"](OnceBenchmark())
     assert raised.type is outcome
+
+
+def test_pytest_adapter_skips_cases_for_another_solver_even_when_strict(monkeypatch: pytest.MonkeyPatch):
+    @bench()
+    def umfpack_only():
+        message = "needs UMFPACK"
+        raise NotApplicable(message)
+
+    namespace: dict[str, Any] = {"umfpack_only": umfpack_only}
+    bw_pytest.tests(namespace)
+
+    class OnceBenchmark:
+        def pedantic(self, target, setup, rounds, iterations):  # noqa: ANN001, ARG002
+            setup()
+            target()
+
+    monkeypatch.setenv("BWBENCH_STRICT", "1")
+    with pytest.raises(pytest.skip.Exception, match="needs UMFPACK"):
+        namespace["test_umfpack_only"](OnceBenchmark())
 
 
 def test_numpy_before_bwbench_warns():

@@ -13,7 +13,8 @@ export const FORMAT_VERSION = 1;
 /** The report formats this UI reads. */
 export const REPORT_FORMATS: readonly string[] = ["bmf/v0"];
 
-// NOTE: formats (date-time, uri) are not checked, as in the Python tests' validator.
+// NOTE: formats (date-time, uri) are not checked here, to keep ajv-formats out of the page. The
+// exporter's tests check date-time against the same schema.
 const ajv = new Ajv2020({ allErrors: true, validateFormats: false });
 const checkIndex = ajv.compile<BenchmarkIndex>(indexSchema);
 const checkReport = ajv.compile<BenchmarkReport>(reportSchema);

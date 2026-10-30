@@ -11,7 +11,7 @@ from pathlib import Path
 from types import ModuleType
 
 import pytest
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, ValidationError
 
 GIT = shutil.which("git") or "git"
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,6 +37,13 @@ def result(commit: str, env: str, date: int, first: list, ci: tuple[list, list])
         "bench_lca.SingleScore.track_relative_error": [[1e-15, 1e-15], PARAMS],
     }
     return {"commit_hash": commit, "env_name": env, "date": date, "result_columns": COLUMNS, "results": res}
+
+
+def schema(name: str) -> Draft202012Validator:
+    """A validator for ui/schema/NAME.schema.json that checks formats such as date-time too."""
+    return Draft202012Validator(
+        json.loads((SCHEMA / f"{name}.schema.json").read_text()), format_checker=Draft202012Validator.FORMAT_CHECKER
+    )
 
 
 @pytest.fixture
@@ -187,8 +194,8 @@ def test_the_export_follows_the_schema(export_ui: ModuleType, tmp_path: Path, mo
     results = layout(tmp_path, files)
     (results.parent / "asv" / "s.hashes").write_text("1111111111111111111111111111111111111111\n")
     index, reports = run(export_ui, results, monkeypatch)
-    Draft202012Validator(json.loads((SCHEMA / "index.schema.json").read_text())).validate(index)
-    check = Draft202012Validator(json.loads((SCHEMA / "report.schema.json").read_text()))
+    schema("index").validate(index)
+    check = schema("report")
     for report in reports.values():
         check.validate(report)
     # A release named by its commit, not a tag, is shown by its first 8 characters.
@@ -227,8 +234,8 @@ def test_the_ui_fixtures_follow_the_schema():
     # The UI's tests read these through its own validator; this one keeps both readings in step.
     data = ROOT / "ui" / "test" / "fixtures" / "data"
     index = json.loads((data / "index.json").read_text())
-    Draft202012Validator(json.loads((SCHEMA / "index.schema.json").read_text())).validate(index)
-    check = Draft202012Validator(json.loads((SCHEMA / "report.schema.json").read_text()))
+    schema("index").validate(index)
+    check = schema("report")
     for report in index["reports"]:
         check.validate(json.loads((data / report["path"]).read_text()))
 
@@ -328,3 +335,9 @@ def test_parameter_values_with_commas_make_distinct_cases(export_ui: ModuleType)
     # Joined with ", ", (x, y; z) and (x; y, z) would read the same.
     report = export_ui.Catalog().report("s", [data], INFO)
     assert len(report) == 4
+
+
+def test_the_schema_checks_formats():
+    index = json.loads((ROOT / "ui" / "test" / "fixtures" / "data" / "index.json").read_text())
+    with pytest.raises(ValidationError, match="is not a 'date-time'"):
+        schema("index").validate(index | {"generated_at": "yesterday"})

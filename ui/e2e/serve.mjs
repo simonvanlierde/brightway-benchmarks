@@ -19,4 +19,4 @@ createServer((req, res) => {
   }
   res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" });
   createReadStream(file).pipe(res);
-}).listen(Number(process.argv[2]));
+}).listen(Number(process.argv[2]), "127.0.0.1"); // this host only

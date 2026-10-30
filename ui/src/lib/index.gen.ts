@@ -113,9 +113,9 @@ export interface BenchmarkIndex {
      */
     path: string;
     /**
-     * The file's format and its version.
+     * The file's format and its version, such as bmf/v0. A reader leaves out a report in a format it does not know.
      */
-    format: "bmf/v0";
+    format: string;
     group: Id;
     machine: Id;
     commit: string;

@@ -52,6 +52,13 @@ describe("loadIndex", () => {
   it("says which URL is missing", async () => {
     await expect(loadIndex("https://data.test/none/", serve())).rejects.toThrow(/none\/index\.json: HTTP 404/);
   });
+  it("leaves out a report in a format this UI does not read", async () => {
+    const index = await fixture("index.json");
+    const reports = index.reports as { path: string; format: string }[];
+    reports.push({ ...(reports[0] as { path: string; format: string }), path: "reports/new.json", format: "bmf/v1" });
+    const loaded = await loadIndex(BASE, serve({ "index.json": JSON.stringify(index) }));
+    expect(loaded.reports.map((r) => r.format)).toEqual(["bmf/v0", "bmf/v0"]);
+  });
 });
 
 describe("loadReport", () => {

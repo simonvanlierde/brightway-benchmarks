@@ -157,7 +157,11 @@
             "type": "string",
             "pattern": "^(?!.*\\.\\.)[a-z0-9][a-z0-9/._-]*\\.json$"
           },
-          "format": { "description": "The file's format and its version.", "const": "bmf/v0" },
+          "format": {
+            "description": "The file's format and its version, such as bmf/v0. A reader leaves out a report in a format it does not know.",
+            "type": "string",
+            "pattern": "^[a-z0-9]+/v[0-9]+$"
+          },
           "group": { "$ref": "#/$defs/id" },
           "machine": { "$ref": "#/$defs/id" },
           "commit": { "type": "string" }

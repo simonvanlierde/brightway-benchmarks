@@ -10,6 +10,8 @@ export type Report = BenchmarkIndex["reports"][number];
 
 /** The index format this UI reads. */
 export const FORMAT_VERSION = 1;
+/** The report formats this UI reads. */
+export const REPORT_FORMATS: readonly string[] = ["bmf/v0"];
 
 // NOTE: formats (date-time, uri) are not checked, as in the Python tests' validator.
 const ajv = new Ajv2020({ allErrors: true, validateFormats: false });
@@ -51,7 +53,8 @@ export async function loadIndex(base: string | URL, fetcher: typeof fetch = fetc
   if (version !== FORMAT_VERSION) {
     throw new ContractError(`${url}: format_version ${version}, this UI reads ${FORMAT_VERSION}`);
   }
-  return valid(checkIndex, data, url);
+  const index = valid(checkIndex, data, url);
+  return { ...index, reports: index.reports.filter((r) => REPORT_FORMATS.includes(r.format)) };
 }
 
 /** One report the index lists, from BASE (the folder that holds index.json), checked against the schema. */

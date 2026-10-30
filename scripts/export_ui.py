@@ -257,7 +257,7 @@ def otava(values: list[list[float]]) -> list[list[dict]]:
     if uv is None:
         sys.exit("export_ui: change points need uv (https://docs.astral.sh/uv/)")
     run = subprocess.run(  # noqa: S603 - our own script, with JSON on stdin
-        [uv, "run", "--quiet", "--script", str(CHANGE_POINTS), str(NOISE_FLOOR)],
+        [uv, "run", "--quiet", "--locked", "--script", str(CHANGE_POINTS), str(NOISE_FLOOR)],
         input=json.dumps(values),
         capture_output=True,
         text=True,
@@ -297,8 +297,21 @@ def change(case: str, machine: str, measure: str, baseline: str, commit: str, ra
     }
 
 
+def ordered(changes: list[dict], series: Series) -> list[dict]:
+    """CHANGES grouped by series, each series oldest first, as the schema promises."""
+    at = {key: {c: i for i, (c, _, _) in enumerate(points)} for key, points in series.items()}
+
+    def key(c: dict) -> tuple:
+        s = (c["case"], c["machine"], c["measure"])
+        return (*s, at[s][c["commit"]], c["method"])
+
+    return sorted(changes, key=key)
+
+
 def export(results: Path, out: Path) -> dict:
-    """Write the index and reports, and return the index."""
+    """Write the index and reports, and return the index. OUT/reports/ is emptied first."""
+    # A report from an earlier export that this one does not list would linger unseen.
+    shutil.rmtree(out / "reports", ignore_errors=True)
     groups, commits, reports = [], [], []
     series: Series = {}
     machines: dict[str, dict] = {}
@@ -351,7 +364,7 @@ def export(results: Path, out: Path) -> dict:
         "cases": list(catalog.cases.values()),
         "commits": commits,
         "reports": reports,
-        "changes": release_changes(series, released) + change_points(series),
+        "changes": ordered(release_changes(series, released) + change_points(series), series),
     }
     write(out / "index.json", index)
     return index

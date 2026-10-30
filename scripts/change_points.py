@@ -5,6 +5,7 @@
 # ///
 """Apache Otava's change points in each series: ``uv run scripts/change_points.py < SERIES``.
 
+Its dependencies are locked in change_points.py.lock (`uv lock --script`).
 Reads a JSON list of series, each a list of positive values in time order, and writes one list
 per series of ``{"index", "ratio", "pvalue"}``: the first value at the new level, the new level's
 mean over the old one's, and the t-test's p-value. Otava pins its own numpy and scipy, so it runs

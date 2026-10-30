@@ -247,6 +247,16 @@ def test_the_ui_fixtures_follow_the_schema(folder: str):
         body = json.loads((data / report["path"]).read_text())
         check.validate(body)
         assert body.keys() <= cases, report["path"]
+    # Changes come grouped by series, each oldest first; and no report file is left unlisted.
+    order = {(c["group"], c["id"]): (c["date"], c["id"]) for c in index["commits"]}
+    group = {c["id"]: b["group"] for c in index["cases"] for b in index["benchmarks"] if b["id"] == c["benchmark"]}
+    keys = [
+        ((c["case"], c["machine"], c["measure"]), order[group[c["case"]], c["commit"]])
+        for c in index.get("changes", [])
+    ]
+    assert keys == sorted(keys)
+    listed = {data / r["path"] for r in index["reports"]}
+    assert set((data / "reports").rglob("*.json")) <= listed
 
 
 def test_a_parameter_count_mismatch_is_skipped_with_one_warning(
@@ -403,6 +413,27 @@ def test_changes_land_in_the_index_with_their_commits(
     assert release["threshold"] == pytest.approx(0.06)  # three times the 2% spread
     (point,) = [c for c in index["changes"] if c["method"] == "change-point"]
     assert point["pvalue"] == 1.23e-5
+    # One series, oldest change first, the release change before the change point at a commit.
+    assert [c["method"] for c in index["changes"] if c["case"] == case] == ["change-point", "release"]
+
+
+def test_changes_are_oldest_first_within_each_series(export_ui: ModuleType):
+    series = {("c", "m", "latency"): [("a", 1.0, None), ("b", 2.0, None), ("c", 4.0, None)]}
+    late = export_ui.change("c", "m", "latency", "b", "c", 2.0, "release")
+    early = export_ui.change("c", "m", "latency", "a", "b", 2.0, "change-point")
+    assert export_ui.ordered([late, early], series) == [early, late]
+
+
+def test_an_earlier_export_leaves_no_report_behind(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    files = {"m/11111111-a": result("11" * 20, "a" + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))}
+    results = layout(tmp_path, files)
+    stale = results.parent / "out" / "reports" / "old" / "gone.json"
+    stale.parent.mkdir(parents=True)
+    stale.write_text("{}")
+    run(export_ui, results, monkeypatch)
+    assert not stale.exists()
 
 
 @pytest.mark.skipif(shutil.which("uv") is None, reason="Otava runs through uv")

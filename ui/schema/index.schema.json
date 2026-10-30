@@ -153,9 +153,9 @@
         "required": ["path", "format", "group", "machine", "commit"],
         "properties": {
           "path": {
-            "description": "Relative to index.json.",
+            "description": "Relative to index.json, and never above it.",
             "type": "string",
-            "pattern": "^[a-z0-9][a-z0-9/._-]*\\.json$"
+            "pattern": "^(?!.*\\.\\.)[a-z0-9][a-z0-9/._-]*\\.json$"
           },
           "format": { "description": "The file's format and its version.", "const": "bmf/v0" },
           "group": { "$ref": "#/$defs/id" },

@@ -8,9 +8,7 @@
     "type": "object",
     "additionalProperties": {
       "type": "object",
-      "required": [
-        "value"
-      ],
+      "required": ["value"],
       "properties": {
         "value": {
           "type": "number"

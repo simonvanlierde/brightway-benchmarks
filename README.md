@@ -13,7 +13,9 @@ many functional units at once, Monte Carlo. It checks every result against an in
 reference score, so a release that slows a calculation or changes a score shows up here.
 
 The benchmarks run on synthetic databases that copy ecoinvent's structure, so anyone can rerun
-them and the results can be published.
+them and the results can be published. One real database sits beside them: USEEIO 1.1 (US EPA,
+public domain), downloaded from [files.brightway.dev](https://files.brightway.dev/USEEIO-1.1.tar.gz)
+by a pinned SHA-256 when `BWBENCH_SIZES=useeio` asks for it.
 
 Every case's history is on the
 [benchmark pages](https://simonvanlierde.com/brightway-benchmarks/).

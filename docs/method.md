@@ -44,8 +44,10 @@ it writes a profile's system as ecoSpold2 files with bw2io's own `biosphere3` fl
 exchange links, and prints each step's time and peak memory. Padding elementary exchanges,
 properties, uncertainties, comments and parameters at ecoinvent 3.12's means per dataset makes
 the files about as heavy as the real ones (137 KB a dataset), without changing the system's
-matrices. Comments have the real count and length per kind, since bw2io keeps their text in
-memory, and review text that bw2io skips makes up the rest of the weight. An import then holds
+matrices. Comments have the real length per kind and the real count, at most one per exchange,
+since bw2io keeps their text in memory. Intermediate exchanges get 7.3 comments a dataset against
+12.8, because many synthetic datasets have fewer exchanges than that. Review text that bw2io skips
+makes up the rest of the weight. An import then holds
 about as much in memory per dataset as a real one (104 KB against 109 KB). `just bw2io-import
 RELEASE_FOLDER all` does the same on a licensed release, read-only.
 

@@ -28,17 +28,14 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `just ui-data OUT` writes the results as the data a new benchmark UI reads: an `index.json`
   and one report per commit in Bencher Metric Format. ui/schema/ describes both, and the tests
   check the output against it. The UI itself is in ui/, with its own changelog.
+- The new viewer is on the site at `ui/`, beside the asv pages, which stay until it shows
+  everything they show ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)). `just ui-serve`
+  builds it and serves it locally with the committed real data, to look at a UI change.
 - `just ui-data` also lists what changed along each series: moves between two releases that are
   larger than the case's own noise, and Apache Otava's change points. It needs uv, which runs
   Otava in an environment of its own ([scripts/export_ui.py](scripts/export_ui.py)). Each time's
   bounds are now the middle half of its samples, not asv's 99% interval, and bw2calc's
   environments carry their solver's name, with the BLAS where the environment pins one.
-- `just bw2io-import` times an import with bw2io's ecoSpold2 importer (bw2io 0.9.17, bw2data
-  4.8) and prints each step's time and peak memory. `just bw2io-import synthetic
-  smoke,ecoinvent` needs no licence: it writes the synthetic database as ecoSpold2 files whose
-  elementary flows are those of bw2io's own `biosphere3`, and fails unless every exchange
-  links. With a licence, `just bw2io-import RELEASE_FOLDER all` times the real release, or a
-  sample of its datasets. `just smoke` now runs the synthetic import at smoke size.
 - A table of what moved in each package's latest release: every case whose time or memory
   changed by more than its noise allows since the release before (three times the spread of its
   samples, and at least 2%), per environment, including cases that failed

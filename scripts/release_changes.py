@@ -22,6 +22,7 @@ import json
 import math
 import re
 import sys
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -68,18 +69,44 @@ def show(value: float | None, unit: str) -> str:
     return f"{text} s" if unit == "seconds" else text
 
 
+def current_stack(subject: str) -> str:
+    """The hash of asv/SUBJECT.stack.txt, as scripts/asv.sh puts it in environment names, or ""."""
+    path = Path(f"asv/{subject}.stack.txt")
+    return hashlib.sha256(path.read_bytes()).hexdigest()[:8] if path.exists() else ""
+
+
+def pick(stacks: Iterable[str], current: str) -> str:
+    """The current stack if it is among STACKS, else the lowest hash."""
+    return min(stacks, key=lambda s: (s != current, s))
+
+
+def releases(subject: str, tool: str) -> dict[str, str]:
+    """Each release's commit (8 characters) -> its line in asv/SUBJECT.hashes, in that order.
+
+    A tag that asv's mirror, .asv/SUBJECT, lacks is left out and named on stderr as TOOL: a
+    missing or stale mirror would otherwise drop releases unannounced.
+    """
+    hashes = Path(f"asv/{subject}.hashes")
+    out, missing = {}, []
+    for tag in hashes.read_text().split() if hashes.exists() else []:
+        commit = sha(Path(".asv") / subject, tag)
+        if commit == tag[:8] and not SHA.fullmatch(tag):  # sha() fell back to the tag; a full hash needs no mirror
+            missing.append(tag)
+        else:
+            out[commit] = tag
+    if missing:
+        print(
+            f"{tool}: .asv/{subject} lacks {', '.join(missing)}; `just bench {subject}` refreshes it", file=sys.stderr
+        )
+    return out
+
+
 def changes(results: Path, subject: str, threshold: float = THRESHOLD) -> list[Change]:
     """The cases that moved more than THRESHOLD in each environment's newest release."""
     folder = results / subject
-    tags = Path(f"asv/{subject}.hashes").read_text().split()
-    order = {sha(Path(".asv") / subject, t): t for t in tags}
-    # sha() falls back to the tag itself; a commit listed by its full hash needs no mirror
-    unresolved = [t for c, t in order.items() if c == t[:8] and not SHA.fullmatch(t)]
-    if unresolved:  # a missing or stale mirror would otherwise compare older releases unannounced
-        missing = ", ".join(unresolved)
-        print(f"release_changes: .asv/{subject} lacks {missing}; `just bench {subject}` refreshes it", file=sys.stderr)
-    stack_file = Path(f"asv/{subject}.stack.txt")
-    current = hashlib.sha256(stack_file.read_bytes()).hexdigest()[:8] if stack_file.exists() else ""
+    order = releases(subject, "release_changes")
+    tags = list(order.values())
+    current = current_stack(subject)
     meta = folder / "benchmarks.json"
     cases = json.loads(meta.read_text()) if meta.exists() else {}
     units = {k: v.get("unit", "") for k, v in cases.items() if isinstance(v, dict)}  # skips "version"
@@ -101,8 +128,7 @@ def changes(results: Path, subject: str, threshold: float = THRESHOLD) -> list[C
         old_tag, new_tag = sorted(by_tag, key=tags.index)[-2:]
         old, new = by_tag[old_tag], by_tag[new_tag]
         shared = old.keys() & new.keys()
-        pick = lambda stacks: min(stacks, key=lambda s: (s != current, s))  # noqa: E731
-        old_stack, new_stack = (pick(shared), pick(shared)) if shared else (pick(old), pick(new))
+        old_stack, new_stack = (pick(shared, current),) * 2 if shared else (pick(old, current), pick(new, current))
         rows = compare(old[old_stack], new[new_stack], units, threshold)
         out.extend(Change(f"{machine}/{env}", old_tag, new_tag, not shared, *row) for row in rows)
     return out

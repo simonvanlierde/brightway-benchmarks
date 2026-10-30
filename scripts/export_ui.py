@@ -30,8 +30,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-from release_changes import SHA, STACK
-from release_report import sha
+from release_changes import SHA, STACK, current_stack, pick, releases
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
 PROJECT = {
@@ -59,8 +58,7 @@ def slug(name: str) -> str:
 
 def runs(folder: Path) -> dict[tuple[str, str], list[dict]]:
     """(machine, commit) -> one result file per environment, on the stack that wins."""
-    stack_file = Path(f"asv/{folder.name}.stack.txt")
-    current = hashlib.sha256(stack_file.read_bytes()).hexdigest()[:8] if stack_file.exists() else ""
+    current = current_stack(folder.name)
     # (machine, commit) -> environment without its stack -> stack -> result
     found: dict[tuple[str, str], dict[str, dict[str, dict]]] = {}
     for path in folder.glob("*/*-*.json"):
@@ -70,10 +68,7 @@ def runs(folder: Path) -> dict[tuple[str, str], list[dict]]:
             STACK.sub("", data["env_name"]), {}
         )
         env[stack.group(1) if stack else ""] = data
-    return {
-        key: [stacks[min(stacks, key=lambda s: (s != current, s))] for _, stacks in sorted(envs.items())]
-        for key, envs in found.items()
-    }
+    return {key: [stacks[pick(stacks, current)] for _, stacks in sorted(envs.items())] for key, envs in found.items()}
 
 
 def metrics(data: dict, kinds: dict[str, str]) -> list[tuple[str, tuple[str, ...], str, dict]]:
@@ -97,20 +92,6 @@ def metrics(data: dict, kinds: dict[str, str]) -> list[tuple[str, tuple[str, ...
             if a is not None and b is not None and math.isfinite(a) and math.isfinite(b) and a <= value <= b:
                 metric |= {"lower_value": a * scale, "upper_value": b * scale}
             out.append((name, point, measure, metric))
-    return out
-
-
-def releases(subject: str) -> dict[str, str]:
-    """The first 8 characters of each release's commit -> its tag, from asv/SUBJECT.hashes."""
-    hashes = Path(f"asv/{subject}.hashes")
-    tags = hashes.read_text().split() if hashes.exists() else []
-    out = {}
-    for tag in tags:
-        commit = sha(Path(".asv") / subject, tag)
-        if commit == tag[:8] and not SHA.fullmatch(tag):  # sha() falls back to the tag itself
-            print(f"export_ui: .asv/{subject} lacks {tag}; `just bench {subject}` refreshes it", file=sys.stderr)
-            continue
-        out[commit] = tag[:8] if SHA.fullmatch(tag) else tag
     return out
 
 
@@ -221,7 +202,7 @@ def export(results: Path, out: Path) -> dict:
                 {"path": path, "format": REPORT_FORMAT, "group": group, "machine": machine_id, "commit": commit}
             )
         catalog.order(subject, info)
-        tags = releases(subject)
+        tags = {c: t[:8] if SHA.fullmatch(t) else t for c, t in releases(subject, "export_ui").items()}
         for commit, date in sorted(dates.items(), key=lambda c: (c[1], c[0])):
             tag = tags.get(commit[:8])
             commits.append({"id": commit, "group": group, "date": iso(date)} | ({"release": tag} if tag else {}))

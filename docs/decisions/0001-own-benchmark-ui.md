@@ -32,7 +32,7 @@ data.
   LayerChart and in Observable Plot.
 - Changes are found in the night job, not in the browser: a change between releases counts
   only when it is larger than that case's measured noise, and Apache Otava marks change points
-  along each series.
+  along each series. Not built yet: noise, change points and the night job.
 - It serves maintainers first (what changed, and is it noise), then users (what to install),
   then readers of the study.
 - It runs beside asv's pages until it shows everything they show, plus two weeks of night runs
@@ -45,11 +45,8 @@ data.
 - The format sits behind one reading module in the UI, so moving to our own format or another
   standard later changes that module only.
 - A later upload service would write the same files, so nothing here may assume a server.
+- After `ui/` moves out, this repository keeps a pinned copy of the schema and checks the
+  `format_version` of the files it writes against it.
 - We now maintain a frontend: accessibility (WCAG 2.2 AA, a table behind every chart, keyboard
-  use), light and dark themes, phone widths, browser tests and a size budget, all from the
-  first release.
-
-Note added on 2026-10-30:
-
-- After `ui/` moves into its own repository, this repository keeps a pinned copy of the schema
-  and checks the `format_version` of the files it writes against it.
+  use), light and dark themes, phone widths, browser tests and a size budget
+  ([ROADMAP.md](../../ROADMAP.md)).

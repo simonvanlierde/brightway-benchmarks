@@ -1,0 +1,69 @@
+{
+  "format_version": 1,
+  "generated_at": "2026-10-30T12:00:00Z",
+  "project": {
+    "name": "example",
+    "url": "https://example.org/",
+    "links": [{ "name": "Method", "url": "https://example.org/method" }]
+  },
+  "groups": [{ "id": "pkg-1a2b3c4d5e6f", "name": "pkg", "url": "https://example.org/pkg" }],
+  "measures": [
+    { "id": "latency", "name": "Time", "unit": "ns", "better": "lower", "statistic": "median" },
+    { "id": "peak-memory", "name": "Peak memory", "unit": "B" }
+  ],
+  "machines": [{ "id": "box-0a1b2c3d4e5f", "name": "box" }],
+  "environments": [{ "id": "pkg-py3-12-111111111111", "group": "pkg-1a2b3c4d5e6f", "name": "py3.12" }],
+  "benchmarks": [
+    {
+      "id": "pkg-bench-solve-time-solve-222222222222",
+      "group": "pkg-1a2b3c4d5e6f",
+      "name": "bench.Solve.time_solve",
+      "measures": ["latency"],
+      "params": [{ "name": "size", "values": ["'small'", "'large'"], "labels": ["small", "large"] }]
+    }
+  ],
+  "cases": [
+    {
+      "id": "pkg-bench-solve-time-solve-small-py3-12-333333333333",
+      "benchmark": "pkg-bench-solve-time-solve-222222222222",
+      "environment": "pkg-py3-12-111111111111",
+      "params": ["'small'"]
+    },
+    {
+      "id": "pkg-bench-solve-time-solve-large-py3-12-444444444444",
+      "benchmark": "pkg-bench-solve-time-solve-222222222222",
+      "environment": "pkg-py3-12-111111111111",
+      "params": ["'large'"]
+    }
+  ],
+  "commits": [
+    {
+      "id": "1111111111111111111111111111111111111111",
+      "group": "pkg-1a2b3c4d5e6f",
+      "date": "2026-01-01T00:00:00Z",
+      "release": "1.0"
+    },
+    {
+      "id": "2222222222222222222222222222222222222222",
+      "group": "pkg-1a2b3c4d5e6f",
+      "date": "2026-02-01T00:00:00Z",
+      "release": "1.1"
+    }
+  ],
+  "reports": [
+    {
+      "path": "reports/pkg-1a2b3c4d5e6f/box-0a1b2c3d4e5f/1111111111111111111111111111111111111111.json",
+      "format": "bmf/v0",
+      "group": "pkg-1a2b3c4d5e6f",
+      "machine": "box-0a1b2c3d4e5f",
+      "commit": "1111111111111111111111111111111111111111"
+    },
+    {
+      "path": "reports/pkg-1a2b3c4d5e6f/box-0a1b2c3d4e5f/2222222222222222222222222222222222222222.json",
+      "format": "bmf/v0",
+      "group": "pkg-1a2b3c4d5e6f",
+      "machine": "box-0a1b2c3d4e5f",
+      "commit": "2222222222222222222222222222222222222222"
+    }
+  ]
+}

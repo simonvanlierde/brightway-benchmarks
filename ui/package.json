@@ -1,0 +1,36 @@
+{
+  "name": "benchmark-ui",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A static benchmark UI that reads an index and Bencher Metric Format reports",
+  "license": "BSD-3-Clause",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@12.15.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "types": "json2ts --no-additionalProperties -i schema/index.schema.json -o src/lib/index.gen.ts && json2ts -i schema/report.schema.json -o src/lib/report.gen.ts && biome format --write src/lib",
+    "check": "biome check . && astro check && svelte-check --fail-on-warnings",
+    "test": "vitest run",
+    "fmt": "biome check --write ."
+  },
+  "dependencies": {
+    "ajv": "8.20.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@astrojs/svelte": "9.1.0",
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "24.19.2",
+    "astro": "7.4.0",
+    "json-schema-to-typescript": "16.0.0",
+    "svelte": "5.57.2",
+    "svelte-check": "4.7.6",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

@@ -22,7 +22,8 @@ def sha(mirror: Path, tag: str) -> str:
         text=True,
         check=False,
     )
-    return run.stdout.strip()[:8] or tag[:8]
+    # On failure rev-parse echoes the argument to stdout, so only a zero exit is a commit.
+    return run.stdout.strip()[:8] if run.returncode == 0 else tag[:8]
 
 
 def tally(text: str) -> tuple[str, str, int, int, int, list[str]]:

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:benchmark-ui:schema:report:1",
+  "title": "BenchmarkReport",
+  "description": "One report: Bencher Metric Format v0 (https://bencher.dev/v0/bmf.json as of 2026-10-30), in draft 2020-12. BMF has no version field, so index.json gives each report's format. Keys are case ids, then measure ids.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "additionalProperties": {
+      "type": "object",
+      "required": ["value"],
+      "properties": {
+        "value": {
+          "type": "number"
+        },
+        "lower_value": {
+          "type": "number"
+        },
+        "upper_value": {
+          "type": "number"
+        }
+      }
+    },
+    "propertyNames": {
+      "minLength": 1
+    }
+  },
+  "propertyNames": {
+    "minLength": 1
+  }
+}

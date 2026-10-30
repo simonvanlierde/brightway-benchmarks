@@ -1,0 +1,4 @@
+{
+  "pkg-bench-solve-time-solve-small-py3-12-333333333333": { "latency": { "value": 1.0e6 } },
+  "pkg-bench-solve-time-solve-large-py3-12-444444444444": { "latency": { "value": 1.0e9 } }
+}

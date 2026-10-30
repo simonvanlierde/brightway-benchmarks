@@ -9,9 +9,13 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
 
 - **A more faithful `ecoinvent` profile.** Its LU fill is too high, so SuperLU times on it
   overstate real ecoinvent ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
-  In ecoinvent a long input list draws from other regions far more than a short one, and the
-  profile's lists are about as local at every length. The next step is a generator step that
-  follows ecoinvent here.
+  Matching how local ecoinvent's input lists are at each length did not lower the fill, so
+  the next step is to measure what makes its long input lists repeat each other.
+- **Our own results UI,** replacing asv's pages: what changed in each release against the
+  measured noise, each benchmark's history, and comparisons across solvers and environments
+  ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).
+- **The synthetic inputs as a dataset** on Zenodo, one version per generator version, so the
+  matrices and ecoSpold2 files can be used without running the generator.
 - **More solver columns for bw2calc:** NVIDIA cuDSS behind a GPU opt-in, kept out of the default
   run, and Apple's Accelerate LU on macOS.
 - **Scaling cells for bw_processing:** how the time to read a datapackage grows with the number of

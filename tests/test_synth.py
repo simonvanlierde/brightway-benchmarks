@@ -129,6 +129,23 @@ def test_sector_markets_share_one_pool_across_regions():
     assert jaccard("sector") > 2 * jaccard("region")  # 0.18 against 0.075 at seed 0
 
 
+def test_copy_long_lists_shares_inputs_in_sector():
+    s = system("ecoinvent", products=6000, copy_long=1.0, copy_long_min=17, seed=0)
+    assert s.sector is not None
+    x = (s.technosphere() != 0).astype(np.float64).tolil()
+    x.setdiag(0)
+    x = x.tocsc()
+    x.eliminate_zeros()
+    length = np.diff(x.indptr)
+    long = np.flatnonzero(length >= 17)
+    q = x[:, long]
+    shared = (q.T @ q).toarray()
+    jac = shared / (length[long][:, None] + length[long][None, :] - shared)
+    np.fill_diagonal(jac, -1.0)
+    best = jac.max(axis=1)
+    assert np.mean(best >= 0.5) > 0.4
+
+
 def test_bw2data_form_has_every_exchange():
     s = system("smoke")
     bio, tech, cfs = as_bw2data(s)

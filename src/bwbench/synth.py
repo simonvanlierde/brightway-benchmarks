@@ -96,6 +96,8 @@ class Profile:
     treatment: float = 0.126  # share of products that are waste treatments
     copies: float = 0.0  # share of products in a run that shares most of one input list (regional variants)
     bundles: float = 0.0  # share of suppliers in a run that sells to mostly the same consumers
+    copy_long: float = 0.0  # share of long input lists that are regional copies in the same sector
+    copy_long_min: int = 17  # shortest input list that counts as a long list for regional copies
     copy_zipf: float = 2.1  # runs have 1 + Zipf(copy_zipf) products: mostly pairs, a few dozens
     copy_max: int = 60  # caps the longest runs
     copy_keep: float = 1.0  # share of the template's list a run member takes; it keeps the rest of its own
@@ -443,6 +445,53 @@ def _copy_lists(
     )
 
 
+def _copy_long_lists(
+    rng: np.random.Generator,
+    rows: NDArray,
+    cols: NDArray,
+    sector: NDArray,
+    p: Profile,
+    share: float,
+) -> tuple[NDArray, NDArray]:
+    """Copy long input lists across regional variants in the same sector.
+
+    In ecoinvent, long lists repeat because regional variants of one technology (activity)
+    share nearly all their inputs. This groups long lists by sector and has variants take
+    a ``p.copy_keep`` share of their template's inputs.
+    """
+    n = p.products
+    length = np.bincount(cols, minlength=n)
+    long_cols = np.flatnonzero(length >= p.copy_long_min)
+    if long_cols.size < 2 or share <= 0:
+        return rows, cols
+
+    template = np.arange(n)
+    for sec in np.unique(sector[long_cols]):
+        sec_long = long_cols[sector[long_cols] == sec]
+        if sec_long.size >= 2:
+            perm = rng.permutation(sec_long)
+            i = 0
+            while i < perm.size:
+                sz = int(np.minimum(1 + rng.zipf(p.copy_zipf), p.copy_max))
+                cluster = perm[i : i + sz]
+                if cluster.size >= 2 and rng.random() < share:
+                    t = cluster[0]
+                    template[cluster[1:]] = t
+                i += sz
+
+    variant = template != np.arange(n)
+    if not np.any(variant):
+        return rows, cols
+
+    borrowed = sparse.csc_matrix((np.ones(rows.size), (rows, cols)), shape=(n, n))[:, template].tocoo()
+    take = ~variant[borrowed.col] | (rng.random(borrowed.nnz) < p.copy_keep)
+    own = variant[cols] & (rng.random(cols.size) >= p.copy_keep)
+    return (
+        np.concatenate([borrowed.row[take].astype(np.int64), rows[own]]),
+        np.concatenate([borrowed.col[take].astype(np.int64), cols[own]]),
+    )
+
+
 def _market_lists(rng: np.random.Generator, rows: NDArray, cols: NDArray, family: NDArray, p: Profile) -> NDArray:
     """Let long input lists of one family draw mostly from one pool of suppliers, as markets do.
 
@@ -469,7 +518,7 @@ def _market_lists(rng: np.random.Generator, rows: NDArray, cols: NDArray, family
     return rows
 
 
-def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
+def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:  # noqa: PLR0915
     """The supply-chain structure the module docstring describes, scaled to ``p.radius`` at most.
 
     Position 0 is the most basic product and position n - 1 the most finished one; product
@@ -515,6 +564,8 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
         cols, rows = _copy_lists(rng, cols, rows, p, p.bundles)
     if p.copies:
         rows, cols = _copy_lists(rng, rows, cols, p, p.copies)
+    if p.copy_long:
+        rows, cols = _copy_long_lists(rng, rows, cols, groups[2], p, p.copy_long)
     rows = np.concatenate([suppliers, rows])
     cols = np.concatenate([consumers, cols])
     rows, cols = _off_diagonal_once(rows, cols, n)

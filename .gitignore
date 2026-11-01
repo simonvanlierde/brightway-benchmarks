@@ -29,6 +29,7 @@ coverage.xml
 # Node
 node_modules/
 .pnpm-store/
+.vitest/
 *.tsbuildinfo
 coverage/
 

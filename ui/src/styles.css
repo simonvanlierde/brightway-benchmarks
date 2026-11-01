@@ -24,7 +24,7 @@
   --s8: #885b8b;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
     --page: #141d32;
     --ink: #f8f9fc;
@@ -49,6 +49,31 @@
     --s8: #d6abdd;
   }
 }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #141d32;
+  --ink: #f8f9fc;
+  --ink-2: #c7d2ed;
+  --muted: #aab9d8;
+  --grid: #2a3755;
+  --axis: #6b7fa9;
+  --line: #3d4d70;
+  --control: #9aadd2;
+  --accent: #b3c5ff;
+  --accent-wash: #2c3d67;
+  --worse: #ffafb0;
+  --better: #74cfc3;
+  --shift: #aab9d8;
+  --s1: #91b4ff;
+  --s2: #a7bce8;
+  --s3: #c2a6f1;
+  --s4: #85c0df;
+  --s5: #d8c78a;
+  --s6: #b8ade3;
+  --s7: #8fb2d3;
+  --s8: #d6abdd;
+}
+
 * {
   box-sizing: border-box;
   border-radius: 0;
@@ -376,25 +401,14 @@ code,
   letter-spacing: -0.015em;
 }
 .home-intro {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 26px;
+  display: block;
+  margin-bottom: 20px;
 }
 .home-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
   gap: 28px;
   align-items: start;
-}
-
-.platform-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 14px 0 13px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 16px;
 }
 
 .coverage-text {
@@ -570,14 +584,6 @@ details.data {
   font-size: 1.5rem;
   letter-spacing: -0.025em;
   font-weight: 650;
-}
-
-.platform-tabs button {
-  border-color: transparent;
-  background: transparent;
-  padding: 7px 18px;
-  min-height: 38px;
-  font-size: 0.875rem;
 }
 
 .install-command code {
@@ -821,12 +827,6 @@ tbody tr:hover {
   max-width: 70ch;
   margin-top: 9px;
 }
-.platform-tabs button[aria-pressed="true"],
-.manager-tabs button[aria-pressed="true"] {
-  color: var(--page);
-  background: var(--accent);
-  font-weight: 650;
-}
 .view .brief-change h3 {
   margin: 0;
   font-size: 1rem;
@@ -853,14 +853,6 @@ details.data[open] summary {
 .rail .home[aria-current] {
   background: var(--accent-wash);
   color: var(--accent);
-}
-.view > .home-intro .snapshot {
-  margin: 4px 0 0;
-  text-align: right;
-  color: var(--muted);
-  flex: none;
-  font-size: 0.8rem;
-  line-height: 1.65;
 }
 @media (min-width: 60rem) {
   .frame {
@@ -921,10 +913,6 @@ details.data[open] summary {
   }
   .fullwidth > .view {
     padding: 26px 22px 40px;
-  }
-  .view > .home-intro .snapshot {
-    text-align: left;
-    margin-top: 12px;
   }
 }
 @media (max-width: 39rem) {
@@ -1121,7 +1109,6 @@ details.data[open] summary {
   /* High contrast drops background fills,
 so a chosen control needs a line of its own. */
   .direction-filter button.chosen,
-  .platform-tabs button[aria-pressed="true"],
   .rail li a[aria-current="page"],
   .rail .home[aria-current] {
     outline: 2px solid Highlight;
@@ -1131,6 +1118,7 @@ so a chosen control needs a line of its own. */
 
 /* Masthead search: one box for the whole catalogue. */
 .masthead-search {
+  margin-left: auto;
   flex: 0 1 18rem;
 }
 .masthead-search input {
@@ -1157,19 +1145,6 @@ so a chosen control needs a line of its own. */
   letter-spacing: -0.02em;
   font-weight: 650;
   margin: 0 0 10px;
-}
-.manager-tabs {
-  display: flex;
-  gap: 2px;
-  margin-bottom: 8px;
-}
-.manager-tabs button {
-  border-color: transparent;
-  background: transparent;
-  padding: 5px 14px;
-  min-height: 34px;
-  font-family: var(--mono);
-  font-size: 0.8125rem;
 }
 .install-command {
   display: flex;
@@ -1216,13 +1191,6 @@ so a chosen control needs a line of its own. */
 .text-button:hover {
   background: none;
   text-decoration-thickness: 2px;
-}
-.environment-files {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  font-size: 0.8rem;
-  margin: 9px 0 0;
 }
 .saved-warning {
   color: var(--worse);
@@ -1485,5 +1453,135 @@ table.check-grid td a[aria-current="true"] {
   .platform-checks a[aria-current] {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
+  }
+}
+
+.theme-toggle {
+  display: none;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  color: var(--accent);
+  background: transparent;
+  cursor: pointer;
+}
+:root[data-theme] .theme-toggle {
+  display: inline-grid;
+}
+[data-theme-icon="sun"] {
+  display: none;
+}
+:root[data-theme="dark"] [data-theme-icon="sun"] {
+  display: block;
+}
+:root[data-theme="dark"] [data-theme-icon="moon"] {
+  display: none;
+}
+.view .brightway-about {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+  margin-top: 6px;
+}
+.setup-controls {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1.2fr;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.control-label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+.setup-controls label {
+  min-width: 0;
+}
+.setup-controls select {
+  width: 100%;
+  min-height: 44px;
+}
+.checks-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-bottom: 6px;
+}
+.view .all-checks .checks-heading h2 {
+  margin: 0;
+}
+.checks-date {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.install-set .install-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0;
+}
+.install-set .install-note {
+  margin: 4px 0;
+}
+.install-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+}
+.install-set .install-details details {
+  margin: 0;
+}
+.install-set .install-details details[open] {
+  flex-basis: 100%;
+}
+.install-set .install-details details > summary {
+  min-height: 44px;
+  align-content: center;
+}
+.check-help {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 18px;
+}
+@media (max-width: 39rem) {
+  .top-inner {
+    display: grid;
+    padding-block: 6px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 10px;
+  }
+  .top-inner h1 {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .top .theme-toggle {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .top .primary-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding-right: 0;
+    mask-image: none;
+  }
+  .masthead-search {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    width: 100%;
+  }
+  .setup-controls {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 }

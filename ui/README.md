@@ -1,6 +1,6 @@
 # Benchmark UI
 
-A static site that shows benchmark results. It reads two kinds of JSON file, which
+A static site that shows Brightway benchmark results. It reads two kinds of JSON file, which
 [schema/](schema/) describes:
 
 - `index.json`: the benchmarks, their parameters, environments, machines, commits, releases and
@@ -9,8 +9,8 @@ A static site that shows benchmark results. It reads two kinds of JSON file, whi
 - one report per commit and machine, in [Bencher Metric Format](https://bencher.dev/docs/reference/bencher-metric-format/)
   v0 ([report.schema.json](schema/report.schema.json)).
 
-The site has no server and knows nothing about the project it shows: every name, group and link
-comes from the data. [src/lib/contract.ts](src/lib/contract.ts) is the only module that reads
+The viewer has no server. Benchmark names, groups and links come from the data; the landing
+page and About page explain this Brightway project. [src/lib/contract.ts](src/lib/contract.ts) is the only module that reads
 the files, and it checks each one against the schema.
 
 ## Use
@@ -51,7 +51,7 @@ hold `guidance.json`.
 
 ## What it shows
 
-Setup starts with the install command for the selected platform, one per package manager (uv, pip, conda, pixi; the choice is remembered in this browser). A command names a dated set that never changes; "Copy latest" copies the one that follows the newest passing set. A manager the selected check does not offer comes from another check on the platform, which the page names. The command's source check, any matching upstream-suite result, and coverage caveats appear before Copy. An optional “Starting a new project?” section gives uv users a complete project-creation command sequence. Below, every check appears in a comparison grid: select a cell to install its set. A smoke pass and an upstream test-suite pass are separate claims. If the current check fails, the earlier passing files keep their date and run link.
+Setup starts with labelled operating-system, Python-version and package-manager selectors above the install command, one per package manager (uv, pip, conda, pixi; the choice is remembered in this browser). A command names a dated set that never changes; "Copy latest" copies the one that follows the newest passing set. Selecting a check keeps that check’s install set; a failed check without a passing set says so. Changing package manager selects a matching check for that Python version and updates the URL; it never substitutes another Python version. With no explicit check, the page chooses a matching check on the platform. The command's source check, any matching upstream-suite result, and coverage caveats appear before Copy. An optional “Starting a new project?” section gives uv users a complete project-creation command sequence. Below, every check appears in a comparison grid: select a cell to install its set. A smoke pass and an upstream test-suite pass are separate claims. If the current check fails, the earlier passing files keep their date and run link.
 
 Beside the setup sit the solver comparison, the curated findings from `benchmarks/findings.toml`, and the latest release changes. The solver timings use the benchmark stack named with the comparison, which may differ from the setup's compatibility snapshot.
 
@@ -62,6 +62,8 @@ The page, platform, selected check and benchmark settings live in the URL. Exist
 On phones, change tables reflow into labelled rows and checks appear as a list for the selected platform. Desktop keeps the comparison grid, with a pinned platform column and a hint when it needs sideways scrolling. Measurement tables scroll inside their own focusable region. Selecting a check moves to the install command.
 
 If optional guidance is missing or cannot be read, the viewer explains the gap and keeps benchmark histories available. It never fills missing setups or measurements with example values.
+
+The masthead holds navigation, search and a sun/moon theme toggle. The theme follows the system until you choose one, then remembers your choice. The latest published check date sits beside All checks; GitHub and the exact release tag or commit used to build the site sit in the footer. The static About page explains the measurements, data sources, citation and privacy. Both pages include search and sharing metadata and appear in the sitemap. The size check measures each page separately: the viewer has a 180 KB gzip budget including lazy chart chunks, and static pages have a 20 KB budget.
 
 ## The data
 

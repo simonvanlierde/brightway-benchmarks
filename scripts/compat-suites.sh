@@ -9,7 +9,7 @@
 # that pytest's default pattern skips); the rest only add coverage. Each result goes to
 # OUT/suites.txt, one line per package (NAME VERSION passed|failed|no tag, or NAME not in the
 # set; then the failing tests), and pytest's output to OUT/suites/NAME.log. Exits 1 if any
-# package failed. Linux only (GNU tar's --wildcards).
+# package failed.
 set -eu
 py=$1
 out=$2
@@ -41,7 +41,17 @@ for pkg in $packages; do
         failed=1
         continue
     fi
-    tar -xzf "$dir.tar.gz" -C "$dir" --strip-components=1 --wildcards '*/tests/*' '*/pyproject.toml'
+    "$py" - "$dir.tar.gz" "$dir" <<'EOF'
+import sys, tarfile
+from pathlib import PurePosixPath
+
+with tarfile.open(sys.argv[1], "r:gz") as archive:
+    for member in archive.getmembers():
+        parts = PurePosixPath(member.name).parts
+        if len(parts) > 1 and (parts[1] == "tests" or parts[1:] == ("pyproject.toml",)):
+            member.name = str(PurePosixPath(*parts[1:]))
+            archive.extract(member, path=sys.argv[2], filter="data")
+EOF
     # pytest reads pytest.ini before the pyproject.toml beside it.
     "$py" -c 'import sys, tomllib
 pytest = tomllib.load(open(sys.argv[1], "rb")).get("tool", {}).get("pytest", {})

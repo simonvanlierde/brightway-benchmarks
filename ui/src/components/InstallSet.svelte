@@ -1,12 +1,26 @@
 <script lang="ts">
+import { type Snippet, untrack } from "svelte";
 import { dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/guidance";
 
 type Manager = "uv" | "pip" | "conda" | "pixi";
 const MANAGERS: Manager[] = ["uv", "pip", "conda", "pixi"];
 const KEY = "bwbench.manager";
 
-// `checks`: every check on the platform; a manager the selected check lacks comes from another of them.
-let { selected, checks, platform }: { selected: GuidanceCheck; checks: GuidanceCheck[]; platform: string } = $props();
+let {
+  selected,
+  checks,
+  platform,
+  explicitCheck = false,
+  onSelectCheck,
+  platformChoice,
+}: {
+  selected: GuidanceCheck;
+  checks: GuidanceCheck[];
+  platform: string;
+  explicitCheck?: boolean;
+  onSelectCheck?: (check: GuidanceCheck) => void;
+  platformChoice?: Snippet;
+} = $props();
 
 function stored(): Manager {
   try {
@@ -17,7 +31,7 @@ function stored(): Manager {
   }
 }
 let manager = $state<Manager>(stored());
-function choose(next: Manager) {
+function remember(next: Manager) {
   manager = next;
   copied = "";
   try {
@@ -28,12 +42,36 @@ function choose(next: Manager) {
 }
 
 const has = (c: GuidanceCheck, m: Manager) => c.lastPassed?.installs.some((i) => i.manager === m) ?? false;
-// The selected check first, then one on the same Python, then any other on the platform.
-const source = $derived(
-  has(selected, manager)
-    ? selected
-    : (checks.find((c) => c.python === selected.python && has(c, manager)) ?? checks.find((c) => has(c, manager))),
+function sourceFor(next: Manager) {
+  return has(selected, next) ? selected : checks.find((c) => c.python === selected.python && has(c, next));
+}
+const pythons = $derived(
+  [...new Set(checks.map((c) => c.python))].sort((a, b) => a.localeCompare(b, "en", { numeric: true })),
 );
+function choosePython(python: string) {
+  const matches = checks.filter((c) => c.python === python);
+  const check =
+    matches.find((c) => c.label === selected.label) ?? matches.find((c) => c.kind === "smoke") ?? matches[0];
+  if (check) onSelectCheck?.(check);
+}
+function choose(next: Manager) {
+  remember(next);
+  const check = sourceFor(next);
+  if (check && check.id !== selected.id) onSelectCheck?.(check);
+}
+// An explicit check keeps its own set; changing managers can select another check.
+const source = $derived(explicitCheck ? selected : sourceFor(manager));
+$effect(() => {
+  const check = selected;
+  const explicit = explicitCheck;
+  untrack(() => {
+    copied = "";
+    if (explicit && !has(check, manager)) {
+      const first = check.lastPassed?.installs[0]?.manager;
+      if (first) remember(first);
+    }
+  });
+});
 const saved = $derived(source?.lastPassed);
 const install = $derived(saved?.installs.find((i) => i.manager === manager));
 const qualifications = $derived(
@@ -68,8 +106,20 @@ async function copy(text: string, what: string) {
 
 <section class="install-set" aria-labelledby="install-heading">
   <h2 id="install-heading" tabindex="-1">Install</h2>
-  <div class="manager-tabs" role="group" aria-label="Package manager">
-    {#each MANAGERS as m (m)}<button type="button" aria-pressed={manager === m} onclick={() => choose(m)}>{m}</button>{/each}
+  <div class="setup-controls">
+    <div class="platform-choice">{@render platformChoice?.()}</div>
+    <div class="python-choice">
+      <label class="control-label" for="setup-python">Python version</label>
+      <select id="setup-python" value={selected.python} onchange={(e) => choosePython(e.currentTarget.value)}>
+        {#each pythons as python (python)}<option value={python}>{python}</option>{/each}
+      </select>
+    </div>
+    <div class="manager-choice">
+      <label class="control-label" for="setup-manager">Package manager</label>
+      <select id="setup-manager" value={manager} onchange={(e) => choose(e.currentTarget.value as Manager)}>
+        {#each MANAGERS as m (m)}<option value={m}>{m}</option>{/each}
+      </select>
+    </div>
   </div>
   {#if source && saved && install}
     <ul class="result-line" aria-label="Check results on {platform}">
@@ -91,28 +141,32 @@ async function copy(text: string, what: string) {
       {:else}
         Passed {dateLabel(saved.date)}
       {/if}
+      {#each saved.files as file (file.url)}<a href={file.url}>{file.label}</a>{/each}
+      <a href={saved.run}>Passing run</a>
       <span role="status">{copied}</span>
     </p>
     {#if manager === "uv"}
       <p class="install-note">For an existing uv project with a minimum Python version of {source.python} or later (<code>requires-python</code>).</p>
+    {/if}
+    {#if source !== selected}
+      <p class="install-note">From the {source.label} check on Python {source.python}.</p>
+    {/if}
+    <div class="install-details">
+    {#if manager === "uv"}
       <details class="new-project">
         <summary>Starting a new project?</summary>
         <p>With uv installed, run these commands in the folder where you keep your projects. They create <code>brightway-project</code> with Python {source.python} and add this tested set.</p>
         <div class="install-command"><pre><code>{projectSetup}</code></pre><button type="button" class="copy" onclick={() => copy(projectSetup, "project setup")}>Copy project setup</button></div>
       </details>
     {/if}
-    {#if source !== selected}
-      <p class="install-note">From the {source.label} check on Python {source.python}.</p>
-    {/if}
-    <p class="environment-files">
-      {#each saved.files as file (file.url)}<a href={file.url}>{file.label}</a>{/each}
-      <a href={saved.run}>Passing run</a>
-    </p>
     <details class="package-pins">
       <summary>{saved.packages.length} tested packages</summary>
       <table aria-label="Tested package versions"><tbody>{#each saved.packages as pkg (pkg.name)}<tr><th scope="row">{pkg.name}</th><td>{pkg.version}</td></tr>{/each}</tbody></table>
     </details>
+    </div>
+  {:else if explicitCheck && !selected.lastPassed}
+    <p class="no-saved">No passing install set is published for {selected.label} on Python {selected.python}. <a href={selected.run}>Open the check's run</a> or choose another check below.</p>
   {:else}
-    <p class="no-saved">No {manager} set has passed on {platform}. Choose another package manager, or a check below.</p>
+    <p class="no-saved">No {manager} set has passed on {platform} on Python {selected.python}. Choose another package manager, or a check below.</p>
   {/if}
 </section>

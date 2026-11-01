@@ -20,26 +20,54 @@ jobs:
     name: ${{ matrix.column }} · Python ${{ matrix.python }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
-    # floors, pre, conda-forge and suites report problems upstream, so they never turn the run
-    # red: a new
-    # failure in latest must stand out.
+    # Diagnostic and upstream-suite failures are reported separately, so a new failure in the
+    # latest releases stands out.
     continue-on-error: ${{ matrix.column != 'latest' }}
     strategy:
       fail-fast: false
       matrix:
-        # The benchmark code needs 3.12 or later (PEP 695 type aliases), though brightway25
-        # allows 3.9, so floors runs on 3.12. macOS and Windows run latest on one Python.
+        # The benchmark harness needs Python 3.12 or later. All native PyPI checks run on
+        # each platform; conda-forge uses the Linux-only container and manifest.
         include:
           - {column: latest, python: "3.12", os: ubuntu-latest}
           - {column: latest, python: "3.13", os: ubuntu-latest}
           - {column: latest, python: "3.14", os: ubuntu-latest}
           - {column: latest, python: "3.12", os: macos-latest}
+          - {column: latest, python: "3.13", os: macos-latest}
+          - {column: latest, python: "3.14", os: macos-latest}
           - {column: latest, python: "3.12", os: windows-latest}
-          - {column: floors, python: "3.12", os: ubuntu-latest}
-          - {column: pre, python: "3.14", os: ubuntu-latest}
-          # The set from conda-forge with pixi, in its image (scripts/compat.sh).
-          - {column: conda-forge, python: "3.12", os: ubuntu-latest}
+          - {column: latest, python: "3.13", os: windows-latest}
+          - {column: latest, python: "3.14", os: windows-latest}
           - {column: suites, python: "3.12", os: ubuntu-latest}
+          - {column: suites, python: "3.13", os: ubuntu-latest}
+          - {column: suites, python: "3.14", os: ubuntu-latest}
+          - {column: suites, python: "3.12", os: macos-latest}
+          - {column: suites, python: "3.13", os: macos-latest}
+          - {column: suites, python: "3.14", os: macos-latest}
+          - {column: suites, python: "3.12", os: windows-latest}
+          - {column: suites, python: "3.13", os: windows-latest}
+          - {column: suites, python: "3.14", os: windows-latest}
+          - {column: floors, python: "3.12", os: ubuntu-latest}
+          - {column: floors, python: "3.13", os: ubuntu-latest}
+          - {column: floors, python: "3.14", os: ubuntu-latest}
+          - {column: floors, python: "3.12", os: macos-latest}
+          - {column: floors, python: "3.13", os: macos-latest}
+          - {column: floors, python: "3.14", os: macos-latest}
+          - {column: floors, python: "3.12", os: windows-latest}
+          - {column: floors, python: "3.13", os: windows-latest}
+          - {column: floors, python: "3.14", os: windows-latest}
+          - {column: pre, python: "3.12", os: ubuntu-latest}
+          - {column: pre, python: "3.13", os: ubuntu-latest}
+          - {column: pre, python: "3.14", os: ubuntu-latest}
+          - {column: pre, python: "3.12", os: macos-latest}
+          - {column: pre, python: "3.13", os: macos-latest}
+          - {column: pre, python: "3.14", os: macos-latest}
+          - {column: pre, python: "3.12", os: windows-latest}
+          - {column: pre, python: "3.13", os: windows-latest}
+          - {column: pre, python: "3.14", os: windows-latest}
+          - {column: conda-forge, python: "3.12", os: ubuntu-latest}
+          - {column: conda-forge, python: "3.13", os: ubuntu-latest}
+          - {column: conda-forge, python: "3.14", os: ubuntu-latest}
     defaults:
       run:
         shell: bash # Windows too, where compat.sh runs under Git Bash

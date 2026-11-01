@@ -16,7 +16,7 @@ Help users choose a tested setup for their platform, then inspect the benchmark 
 
 The viewer in `ui/` is a static Astro and Svelte app. It reads versioned JSON through one contract adapter. Names, descriptions, groups, environments, machines and links come from the data, so the viewer explains Brightway terms without holding Brightway-specific logic. Change detection runs in the exporter. An optional versioned guidance file supplies platform setups, current check results, last passing install commands per package manager and curated solver comparisons. A shareable URL holds the page, platform, selected check, benchmark, parameters, measure and machine. Each chart has a data table and an SVG download.
 
-Platform choices open the published default directly, without a wizard. If guidance is absent, benchmark histories and release changes remain available. Keep the gzip total of built HTML, JavaScript and CSS within the budget in `ui/scripts/size.mjs`; data files are excluded.
+Platform choices open the published default directly, without a wizard. If guidance is absent, benchmark histories and release changes remain available. Keep each page’s gzipped HTML, JavaScript and linked CSS within the budgets in `ui/scripts/size.mjs`: 180 KB for the viewer, including lazy chart chunks, and 20 KB for static pages. Data files are excluded.
 
 Keep experimental commits visible without treating them as releases. Keep machines separate and show failed or missing reports honestly. Preserve the independent correctness checks behind every timing.
 

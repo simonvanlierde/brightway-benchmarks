@@ -105,19 +105,19 @@ Ink, secondary ink and muted text establish hierarchy; line, axis, control and g
 
 ## Typography
 
-Use the system sans stack for headings, controls and tables. Page titles and the larger Home title share a restrained weight and tight tracking; both use the title tokens above. At phone widths, page titles become 1.8rem and the Home title becomes 2.1rem. Section titles range from 1.25rem for setup and summary to 1.5rem for solver evidence.
+Use the system sans stack for headings, controls and tables. Page titles and the larger Home title share a restrained weight and tight tracking; both use the title tokens above.
 
-Monospace belongs to original identifiers and environment specifications. Measurements use tabular numerals and right-aligned numeric columns. Solver timing values are prominent (1.55rem on larger screens, 1.1rem on phones). Keep explanatory prose within about 68 characters per line where space allows.
+Monospace belongs to original identifiers and environment specifications. Measurements use tabular numerals and right-aligned numeric columns. Solver timing values are prominent. Keep explanatory prose within about 68 characters per line where space allows.
 
 ## Layout
 
-The compact masthead links Home, Compatibility, Release changes and Benchmark explorer. The outer frame is capped at 96rem; full-width view content is capped at 1440px. Desktop content uses the spacing token above, while wide explorer views increase their side padding to 56px at 90rem.
+Breakpoints and sizes live in [ui/src/styles.css](ui/src/styles.css); this section gives the intent.
 
-Home places setup and solver evidence side by side in a 1:1.15 grid, with a full-width maintainer summary below. The summary divides changes into two columns. Setup and solver sections begin on matching rules; timing columns align within the solver table. At 75rem and below, the Home columns become equal, setup installation files and pins stack, Compatibility detail moves below its table, and masthead navigation becomes a separate scrolling row. At 55rem and below, setup, solver evidence and maintainer summary stack. The wider stacked setup can again show files and pins side by side. At 39rem and below, those details and summary columns each become a single column.
+The compact masthead links Home, Compatibility, Release changes and Benchmark explorer. Home places setup and solver evidence side by side, with a full-width maintainer summary below; setup and solver sections begin on matching rules, and timing columns align within the solver table. As the screen narrows, Compatibility detail moves below its table, the masthead becomes its own scrolling row, and then setup, solver evidence and summary stack into one column.
 
-Compatibility pairs its filterable check table with a 370px selected-detail pane on wide screens. Only Benchmark explorer has a catalogue rail: at 60rem and above it is 16.5rem wide, sticky and independently scrollable; below that it becomes a disclosure. Filters sit directly above the evidence they control.
+Compatibility pairs its filterable check table with a selected-detail pane on wide screens. Only Benchmark explorer has a catalogue rail, sticky on wide screens and a disclosure on narrow ones. Filters sit directly above the evidence they control.
 
-At 39rem and below, release-change tables reflow into labelled rows. Full measurement tables retain horizontal scrolling in their own focusable region. Charts reduce tick density without dropping keyboard access to any release.
+On phones, release-change tables reflow into labelled rows. Full measurement tables keep horizontal scrolling in their own focusable region. Charts reduce tick density without dropping keyboard access to any release.
 
 ## Elevation & Depth
 
@@ -129,9 +129,9 @@ All corners are square, including controls, charts, selections and detail frames
 
 ## Components
 
-Primary downloads use accent fill with page-coloured text, the primary-download padding and a 40px minimum height. Data ordering chooses the primary file; other installation files remain links. Pressed platform buttons use solid accent fill with page-coloured text. Chosen direction filters and catalogue entries use the selection wash; active masthead navigation uses an accent underline.
+Primary downloads use accent fill with page-coloured text and the primary-download padding. Data ordering chooses the primary file; other installation files remain links. Pressed platform buttons use solid accent fill with page-coloured text. Chosen direction filters and catalogue entries use the selection wash; active masthead navigation uses an accent underline.
 
-Search fields and selects use the surface ground and control stroke. Links thicken their underline on hover. Buttons and catalogue entries use the selection wash on hover; row hover uses a faint selection wash. Native-control and catalogue colour transitions last 150ms only when reduced motion is not requested. All interactive controls retain visible keyboard focus.
+Search fields and selects use the page ground and control stroke. Links thicken their underline on hover. Buttons and catalogue entries use the selection wash on hover; row hover uses a faint selection wash. Native-control and catalogue colour transitions last 150ms only when reduced motion is not requested. All interactive controls retain visible keyboard focus.
 
 Benchmark labels use a readable fallback, with original identifiers in detail views and link titles. Ambiguous labels include their identifiers; search accepts either form. Filter counts update together and selections live in the URL. Empty filters and unknown links explain how to recover. Platform controls select a published setup directly. Saved files carry their passing date; smoke calculations and upstream test suites keep separate coverage labels. External project and method links sit in the footer.
 

@@ -2,6 +2,7 @@
 
 import importlib
 import json
+import shutil
 from pathlib import Path
 from types import ModuleType
 
@@ -264,3 +265,13 @@ def test_install_includes_all_checked_runtime_roots(module: ModuleType, tmp_path
     out = module.export(snapshot(tmp_path, [cell(column, os_name)]), tmp_path / "data", "https://example.test/")
     command = out["checks"][0]["lastPassed"]["install"]
     assert command == "uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt"
+
+
+def test_committed_ui_fixture_is_what_the_exporter_writes(module: ModuleType, tmp_path: Path):
+    # The browser tests read this fixture. When this fails, refresh it with
+    # `python3 scripts/export_guidance.py ui/test/fixtures/compat/status.json ui/test/fixtures/real`.
+    fixtures = ROOT / "ui/test/fixtures"
+    data = tmp_path / "real"
+    shutil.copytree(fixtures / "real", data)
+    module.export(fixtures / "compat/status.json", data)
+    assert (data / "guidance.json").read_text() == (fixtures / "real/guidance.json").read_text()

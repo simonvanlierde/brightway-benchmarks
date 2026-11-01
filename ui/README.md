@@ -30,7 +30,10 @@ pnpm e2e        # after a build: browser tests, with axe and screenshots (SHOTS=
 The browser tests need Playwright's Chromium once: `pnpm exec playwright install chromium`.
 They serve `dist/` with [test/fixtures/real/](test/fixtures/real/) as its data: a copy of
 `just ui-data` run on the public `results` branch. To refresh it, run `just ui-data` from a
-clone that has asv's mirrors in `.asv/` (they give the release names) into that folder.
+clone that has asv's mirrors in `.asv/` (they give the release names) into that folder. Its
+`guidance.json` comes from [test/fixtures/compat/status.json](test/fixtures/compat/status.json):
+`python3 scripts/export_guidance.py ui/test/fixtures/compat/status.json ui/test/fixtures/real`, and a
+pytest fails when the two drift apart.
 
 To look at a UI change, `just ui-serve` (port 4400 by default) builds the viewer and serves it
 with that same data. CI's `ui` job also keeps the browser tests' screenshots as the

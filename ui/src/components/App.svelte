@@ -277,7 +277,7 @@ $effect(() => {
     {#if page === "explorer"}
     <nav class="rail" aria-label="Benchmarks">
       <details open={wide}>
-        <summary>{bench ? "All benchmarks" : "Benchmarks"}</summary>
+        <summary>Benchmark catalogue</summary>
         <a class="home" href={writeView({page:"explorer",params:[]})} aria-current={bench ? undefined : "page"} onclick={(e) => follow(e, { page:"explorer", params: [] })}
           >All benchmarks</a
         >
@@ -407,11 +407,9 @@ $effect(() => {
               <div class="empty" role="alert"><p>The chart did not load: {String(reason)}</p></div>
             {/await}
             <figcaption>
-              {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment; points are spaced by commit, not by date{measure?.bounds
-                ? `; shaded: ${measure.bounds}`
-                : ""}.
-              A ring marks a release that moved beyond the case's noise (red worse, teal better); a dashed line marks a
-              level shift that Apache Otava found along the series.
+              {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment and one even step per commit,
+              not by date{measure?.bounds ? `; the band is ${measure.bounds}` : ""}. A ring marks a change beyond its noise (red worse,
+              teal better); a dashed line marks a level shift across the whole series.
             </figcaption>
           </figure>
 
@@ -442,7 +440,7 @@ $effect(() => {
                       <td class="wrap" data-label="Environment">{short(c.case)}</td>
                       <td class="nowrap" data-label="Evidence">
                         {row.all
-                          .map((e) => (e.method === "release" ? `release vs. noise ${noiseText(e)}` : `level shift (Otava), ${pText(e.pvalue)}`))
+                          .map((e) => (e.method === "release" ? `beyond ${noiseText(e)} noise` : `level shift in the series, ${pText(e.pvalue)}`))
                           .join("; ")}
                       </td>
                     </tr>

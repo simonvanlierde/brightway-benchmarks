@@ -59,7 +59,7 @@ const changeAt = $derived.by(() => {
 
 function words(change: Change): string {
   const way = verdict(change.ratio, better);
-  if (change.method === "release") return `${percent(change.ratio)} ${way} (noise ${noiseText(change)})`;
+  if (change.method === "release") return `${percent(change.ratio)} ${way} (beyond ${noiseText(change)} noise)`;
   return `level shift ${percent(change.ratio)} ${way}`;
 }
 

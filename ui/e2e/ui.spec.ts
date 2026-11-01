@@ -90,8 +90,8 @@ test("change points and release changes are marked and listed", async ({ page })
   await chart(page, IMPORT);
   await expect(page.locator("[data-mark='rule']")).not.toHaveCount(0); // Otava's level shifts
   const changes = page.getByRole("table", { name: "Changes" });
-  await expect(changes.getByText("level shift (Otava)").first()).toBeVisible();
-  await expect(changes.getByText("release vs. noise").first()).toBeVisible();
+  await expect(changes.getByText("level shift in the series").first()).toBeVisible();
+  await expect(changes.getByText(/beyond ±[\d.]+% noise/).first()).toBeVisible();
 });
 
 test("every chart has a table behind it", async ({ page }) => {
@@ -213,8 +213,10 @@ test("overview filters scope their counts and survive a shared URL", async ({ pa
   // Three improvements in two benchmarks: one row each, the cases inside.
   await expect(page.locator(".gains-table tbody tr")).toHaveCount(2);
   await expect(page.locator(".gains-table summary")).toHaveText(["2 cases", "1 case"]);
+  // The Better count is cases, not rows, so the caption reconciles the two.
+  await expect(page.locator(".gains-table caption")).toContainText("2 benchmarks with 3 improved cases");
   await expect(page.locator(".gains-table tbody tr").first()).toContainText("bw_processing");
-  await page.getByRole("button", { name: "Show all changes" }).click();
+  await page.getByRole("button", { name: "Clear filters" }).click();
   await expect(page.getByLabel("Package", { exact: true })).toHaveValue("");
   await expect(page.getByRole("button", { name: /^All changes/ })).toHaveAttribute("aria-pressed", "true");
 });

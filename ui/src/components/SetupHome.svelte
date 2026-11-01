@@ -62,7 +62,7 @@ const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ??
     <h2 id="release-brief-heading">What changed?</h2><p>Changes beyond measured noise in each package's latest release.</p>
     {#each moves as row(row.change.case+row.change.machine+row.way)}
       {@const next={bench:row.bench.id,params:row.params,measure:row.change.measure,machine:row.change.machine}}
-      <article class="brief-change"><div><h3><a href={writeView(next)} onclick={(e)=>follow(e,next)}>{benchmarkLabel(row.bench.name)}</a></h3><strong class={row.way}>{percent(row.change.ratio)} {row.way}</strong></div><p>{row.env} · noise {noiseText(row.change)}</p><p class="brief-context">{row.group.name} · {row.from} → {row.to}{#if index.machines.length>1} · {index.machines.find(m=>m.id===row.change.machine)?.name}{/if}</p></article>
+      <article class="brief-change"><div><h3><a href={writeView(next)} onclick={(e)=>follow(e,next)}>{benchmarkLabel(row.bench.name)}</a></h3><strong class={row.way}>{percent(row.change.ratio)} {row.way}</strong></div><p>{row.env} · beyond {noiseText(row.change)} noise</p><p class="brief-context">{row.group.name} · {row.from} → {row.to}{#if index.machines.length>1} · {index.machines.find(m=>m.id===row.change.machine)?.name}{/if}</p></article>
     {/each}
     {#if moves.length===0}<p class="coverage-text">No release changes beyond measured noise were published.</p>{/if}
     <a class="section-link" href={writeView({page:"changes",params:[]})} onclick={(e)=>follow(e,{page:"changes",params:[]})}>Open all release changes</a>

@@ -21,7 +21,7 @@ const primary = $derived(saved?.files[0]);
         <div class="install-panel">
           {#if primary}<a class="primary-action" href={primary.url}>Download {primary.label}</a>{/if}
           <div class="environment-files">{#each saved.files.filter(f=>f!==primary) as file(file.url)}<a href={file.url}>{file.label}</a>{/each}</div>
-          {#if saved.install}<div class="install-command"><div><strong>Install this tested set</strong></div><pre><code>{saved.install}</code></pre></div>{/if}
+          {#if saved.install}<div class="install-command"><div><strong>Install command</strong></div><pre><code>{saved.install}</code></pre></div>{/if}
         </div>
         <div class="package-pins"><h3>Verified package versions</h3><table aria-label="Tested package versions"><tbody>{#each saved.packages as pkg(pkg.name)}<tr><th scope="row">{pkg.name}</th><td>{pkg.version}</td></tr>{/each}</tbody></table>
 

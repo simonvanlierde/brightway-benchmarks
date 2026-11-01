@@ -19,6 +19,7 @@ const worse = $derived(packageChanges.filter((r) => r.way === "worse").length);
 const better = $derived(packageChanges.filter((r) => r.way === "better").length);
 const flagged = $derived(filtered.filter((r) => r.way !== "better"));
 const gains = $derived(byBenchmark(filtered.filter((r) => r.way === "better")));
+const gainCases = $derived(gains.reduce((n, g) => n + g.rows.length, 0));
 const narrowed = $derived(packageId !== "" || direction !== "all");
 function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
   const label = benchmarkLabel(b.name);
@@ -42,7 +43,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
           <div class="package-filter"><label class="sr" for="package-filter">Package</label><select id="package-filter" value={packageId} onchange={(e) => go({ ...view, page: "changes", group: e.currentTarget.value })}><option value="">All packages</option>{#each index.groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}</select></div>
         </div>
         <p class="sr" role="status">{filtered.length} of {packageChanges.length} changes shown</p>
-        {#if narrowed}<button type="button" class="clear-filters" onclick={() => go({ ...view, page: "changes", group: "", direction: "all" })}>Show all changes</button>{/if}
+        {#if narrowed}<button type="button" class="clear-filters" onclick={() => go({ ...view, page: "changes", group: "", direction: "all" })}>Clear filters</button>{/if}
         {#if !exported}
           <p class="empty">Changes were not exported with this data, so there is nothing to compare here.</p>
         {:else if latest.length === 0}
@@ -56,7 +57,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
           <div class="scroll gap" role="region" aria-labelledby="flagged-h" tabindex="0">
             <table class="latest-table responsive-table">
               <caption>
-                Largest first; noise is the threshold each change exceeded.
+                Largest first, each beside the noise it exceeded.
               </caption>
               <thead>
                 <tr>
@@ -79,7 +80,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
                     </th>
                     <td class="num" data-label="Change">
                       <span class="delta {row.way}">{percent(row.change.ratio)} {row.way}</span><br />
-                      <span class="quiet">noise {noiseText(row.change)}</span>
+                      <span class="quiet">beyond {noiseText(row.change)} noise</span>
                     </td>
                     <td class="wrap" data-label="Environment">{row.env}{#if index.machines.length > 1}<br /><span class="quiet">{index.machines.find((m) => m.id === row.change.machine)?.name ?? row.change.machine}</span>{/if}</td>
                     <td class="nowrap" data-label="Releases">{row.from} <span class="quiet">→</span> {row.to}</td>
@@ -95,7 +96,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
           <div class="scroll gap" role="region" aria-labelledby="gains-h" tabindex="0">
             <table class="latest-table gains-table responsive-table">
               <caption>
-                One row per benchmark; open the cases to see each environment and its noise.
+                {gains.length} {gains.length === 1 ? "benchmark" : "benchmarks"} with {gainCases} improved {gainCases === 1 ? "case" : "cases"}; open the cases for each environment and its noise.
               </caption>
               <thead>
                 <tr>
@@ -124,7 +125,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
                           <summary>{g.rows.length} {g.rows.length === 1 ? "case" : "cases"}</summary>
                           <ul>
                             {#each g.rows as row, i (i)}
-                              <li>{percent(row.change.ratio)} · {row.env}{#if row.params.length} · {row.params.join(", ")}{/if} <span class="quiet">noise {noiseText(row.change)}</span></li>
+                              <li>{percent(row.change.ratio)} · {row.env}{#if row.params.length} · {row.params.join(", ")}{/if} <span class="quiet">beyond {noiseText(row.change)} noise</span></li>
                             {/each}
                           </ul>
                         </details>

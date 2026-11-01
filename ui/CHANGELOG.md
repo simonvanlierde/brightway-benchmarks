@@ -9,6 +9,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- SoftwareSourceCode JSON-LD on the homepage and About page, generated from the project’s metadata ([viewer](README.md#what-it-shows)).
 - Adaptive Brightway leaf icons and social preview cards with descriptive image metadata ([viewer](README.md#what-it-shows)).
 - A sun/moon toggle remembers the chosen theme.
 - An About page explains the project and privacy, with search and sharing metadata. Check freshness sits beside All checks, and GitHub and build identity sit in the footer ([viewer](README.md#what-it-shows)).

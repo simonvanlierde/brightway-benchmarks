@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import codemeta from "../../codemeta.json" with { type: "json" };
 
 const SITE = "https://simonvanlierde.com/brightway-benchmarks/";
 const IMAGE = `${SITE}ui/og.png`;
@@ -24,6 +25,26 @@ for (const path of ["/", "/about/"]) {
     const alt = await page.locator('meta[property="og:image:alt"]').getAttribute("content");
     expect(alt?.length).toBeGreaterThan(20);
     await expect(page.locator('meta[name="twitter:image:alt"]')).toHaveAttribute("content", alt ?? "");
+    const structured = page.locator('script[type="application/ld+json"]');
+    await expect(structured).toHaveCount(1);
+    const software = JSON.parse((await structured.textContent()) ?? "null");
+    expect(software).toMatchObject({
+      "@context": "https://schema.org",
+      "@type": "SoftwareSourceCode",
+      "@id": codemeta.codeRepository,
+      name: codemeta.name,
+      description: codemeta.description,
+      codeRepository: codemeta.codeRepository,
+      license: codemeta.license,
+      programmingLanguage: codemeta.programmingLanguage,
+    });
+    expect(software.author).toEqual(
+      codemeta.author.map((author) => ({
+        "@type": "Person",
+        "@id": author["@id"],
+        name: `${author.givenName} ${author.familyName}`,
+      })),
+    );
     await context.close();
   });
 }

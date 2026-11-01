@@ -111,9 +111,11 @@ floors)
     # unpinned, so lowest-direct takes it to the floor their bounds allow. The rest gets the
     # newest version that fits, since a third-party package's own floors (python-dateutil's
     # six>=1.5, which predates Python 3.12) say nothing about Brightway.
-    # Declared floors found too low on Python 3.12, raised so the run reaches the next one. Each
-    # line is the oldest release that passes, bisected against this column or the package's own
-    # tests, with the package that leaves it unbounded. Drop a line once that release raises it.
+    # Declared floors found too low, raised so the run reaches the next one. Each line is the
+    # oldest release that passes, bisected against this column or the package's own tests, with
+    # the package that leaves it unbounded. Drop a line once that release raises it. Lines with a
+    # python_version marker apply from that Python on, where the oldest NumPy with wheels is 2.x;
+    # the unmarked line for the same package still sets the floor on 3.12.
     cat >"$out/raised.txt" <<'EOF'
 astunparse>=1.6.3      # bw2parameters (brightway2-parameters#15): 1.1.0 pulls six 1.6.1
 asteval>=0.9.27        # bw2parameters: eval(raise_errors=) from 0.9.24, which has no 3.12 wheel until 0.9.27
@@ -127,6 +129,9 @@ threadpoolctl>=3.0.0   # bw2calc: ThreadpoolController
 ipython>=7.6.0         # bw_timex: asyncio.coroutine up to 7.5.0
 ipywidgets>=7.5.0      # bw_timex: collections.Mapping up to 7.4.2
 seaborn>=0.12.0        # bw_timex: matplotlib.cm.register_cmap in 0.11.2
+pint>=0.24.4; python_version >= "3.13"       # bw2data: np.cumproduct up to 0.23, frozen dataclass error up to 0.24.3
+fsspec>=2024.10.0; python_version >= "3.13"  # bw_processing: zip calls Path.__enter__, gone in Python 3.13, up to 2024.9.0
+xarray>=2023.9.0; python_version >= "3.13"   # bw2calc: np.unicode_ up to 2023.8.0
 EOF
     # --no-build: only versions with a wheel for this Python, as a user's install would pick.
     awk -F ' *# via ' -v pin="^($bw|pytest)" -v via="(^|, )($bw)" '

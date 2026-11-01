@@ -115,7 +115,7 @@ Monospace belongs to original identifiers and environment specifications. Measur
 
 Breakpoints and sizes live in [ui/src/styles.css](ui/src/styles.css); this section gives the intent.
 
-The compact masthead links Home, Compatibility, Release changes and Benchmark explorer. Home places setup and solver evidence side by side, with a full-width maintainer summary below; setup and solver sections begin on matching rules, and timing columns align within the solver table. As the screen narrows, Compatibility detail moves below its table, the masthead becomes its own scrolling row, and then setup, solver evidence and summary stack into one column.
+The compact masthead links Home, Compatibility, Release changes and Benchmark explorer. Home places setup and solver evidence side by side, with a full-width maintainer summary below; setup and solver sections begin on matching rules, and timing columns align within the solver table. As the screen narrows, Compatibility detail moves below its table, the masthead becomes its own scrolling row that keeps the current page in view, and then setup, solver evidence and summary stack into one column.
 
 Compatibility pairs its filterable check table with a selected-detail pane on wide screens. Only Benchmark explorer has a catalogue rail, sticky on wide screens and a disclosure on narrow ones. Filters sit directly above the evidence they control.
 

@@ -541,3 +541,14 @@ test("a conda environment offers its manifest and lock before other files", asyn
   await expect(detail.getByRole("link", { name: "pixi.lock", exact: true })).toBeVisible();
   await expect(detail.locator(".install-command pre")).toContainText("pixi");
 });
+
+test("the phone masthead scrolls the current page into view", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("?page=explorer");
+  const nav = page.getByRole("navigation", { name: "Main", exact: true });
+  const current = nav.getByRole("link", { name: "Benchmark explorer" });
+  await expect(current).toHaveAttribute("aria-current", "page");
+  const [box, link] = [await nav.boundingBox(), await current.boundingBox()];
+  if (!box || !link) throw new Error("no masthead");
+  expect(link.x + link.width).toBeLessThanOrEqual(box.x + box.width);
+});

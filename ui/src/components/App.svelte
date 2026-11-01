@@ -238,6 +238,15 @@ function setParam(i: number, value: string) {
   go({ ...view, bench: bench.id, params: labels }); // the bench, so the opening case stops choosing
 }
 
+// On a phone the masthead scrolls sideways; keep the current page's link in view (32px clears the fade).
+let masthead = $state<HTMLElement>();
+$effect(() => {
+  const link = page && masthead?.querySelector('[aria-current="page"]');
+  if (!masthead || !link) return;
+  const over = link.getBoundingClientRect().right - masthead.getBoundingClientRect().right + 32;
+  if (over > 0) masthead.scrollLeft += over;
+});
+
 $effect(() => {
   const name = index?.project.name ?? "Benchmarks";
   document.title = bench
@@ -250,7 +259,7 @@ $effect(() => {
 <header class="top">
   <div class="top-inner">
     <h1><a href={location.pathname} onclick={(e) => follow(e, { params: [] })}><svg class="brand-mark" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 19V5M3 19h18M6 15l4-6 5 3 6-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>{index?.project.name ?? "Benchmarks"}</a></h1>
-    <nav class="primary-nav" aria-label="Main">
+    <nav class="primary-nav" aria-label="Main" bind:this={masthead}>
       {#each PAGES as [id, text] (id)}
         <a href={writeView({page:id,params:[]})} aria-current={page === id ? "page" : undefined} onclick={(e) => follow(e, {page:id,params:[]})}>{text}</a>
       {/each}

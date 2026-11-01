@@ -939,6 +939,10 @@ details.data {
   max-width: 68ch;
   font-size: 1rem;
 }
+.cases summary {
+  cursor: pointer;
+  color: var(--ink-2);
+}
 details.data summary {
   cursor: pointer;
   font-weight: 500;
@@ -964,10 +968,6 @@ tbody tr:hover {
 /* Wider, the benchmark and its change drift apart across empty space. */
 .latest-table {
   max-width: 64rem;
-}
-details.cases summary {
-  cursor: pointer;
-  color: var(--ink-2);
 }
 .cases ul {
   margin: 6px 0 0;

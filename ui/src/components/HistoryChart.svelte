@@ -138,7 +138,14 @@ $effect(() => {
     style: { color: v("--ink-2"), fontSize: "12px", fontFamily: "inherit", overflow: "visible" },
     x: { type: "point", domain: labels, ticks, label: null, padding: 0.3 },
     // From the values, not the intervals: one wide interval would otherwise flatten every line.
-    y: { label: unitName, grid: true, nice: true, domain: yDomain, tickFormat: (d: number) => sig(d) },
+    y: {
+      label: unitName,
+      grid: true,
+      nice: true,
+      ticks: width < 480 ? 4 : 6,
+      domain: yDomain,
+      tickFormat: (d: number) => sig(d),
+    },
     color: { domain, range: colours },
     symbol: { domain, range: domain.map((_, i) => SYMBOLS[i % SYMBOLS.length] ?? "circle") },
     marks: [

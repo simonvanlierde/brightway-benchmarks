@@ -96,7 +96,7 @@ class Profile:
     treatment: float = 0.126  # share of products that are waste treatments
     copies: float = 0.0  # share of products in a run that shares most of one input list (regional variants)
     bundles: float = 0.0  # share of suppliers in a run that sells to mostly the same consumers
-    copy_long: float = 0.0  # share of long input lists that are regional copies in the same sector
+    copy_long: float = 0.0  # chance a cluster of long input lists shares a template within its sector
     copy_long_min: int = 17  # shortest input list that counts as a long list for regional copies
     copy_zipf: float = 2.1  # runs have 1 + Zipf(copy_zipf) products: mostly pairs, a few dozens
     copy_max: int = 60  # caps the longest runs
@@ -113,9 +113,26 @@ class Profile:
         """Short hash of the profile's fields: what shapes the arrays.
 
         Not of the calibration file: the builders never read it, and new measurements in it
-        must not drop asv's results by changing their version.
+        must not drop asv's results by changing their version. Experimental controls at
+        their defaults also keep the existing key: they leave the generated arrays unchanged.
         """
-        return _short_hash(asdict(self))
+        values = asdict(self)
+        for name in (
+            "same_region_by_length",
+            "copies",
+            "bundles",
+            "copy_long",
+            "copy_long_min",
+            "copy_zipf",
+            "copy_max",
+            "copy_keep",
+            "markets",
+            "market_min",
+            "market_by",
+        ):
+            if values[name] == getattr(Profile, name):
+                del values[name]
+        return _short_hash(values)
 
 
 def _short_hash(key: object, length: int = 12) -> str:
@@ -442,7 +459,7 @@ def _copy_lists(
 
     A run starts at a product, its template, and each product right after it in the order
     takes a ``p.copy_keep`` share of the template's inputs and keeps the rest of its own.
-    Runs start often enough that about ``p.copies`` of all products sit in one. Repeated
+    Runs start often enough that about ``share`` of all products sit in one. Repeated
     cells, and a variant buying from itself, are left for ``_off_diagonal_once`` to drop.
     """
     n = p.products
@@ -490,8 +507,7 @@ def _copy_long_lists(
                 sz = int(np.minimum(1 + rng.zipf(p.copy_zipf), p.copy_max))
                 cluster = perm[i : i + sz]
                 if cluster.size >= 2 and rng.random() < share:
-                    t = cluster[0]
-                    template[cluster[1:]] = t
+                    template[cluster[1:]] = cluster[0]
                 i += sz
 
     return _apply_template(rng, rows, cols, template, p)
@@ -502,7 +518,7 @@ def _market_lists(rng: np.random.Generator, rows: NDArray, cols: NDArray, family
 
     The pool is the list of the family's longest member. Each other list of at least
     ``p.market_min`` draws swaps a ``p.markets`` share of its draws for a window of the
-    pool, from a random offset: no list takes a pool supplier twice, and the lengths stay.
+    pool, from a random offset: no list takes a pool position twice, and draw counts stay.
     ``cols`` must be sorted, as the draws are. Returns the new ``rows``.
     """
     n = p.products
@@ -566,8 +582,8 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:  # noq
     rows, cols, pool = rows[found], cols[found], pool[found]
     # Not the inputs every seller's first consumer takes: without them some suppliers would sell to nobody.
     if p.markets:  # one pool per region or sector; draws from the consumer's own sector (region) stay its own
-        own = {"region": 2, "sector": 1}[p.market_by]
-        rows[pool != own] = _market_lists(rng, rows[pool != own], cols[pool != own], groups[3 - own], p)
+        family, own = {"region": (groups[1], 2), "sector": (groups[2], 1)}[p.market_by]
+        rows[pool != own] = _market_lists(rng, rows[pool != own], cols[pool != own], family, p)
     if p.bundles:
         cols, rows = _copy_lists(rng, cols, rows, p, p.bundles)
     if p.copies:

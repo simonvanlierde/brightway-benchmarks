@@ -55,6 +55,19 @@ Review text, which bw2io skips, makes up the rest. At `ecoinvent` size the impor
 against 4.5 GB for the real release. `just bw2io-import RELEASE_FOLDER all` does the same on a
 licensed release, read-only.
 
+### Experimental input sharing
+
+`bwbench.synth.system` accepts overrides for calibration experiments. `copy_long` copies long
+input lists within a sector; `copies` and `bundles` copy input or consumer lists in runs.
+`markets` draws long lists from one pool per region, or per sector with `market_by="sector"`.
+`same_region_by_length` sets locality separately for the five input-list length bands in
+[`OVERLAP_BANDS`](../src/bwbench/synth.py).
+
+These controls are off in every registered profile. They do not fix
+[#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54): `copy_long=0.85` lowers
+fill, but shrinks the largest loop below the calibration test's accepted range.
+Default controls preserve existing cache keys and benchmark histories; overrides get separate keys.
+
 ## The real database
 
 `BWBENCH_SIZES=useeio` runs the cases on USEEIO 1.1, the US EPA's input-output model: 388

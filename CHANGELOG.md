@@ -9,6 +9,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Experimental controls for sharing synthetic input lists and varying locality by list length.
+  They stay off in registered profiles, so existing benchmark histories keep their versions
+  ([method](docs/method.md#experimental-input-sharing)).
 - Compatibility snapshot reports name newly failing jobs, recoveries and continuing failures,
   with links to both runs ([running](docs/running.md#report-newly-failing-jobs)).
 - `scripts/solver_factorize.py --cudss` times NVIDIA's cuDSS GPU solver on the real ecoinvent matrix: a

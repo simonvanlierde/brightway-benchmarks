@@ -14,7 +14,7 @@ Help users choose a tested setup for their platform, then inspect the benchmark 
 
 ## Capabilities and Constraints
 
-The viewer in `ui/` is a static Astro and Svelte app. It reads versioned JSON through one contract adapter. Names, groups, environments, machines and links come from the data; the viewer has no Brightway-specific logic. Change detection runs in the exporter. An optional versioned guidance file supplies platform setups, current check results, last passing installation files and curated solver comparisons. A shareable URL holds the primary view, platform, compatibility filters, selected check, benchmark, parameters, measure and machine. Each chart has a data table and an SVG download.
+The viewer in `ui/` is a static Astro and Svelte app. It reads versioned JSON through one contract adapter. Names, descriptions, groups, environments, machines and links come from the data, so the viewer explains Brightway terms without holding Brightway-specific logic. Change detection runs in the exporter. An optional versioned guidance file supplies platform setups, current check results, last passing installation files and curated solver comparisons. A shareable URL holds the primary view, platform, compatibility filters, selected check, benchmark, parameters, measure and machine. Each chart has a data table and an SVG download.
 
 Platform choices open the published default directly, without a wizard. If guidance is absent, benchmark histories and release changes remain available. Keep the gzip total of built HTML, JavaScript and CSS within the budget in `ui/scripts/size.mjs`; data files are excluded.
 

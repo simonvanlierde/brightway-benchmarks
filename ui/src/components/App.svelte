@@ -235,7 +235,7 @@ function setParam(i: number, value: string) {
   if (!bench) return;
   const labels = paramLabels(bench, params);
   labels[i] = value;
-  go({ ...view, params: labels });
+  go({ ...view, bench: bench.id, params: labels }); // the bench, so the opening case stops choosing
 }
 
 $effect(() => {
@@ -322,6 +322,7 @@ $effect(() => {
       {:else}
         <header>
           <h2>{labelOf(bench)}</h2>
+          {#if bench.description}<p class="bench-about">{bench.description}</p>{/if}
           <p class="benchmark-id"><code>{#each breakable(bench.name) as part, k (k)}{part}<wbr />{/each}</code></p>
           <p>
             {#if group?.url}<a href={group.url}>{group.name}</a>{:else}{group?.name}{/if}
@@ -369,6 +370,18 @@ $effect(() => {
             </div>
           {/if}
         </div>
+        {#if bench.params.some((a) => a.description || a.notes)}
+          <dl class="param-notes">
+            {#each bench.params as axis, i (axis.name)}
+              {@const shown = paramLabels(bench, params)[i] ?? ""}
+              {@const note = axis.notes?.[(axisLabels(bench)[i] ?? []).indexOf(shown)]}
+              {#if axis.description || note}
+                <dt>{axis.name}</dt>
+                <dd>{axis.description}{#if note}{" "}<strong>{shown}:</strong> {note}{/if}</dd>
+              {/if}
+            {/each}
+          </dl>
+        {/if}
 
         {#if reportError}
           <div class="empty" role="alert"><p>The results for this benchmark did not load: {reportError}</p></div>

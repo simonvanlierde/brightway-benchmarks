@@ -135,6 +135,8 @@ Search fields and selects use the page ground and control stroke. Links thicken 
 
 Release changes put regressions first, one row per case; improvements group by benchmark with their cases folded. Chart legend entries are buttons that bring one environment forward. A history with two releases shows points without a line. Text is never smaller than 12px.
 
+The explorer says what the benchmark measures under its title, and what each parameter and its chosen value mean under the controls.
+
 Benchmark labels use a readable fallback, with original identifiers in detail views and link titles. Ambiguous labels include their identifiers; search accepts either form. Filter counts update together and selections live in the URL. Empty filters and unknown links explain how to recover. Platform controls select a published setup directly. Saved files carry their passing date; smoke calculations and upstream test suites keep separate coverage labels. External project and method links sit in the footer.
 
 ## Do's and Don'ts

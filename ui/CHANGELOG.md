@@ -16,6 +16,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Release changes lists regressions first, with improvements grouped by benchmark.
 - A chart's legend buttons bring one environment forward, and the explorer opens on the newest regression.
 - Home says which machine timed the solvers, and notes when that is not your platform.
+- The explorer explains each benchmark, its parameters and the values you choose, such as what `JacobiGMRESLCA` does.
 - A JSON Schema for the data: an index (format version 1) and reports in Bencher Metric
   Format v0.
 - `src/lib/contract.ts` loads both from a configurable URL and checks them against the schema

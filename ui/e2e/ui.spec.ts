@@ -254,6 +254,18 @@ test("the explorer opens on the newest regression", async ({ page }) => {
   await expect(page.locator(".chart svg")).toBeVisible();
 });
 
+test("the explorer explains the benchmark and the chosen parameter values", async ({ page }) => {
+  await page.goto("?page=explorer");
+  await expect(page.locator(".bench-about")).not.toBeEmpty();
+  const notes = page.locator(".param-notes");
+  const cls = page.getByLabel("cls", { exact: true });
+  if ((await cls.count()) === 0) test.skip(true, "the newest regression has no cls choice");
+  await cls.selectOption("JacobiGMRESLCA");
+  await expect(notes).toContainText("JacobiGMRESLCA: Solves by GMRES");
+  await cls.selectOption("LCA");
+  await expect(notes).toContainText("LCA: Solves directly");
+});
+
 test("clearing a shared package filter stays on release changes", async ({ page }) => {
   // A link from before the page parameter: the filters alone chose the changes page.
   await page.goto("?group=bw-processing-dfb1fd2e3103");

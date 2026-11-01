@@ -1,0 +1,23 @@
+[workspace]
+name = "bwbench-compat"
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[dependencies]
+python = "3.12.*"
+bw2analyzer = "*"
+bw2calc = "*"
+bw2data = "*"
+bw2io = "*"
+bw2parameters = "*"
+bw_migrations = "*"
+bw_processing = "*"
+ecoinvent_interface = "*"
+matrix_utils = "*"
+mrio_common_metadata = "*"
+randonneur = "*"
+randonneur_data = "*"
+stats_arrays = "*"
+pypardiso = "*"
+pytest = "*"
+pytest-codspeed = "==5.0.3"

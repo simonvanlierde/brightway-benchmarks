@@ -33,6 +33,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
+from output_path import output_path
 from release_changes import NOISE_FLOOR, SHA, STACK, current_stack, noise_threshold, pick, releases
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
@@ -128,8 +129,8 @@ def iso(ms: int) -> str:
 
 def write(path: Path, data: dict) -> None:
     """DATA as compact JSON; NaN is not JSON, so it fails here rather than in the browser."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
+    output_path(path).parent.mkdir(parents=True, exist_ok=True)
+    output_path(path).write_text(
         json.dumps(data, separators=(",", ":"), allow_nan=False) + "\n"
     )  # a final newline, as the end-of-file hook wants
 
@@ -393,6 +394,8 @@ def ordered(changes: list[dict], series: Series) -> list[dict]:
 
 def export(results: Path, out: Path) -> dict:
     """Write the index and reports, and return the index. OUT/reports/ is emptied first."""
+    for path in (out, out / "index.json", out / "reports"):
+        output_path(path)
     # A report from an earlier export that this one does not list would linger unseen.
     shutil.rmtree(out / "reports", ignore_errors=True)
     groups, commits, reports = [], [], []

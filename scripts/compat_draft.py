@@ -19,14 +19,15 @@ import sys
 import zipfile
 from pathlib import Path
 
-from compat_site import GREEN, REPO, gh, versions
+from compat_site import GREEN, REPO, GreenArtifacts, gh, versions
 
 
 def fetch_green(name: str, dest: Path) -> None:
     """Save the requirements.txt of the newest unexpired NAME artifact from main, if there is one."""
     lines = gh("--paginate", f"repos/{REPO}/actions/artifacts?name={name}&per_page=100", "--jq", ".artifacts[] | @json")
+    trusted = GreenArtifacts()
     for a in map(json.loads, lines.splitlines()):
-        if a["workflow_run"]["head_branch"] == "main" and not a["expired"]:
+        if trusted(a):
             with zipfile.ZipFile(io.BytesIO(gh(f"repos/{REPO}/actions/artifacts/{a['id']}/zip"))) as z:
                 dest.write_bytes(z.read("requirements.txt"))
             return

@@ -23,10 +23,6 @@ export function statusTone(status: string): "better" | "worse" | undefined {
   return undefined;
 }
 
-export function checkKind(kind: GuidanceCheck["kind"]): string {
-  return { smoke: "Smoke calculations", suites: "Upstream test suites", diagnostic: "Diagnostic checks" }[kind];
-}
-
 export function dateLabel(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.valueOf())

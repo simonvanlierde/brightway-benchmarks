@@ -1,7 +1,7 @@
 [project]
 name = "brightway-benchmarks"
-version = "0.1.0"
-description = "Benchmarks for the Brightway LCA stack on seeded synthetic matrices"
+version = "0.2.0"
+description = "Continuous benchmarks and tested installation sets for the Brightway LCA stack"
 readme = "README.md"
 requires-python = ">=3.12"
 authors = [{ name = "Simon van Lierde", email = "code@duinlab.nl" }]

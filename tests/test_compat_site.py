@@ -18,7 +18,10 @@ SCRIPT = REPO / "scripts" / "compat_site.py"
 GH = """#!/bin/sh
 case "$*" in
 */workflows/compat.yml/runs*) cat "$FAKE/runs.json" ;;
+*/workflows/compat.yml) echo '{"id": 11}' ;;
+*repos/o/r) echo '{"id": 100}' ;;
 */jobs*) cat "$FAKE/jobs.json" ;;
+*/runs/*) for a; do :; done; cat "$FAKE/run-${a##*/}.json" ;;
 */zip) for a; do :; done; id=${a%/zip}; cat "$FAKE/${id##*/}.zip" ;;
 */artifacts*) cat "$FAKE/artifacts.jsonl" ;;
 *) exit 1 ;;
@@ -32,7 +35,7 @@ def artifact(id_: int, name: str, created: str, branch: str = "main", *, expired
         "name": name,
         "created_at": created,
         "expired": expired,
-        "workflow_run": {"id": id_ * 100, "head_branch": branch},
+        "workflow_run": {"id": id_ * 100, "head_branch": branch, "repository_id": 100, "head_repository_id": 100},
     }
 
 
@@ -46,6 +49,16 @@ def run_site(tmp_path: Path, jobs: list[tuple[str, str]], artifacts: list[dict],
     (fake / "jobs.json").write_text(json.dumps({"jobs": [{"name": n, "conclusion": c} for n, c in jobs]}))
     (fake / "artifacts.jsonl").write_text("".join(json.dumps(a) + "\n" for a in artifacts))
     for a in artifacts:
+        source = {
+            "workflow_id": 11,
+            "path": ".github/workflows/compat.yml",
+            "event": "schedule",
+            "head_branch": "main",
+            "repository": {"id": 100},
+            "head_repository": {"id": 100},
+            "conclusion": "failure",
+        } | a.get("source", {})
+        (fake / f"run-{a['workflow_run']['id']}.json").write_text(json.dumps(source))
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as z:
             version = a.get("set", a["id"])  # a test may give two artifacts the same set
@@ -208,3 +221,59 @@ def test_versions_match_names_as_uv_writes_them(monkeypatch: pytest.MonkeyPatch)
     versions = importlib.import_module("compat_site").versions
     reqs = "bw-graph-tools==0.6.1\n    # via brightway25\nbw_timex==1.2.0\nBW2Calc==3.1.0\nnumpy==2.5.4\n"
     assert versions(reqs) == {"bw2calc": "3.1.0", "bw_graph_tools": "0.6.1", "bw_timex": "1.2.0", "numpy": "2.5.4"}
+
+
+def test_foreign_main_artifacts_do_not_become_tested_sets(tmp_path: Path):
+    foreign = artifact(99, "compat-green-latest-3.12-ubuntu-latest", "2026-11-01")
+    foreign["workflow_run"].update(repository_id=100, head_repository_id=200)
+    status = run_site(tmp_path, [("latest · Python 3.12 on ubuntu-latest", "success")], [foreign])
+    assert status["cells"][0]["green"] is None
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        {"workflow_id": 22},
+        {"path": ".github/workflows/ui.yml"},
+        {"event": "pull_request"},
+        {"head_branch": "feature"},
+        {"repository": {"id": 200}},
+        {"head_repository": {"id": 200}},
+    ],
+)
+def test_untrusted_run_metadata_is_not_archived(tmp_path: Path, source: dict):
+    candidate = artifact(99, "compat-green-latest-3.12-ubuntu-latest", "2026-11-01") | {"source": source}
+    status = run_site(tmp_path, [("latest · Python 3.12 on ubuntu-latest", "success")], [candidate])
+    assert status["cells"][0]["green"] is None
+
+
+def test_artifact_run_provenance_is_looked_up_once(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.syspath_prepend(str(SCRIPT.parent))
+    module = importlib.import_module("compat_site")
+    calls = []
+
+    def gh(path: str) -> bytes:
+        calls.append(path)
+        if path.endswith("compat.yml"):
+            return b'{"id": 11}'
+        if "/actions/runs/" not in path:
+            return b'{"id": 100}'
+        return json.dumps(
+            {
+                "workflow_id": 11,
+                "path": ".github/workflows/compat.yml",
+                "event": "schedule",
+                "head_branch": "main",
+                "repository": {"id": 100},
+                "head_repository": {"id": 100},
+                "status": "in_progress",
+                "conclusion": None,
+            }
+        ).encode()
+
+    monkeypatch.setattr(module, "gh", gh)
+    trusted = module.GreenArtifacts()
+    candidate = artifact(9, "compat-green-latest-3.12-ubuntu-latest", "2026-11-01")
+    assert trusted(candidate)
+    assert trusted(candidate)
+    assert sum("/actions/runs/" in path for path in calls) == 1

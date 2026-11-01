@@ -7,6 +7,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-01
+
 ### Added
 
 - SoftwareSourceCode JSON-LD on the homepage and About page, generated from the project’s metadata ([viewer](README.md#what-it-shows)).
@@ -56,3 +58,6 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Release-change history lines keep each package's commits separate, and benchmark explanations meet the 12px minimum text size ([viewer](README.md#what-it-shows)).
 - Opening a change keeps the machine that measured it, and narrow charts keep their first and last release labels.
 - A link to an unknown benchmark says how to find it.
+
+[Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.1.0...v0.2.0

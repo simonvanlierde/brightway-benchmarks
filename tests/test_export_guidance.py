@@ -324,3 +324,27 @@ def test_check_description_explains_its_actual_column(module: ModuleType, tmp_pa
     validator().validate(out)
     del check["description"]
     validator().validate(out)  # Existing guidance remains valid without the optional explanation.
+
+
+@pytest.mark.parametrize("missing", [False, True])
+@pytest.mark.parametrize("link", ["root", "ancestor", "target"])
+def test_guidance_symlinks_preserve_outside_files(module: ModuleType, tmp_path: Path, *, missing: bool, link: str):
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    victim = outside / "guidance.json"
+    victim.write_text("keep")
+    data = tmp_path / "data"
+    if link == "target":
+        data.mkdir()
+        (data / "guidance.json").symlink_to(victim)
+    else:
+        data.symlink_to(outside, target_is_directory=True)
+        if link == "ancestor":
+            data = data / "nested"
+            data.mkdir()
+            victim = data / "guidance.json"
+            victim.write_text("keep")
+    status = tmp_path / "missing" if missing else snapshot(tmp_path, [cell()])
+    with pytest.raises(ValueError, match="symlink"):
+        module.export(status, data)
+    assert victim.read_text() == "keep"

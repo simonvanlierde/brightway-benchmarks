@@ -7,118 +7,72 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Removed
-
-- The asv-generated history pages. Old links to them redirect to the benchmark explorer
-  ([running](docs/running.md#benchmarks)).
+## [0.2.0] - 2026-11-01
 
 ### Added
 
-- Nightly compatibility checks now cover all three Python versions on Linux, macOS and Windows, including dependency floors and pre-releases; conda checks remain Linux-only ([coverage](docs/running.md#the-nightly-runs)).
-- Install sets that never change: each set that differs from the last is kept in a dated folder
-  on the `compat` branch, and stays after GitHub deletes the run's artifacts
-  ([running](docs/running.md#the-compat-archive)).
-- The `conda-forge` compat column writes `environment.yml`, so `conda env update` installs the
-  tested set ([running](docs/running.md#install-a-set-that-works)).
-- A finding on `JacobiGMRESLCA`'s Monte Carlo time, which doubled in bw2calc 3.0.0
-  ([findings](docs/findings.md#bw2calc-300-doubled-jacobigmreslcas-monte-carlo-time)).
-- The homepage shows a tested Brightway setup, measured solver alternatives and the latest
-  release changes ([viewer](ui/README.md), [UI changelog](ui/CHANGELOG.md)).
-- Experimental controls for sharing synthetic input lists and varying locality by list length.
-  They stay off in registered profiles, so existing benchmark histories keep their versions
-  ([method](docs/method.md#experimental-input-sharing)).
-- Compatibility snapshot reports name newly failing jobs, recoveries and continuing failures,
-  with links to both runs ([running](docs/running.md#report-newly-failing-jobs)).
-- `scripts/solver_factorize.py --cudss` times NVIDIA's cuDSS GPU solver on the real ecoinvent matrix: a
-  first factorization and one that reuses its analysis, as a Monte Carlo draw does. `--pardiso` now
-  times PARDISO's reuse too ([method](docs/method.md)).
-- `scripts/calibration_sweep.py` writes seed-by-seed measurement reports for the experimental input-sharing controls. Missing results, worker errors and failed calibration guards return a failure status while preserving the report ([calibration experiments](docs/calibration-sweep.md)).
-- `scripts/solver_factorize.py --cudss-updates` checks cuDSS against CPU solves while changing
-  matrix values at fixed sparsity and reports separate phase timings. The existing `--cudss`
-  and `--pardiso` refactorization probes keep their values unchanged; these are not complete
-  Monte Carlo draws ([method](docs/method.md)).
-- When a `floors`, `pre`, `conda-forge` or `suites` compat job fails, its summary and artifact now
-  hold a draft of an upstream issue: the failed test IDs (or the resolve error), the versions, the
-  pins that changed since the job's last green set, and the run URL. Posting it is left to a person.
-- `BWBENCH_SIZES=useeio` runs the bw2calc cases on USEEIO 1.1, a real database (US EPA,
-  public domain, 388 commodities), fetched once by a pinned SHA-256 and checked against a
-  reference solve. Only timings are kept ([method](docs/method.md#the-real-database)).
-- `just bw2io-import` times an import with bw2io's ecoSpold2 importer (bw2io 0.9.17, bw2data 4.8)
-  and prints each step's time and peak memory. `just bw2io-import synthetic smoke,ecoinvent` needs
-  no licence: it writes the synthetic database as ecoSpold2 files whose elementary flows are those
-  of bw2io's own `biosphere3`, and fails unless every exchange links. Its files are as heavy as
-  ecoinvent 3.12's, so an import comes close to a real one in time and memory (docs/method.md). With
-  a licence, `just bw2io-import RELEASE_FOLDER all` times the real release, or a sample of its
-  datasets. `just smoke` now runs the synthetic import at smoke size.
-- `just ui-data OUT` writes the results as the data a new benchmark UI reads: an `index.json`
-  and one report per commit in Bencher Metric Format. ui/schema/ describes both, and the tests
-  check the output against it. The UI itself is in ui/, with its own changelog.
-- The new viewer is the site's homepage and is also at `ui/`
-  ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).
-  `just ui-serve` builds it and serves it locally with the committed real data, to look at a UI change.
-- `just ui-data` also lists what changed along each series: moves between two releases that are
-  larger than the case's own noise, and Apache Otava's change points. It needs uv, which runs
-  Otava in an environment of its own ([scripts/export_ui.py](scripts/export_ui.py)). Each time's
-  bounds are now the middle half of its samples, not asv's 99% interval, and bw2calc's
-  environments carry their solver's name, with the BLAS where the environment pins one.
-- `just ui-data` adds what each benchmark, parameter and value means, from
-  [`benchmarks/descriptions.toml`](benchmarks/descriptions.toml), for the viewer to show.
-- A table of what moved in each package's latest release: every case whose time or memory
-  changed by more than its noise allows since the release before (three times the spread of its
-  samples, and at least 2%), per environment, including cases that failed
-  before and run now. It is on the site's front page, and `just release-changes bw2calc`
-  prints it as Markdown to paste into an upstream issue. A row says "stack moved" when the
-  two releases ran on different fixed dependencies.
-- docs/faster.md lists what to install or call to make Brightway faster, with the gain
-  measured and the release it was measured on.
-- Each finding in docs/findings.md links the case, script or `just` recipe that reruns it, and
-  a test fails when one is missing.
-- A bw2calc case, `NewDemandRefinement`, that times `redo_lci` with UMFPACK's iterative
-  refinement on (its default) and off (`UMFPACK_IRSTEP=0`). It records the refinement steps
-  taken and checks the score against the reference either way. It runs only in the UMFPACK
-  environment.
-- A DOI for citing the project, 10.5281/zenodo.23727602, in `CITATION.cff` and as a README
-  badge. It always points at the latest release.
-- A roadmap (ROADMAP.md), a governance page that says who decides and what happens if the
-  maintainer is unavailable, a code of conduct, and an assurance case
-  (docs/assurance-case.md) that ties each security claim to the code that backs it.
-- SECURITY.md says which releases get fixes: only the newest.
-- A `conda-forge` compat column: each night the Brightway set is installed from conda-forge
-  with pixi and its cases run on Python 3.12, since conda-forge gets releases later than PyPI
-  and breaks separately. Run it with `just compat 3.12 conda-forge`. The bw_graph_tools and
-  bw_timex cases are left out until those packages are on conda-forge. The site table shows
-  the last set that passed, with a `pixi.toml` and `pixi.lock` to install it.
-- CI fails when test coverage drops below 80%. Coverage now counts the scripts the tests run
-  as subprocesses, leaving out the three that only run inside the benchmark box.
-- A `suites` compat column (`just compat 3.12 suites`) runs the test suites of bw2data,
-  bw2calc, bw2io, bw_processing, matrix_utils, bw_graph_tools and bw_timex against the
-  newest releases, every night on Python 3.12. A dependency release that breaks a package's
-  own tests shows up the next morning, with the failing tests in the job summary, even when
-  that package's CI has not run since. Like `floors` and `pre`, it does not turn the run red.
+- A benchmark viewer with Setup and Benchmarks pages, searchable histories, release comparisons,
+  solver evidence and linked findings. It includes accessible charts and data tables, phone layouts,
+  a theme switch, sharing previews and project metadata ([viewer](ui/README.md)).
+- Dated installation sets for uv, pip, conda and pixi, retained beyond workflow artifact expiry.
+  Setup shows each check’s latest result and last passing set, including failed checks and coverage
+  limits ([installation sets](docs/running.md#install-a-set-that-works)).
+- A 39-job nightly compatibility matrix covering Python 3.12, 3.13 and 3.14 on Linux, macOS and
+  Windows, including dependency floors, pre-releases and upstream test suites. Conda checks remain
+  Linux-only ([coverage](docs/running.md#the-nightly-runs)).
+- Compatibility reports identify new failures, recoveries and continuing failures. Failed diagnostic
+  jobs retain an upstream issue draft for a person to review and post
+  ([compatibility reports](docs/running.md#report-newly-failing-jobs)).
+- USEEIO 1.1 as a public-domain input for bw2calc benchmarks, fetched by a pinned checksum and checked
+  against a reference solve ([real database](docs/method.md#the-real-database)).
+- Synthetic ecoSpold2 import benchmarks that require no ecoinvent licence, plus optional benchmarks
+  of a licensed release. The import checks that every exchange links ([method](docs/method.md)).
+- Experimental controls for shared input lists and locality, with seed-by-seed calibration reports.
+  These controls remain off in registered profiles ([calibration](docs/calibration-sweep.md)).
+- GPU factorization and fixed-sparsity update probes for cuDSS, PARDISO analysis reuse timings, and
+  a benchmark of UMFPACK iterative refinement ([method](docs/method.md)).
+- A versioned JSON export for the viewer, including benchmark explanations, release changes beyond
+  measurement noise and Apache Otava change points ([viewer data](ui/README.md#the-data)).
+- Findings and installation guidance explaining measured regressions and solver choices, including
+  the Monte Carlo slowdown in JacobiGMRESLCA ([findings](docs/findings.md),
+  [faster workflows](docs/faster.md)).
+- A project DOI, governance and contribution guidance, roadmap and security assurance case
+  ([assurance case](docs/assurance-case.md)).
 
 ### Changed
 
-- The README is now a short overview. What the benchmarks found, with what each finding means
-  for you and its upstream issue, moved to docs/findings.md; what is measured and how far to
-  trust a step to docs/method.md; and how to run the benchmarks and compat checks, with every
-  `BWBENCH_*` variable, to docs/running.md.
-- The `floors` compat column raises twelve declared floors found too low on Python 3.12 to
-  the oldest release that passes, so it runs every case again and catches the next one. They
-  are in bw2parameters, bw_processing, bw2data, bw2calc and bw_timex; `scripts/compat.sh`
-  lists them.
+- The README is a project overview; findings, methods and operating instructions now have their own
+  pages ([running](docs/running.md)).
+- Dependency-floor checks use corrected lower bounds for the tested Brightway packages
+  ([compatibility checks](docs/running.md#compat)).
+- Release comparisons use each case’s measured spread, distinguish fixed-stack changes and keep
+  hash-only experiments out of release summaries ([release comparisons](ui/README.md#what-it-shows)).
 
 ### Fixed
 
-- Selecting a compatibility check keeps its install set and URL aligned. Check explanations use the table’s labels ([viewer](ui/README.md#what-it-shows)).
-- Archived setup sets keep their latest passing date and run after the artifacts expire
-  ([compat archive](docs/running.md#the-compat-archive)).
-- `pylock.toml` refused Python patch releases older than the CI runner's, such as Ubuntu
-  24.04's 3.12.3. It now asks for Python 3.12 or newer
-  ([running](docs/running.md#compat)).
-- Hash-only experiments no longer count as releases in the viewer or `just release-changes`.
-  They remain visible in each benchmark's history ([running](docs/running.md#add-a-release)).
-- A run no longer fails after its benchmarks pass when an asv environment has lost its
-  interpreter, as happens when its uv cache is cleaned: the lock files skip that folder.
+- Selecting a compatibility check keeps its Python version, install command and URL aligned;
+  changing package manager no longer silently switches Python ([viewer](ui/README.md#what-it-shows)).
+- Archived installation sets preserve their latest passing date and run after artifacts expire,
+  and pylock files accept supported Python patch releases older than the CI runner’s
+  ([archive](docs/running.md#the-compat-archive)).
+- Sampling an import from a relative ecoinvent release folder now keeps readable links to its
+  datasets and MasterData ([import benchmarks](docs/method.md)).
+- Missing interpreters in old asv environments no longer fail an otherwise completed run when
+  installation versions are collected ([running](docs/running.md#benchmarks)).
+
+### Security
+
+- Compatibility installation sets are accepted only from this repository’s main-branch compatibility
+  workflow, with repository and workflow provenance checked before artifact downloads
+  ([trust boundaries](docs/assurance-case.md#trust-boundaries)).
+- Viewer data exports reject symlink output paths before deleting or writing files, protecting
+  host files from links planted in container-writable output folders
+  ([trust boundaries](docs/assurance-case.md#trust-boundaries)).
+
+### Removed
+
+- The asv-generated history pages. Existing links redirect to the new benchmark explorer
+  ([viewer](ui/README.md#what-it-shows)).
 
 ## [0.1.0] - 2026-10-28
 
@@ -200,5 +154,6 @@ For readers of the history pages, which were published before this release:
   before the run records existed show the commit as `unknown`, where the crate used to name
   whatever commit last wrote it.
 
-[Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/simonvanlierde/brightway-benchmarks/releases/tag/v0.1.0

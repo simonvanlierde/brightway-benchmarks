@@ -96,10 +96,20 @@ under `[Unreleased]` for a change users see.
 
 A release is one pull request and one tag:
 
-1. In a pull request, set `version` in `pyproject.toml` and move the `[Unreleased]` entries
-   in CHANGELOG.md under a new `## [X.Y.Z] - date` heading, with its compare link.
-2. On the merge commit on `main`, make a signed tag and push it:
+1. In a pull request, set `version` in `pyproject.toml`, keep the project version in `uv.lock`
+   in sync without changing dependency pins, and move the `[Unreleased]` entries in CHANGELOG.md
+   under a new `## [X.Y.Z] - date` heading, with its compare link. Update the UI changelog when
+   it has changes, and check that CITATION.cff and codemeta.json still describe the README and
+   current viewer.
+2. Review the full diff from the previous release tag. Run `just check`, the UI checks, unit and
+   browser tests, `pnpm size` after its build, and `uv build`. Test the oldest and newest supported
+   Python versions. Run the full mutation suite if the project defines one; a single-PR review
+   does not replace the release review.
+3. After the pull request is merged and its checks pass, make a signed tag on the merge commit
+   on `main` and push it:
    `git tag -s vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`.
+4. After the release workflow succeeds, dispatch `site.yml` on `main` so the viewer’s build
+   label picks up the tag. Verify the release downloads and deployed metadata.
 
 The tag runs the `release` workflow. It checks the tag against `pyproject.toml` and the
 CHANGELOG, then creates the GitHub release with that version's section as notes, the source

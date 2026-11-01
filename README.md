@@ -9,8 +9,9 @@
 
 How fast is [Brightway](https://docs.brightway.dev), and does it still give the right answer?
 This repository times everyday LCA calculations across Brightway's releases: an LCI and LCIA,
-many functional units at once, Monte Carlo. It checks every result against an independent
-reference score, so a release that slows a calculation or changes a score shows up here.
+many functional units at once, Monte Carlo. Correctness checks run alongside the timings; the [method](docs/method.md) explains the reference
+calculations and their coverage limits. A release that slows a calculation or changes a checked
+score shows up in the history.
 
 The benchmarks run on synthetic databases that copy ecoinvent's structure, so anyone can rerun
 them and the results can be published. One real database sits beside them: USEEIO 1.1 (US EPA,

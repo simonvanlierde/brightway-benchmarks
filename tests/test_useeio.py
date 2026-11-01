@@ -1,5 +1,9 @@
 import hashlib
+import json
+import sys
+import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -96,3 +100,43 @@ def test_the_profile_stays_out_of_the_asv_version(monkeypatch: pytest.MonkeyPatc
 def test_useeio_has_no_monte_carlo():
     with pytest.raises(NotImplementedError, match="uncertainty"):
         synth.system("useeio", uncertain=True)
+
+
+class FixtureDatapackage:
+    """Read the fixture's named NumPy resources using the loader's two-method contract."""
+
+    def __init__(self, path: Path):
+        self.path = path
+        with zipfile.ZipFile(path) as archive:
+            self.resources = json.loads(archive.read("datapackage.json"))["resources"]
+
+    def get_resource(self, name: str) -> tuple[np.ndarray, dict]:
+        resource = next(r for r in self.resources if r["name"] == name)
+        with zipfile.ZipFile(self.path) as archive, archive.open(resource["path"]) as stream:
+            return np.load(stream, allow_pickle=False), resource
+
+
+@pytest.mark.parametrize("loader", ["fixture", "bw_processing"])
+def test_archive_becomes_a_system_with_the_same_scores(loader: str, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    if loader == "bw_processing":
+        pytest.importorskip("bw_processing", reason="real loader contract runs in the benchmark container")
+    else:
+        monkeypatch.setitem(sys.modules, "bw_processing", SimpleNamespace(load_datapackage=FixtureDatapackage))
+        monkeypatch.setitem(sys.modules, "fsspec", SimpleNamespace(filesystem=lambda _protocol, *, fo: Path(fo)))
+    archive = Path(__file__).parent / "fixtures" / "useeio-tiny.tar.gz"
+    monkeypatch.setattr(useeio, "fetch", lambda _dest: archive)
+    monkeypatch.setattr(synth, "data_root", lambda: tmp_path)
+    result = useeio.system(synth.profile("useeio", products=3, flows=2), seed=0)
+
+    # Product ids 30, 60, 120 belong to processes 7, 50, 90; flow 999 has no emissions.
+    a = np.array([[2.0, 0.0, -0.5], [-0.25, 1.0, 0.0], [0.0, -0.125, 1.0]])
+    b = np.array([[3.0, 0.0, 4.0], [0.0, 2.0, 0.0]])
+    factors = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+    np.testing.assert_array_equal(result.technosphere().toarray(), a)
+    np.testing.assert_array_equal(result.biosphere().toarray(), b)
+    np.testing.assert_array_equal(result.cf_data, factors)
+    np.testing.assert_array_equal(result.cf_flows, [[3, 4]] * 3)
+    expected = (factors @ b @ np.linalg.solve(a, np.eye(3))).T
+    np.testing.assert_allclose(result.reference, expected, rtol=1e-12)
+    for array in (result.tech_data, result.bio_data, *result.cf_data):
+        assert memoryview(array).readonly

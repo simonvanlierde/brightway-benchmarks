@@ -210,8 +210,48 @@ test("overview filters scope their counts and survive a shared URL", async ({ pa
   await expect(page.getByRole("button", { name: /^Worse/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByLabel("Package", { exact: true })).toHaveValue("bw-processing-dfb1fd2e3103");
   await page.getByRole("button", { name: /^Better/ }).click();
-  await expect(page.locator(".latest-table tbody tr")).toHaveCount(3);
-  await expect(page.locator(".latest-table tbody tr").first()).toContainText("bw_processing");
+  // Three improvements in two benchmarks: one row each, the cases inside.
+  await expect(page.locator(".gains-table tbody tr")).toHaveCount(2);
+  await expect(page.locator(".gains-table summary")).toHaveText(["2 cases", "1 case"]);
+  await expect(page.locator(".gains-table tbody tr").first()).toContainText("bw_processing");
+  await page.getByRole("button", { name: "Show all changes" }).click();
+  await expect(page.getByLabel("Package", { exact: true })).toHaveValue("");
+  await expect(page.getByRole("button", { name: /^All changes/ })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("release changes list regressions before grouped improvements", async ({ page }) => {
+  await page.goto("?page=changes");
+  await expect(page.getByRole("heading", { level: 3 })).toHaveText(["Regressions", "Improvements"]);
+  const better = Number((await page.getByRole("button", { name: /^Better/ }).textContent())?.match(/\d+/)?.[0]);
+  const cases = await page.locator(".gains-table summary").allTextContents();
+  expect(cases.reduce((sum, text) => sum + Number.parseInt(text, 10), 0)).toBe(better);
+});
+
+test("the solver comparison says which platform it was measured on", async ({ page }) => {
+  await page.goto("?platform=linux");
+  await expect(page.getByRole("heading", { name: /measured on one Linux machine/ })).toBeVisible();
+  await expect(page.getByText(/No Linux machine was timed/)).toHaveCount(0);
+  await page.goto("?platform=windows");
+  await expect(page.getByText("No Windows machine was timed, so these values may not hold there.")).toBeVisible();
+});
+
+test("a legend button brings one environment forward and keeps focus", async ({ page }) => {
+  await chart(page, SCORES);
+  const key = page.locator(".legend-host button").first();
+  await key.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".legend-host button").first()).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".legend-host button").first()).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".legend-host button").first()).toHaveAttribute("aria-pressed", "false");
+});
+
+test("the explorer opens on the newest regression", async ({ page }) => {
+  const index = JSON.parse(await readFile(new URL("../test/fixtures/real/index.json", import.meta.url), "utf8"));
+  const worst = latestChanges(index).find((r) => r.way === "worse");
+  await page.goto("?page=explorer");
+  await expect(page.getByRole("main").locator("code").first()).toHaveText(worst?.bench.name ?? "");
+  await expect(page.locator(".chart svg")).toBeVisible();
 });
 
 test("clearing a shared package filter stays on release changes", async ({ page }) => {

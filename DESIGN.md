@@ -40,7 +40,7 @@ colors:
   dark-s2: "#a7bce8"
   dark-s3: "#c2a6f1"
   dark-s4: "#85c0df"
-  dark-s5: "#e5a5d1"
+  dark-s5: "#d8c78a"
   dark-s6: "#b8ade3"
   dark-s7: "#8fb2d3"
   dark-s8: "#d6abdd"
@@ -132,6 +132,8 @@ All corners are square, including controls, charts, selections and detail frames
 Primary downloads use accent fill with page-coloured text and the primary-download padding. Data ordering chooses the primary file; other installation files remain links. Pressed platform buttons use solid accent fill with page-coloured text. Chosen direction filters and catalogue entries use the selection wash; active masthead navigation uses an accent underline.
 
 Search fields and selects use the page ground and control stroke. Links thicken their underline on hover. Buttons and catalogue entries use the selection wash on hover; row hover uses a faint selection wash. Native-control and catalogue colour transitions last 150ms only when reduced motion is not requested. All interactive controls retain visible keyboard focus.
+
+Release changes put regressions first, one row per case; improvements group by benchmark with their cases folded. Chart legend entries are buttons that bring one environment forward. A history with two releases shows points without a line. Text is never smaller than 12px.
 
 Benchmark labels use a readable fallback, with original identifiers in detail views and link titles. Ambiguous labels include their identifiers; search accepts either form. Filter counts update together and selections live in the URL. Empty filters and unknown links explain how to recover. Platform controls select a published setup directly. Saved files carry their passing date; smoke calculations and upstream test suites keep separate coverage labels. External project and method links sit in the footer.
 

@@ -43,7 +43,7 @@
     --s2: #a7bce8;
     --s3: #c2a6f1;
     --s4: #85c0df;
-    --s5: #e5a5d1;
+    --s5: #d8c78a;
     --s6: #b8ade3;
     --s7: #8fb2d3;
     --s8: #d6abdd;
@@ -104,7 +104,7 @@ figure {
 figcaption {
   color: var(--ink-2);
   margin-top: 16px;
-  max-width: 82ch;
+  max-width: 68ch;
   font-size: 0.8rem;
   line-height: 1.6;
 }
@@ -127,7 +127,7 @@ table {
 caption {
   text-align: left;
   padding-bottom: 16px;
-  font-size: 0.77rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 th,
@@ -161,7 +161,7 @@ thead th {
   border-bottom-color: var(--axis);
   padding-top: 10px;
   padding-bottom: 10px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 tbody th {
   font-weight: 500;
@@ -180,7 +180,7 @@ input::placeholder {
 code,
 .mono {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  font-size: 0.875em;
+  font-size: max(0.875em, 0.8rem);
 }
 .top {
   border-bottom: 1px solid var(--line);
@@ -254,7 +254,7 @@ code,
 .hint {
   margin: 0;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   max-width: 56ch;
 }
 .gap {
@@ -281,7 +281,7 @@ code,
 }
 .quiet {
   color: var(--muted);
-  font-size: 0.82em;
+  font-size: max(0.82em, 0.8rem);
 }
 .envs {
   display: grid;
@@ -343,8 +343,25 @@ code,
   min-height: 24px;
   margin-bottom: 6px;
 }
+.legend-host button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 2px 8px 2px 4px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.legend-host button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--ink);
+}
 .package-name {
-  font-size: 0.74rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 .delta {
@@ -406,7 +423,7 @@ code,
 }
 .check-run {
   display: inline-block;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   margin-top: 6px;
 }
 .saved-set {
@@ -450,7 +467,7 @@ code,
   display: flex;
   flex-wrap: wrap;
   gap: 8px 14px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   margin-top: 11px;
 }
 .install-command {
@@ -478,7 +495,7 @@ code,
   padding: 14px 0;
   border-top: 1px solid var(--line);
   background: transparent;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 .solver-evidence {
   min-width: 0;
@@ -545,15 +562,38 @@ code,
 .cell-subline {
   display: block;
   margin-top: 3px;
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   color: var(--muted);
   font-weight: 400;
   white-space: nowrap;
 }
+.check-kinds {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 16px;
+  margin: 0 0 16px;
+  font-size: 0.8rem;
+  color: var(--ink-2);
+}
+.check-kinds dt {
+  font-weight: 600;
+  color: var(--ink);
+}
+.check-kinds dd {
+  margin: 0;
+}
+@media (max-width: 39rem) {
+  .check-kinds {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .check-kinds dd {
+    margin-bottom: 6px;
+  }
+}
 .compat-note {
   margin: 14px 0;
   color: var(--ink-2);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1.6;
 }
 .compat-detail {
@@ -640,7 +680,7 @@ details.data {
 }
 .search-field label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--ink-2);
   margin-bottom: 6px;
@@ -682,7 +722,7 @@ details.data {
 }
 .saved-header p {
   margin: 0;
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   color: var(--muted);
   text-align: right;
 }
@@ -691,7 +731,7 @@ details.data {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 .install-command pre {
@@ -743,7 +783,7 @@ details.data {
   font-size: 0.8rem;
 }
 .solver-evidence caption {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   padding-bottom: 9px;
 }
 .solver-evidence th,
@@ -779,7 +819,7 @@ details.data {
   font-variant-numeric: tabular-nums;
 }
 .brief-change p {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--ink-2);
   margin: 7px 0 0;
 }
@@ -790,12 +830,12 @@ details.data {
 }
 .current-coverage li {
   margin: 11px 0;
-  font-size: 0.76rem;
+  font-size: 0.8rem;
 }
 .current-coverage p {
   margin: 7px 0 10px;
   color: var(--ink-2);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   line-height: 1.6;
 }
 
@@ -804,7 +844,7 @@ details.data {
 }
 .compat-filters label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--ink-2);
   margin-bottom: 5px;
@@ -812,11 +852,11 @@ details.data {
 .compat-filters p {
   margin: 0 0 9px auto;
   color: var(--ink-2);
-  font-size: 0.73rem;
+  font-size: 0.8rem;
 }
 .compat-table caption {
   padding: 12px 16px;
-  font-size: 0.73rem;
+  font-size: 0.8rem;
 }
 .compat-table th,
 .compat-table td {
@@ -889,8 +929,24 @@ tbody tr:hover {
 .latest-table tbody th {
   width: 40%;
 }
+/* Wider, the benchmark and its change drift apart across empty space. */
+.latest-table {
+  max-width: 64rem;
+}
+.cases summary {
+  cursor: pointer;
+  color: var(--ink-2);
+}
+.cases ul {
+  margin: 6px 0 0;
+  padding-left: 1.1em;
+  font-size: 0.8rem;
+}
+.clear-filters {
+  margin: 0 0 12px;
+}
 .solver-evidence thead th {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
 }
 .solver-evidence tbody th {
   font-weight: 550;
@@ -900,11 +956,11 @@ tbody tr:hover {
 }
 .current-coverage li > span {
   display: block;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   margin-top: 3px;
 }
 .compat-table thead th {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   background: var(--page);
 }
 .compat-detail > header h2 {
@@ -948,7 +1004,7 @@ tbody tr:hover {
 .controls label,
 .controls .label {
   color: var(--ink-2);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 650;
 }
 .top .primary-nav {
@@ -975,14 +1031,14 @@ tbody tr:hover {
   padding-right: 22px;
 }
 .solver-evidence .measurement-note {
-  font-size: 0.73rem;
+  font-size: 0.8rem;
   line-height: 1.65;
   color: var(--muted);
   margin-top: 12px;
 }
 .brief-change .brief-context {
   color: var(--ink-2);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
 }
 .compat-detail .setup-content {
   grid-template-columns: 1fr;
@@ -1085,7 +1141,7 @@ details.data[open] summary {
   text-align: right;
   color: var(--muted);
   flex: none;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   line-height: 1.65;
 }
 @media (min-width: 60rem) {
@@ -1183,6 +1239,11 @@ details.data[open] summary {
   }
 }
 @media (max-width: 39rem) {
+  /* The masthead scrolls sideways here; fading its edge shows there is more. */
+  .top .primary-nav {
+    padding-right: 32px;
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
   figure {
     padding: 16px 10px;
     margin: 0 -8px;
@@ -1255,11 +1316,11 @@ details.data[open] summary {
   .top p {
     flex-basis: 100%;
     order: 2;
-    font-size: 0.78rem;
+    font-size: 0.8rem;
   }
   .top nav {
     gap: 14px;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
   }
   .top h1 {
     font-size: 0.875rem;
@@ -1379,11 +1440,8 @@ details.data[open] summary {
   .release-brief {
     grid-template-columns: minmax(0, 1fr);
   }
-  .responsive-table td[data-label="Releases"] {
-    grid-column: 2;
-    grid-row: 3;
-    text-align: right;
-  }
+  .responsive-table td[data-label="Releases"],
+  .responsive-table td[data-label="Cases"],
   .responsive-table td[data-label="Environment"] {
     grid-column: 1 / -1;
     color: var(--ink-2);
@@ -1402,6 +1460,10 @@ details.data[open] summary {
   }
   .responsive-table td[data-label="Environment"]::before {
     content: "Environment: ";
+    color: var(--muted);
+  }
+  .responsive-table td[data-label="Releases"]::before {
+    content: "Releases: ";
     color: var(--muted);
   }
   .envs dt:not(:first-child) {

@@ -3,6 +3,7 @@ import { tick } from "svelte";
 import {
   type BenchmarkIndex,
   type BenchmarkReport,
+  type Change,
   ContractError,
   type Guidance,
   loadGuidance,
@@ -18,6 +19,7 @@ import {
   commitName,
   format,
   type Line,
+  latestChanges,
   lines as linesOf,
   noiseText,
   pageOf,
@@ -123,23 +125,29 @@ function follow(e: MouseEvent, next: View) {
 }
 
 const page = $derived(pageOf(view));
+// The explorer without a benchmark opens on the newest regression, the case a maintainer came for.
+const opening = $derived(
+  page === "explorer" && !view.bench && index ? latestChanges(index).find((r) => r.way === "worse") : undefined,
+);
 const bench = $derived(
   view.bench
     ? index?.benchmarks.find((b) => b.id === view.bench)
     : page === "explorer"
-      ? index?.benchmarks[0]
+      ? (opening?.bench ?? index?.benchmarks[0])
       : undefined,
 );
 const group = $derived(bench && index?.groups.find((g) => g.id === bench.group));
-const params = $derived(bench ? pickParams(bench, view.params) : []);
-const measureId = $derived(bench && (bench.measures.find((m) => m === view.measure) ?? bench.measures[0]));
+const params = $derived(bench ? pickParams(bench, opening ? opening.params : view.params) : []);
+const measureId = $derived(
+  bench && (bench.measures.find((m) => m === (view.measure ?? opening?.change.measure)) ?? bench.measures[0]),
+);
 const measure = $derived(index?.measures.find((m) => m.id === measureId));
 const machines = $derived(
   index && bench
     ? index.machines.filter((m) => index?.reports.some((r) => r.group === bench.group && r.machine === m.id))
     : [],
 );
-const machine = $derived(machines.find((m) => m.id === view.machine) ?? machines[0]);
+const machine = $derived(machines.find((m) => m.id === (view.machine ?? opening?.change.machine)) ?? machines[0]);
 const wanted = $derived<Report[]>(
   index && bench && machine ? index.reports.filter((r) => r.group === bench.group && r.machine === machine.id) : [],
 );
@@ -185,6 +193,15 @@ const commits = $derived(index && bench ? index.commits.filter((c) => c.group ==
 const label = (id: string) => commitName(index?.commits.find((x) => x.id === id) ?? { id });
 const short = (caseId: string) => shown.find((l) => l.case === caseId)?.short ?? caseId;
 const exported = $derived(index?.changes !== undefined);
+// One row per environment and release: the release check and Otava often find the same move.
+const changeRows = $derived.by(() => {
+  const by = new Map<string, Change[]>();
+  for (const c of changes) by.set(`${c.case}/${c.commit}`, [...(by.get(`${c.case}/${c.commit}`) ?? []), c]);
+  return [...by.values()].flatMap((all) => {
+    const lead = all.find((c) => c.method === "release") ?? all[0];
+    return lead ? [{ lead, all }] : [];
+  });
+});
 
 const HINTS: Record<ContractError["kind"], string> = {
   missing: "Check that index.json is in the data folder, then reload.",
@@ -377,7 +394,7 @@ $effect(() => {
               <div class="empty" role="alert"><p>The chart did not load: {String(reason)}</p></div>
             {/await}
             <figcaption>
-              {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment{measure?.bounds
+              {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment; points are spaced by commit, not by date{measure?.bounds
                 ? `; shaded: ${measure.bounds}`
                 : ""}.
               A ring marks a release that moved beyond the case's noise (red worse, teal better); a dashed line marks a
@@ -403,14 +420,17 @@ $effect(() => {
                   </tr>
                 </thead>
                 <tbody>
-                  {#each changes as c, i (i)}
+                  {#each changeRows as row, i (i)}
+                    {@const c = row.lead}
                     {@const way = verdict(c.ratio, measure?.better)}
                     <tr>
                       <th scope="row" class="nowrap">{label(c.baseline)} → {label(c.commit)}</th>
                       <td class="num {way}" data-label="Change">{percent(c.ratio)} {way}</td>
                       <td class="wrap" data-label="Environment">{short(c.case)}</td>
                       <td class="nowrap" data-label="Evidence">
-                        {c.method === "release" ? `release vs. noise ${noiseText(c)}` : `level shift (Otava), ${pText(c.pvalue)}`}
+                        {row.all
+                          .map((e) => (e.method === "release" ? `release vs. noise ${noiseText(e)}` : `level shift (Otava), ${pText(e.pvalue)}`))
+                          .join("; ")}
                       </td>
                     </tr>
                   {/each}

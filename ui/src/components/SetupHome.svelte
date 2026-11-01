@@ -42,7 +42,7 @@ const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ??
   <div class="home-evidence">
     {#if guidance && platform}
       <section class="setup-panel" aria-labelledby="setup-heading">
-        <div class="setup-heading"><h2 id="setup-heading">Your starting point</h2><span>{platform.label}{#if check} · Python {check.python}{/if}</span></div>
+        <div class="setup-heading"><h2 id="setup-heading">Your starting point</h2><span>{platform.label}{#if check}{` · Python ${check.python}`}{/if}</span></div>
         <div class="platform-tabs" role="group" aria-label="Choose a platform">{#each guidance.platforms as p(p.id)}<button type="button" aria-pressed={platform.id===p.id} onclick={()=>go({...view,page:"home",platform:p.id})}>{p.label}</button>{/each}</div>
         {#if check}<CheckDetail {check}/>{:else}<p class="no-saved">No passing setup files are published for {platform.label}. Inspect compatibility for check coverage.</p>{/if}
         <div class="setup-coverage"><div><strong>Check coverage</strong><p>Smoke calculations and full upstream tests are separate checks.</p></div><a href={writeView({page:"compatibility",platform:platform.id,params:[]})} onclick={(e)=>follow(e,{page:"compatibility",platform:platform.id,params:[]})}>Inspect compatibility</a></div>
@@ -52,6 +52,7 @@ const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ??
 
     {#if comparison}
       <section class="solver-evidence" aria-labelledby="solver-heading"><h2 id="solver-heading">{comparison.title}</h2><p>{comparison.context}</p>
+        {#if platform && comparison.platform && comparison.platform !== platform.id}<p class="measurement-note">No {platform.label} machine was timed, so these values may not hold there.</p>{/if}
         <table><caption>Recorded measurements; follow a solver to inspect its benchmark.</caption><thead><tr><th scope="col">Solver</th><th scope="col" class="solver-bar-column">Relative time</th><th scope="col" class="num">Measured value</th></tr></thead><tbody>{#each comparison.rows as row(row.label)}<tr><th scope="row"><a href={row.href}>{row.label}</a></th><td class="solver-bar-column"><div class="solver-track" aria-hidden="true"><span style:width={`${largest > 0 ? row.value/largest*100 : 0}%`}></span></div></td><td class="num">{format(row.value,row.unit)}</td></tr>{/each}</tbody></table>
         {#if comparison.note}<p class="measurement-note">{comparison.note}</p>{/if}
       </section>

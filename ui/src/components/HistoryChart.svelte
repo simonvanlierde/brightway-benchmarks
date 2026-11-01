@@ -25,6 +25,7 @@ const SLOTS = 8;
 let width = $state(640);
 let theme = $state(0); // bumped when the colour scheme changes, so the chart reads its colours again
 let active = $state<number | null>(null); // the release the keyboard has selected, by position in `steps`
+let picked = $state<string | null>(null); // the environment its legend button brings forward
 let host = $state<HTMLElement>();
 let legend = $state<HTMLElement>();
 let figure = $state<SVGSVGElement>();
@@ -121,7 +122,11 @@ $effect(() => {
         .map(([commit]) => points.find((p) => p.commit === commit)?.label ?? ""),
     ),
   ];
-  const picked = active === null ? undefined : tips[active];
+  const at = active === null ? undefined : tips[active];
+  const chosen = picked !== null && domain.includes(picked) ? picked : null;
+  const fade = (d: { short: string }) => (chosen && d.short !== chosen ? 0.2 : 1);
+  // Two releases make a before and after, not a trend, so they get no connecting line.
+  const joined = labels.length > 2;
   const plot = Plot.plot({
     width,
     height: width < 480 ? 300 : 380,
@@ -140,20 +145,33 @@ $effect(() => {
       Plot.gridY({ stroke: v("--grid"), strokeOpacity: 1 }),
       Plot.ruleX(shifts, { stroke: v("--shift"), strokeDasharray: "4 4", strokeWidth: 1 }),
       Plot.text(shifts, { x: (d: string) => d, frameAnchor: "top", dy: -14, text: () => "shift", fill: v("--ink-2") }),
-      Plot.areaY(data, { x: "label", y1: "lo", y2: "hi", z: "short", fill: "short", fillOpacity: 0.12, clip: true }),
-      Plot.lineY(data, { x: "label", y: "y", z: "short", stroke: "short", strokeWidth: 2 }),
+      joined
+        ? Plot.areaY(data, { x: "label", y1: "lo", y2: "hi", z: "short", fill: "short", fillOpacity: 0.12, clip: true })
+        : null,
+      joined
+        ? Plot.lineY(data, { x: "label", y: "y", z: "short", stroke: "short", strokeWidth: 2, strokeOpacity: fade })
+        : null,
       // Outlined, so a symbol under another of a different shape still shows.
-      Plot.dot(data, { x: "label", y: "y", fill: "none", stroke: "short", symbol: "short", r: 4, strokeWidth: 1.5 }),
+      Plot.dot(data, {
+        x: "label",
+        y: "y",
+        fill: "none",
+        stroke: "short",
+        symbol: "short",
+        r: joined ? 4 : 5,
+        strokeWidth: 1.5,
+        strokeOpacity: fade,
+      }),
       ...tiers.map((t) =>
         Plot.dot(
           flagged.filter((f) => f.tier === t),
           { x: "label", y: "y", r: 9 + 4 * t, fill: "none", strokeWidth: 2, stroke: ring },
         ),
       ),
-      picked ? Plot.ruleX([picked.label], { stroke: v("--ink"), strokeOpacity: 0.4 }) : null,
+      at ? Plot.ruleX([at.label], { stroke: v("--ink"), strokeOpacity: 0.4 }) : null,
       Plot.tip(tips, Plot.pointerX({ x: "label", y: "y", title: "text", fill: v("--page"), stroke: v("--axis") })),
-      picked
-        ? Plot.tip([picked], {
+      at
+        ? Plot.tip([at], {
             x: "label",
             y: "y",
             title: "text",
@@ -175,8 +193,23 @@ $effect(() => {
   const watch = new MutationObserver(unlabel);
   watch.observe(plot, { childList: true, subtree: true });
   const key = plot.legend("symbol");
+  // Each swatch becomes a button that brings its environment forward; the redraw keeps focus on it.
+  const had = (document.activeElement as HTMLElement | null)?.dataset.series;
+  for (const [i, swatch] of [...(key?.querySelectorAll(":scope > span") ?? [])].entries()) {
+    const name = domain[i] ?? "";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.series = name;
+    button.setAttribute("aria-pressed", String(chosen === name));
+    button.append(...swatch.childNodes);
+    button.onclick = () => {
+      picked = chosen === name ? null : name;
+    };
+    swatch.replaceWith(button);
+  }
   host.replaceChildren(plot);
   legend.replaceChildren(...(key && lines.length > 1 ? [key] : []));
+  if (had) legend.querySelector<HTMLElement>(`[data-series="${CSS.escape(had)}"]`)?.focus();
   figure = plot as unknown as SVGSVGElement;
   return () => watch.disconnect();
 });
@@ -217,7 +250,7 @@ const said = $derived.by(() => {
 });
 </script>
 
-<div class="legend-host" bind:this={legend}></div>
+<div class="legend-host" role="group" aria-label="Highlight an environment" bind:this={legend}></div>
 <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 <div
   class="chart"

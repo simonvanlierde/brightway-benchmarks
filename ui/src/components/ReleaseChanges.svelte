@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { BenchmarkIndex } from "../lib/contract";
-import { benchmarkLabel, latestChanges, noiseText, percent, type View, writeView } from "../lib/history";
+import { benchmarkLabel, byBenchmark, latestChanges, noiseText, percent, type View, writeView } from "../lib/history";
 
 let {
   index,
@@ -17,6 +17,9 @@ const packageChanges = $derived(latest.filter((r) => !packageId || r.group.id ==
 const filtered = $derived(packageChanges.filter((r) => direction === "all" || r.way === direction));
 const worse = $derived(packageChanges.filter((r) => r.way === "worse").length);
 const better = $derived(packageChanges.filter((r) => r.way === "better").length);
+const flagged = $derived(filtered.filter((r) => r.way !== "better"));
+const gains = $derived(byBenchmark(filtered.filter((r) => r.way === "better")));
+const narrowed = $derived(packageId !== "" || direction !== "all");
 function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
   const label = benchmarkLabel(b.name);
   return index.benchmarks.filter((other) => other.group === b.group && benchmarkLabel(other.name) === label).length > 1
@@ -39,6 +42,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
           <div class="package-filter"><label class="sr" for="package-filter">Package</label><select id="package-filter" value={packageId} onchange={(e) => go({ ...view, page: "changes", group: e.currentTarget.value })}><option value="">All packages</option>{#each index.groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}</select></div>
         </div>
         <p class="sr" role="status">{filtered.length} of {packageChanges.length} changes shown</p>
+        {#if narrowed}<button type="button" class="clear-filters" onclick={() => go({ ...view, page: "changes", group: "", direction: "all" })}>Show all changes</button>{/if}
         {#if !exported}
           <p class="empty">Changes were not exported with this data, so there is nothing to compare here.</p>
         {:else if latest.length === 0}
@@ -46,11 +50,13 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
         {:else if filtered.length === 0}
           <p class="empty">No changes match these filters. Choose another package or change direction.</p>
         {:else}
+          {#if flagged.length}
+          <h3 id="flagged-h">Regressions</h3>
           <!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region must take focus to scroll by keyboard -->
-          <div class="scroll gap" role="region" aria-label="Latest changes" tabindex="0">
+          <div class="scroll gap" role="region" aria-labelledby="flagged-h" tabindex="0">
             <table class="latest-table responsive-table">
               <caption>
-                Worse first, then the largest change; noise is the threshold each change exceeded.
+                Largest first; noise is the threshold each change exceeded.
               </caption>
               <thead>
                 <tr>
@@ -61,7 +67,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
                 </tr>
               </thead>
               <tbody>
-                {#each filtered as row, i (i)}
+                {#each flagged as row, i (i)}
                   {@const next = { bench: row.bench.id, params: row.params, measure: row.change.measure, machine: row.change.machine }}
                   <tr>
                     <th scope="row" class="wrap">
@@ -82,4 +88,53 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
               </tbody>
             </table>
           </div>
+          {/if}
+          {#if gains.length}
+          <h3 id="gains-h">Improvements</h3>
+          <!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region must take focus to scroll by keyboard -->
+          <div class="scroll gap" role="region" aria-labelledby="gains-h" tabindex="0">
+            <table class="latest-table gains-table responsive-table">
+              <caption>
+                One row per benchmark; open the cases to see each environment and its noise.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Benchmark</th>
+                  <th scope="col" class="num">Change</th>
+                  <th scope="col">Cases</th>
+                  <th scope="col">Releases</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each gains as g (g.bench.id + g.rows[0]?.change.machine)}
+                  {@const top = g.rows[0]}
+                  {@const low = g.rows[g.rows.length - 1]}
+                  {#if top && low}
+                    {@const next = { bench: top.bench.id, params: top.params, measure: top.change.measure, machine: top.change.machine }}
+                    <tr>
+                      <th scope="row" class="wrap">
+                        <span class="package-name">{g.group.name}</span><br />
+                        <a href={writeView(next)} onclick={(e) => follow(e, next)} title={g.bench.name}>{labelOf(g.bench)}</a>
+                      </th>
+                      <td class="num" data-label="Change">
+                        <span class="delta better">{g.rows.length > 1 ? `${percent(low.change.ratio)} to ${percent(top.change.ratio)}` : percent(top.change.ratio)} better</span>
+                      </td>
+                      <td class="wrap" data-label="Cases">
+                        <details class="cases">
+                          <summary>{g.rows.length} {g.rows.length === 1 ? "case" : "cases"}</summary>
+                          <ul>
+                            {#each g.rows as row, i (i)}
+                              <li>{percent(row.change.ratio)} · {row.env}{#if row.params.length} · {row.params.join(", ")}{/if} <span class="quiet">noise {noiseText(row.change)}</span></li>
+                            {/each}
+                          </ul>
+                        </details>
+                      </td>
+                      <td class="nowrap" data-label="Releases">{top.from} <span class="quiet">→</span> {top.to}</td>
+                    </tr>
+                  {/if}
+                {/each}
+              </tbody>
+            </table>
+          </div>
+          {/if}
         {/if}

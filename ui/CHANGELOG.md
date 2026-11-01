@@ -13,6 +13,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A Compatibility page lists every check by platform and Python version, with the last environment that passed.
 - Each page has its own shareable URL, and old benchmark links and homepage anchors still work.
 - Search benchmarks by name, and filter release changes by package and direction.
+- Release changes lists regressions first, with improvements grouped by benchmark.
+- A chart's legend buttons bring one environment forward, and the explorer opens on the newest regression.
+- Home says which machine timed the solvers, and notes when that is not your platform.
 - A JSON Schema for the data: an index (format version 1) and reports in Bencher Metric
   Format v0.
 - `src/lib/contract.ts` loads both from a configurable URL and checks them against the schema
@@ -31,7 +34,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - A new flat blue look, with red and teal kept for worse and better results ([design](../DESIGN.md)).
-- Change tables reflow into labelled rows on phones.
+- Change tables reflow into labelled rows on phones, and no text is smaller than 12px.
 
 ### Fixed
 

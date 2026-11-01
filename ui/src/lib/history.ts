@@ -269,6 +269,24 @@ export function latestChanges(index: BenchmarkIndex): LatestChange[] {
   return out.sort((a, b) => rank[a.way] - rank[b.way] || size(b) - size(a));
 }
 
+export interface ChangeGroup {
+  bench: Benchmark;
+  group: BenchmarkIndex["groups"][number];
+  rows: LatestChange[];
+}
+
+/** ROWS gathered per benchmark and machine, in the order each first appears; rows keep their order. */
+export function byBenchmark(rows: LatestChange[]): ChangeGroup[] {
+  const out = new Map<string, ChangeGroup>();
+  for (const row of rows) {
+    const key = `${row.bench.id}/${row.change.machine}`;
+    const found = out.get(key);
+    if (found) found.rows.push(row);
+    else out.set(key, { bench: row.bench, group: row.group, rows: [row] });
+  }
+  return [...out.values()];
+}
+
 /** TEXT cut after each "." and "_", so a long dotted or snake_case name can break there (<wbr>). */
 export function breakable(text: string): string[] {
   return text.split(/(?<=[._])/);

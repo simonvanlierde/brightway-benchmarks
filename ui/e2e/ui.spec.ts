@@ -387,6 +387,44 @@ test.describe("guidance looks", () => {
 const guidanceFixture = async (): Promise<Guidance> =>
   JSON.parse(await readFile(new URL("../test/fixtures/real/guidance.json", import.meta.url), "utf8"));
 
+test("a failing check on the platform sits next to its setup, before the files", async ({ page }) => {
+  await page.goto("?platform=linux");
+  const setup = page.getByRole("region", { name: "Your starting point" });
+  const others = setup.locator(".other-checks");
+  await expect(others.locator("li").first()).toContainText("Upstream test suites · Python 3.12");
+  await expect(others.locator("li").first()).toContainText("Failed");
+  const before = await others.evaluate(
+    (el) =>
+      !!(el.compareDocumentPosition(document.querySelector(".saved-set") as Node) & Node.DOCUMENT_POSITION_FOLLOWING),
+  );
+  expect(before).toBe(true);
+  await expect(page.getByText("Verified")).toHaveCount(0);
+});
+
+test("the install command copies", async ({ page, context, browserName }) => {
+  test.skip(browserName !== "chromium", "clipboard permissions are Chromium's");
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("?platform=windows");
+  await page.locator(".install-command").getByRole("button", { name: "Copy" }).click();
+  await expect(page.locator(".install-command [role=status]")).toHaveText("Copied");
+  const text = await page.evaluate(() => navigator.clipboard.readText());
+  await expect(page.locator(".install-command pre")).toHaveText(text);
+});
+
+test("environments on a two-release chart sit apart", async ({ page }) => {
+  await page.goto("?page=explorer");
+  const dots = page.locator('.chart [data-mark="dot"]');
+  await expect(dots.first()).toBeAttached();
+  const at = await dots.evaluateAll((gs) => gs.map((g) => g.getAttribute("transform") ?? ""));
+  expect(new Set(at).size).toBeGreaterThan(1);
+});
+
+test("commits that are not releases are named under the chart", async ({ page }) => {
+  await page.goto("?bench=bw2data-bench-write-databasewrite-time-write-e538eba4ffdf");
+  await expect(page.locator(".chart svg")).toBeVisible();
+  await expect(page.getByText(/not a\s+release and (is|are) drawn faint/)).toBeVisible();
+});
+
 test("platform setups keep their pins, install command and URL together", async ({ page }) => {
   const data = await guidanceFixture();
   await page.goto("?page=home&platform=linux");

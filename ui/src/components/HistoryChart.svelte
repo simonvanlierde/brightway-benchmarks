@@ -68,7 +68,8 @@ function describe(step: (typeof steps)[number]): string {
   if (!first) return "";
   const rows = step.map((p) => `${p.short}: ${format(p.value, unit)}`);
   const marks = (changeAt.get(first.commit) ?? []).map((c) => `${c.short}: ${words(c.change)}`);
-  return [`${first.label} · ${first.date}`, ...rows, ...marks].join("\n");
+  const note = first.released ? [] : ["Not a release, so release changes skip it"];
+  return [`${first.label} · ${first.date}`, ...rows, ...marks, ...note].join("\n");
 }
 
 $effect(() => {
@@ -100,13 +101,14 @@ $effect(() => {
   const pad = (high - low) * 0.15 || Math.abs(high) * 0.05 || 1;
   const yDomain = [Math.max(0, low - pad), high + pad];
   const valueAt = new Map(points.map((p) => [`${p.commit}/${p.short}`, p.value / divisor]));
-  // Rings at one release grow by a step each, so rings on lines that coincide stay apart.
+  // Rings at one release grow by a step each, so rings on lines that coincide stay apart (unless set apart by dx).
   const flagged = [...changeAt.entries()].flatMap(([commit, cs]) =>
     cs
       .filter((c) => c.change.method === "release")
       .map((c) => ({
         label: points.find((p) => p.commit === commit)?.label ?? "",
         y: valueAt.get(`${commit}/${c.short}`),
+        short: c.short,
         way: verdict(c.change.ratio, better),
       }))
       .filter((f) => f.y !== undefined)
@@ -125,8 +127,14 @@ $effect(() => {
   const at = active === null ? undefined : tips[active];
   const chosen = picked !== null && domain.includes(picked) ? picked : null;
   const fade = (d: { short: string }) => (chosen && d.short !== chosen ? 0.2 : 1);
+  // A commit that is not a release draws fainter: release changes do not compare it.
+  const faint = (d: { short: string; released: boolean }) => fade(d) * (d.released ? 1 : 0.45);
   // Two releases make a before and after, not a trend, so they get no connecting line.
   const joined = labels.length > 2;
+  // With few steps there is room to set each environment a little apart, so equal values stay visible.
+  const spread =
+    labels.length <= 3 && domain.length > 1 ? Math.min(20, width / (labels.length * 3 * domain.length)) : 0;
+  const series = domain.map((name, i) => ({ name, dx: (i - (domain.length - 1) / 2) * spread }));
   const plot = Plot.plot({
     width,
     height: width < 480 ? 300 : 380,
@@ -152,29 +160,35 @@ $effect(() => {
       Plot.gridY({ stroke: v("--grid"), strokeOpacity: 1 }),
       Plot.ruleX(shifts, { stroke: v("--shift"), strokeDasharray: "4 4", strokeWidth: 1 }),
       Plot.text(shifts, { x: (d: string) => d, frameAnchor: "top", dy: -14, text: () => "shift", fill: v("--ink-2") }),
-      joined
-        ? Plot.areaY(data, { x: "label", y1: "lo", y2: "hi", z: "short", fill: "short", fillOpacity: 0.12, clip: true })
-        : null,
-      joined
-        ? Plot.lineY(data, { x: "label", y: "y", z: "short", stroke: "short", strokeWidth: 2, strokeOpacity: fade })
-        : null,
-      // Outlined, so a symbol under another of a different shape still shows.
-      Plot.dot(data, {
-        x: "label",
-        y: "y",
-        fill: "none",
-        stroke: "short",
-        symbol: "short",
-        r: joined ? 4 : 5,
-        strokeWidth: 1.5,
-        strokeOpacity: fade,
+      ...series.flatMap(({ name, dx }) => {
+        const mine = data.filter((d) => d.short === name);
+        return [
+          joined
+            ? Plot.areaY(mine, { x: "label", y1: "lo", y2: "hi", dx, fill: "short", fillOpacity: 0.12, clip: true })
+            : null,
+          joined
+            ? Plot.lineY(mine, { x: "label", y: "y", dx, stroke: "short", strokeWidth: 2, strokeOpacity: fade })
+            : null,
+          // Outlined, so a symbol under another of a different shape still shows.
+          Plot.dot(mine, {
+            x: "label",
+            y: "y",
+            dx,
+            fill: "none",
+            stroke: "short",
+            symbol: "short",
+            r: joined ? 4 : 5,
+            strokeWidth: 1.5,
+            strokeOpacity: faint,
+          }),
+          ...tiers.map((t) =>
+            Plot.dot(
+              flagged.filter((f) => f.tier === t && f.short === name),
+              { x: "label", y: "y", dx, r: spread ? 9 : 9 + 4 * t, fill: "none", strokeWidth: 2, stroke: ring },
+            ),
+          ),
+        ];
       }),
-      ...tiers.map((t) =>
-        Plot.dot(
-          flagged.filter((f) => f.tier === t),
-          { x: "label", y: "y", r: 9 + 4 * t, fill: "none", strokeWidth: 2, stroke: ring },
-        ),
-      ),
       at ? Plot.ruleX([at.label], { stroke: v("--ink"), strokeOpacity: 0.4 }) : null,
       Plot.tip(tips, Plot.pointerX({ x: "label", y: "y", title: "text", fill: v("--page"), stroke: v("--axis") })),
       at

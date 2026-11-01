@@ -16,6 +16,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Release changes lists regressions first, with improvements grouped by benchmark.
 - A chart's legend buttons bring one environment forward, and the explorer opens on the newest regression.
 - Home says which machine timed the solvers, and notes when that is not your platform.
+- Home lists the other checks on your platform, such as a failing upstream test suite, next to the setup, and the install command has a copy button.
+- Charts with three releases or fewer set environments a little apart, and commits that are not releases draw faint, with a count under the chart.
 - The explorer explains each benchmark, its parameters and the values you choose, such as what `JacobiGMRESLCA` does.
 - A JSON Schema for the data: an index (format version 1) and reports in Bencher Metric
   Format v0.

@@ -186,6 +186,10 @@ const shown = $derived<Line[]>(
   index && bench && measureId && reports ? linesOf(index, bench, params, measureId, reports) : [],
 );
 const changes = $derived(index && measureId && machine ? changesFor(index, shown, measureId, machine.id) : []);
+// Commits on the chart that are not releases: release changes skip them.
+const unreleased = $derived(
+  new Set(shown.flatMap((l) => l.points.filter((p) => !p.released).map((p) => p.commit))).size,
+);
 const paramText = $derived(
   bench ? bench.params.map((a, i) => `${a.name} ${paramLabels(bench, params)[i]}`).join(", ") : "",
 );
@@ -382,11 +386,11 @@ $effect(() => {
         {#if bench.params.some((a) => a.description || a.notes)}
           <dl class="param-notes">
             {#each bench.params as axis, i (axis.name)}
-              {@const shown = paramLabels(bench, params)[i] ?? ""}
-              {@const note = axis.notes?.[(axisLabels(bench)[i] ?? []).indexOf(shown)]}
+              {@const value = paramLabels(bench, params)[i] ?? ""}
+              {@const note = axis.notes?.[(axisLabels(bench)[i] ?? []).indexOf(value)]}
               {#if axis.description || note}
                 <dt>{axis.name}</dt>
-                <dd>{axis.description}{#if note}{" "}<strong>{shown}:</strong> {note}{/if}</dd>
+                <dd>{axis.description}{#if note}{" "}<strong>{value}:</strong> {note}{/if}</dd>
               {/if}
             {/each}
           </dl>
@@ -457,6 +461,13 @@ $effect(() => {
                 </tbody>
               </table>
             </div>
+          {/if}
+          {#if exported && unreleased > 0}
+            <p class="quiet">
+              {unreleased === 1 ? "One commit" : `${unreleased} commits`} on this chart {unreleased === 1 ? "is" : "are"} not a
+              release and {unreleased === 1 ? "is" : "are"} drawn faint; release changes compare releases only, so a move there
+              shows only if it shifts the whole series.
+            </p>
           {/if}
 
           <details class="data" bind:open={tableOpen}>

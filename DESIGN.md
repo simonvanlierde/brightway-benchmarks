@@ -135,7 +135,7 @@ Primary downloads use accent fill with page-coloured text and the primary-downlo
 
 Search fields and selects use the page ground and control stroke. Links thicken their underline on hover. Buttons and catalogue entries use the selection wash on hover; row hover uses a faint selection wash. Native-control and catalogue colour transitions last 150ms only when reduced motion is not requested. All interactive controls retain visible keyboard focus.
 
-Release changes put regressions first, one row per case; improvements group by benchmark with their cases folded. Chart legend entries are buttons that bring one environment forward. A history with two releases shows points without a line. Text is never smaller than 12px.
+Release changes put regressions first, one row per case; improvements group by benchmark with their cases folded. Chart legend entries are buttons that bring one environment forward. A history with two releases shows points without a line, and with three or fewer each environment sits a little apart so equal values stay visible. Commits that are not releases draw faint, and the explorer counts them under its changes. The setup names the other checks on its platform, failures first, before its files; the install command has a copy button. Text is never smaller than 12px.
 
 The explorer says what the benchmark measures under its title, and what each parameter and its chosen value mean under the controls.
 

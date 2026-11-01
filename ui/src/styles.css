@@ -1344,7 +1344,7 @@ table.check-grid td a[aria-current="true"] {
   margin: 4px 0 0;
 }
 .bench-meta .benchmark-id {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 .controls .field {
@@ -1352,7 +1352,7 @@ table.check-grid td a[aria-current="true"] {
   align-content: start;
 }
 .field-note {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--ink-2);
   margin: 5px 0 0;

@@ -7,6 +7,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Benchmark search keeps keyboard focus while typing and shows matches on phones ([viewer](README.md#what-it-shows)).
+- Release-change history lines keep each package's commits separate, and benchmark explanations meet the 12px minimum text size ([viewer](README.md#what-it-shows)).
+
 ### Added
 
 - Two pages, Setup and Benchmarks, with a benchmark search in the masthead ([viewer](README.md#what-it-shows)).

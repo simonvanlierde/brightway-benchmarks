@@ -97,9 +97,11 @@ def follow(site: Path, here: Path, dated: Path, passed: str, run: str | None = N
             target.write_bytes((dated / name).read_bytes())
         else:
             target.unlink(missing_ok=True)
+    run = run or json.loads((dated / "set.json").read_text())["run"]
+    own(site, here / "set.json").write_text(json.dumps({"date": passed, "run": run}) + "\n")
     return {
         "date": passed,
-        "run": run or json.loads((dated / "set.json").read_text())["run"],
+        "run": run,
         "dir": f"compat/{here.name}/{dated.name}",
         "latest": f"compat/{here.name}",
         "files": names,
@@ -144,7 +146,9 @@ def main(site: Path) -> None:
             run_url = f"https://github.com/{REPO}/actions/runs/{a['workflow_run']['id']}"
             dated = keep(site, here, files, passed, run_url)
         elif dated := newest(here):  # the artifact expired; the archive still has the set
-            passed = json.loads((dated / "set.json").read_text())["date"]
+            metadata = own(site, here / "set.json")
+            saved = json.loads((metadata if metadata.is_file() else dated / "set.json").read_text())
+            passed, run_url = saved["date"], saved["run"]
         last = follow(site, here, dated, passed, run_url) if dated else None
         cells.append({**m.groupdict(), "today": job["conclusion"], "green": last})
     cells.sort(key=lambda c: (COLUMNS.index(c["column"]) if c["column"] in COLUMNS else 9, c["python"], c["os"]))

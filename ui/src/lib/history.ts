@@ -344,15 +344,18 @@ export function findBench(index: BenchmarkIndex, view: View): Benchmark | undefi
   return index.benchmarks.find((b) => b.name === view.bench && (!group || b.group === group.id));
 }
 
-/** One case's values in MEASURE along REPORTS (commit -> report), in the index's commit order. */
+/** One case's values in MEASURE along REPORTS (commit -> report), in GROUP's commit order. */
 export function seriesOf(
   index: BenchmarkIndex,
   reports: Map<string, BenchmarkReport>,
   caseId: string,
   measure: string,
+  group: string,
 ) {
-  return index.commits.flatMap((c) => {
-    const value = reports.get(c.id)?.[caseId]?.[measure]?.value;
-    return value === undefined ? [] : [{ commit: c.id, value, released: c.release !== undefined }];
-  });
+  return index.commits
+    .filter((c) => c.group === group)
+    .flatMap((c) => {
+      const value = reports.get(c.id)?.[caseId]?.[measure]?.value;
+      return value === undefined ? [] : [{ commit: c.id, value, released: c.release !== undefined }];
+    });
 }

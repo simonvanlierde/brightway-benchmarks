@@ -33,7 +33,7 @@ function history(row: LatestChange) {
     const data = r.group === row.group.id && r.machine === row.change.machine ? loaded.get(r.path) : undefined;
     if (data) reports.set(r.commit, data);
   }
-  return seriesOf(index, reports, row.change.case, row.change.measure);
+  return seriesOf(index, reports, row.change.case, row.change.measure, row.group.id);
 }
 const latest = $derived(latestChanges(index));
 const exported = $derived(index.changes !== undefined);

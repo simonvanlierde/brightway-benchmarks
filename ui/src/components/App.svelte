@@ -104,7 +104,7 @@ $effect(() => {
 });
 
 /** Show NEXT, and keep it in the URL; a new benchmark is a new history entry, a new setting is not. */
-function go(next: View) {
+function go(next: View, focusPage = true) {
   const moved = pageOf(next) !== pageOf(view);
   const push = next.bench !== view.bench || moved || next.platform !== view.platform || next.check !== view.check;
   view = next;
@@ -113,7 +113,7 @@ function go(next: View) {
   else history.replaceState(null, "", url);
   if (push) scrollTo({ top: 0 });
   // The link that led here may be gone, so start keyboard focus at the new page.
-  if (moved) tick().then(() => document.getElementById("main")?.focus({ preventScroll: true }));
+  if (moved && focusPage) tick().then(() => document.getElementById("main")?.focus({ preventScroll: true }));
 }
 
 function follow(e: MouseEvent, next: View) {
@@ -233,7 +233,7 @@ let search = $state("");
 // The masthead's search shows its matches in the catalogue; Enter opens the first.
 function searchFor(text: string) {
   search = text;
-  if (page !== "explorer" || bench) go({ page: "explorer", params: [] });
+  if (page !== "explorer" || bench) go({ page: "explorer", params: [] }, false);
 }
 function openFirst(e: SubmitEvent) {
   e.preventDefault();
@@ -317,7 +317,7 @@ $effect(() => {
   {:else}
     {#if page === "explorer"}
     <nav class="rail" aria-label="Benchmarks">
-      <details open={wide}>
+      <details open={wide || search.length > 0}>
         <summary>Benchmark catalogue</summary>
         <a class="home" href={writeView({page:"explorer",params:[]})} aria-current={bench ? undefined : "page"} onclick={(e) => follow(e, { page:"explorer", params: [] })}
           >All benchmarks</a

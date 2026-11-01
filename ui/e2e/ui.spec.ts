@@ -326,6 +326,32 @@ test("the masthead search filters the catalogue and opens the first match", asyn
   await expect(page.locator(".benchmark-id")).toContainText("bench_import.timeraw_import_bw2calc");
 });
 
+for (const width of [390, 1440]) {
+  test(`search keeps results visible and typing focused at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("./");
+    const search = page.getByRole("searchbox", { name: "Find a benchmark" });
+    await search.focus();
+    await search.pressSequentially("import");
+    await expect(search).toBeFocused();
+    await expect(search).toHaveValue("import");
+    const catalogue = page.getByRole("navigation", { name: "Benchmarks" });
+    await expect(catalogue.locator("li a").first()).toBeVisible();
+    await search.fill("missing-case");
+    await expect(catalogue.getByText("No benchmarks match")).toBeVisible();
+  });
+}
+
+test("benchmark explanations keep the design's minimum text size", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chart(page, SCORES);
+  const sizes = await page
+    .locator(".field-note, .benchmark-id")
+    .evaluateAll((nodes) => nodes.map((node) => Number.parseFloat(getComputedStyle(node).fontSize)));
+  expect(sizes.length).toBeGreaterThan(0);
+  expect(Math.min(...sizes)).toBeGreaterThanOrEqual(12);
+});
+
 test("an unknown benchmark link names the problem", async ({ page }) => {
   await page.goto("?bench=missing-case");
   await expect(page.getByText("This benchmark is not in the current data")).toHaveRole("status");

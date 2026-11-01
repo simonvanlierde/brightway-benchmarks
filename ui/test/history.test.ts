@@ -257,12 +257,14 @@ describe("page routing", () => {
     expect(findBench(index, { params: [], bench: "y", group: "b" })).toBeUndefined();
   });
 
-  it("reads one case's series in commit order", () => {
+  it("reads one case's series in its group commit order", () => {
     const index = {
       commits: [
         { id: "c1", group: "g", date: "2026-01-01T00:00:00Z", release: "1.0" },
         { id: "c2", group: "g", date: "2026-02-01T00:00:00Z" },
         { id: "c3", group: "g", date: "2026-03-01T00:00:00Z", release: "1.1" },
+        { id: "c1", group: "other", date: "2026-01-01T00:00:00Z", release: "1.0" },
+        { id: "c3", group: "other", date: "2026-03-01T00:00:00Z", release: "1.1" },
       ],
     } as unknown as BenchmarkIndex;
     const reports = new Map([
@@ -270,7 +272,7 @@ describe("page routing", () => {
       ["c1", { k: { latency: { value: 1 } } }],
       ["c2", { other: { latency: { value: 9 } } }],
     ]);
-    expect(seriesOf(index, reports, "k", "latency")).toEqual([
+    expect(seriesOf(index, reports, "k", "latency", "g")).toEqual([
       { commit: "c1", value: 1, released: true },
       { commit: "c3", value: 3, released: true },
     ]);

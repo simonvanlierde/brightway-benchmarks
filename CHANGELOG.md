@@ -7,6 +7,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Archived setup sets keep their latest passing date and run after the artifacts expire
+  ([compat archive](docs/running.md#the-compat-archive)).
+
 ### Removed
 
 - The asv-generated history pages. Old links to them redirect to the benchmark explorer

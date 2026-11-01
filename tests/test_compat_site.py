@@ -154,6 +154,15 @@ def test_a_second_set_on_the_same_day_leaves_the_first_one_alone(tmp_path: Path)
     assert green["run"] == "https://github.com/o/r/actions/runs/600"
 
 
+def test_expired_artifact_keeps_the_latest_pass_of_an_unchanged_set(tmp_path: Path):
+    jobs = [("latest · Python 3.12 on ubuntu-latest", "success")]
+    run_site(tmp_path, jobs, [artifact(4, "compat-green-latest-3.12-ubuntu-latest", "2026-10-26T04:00:00Z")])
+    same = artifact(5, "compat-green-latest-3.12-ubuntu-latest", "2026-10-27T04:00:00Z") | {"set": 4}
+    before = run_site(tmp_path, jobs, [same])["cells"][0]["green"]
+    after = run_site(tmp_path, [(jobs[0][0], "failure")], [])["cells"][0]["green"]
+    assert after == before
+
+
 def test_keeps_the_conda_forge_set_with_its_pixi_lock(tmp_path: Path):
     jobs = [
         ("conda-forge · Python 3.12 on ubuntu-latest", "success"),

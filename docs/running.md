@@ -122,7 +122,8 @@ The `archive` job of the `compat` workflow runs on `main` after the matrix. It r
 `scripts/compat_site.py`, which takes each job's newest passing set and writes it to the
 `compat` branch. A set that differs from the job's previous one goes to
 `compat/COLUMN-PYTHON-OS/YYYY-MM-DD/`, with `set.json` for its date and run. The undated
-`compat/COLUMN-PYTHON-OS/` folder follows the newest set. A dated folder never changes, and it
+`compat/COLUMN-PYTHON-OS/` folder follows the newest set; its `set.json` keeps the latest
+passing date and run even when that set has not changed. A dated folder never changes, and it
 stays after GitHub deletes the run's artifacts at 90 days. `compat/status.json` summarizes how
 each job ended. `just site` copies the branch into `site/compat`; the site workflow publishes it.
 

@@ -382,6 +382,74 @@ code,
   gap: 24px;
   margin-bottom: 26px;
 }
+.home-intro-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.home-kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.home-kicker-title {
+  font-weight: 700;
+  color: var(--ink);
+}
+.home-kicker-sep {
+  color: var(--muted);
+}
+.home-kicker-tag {
+  color: var(--muted);
+}
+.home-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.home-emblem {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.home-intro-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex: none;
+}
+.home-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border: 1px solid var(--better);
+  color: var(--better);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.home-status-badge::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--better);
+}
+.home-status-badge.worse {
+  border-color: var(--worse);
+  color: var(--worse);
+}
+.home-status-badge.worse::before {
+  background: var(--worse);
+}
 .home-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
@@ -811,13 +879,13 @@ tbody tr:hover {
   border-bottom-color: var(--accent);
   font-weight: 650;
 }
-.view > .home-intro h2 {
+.view .home-intro h2 {
   max-width: 32ch;
   font-size: clamp(1.75rem, 2.6vw, 2.5rem);
   font-weight: 650;
   letter-spacing: -0.03em;
 }
-.view > .home-intro p {
+.view .home-intro p {
   max-width: 70ch;
   margin-top: 9px;
 }
@@ -854,7 +922,7 @@ details.data[open] summary {
   background: var(--accent-wash);
   color: var(--accent);
 }
-.view > .home-intro .snapshot {
+.view .home-intro .snapshot {
   margin: 4px 0 0;
   text-align: right;
   color: var(--muted);
@@ -919,12 +987,16 @@ details.data[open] summary {
   .home-intro {
     display: block;
   }
+  .home-intro-status {
+    align-items: flex-start;
+    margin-top: 14px;
+  }
   .fullwidth > .view {
     padding: 26px 22px 40px;
   }
-  .view > .home-intro .snapshot {
+  .view .home-intro .snapshot {
     text-align: left;
-    margin-top: 12px;
+    margin-top: 0;
   }
 }
 @media (max-width: 39rem) {
@@ -943,6 +1015,22 @@ details.data[open] summary {
   }
   .brand-mark {
     width: 20px;
+    height: 20px;
+  }
+  .home-brand-lockup {
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .home-brand-lockup .brand-mark {
+    width: 28px;
+    height: 28px;
+    margin-top: 4px;
+  }
+  .home-kicker {
+    font-size: 0.7rem;
+    gap: 6px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
   }
   .view {
     padding: 26px 20px;
@@ -1087,10 +1175,10 @@ details.data[open] summary {
     white-space: normal;
     font-size: 0.8rem;
   }
-  .view > .home-intro h2 {
+  .view .home-intro h2 {
     font-size: 2.1rem;
   }
-  .view > .home-intro p {
+  .view .home-intro p {
     font-size: 0.875rem;
   }
   .responsive-table td[data-label="Environment"]::before {

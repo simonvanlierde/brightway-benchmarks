@@ -5,6 +5,7 @@ import { checkKind, dateLabel, type GuidanceCheck, statusLabel, statusTone } fro
 import { benchmarkLabel, format, latestChanges, noiseText, percent, type View, writeView } from "../lib/history";
 import Findings from "./Findings.svelte";
 import InstallSet from "./InstallSet.svelte";
+import LogoMark from "./LogoMark.svelte";
 
 let {
   guidance,
@@ -84,8 +85,26 @@ $effect(() => {
 </script>
 
 <header class="home-intro">
-  <div><h2>{guidance?.title ?? index.project.name}</h2><p>{guidance?.intro ?? index.project.description ?? "Explore benchmark measurements and release changes."}</p></div>
-  {#if guidance}<p class="snapshot">Latest published checks<br/><a href={guidance.snapshot.run}>{dateLabel(guidance.snapshot.date)}</a></p>{/if}
+  <div class="home-intro-main">
+    <div class="home-kicker">
+      <span class="home-kicker-title">Brightway Benchmarks</span>
+      <span class="home-kicker-sep">·</span>
+      <span class="home-kicker-tag">Evidence Workspace</span>
+    </div>
+    <div class="home-brand-lockup">
+      <div class="home-emblem" aria-hidden="true">
+        <LogoMark size={36} />
+      </div>
+      <h2>{guidance?.title ?? (index.project.name === "brightway-benchmarks" ? "Continuous benchmarks for the Brightway LCA stack" : index.project.name)}</h2>
+    </div>
+    <p>{guidance?.intro ?? index.project.description ?? "Explore benchmark measurements and release changes."}</p>
+  </div>
+  {#if guidance}
+    <div class="home-intro-status">
+      <span class="home-status-badge {statusTone(selected?.status ?? 'success')}">{statusLabel(selected?.status ?? "success")}</span>
+      <p class="snapshot">Latest published checks<br/><a href={guidance.snapshot.run}>{dateLabel(guidance.snapshot.date)}</a></p>
+    </div>
+  {/if}
 </header>
 
 <div class="home-columns">

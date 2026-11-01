@@ -67,7 +67,11 @@ async function copy(text: string, what: string) {
       {/if}
       <span role="status">{copied}</span>
     </p>
-    {#if source !== selected}<p class="install-note">From the {source.label} check on Python {source.python}.</p>{/if}
+    {#if manager === "uv"}<p class="install-note">Run it in a project whose <code>requires-python</code> starts at {source.python} or later.</p>{/if}
+    {#if source !== selected}
+      <p class="install-note">From the {source.label} check on Python {source.python}.</p>
+      {#if source.caveats.length}<ul class="caveats">{#each source.caveats as caveat (caveat)}<li>{caveat}</li>{/each}</ul>{/if}
+    {/if}
     {#if source.status !== "success"}<p class="saved-warning">The latest {source.label} check did not pass; this is the set that passed on {dateLabel(saved.date)}.</p>{/if}
     <p class="environment-files">
       {#each saved.files as file (file.url)}<a href={file.url}>{file.label}</a>{/each}

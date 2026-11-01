@@ -43,8 +43,9 @@ env=$(dirname "$manifest")
 case $1 in
 lock) echo "lock for $(sed -n 's/^python = //p' "$manifest")" >"$env/pixi.lock" ;;
 list)
-    echo '[{"name": "python", "version": "3.13.1", "kind": "conda"},'
-    echo ' {"name": "bw2calc", "version": "3.1.0", "kind": "conda"}, {"name": "x", "version": "1", "kind": "pypi"}]'
+    echo '[{"name": "python", "version": "3.13.1", "build": "h9e4cc4f_102_cp313", "kind": "conda"},'
+    echo ' {"name": "bw2calc", "version": "3.1.0", "build": "pyhd8ed1ab_0", "kind": "conda"},'
+    echo ' {"name": "x", "version": "1", "kind": "pypi"}]'
     ;;
 install)
     mkdir -p "$env/.pixi/envs/test/bin"
@@ -179,10 +180,13 @@ def test_conda_forge_installs_with_pixi_and_leaves_out_what_it_lacks(repo: Path)
     assert 'python = "3.13.*"' in (cell / "pixi.toml").read_text()
     assert (cell / "pixi.lock").read_text() == 'lock for "3.13.*"\n'
     assert (cell / "requirements.txt").read_text() == "bw2calc==3.1.0\n"
-    # plain conda gets the default environment, without the test harness, at the locked versions
+    # plain conda gets the default environment, without the test harness, at the locked builds
     assert "[feature.test.dependencies]\npytest = " in (cell / "pixi.toml").read_text()
     conda = (cell / "environment.yml").read_text()
-    assert conda.endswith("channels:\n  - conda-forge\ndependencies:\n  - bw2calc==3.1.0\n  - python==3.13.1\n")
+    assert conda.endswith(
+        "channels:\n  - conda-forge\ndependencies:\n"
+        "  - bw2calc=3.1.0=pyhd8ed1ab_0\n  - python=3.13.1=h9e4cc4f_102_cp313\n"
+    )
     run = log[-1]
     assert run.startswith("python -m pytest")
     assert run.endswith("PYTHONPATH=benchmarks strict=1")

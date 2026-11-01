@@ -60,30 +60,36 @@ def own(site: Path, path: Path) -> Path:
 
 
 def newest(cell: Path) -> Path | None:
-    """CELL's newest dated set, if it has one."""
-    dated = sorted(d for d in cell.glob("????-??-??") if d.is_dir()) if cell.is_dir() else []
-    return dated[-1] if dated else None
+    """CELL's newest dated set, if it has one: 2026-11-01.2 is the day's second set."""
+    dated = [d for d in cell.glob("????-??-??*") if d.is_dir()] if cell.is_dir() else []
+    return max(dated, key=lambda d: (d.name[:10], int(d.name[11:] or 1)), default=None)
 
 
 def keep(site: Path, cell: Path, files: dict[str, bytes], date: str, run: str) -> Path:
-    """The dated folder that holds FILES: CELL's newest one when it holds the same, or a new one."""
+    """The dated folder that holds FILES: CELL's newest one when it holds the same, or a new one.
+
+    A dated folder is never written twice, so a command that names one installs the same set.
+    """
     prev = newest(cell)
     same = prev and {n for n in FILES if (prev / n).exists()} == set(files)
     if prev and same and all((prev / n).read_bytes() == data for n, data in files.items()):
         return prev
-    dated = own(site, cell / date)
-    dated.mkdir(parents=True, exist_ok=True)
-    for name in FILES:  # a rerun on the same day replaces that day's set
-        if name not in files:
-            own(site, dated / name).unlink(missing_ok=True)
+    n = 1
+    while (cell / (date if n == 1 else f"{date}.{n}")).exists():
+        n += 1
+    dated = own(site, cell / (date if n == 1 else f"{date}.{n}"))
+    dated.mkdir(parents=True)
     for name, data in files.items():
         own(site, dated / name).write_bytes(data)
     own(site, dated / "set.json").write_text(json.dumps({"date": date, "run": run}) + "\n")
     return dated
 
 
-def follow(site: Path, here: Path, dated: Path, passed: str) -> dict:
-    """Copy DATED's set to HERE, the folder that follows the newest set, and describe it."""
+def follow(site: Path, here: Path, dated: Path, passed: str, run: str | None = None) -> dict:
+    """Copy DATED's set to HERE, the folder that follows the newest set, and describe it.
+
+    RUN is the newest run that passed with it; without one, the run that first wrote it.
+    """
     names = [name for name in FILES if (dated / name).exists()]
     for name in FILES:
         target = own(site, here / name)
@@ -93,7 +99,7 @@ def follow(site: Path, here: Path, dated: Path, passed: str) -> dict:
             target.unlink(missing_ok=True)
     return {
         "date": passed,
-        "run": json.loads((dated / "set.json").read_text())["run"],
+        "run": run or json.loads((dated / "set.json").read_text())["run"],
         "dir": f"compat/{here.name}/{dated.name}",
         "latest": f"compat/{here.name}",
         "files": names,
@@ -129,16 +135,17 @@ def main(site: Path) -> None:
             continue
         cell = "-".join(m.groups())
         here = own(site, out / cell)
-        dated = None
+        dated = run_url = None
         if a := green.get(cell):
             with zipfile.ZipFile(io.BytesIO(gh(f"repos/{REPO}/actions/artifacts/{a['id']}/zip"))) as z:
                 # Only FILES are read, so an entry's path never leaves the cell's folder.
                 files = {name: z.read(name) for name in FILES if name in z.namelist()}
             passed = a["created_at"][:10]
-            dated = keep(site, here, files, passed, f"https://github.com/{REPO}/actions/runs/{a['workflow_run']['id']}")
+            run_url = f"https://github.com/{REPO}/actions/runs/{a['workflow_run']['id']}"
+            dated = keep(site, here, files, passed, run_url)
         elif dated := newest(here):  # the artifact expired; the archive still has the set
             passed = json.loads((dated / "set.json").read_text())["date"]
-        last = follow(site, here, dated, passed) if dated else None
+        last = follow(site, here, dated, passed, run_url) if dated else None
         cells.append({**m.groupdict(), "today": job["conclusion"], "green": last})
     cells.sort(key=lambda c: (COLUMNS.index(c["column"]) if c["column"] in COLUMNS else 9, c["python"], c["os"]))
     out.mkdir(parents=True, exist_ok=True)

@@ -86,7 +86,7 @@ def test_scope_and_installation_follow_the_actual_check(module: ModuleType, tmp_
     assert labels == ["environment.yml", "pixi.toml", "pixi.lock", "requirements.txt"]
     folder = "https://example.test/compat/conda-forge-3.12-ubuntu-latest/2026-10-28/"
     assert [(i["manager"], i["command"]) for i in conda["lastPassed"]["installs"]] == [
-        ("conda", f"conda env update -n brightway -f {folder}environment.yml --prune"),
+        ("conda", f"conda env update -n brightway-tested -f {folder}environment.yml --prune"),
         ("pixi", f"curl -fL -O {folder}pixi.toml -O {folder}pixi.lock && pixi install --frozen"),
     ]
     assert "bw_timex" in " ".join(conda["caveats"])

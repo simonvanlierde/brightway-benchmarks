@@ -591,8 +591,11 @@ test("each package manager has its own command, and the choice is remembered", a
   const command = page.locator(".install-command pre");
   await expect(command).toContainText("uv add brightway25 bw_graph_tools bw_timex -c https://");
   await page.getByRole("button", { name: "conda", exact: true }).click();
-  await expect(command).toContainText("conda env update -n brightway -f https://");
+  await expect(command).toContainText("conda env update -n brightway-tested -f https://");
   await expect(page.locator(".install-note")).toHaveText("From the conda-forge check on Python 3.12.");
+  // That check's caveats come with its command, such as the packages conda-forge lacks.
+  const conda = (await guidanceFixture()).checks.find((c) => c.id.startsWith("conda-forge-"));
+  await expect(page.locator(".install-set .caveats li")).toHaveText(conda?.caveats ?? []);
   await expect(page.locator(".environment-files a").first()).toHaveText("environment.yml");
   await page.getByRole("button", { name: "pixi", exact: true }).click();
   await expect(command).toContainText("pixi install --frozen");

@@ -48,8 +48,9 @@ def _installs(column: str, files: list[str], folder: str) -> list[dict]:
     if column == "conda-forge":
         out = []
         if "environment.yml" in files:
-            # update, not create: it makes the environment when missing, so a rerun is harmless.
-            out.append(("conda", f"conda env update -n brightway -f {folder}environment.yml --prune"))
+            # update, not create: it makes the environment when missing, so a rerun is harmless. Its
+            # own name, because --prune removes whatever else an environment holds.
+            out.append(("conda", f"conda env update -n brightway-tested -f {folder}environment.yml --prune"))
         if {"pixi.toml", "pixi.lock"} <= set(files):
             out.append(("pixi", f"curl -fL -O {folder}pixi.toml -O {folder}pixi.lock && pixi install --frozen"))
         return [{"manager": m, "command": c} for m, c in out]
@@ -86,7 +87,7 @@ def _passing_set(green: dict, column: str, public_base: str) -> dict:
         "installs": _installs(column, files, dated),
     }
     if latest:
-        out["pinned"] = PurePosixPath(green["dir"]).name
+        out["pinned"] = PurePosixPath(green["dir"]).name[:10]  # 2026-11-01.2 is that day's second set
         for install, follow in zip(out["installs"], _installs(column, files, latest), strict=True):
             install["latest"] = follow["command"]
     return out

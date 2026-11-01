@@ -118,7 +118,9 @@ site:
         "<script>location.replace('../?page=explorer&group=$s'+(location.hash.length>1?'&bench='+encodeURIComponent(location.hash.slice(1).split('?')[0]):''))</script>" \
         '<p>The benchmark histories have moved to <a href="../?page=explorer">the explorer</a>.</p>' >"site/$s/index.html"
     done
-    printf '%s\n' '<!doctype html><meta charset="utf-8"><title>Moved</title><meta http-equiv="refresh" content="0; url=./?page=explorer">' \
+    # The old landing page's anchors (#works-together, #latest-release) still mean something to the viewer.
+    printf '%s\n' '<!doctype html><meta charset="utf-8"><title>Moved</title>' \
+      "<script>location.replace(location.hash ? './' + location.hash : './?page=explorer')</script>" \
       '<p>The benchmark histories have moved to <a href="./?page=explorer">the explorer</a>.</p>' >site/asv.html
 
 # Build the viewer and serve it on 127.0.0.1:PORT with the committed real data, to look at a UI

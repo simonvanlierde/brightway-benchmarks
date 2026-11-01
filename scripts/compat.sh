@@ -65,15 +65,16 @@ EOF
     cp "$venv/pixi.toml" "$venv/pixi.lock" "$out/"
     pixi install --quiet --no-config --frozen -e test --manifest-path "$venv/pixi.toml"
     py=$venv/.pixi/envs/test/bin/python
-    # The default environment's conda packages at their locked versions, for plain conda users.
+    # The default environment's conda packages at their locked versions and builds, for plain conda
+    # users: a version alone can match another build, such as libblas on MKL instead of OpenBLAS.
     pixi list --no-config --frozen --json -e default --manifest-path "$venv/pixi.toml" >"$venv/default.json"
     "$py" - "$venv/default.json" >"$out/environment.yml" <<'EOF'
 import json, sys
-print("# The tested conda-forge set (linux-64). conda env update -n brightway -f environment.yml --prune")
+print("# The tested conda-forge set (linux-64). conda env update -n brightway-tested -f environment.yml --prune")
 print("channels:\n  - conda-forge\ndependencies:")
 for p in sorted(json.load(open(sys.argv[1])), key=lambda p: p["name"]):
     if p["kind"] == "conda":
-        print(f"  - {p['name']}=={p['version']}")
+        print(f"  - {p['name']}={p['version']}={p['build']}")
 EOF
     # The Python packages in the set, named as uv names them, for the job summary and the site.
     "$py" -c 'import importlib.metadata as m, re

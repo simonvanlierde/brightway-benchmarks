@@ -139,15 +139,19 @@ passing set:
 ```sh
 uv add brightway25 bw_graph_tools bw_timex -c URL/requirements.txt
 pip install brightway25 bw_graph_tools bw_timex -c URL/requirements.txt
-conda env update -n brightway -f URL/environment.yml --prune
+conda env update -n brightway-tested -f URL/environment.yml --prune
 curl -fL -O URL/pixi.toml -O URL/pixi.lock && pixi install --frozen
 ```
 
 The first two use the runtime libraries the PyPI compatibility job checks together.
-Constraints pin versions but do not install packages themselves. The full requirements file
-also includes the test harness; `uv pip install -r requirements.txt` installs that complete
-recorded environment. The conda command creates the `brightway` environment if it is missing
-and is safe to rerun. The conda and pixi commands use the `conda-forge` row.
+Constraints pin versions but do not install packages themselves. `uv add` adds them to the
+project in the current folder, so it needs a `pyproject.toml` whose `requires-python` starts at
+the set's Python version or later: uv resolves for every Python the project allows. The full
+requirements file also includes the test harness; `uv pip install -r requirements.txt` installs
+that complete recorded environment. The conda command creates the `brightway-tested`
+environment if it is missing and is safe to rerun; `--prune` removes anything else in it, so
+keep your own packages in another environment. The conda and pixi commands use the
+`conda-forge` row.
 
 ## Environment variables
 

@@ -518,8 +518,8 @@
         "installs": [
           {
             "manager": "conda",
-            "command": "conda env update -n brightway -f https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/2026-10-31/environment.yml --prune",
-            "latest": "conda env update -n brightway -f https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/environment.yml --prune"
+            "command": "conda env update -n brightway-tested -f https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/2026-10-31/environment.yml --prune",
+            "latest": "conda env update -n brightway-tested -f https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/environment.yml --prune"
           },
           {
             "manager": "pixi",

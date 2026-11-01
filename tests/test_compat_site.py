@@ -137,6 +137,23 @@ def test_dates_a_set_once_and_keeps_it_after_its_artifact_expires(tmp_path: Path
     assert green["versions"]["brightway25"] == "1.1.6"
 
 
+def test_a_second_set_on_the_same_day_leaves_the_first_one_alone(tmp_path: Path):
+    jobs = [("latest · Python 3.12 on ubuntu-latest", "success")]
+    cell = tmp_path / "site" / "compat" / "latest-3.12-ubuntu-latest"
+    run_site(tmp_path, jobs, [artifact(4, "compat-green-latest-3.12-ubuntu-latest", "2026-10-26T04:00:00Z")])
+    # A rerun at noon finds a new release: the morning's pinned command must still install set 4.
+    noon = artifact(5, "compat-green-latest-3.12-ubuntu-latest", "2026-10-26T12:00:00Z")
+    green = run_site(tmp_path, jobs, [noon])["cells"][0]["green"]
+    assert green["dir"] == "compat/latest-3.12-ubuntu-latest/2026-10-26.2"
+    assert (cell / "2026-10-26" / "pylock.toml").read_text() == "# set 4\n"
+    assert (cell / "pylock.toml").read_text() == "# set 5\n"
+    # The same set again the next day keeps the newest folder and names the newest passing run.
+    again = artifact(6, "compat-green-latest-3.12-ubuntu-latest", "2026-10-27T04:00:00Z") | {"set": 5}
+    green = run_site(tmp_path, jobs, [again])["cells"][0]["green"]
+    assert green["dir"] == "compat/latest-3.12-ubuntu-latest/2026-10-26.2"
+    assert green["run"] == "https://github.com/o/r/actions/runs/600"
+
+
 def test_keeps_the_conda_forge_set_with_its_pixi_lock(tmp_path: Path):
     jobs = [
         ("conda-forge · Python 3.12 on ubuntu-latest", "success"),

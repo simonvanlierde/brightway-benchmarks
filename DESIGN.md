@@ -107,6 +107,8 @@ Ink, secondary ink and muted text establish hierarchy; line, axis, control and g
 
 Use the system sans stack for headings, controls and tables. Page titles and the larger Home title share a restrained weight and tight tracking; both use the title tokens above.
 
+Below the titles, text uses six roles on a 15px root: meta 0.8rem (captions, column headers, labels, notes), data 0.875rem (tables, buttons, navigation, catalogue), control 0.9375rem (selects and fixed parameter values), body 1rem (ledes, changes, benchmark names), subhead 1.35rem (sections inside a view and the selected-check pane) and section 1.5rem (Home's columns). Weight separates roles of the same size; parameter names are muted so their values lead.
+
 Monospace belongs to original identifiers and environment specifications. Measurements use tabular numerals and right-aligned numeric columns. Solver timing values are prominent. Keep explanatory prose within about 68 characters per line where space allows.
 
 ## Layout

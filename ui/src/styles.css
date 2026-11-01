@@ -110,7 +110,7 @@ figcaption {
 }
 button {
   font: inherit;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--ink);
   background: transparent;
   border: 1px solid var(--control);
@@ -122,7 +122,7 @@ table {
   border-collapse: collapse;
   width: 100%;
   font-variant-numeric: tabular-nums;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 caption {
   text-align: left;
@@ -228,7 +228,7 @@ code,
   display: flex;
   align-items: center;
   min-height: 40px;
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
 }
 .lede {
   max-width: 68ch;
@@ -440,7 +440,7 @@ code,
   margin: 0;
 }
 .coverage-text {
-  font-size: 0.825rem;
+  font-size: 0.875rem;
   line-height: 1.6;
   color: var(--ink-2);
   margin: 5px 0 0;
@@ -657,7 +657,7 @@ a:hover {
   display: flex;
   margin-left: auto;
   gap: 22px;
-  font-size: 0.825rem;
+  font-size: 0.875rem;
 }
 .rail summary {
   cursor: pointer;
@@ -665,7 +665,7 @@ a:hover {
   padding: 8px 0;
 }
 .rail h2 {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   margin: 24px 0 7px;
   color: var(--ink);
   font-weight: 700;
@@ -678,7 +678,8 @@ a:hover {
 .view h3 {
   font-weight: 650;
   margin: 32px 0 14px;
-  font-size: 1.1rem;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
 }
 select:hover {
   border-color: var(--muted);
@@ -735,7 +736,7 @@ details.data {
 }
 .setup-panel h2,
 .release-brief > h2 {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   letter-spacing: -0.025em;
   font-weight: 650;
 }
@@ -835,7 +836,7 @@ details.data {
 .release-brief > p {
   margin: 8px 0 18px;
   color: var(--ink-2);
-  font-size: 0.825rem;
+  font-size: 0.875rem;
 }
 .brief-change > div {
   display: flex;
@@ -845,7 +846,7 @@ details.data {
 }
 .brief-change strong {
   flex: none;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
 }
 .brief-change p {
@@ -936,11 +937,12 @@ details.data {
   color: var(--ink-2);
   margin-top: 12px;
   max-width: 68ch;
-  font-size: 0.92rem;
+  font-size: 1rem;
 }
 details.data summary {
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
+  color: var(--accent);
   font-size: 0.875rem;
   padding: 4px 0;
 }
@@ -994,12 +996,12 @@ details.cases summary {
   background: var(--page);
 }
 .compat-detail > header h2 {
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   letter-spacing: -0.025em;
 }
 .compat-detail > header p {
   color: var(--ink-2);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   margin: 7px 0 0;
 }
 .latest-table tbody th a {
@@ -1007,7 +1009,7 @@ details.cases summary {
   margin: 2px 0;
   color: var(--ink);
   text-decoration-color: var(--axis);
-  font-size: 0.925rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 .rail .home {
@@ -1033,9 +1035,9 @@ details.cases summary {
 }
 .controls label,
 .controls .label {
-  color: var(--ink-2);
+  color: var(--muted);
   font-size: 0.8rem;
-  font-weight: 650;
+  font-weight: 600;
 }
 .top .primary-nav {
   margin-left: 0;
@@ -1125,12 +1127,12 @@ details.cases summary {
 }
 .view .brief-change h3 {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 650;
 }
 .view .current-coverage h3 {
   margin: 0 0 9px;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 .compat-table td:last-child {
   white-space: nowrap;

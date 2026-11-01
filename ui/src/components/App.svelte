@@ -380,7 +380,7 @@ $effect(() => {
               {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment{measure?.bounds
                 ? `; shaded: ${measure.bounds}`
                 : ""}.
-              A ring marks a release that moved beyond the case's noise (red worse, green better); a dashed line marks a
+              A ring marks a release that moved beyond the case's noise (red worse, teal better); a dashed line marks a
               level shift that Apache Otava found along the series.
             </figcaption>
           </figure>

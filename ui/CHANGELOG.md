@@ -29,7 +29,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- A flat green workspace uses square controls, fine rules and aligned measurements. Home places the solver comparison beside the tested setup, with release changes below ([design](../DESIGN.md)).
+- A flat blue workspace uses square controls, fine rules and aligned measurements. Chart series use cool colours; red and teal mark worse and better results. Home places the solver comparison beside the tested setup, with release changes below ([design](../DESIGN.md)).
 - The viewer separates its searchable catalogue from the evidence workspace, with clearer hierarchy and chart colours distinct from release-change status. Change tables reflow into labelled rows on phones ([viewer](README.md#what-it-shows)).
 
 ### Fixed

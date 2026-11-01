@@ -32,7 +32,7 @@ selected check's current result, coverage, last passing set and installation fil
   subject pages stay at their current paths. The former landing page remains at `asv.html`.
   The two-week parity condition in 0001 still applies before removing the asv pages.
 
-The viewer uses a continuous pale green ground, dark green text, square controls and fine
+The viewer uses a continuous cool white ground, dark blue text, square controls and fine
 rules. On wide screens, tested setup and solver evidence sit side by side; regressions and
 improvements follow below. The same geometry applies to Compatibility and benchmark views.
 

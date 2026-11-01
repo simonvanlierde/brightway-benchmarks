@@ -2,52 +2,52 @@
 name: Benchmark viewer
 description: A scientific evidence workspace for tested setups and measured changes
 colors:
-  page: "#edf3ef"
-  rail: "#edf3ef"
-  surface: "#edf3ef"
-  ink: "#183f36"
-  ink-2: "#3e5d52"
-  muted: "#50695f"
-  grid: "#d9e3dc"
-  axis: "#8aa79a"
-  line: "#b5c9bf"
-  control: "#50695f"
-  accent: "#235c4b"
-  accent-wash: "#d3e3d8"
+  page: "#f8f9fc"
+  rail: "#f8f9fc"
+  surface: "#f8f9fc"
+  ink: "#172b65"
+  ink-2: "#42547d"
+  muted: "#536084"
+  grid: "#e3e8f3"
+  axis: "#8d9cc0"
+  line: "#bfc9e4"
+  control: "#536084"
+  accent: "#1636b9"
+  accent-wash: "#dce5fb"
   worse: "#a13236"
-  better: "#245e33"
-  shift: "#3e5d52"
+  better: "#006c65"
+  shift: "#42547d"
   s1: "#315bba"
-  s2: "#9a6500"
+  s2: "#526d91"
   s3: "#7757ac"
   s4: "#416d86"
   s5: "#9b427c"
-  s6: "#6f7132"
+  s6: "#68618f"
   s7: "#3a6880"
-  s8: "#79613f"
-  dark-page: "#15231f"
-  dark-rail: "#15231f"
-  dark-surface: "#15231f"
-  dark-ink: "#edf3ef"
-  dark-ink-2: "#c2d5ca"
-  dark-muted: "#a5bdb0"
-  dark-grid: "#2b4438"
-  dark-axis: "#648574"
-  dark-line: "#3c5a4a"
-  dark-control: "#91ad9c"
-  dark-accent: "#a3d2b8"
-  dark-accent-wash: "#2c493b"
+  s8: "#885b8b"
+  dark-page: "#141d32"
+  dark-rail: "#141d32"
+  dark-surface: "#141d32"
+  dark-ink: "#f8f9fc"
+  dark-ink-2: "#c7d2ed"
+  dark-muted: "#aab9d8"
+  dark-grid: "#2a3755"
+  dark-axis: "#6b7fa9"
+  dark-line: "#3d4d70"
+  dark-control: "#9aadd2"
+  dark-accent: "#b3c5ff"
+  dark-accent-wash: "#2c3d67"
   dark-worse: "#ffafb0"
-  dark-better: "#a2d78d"
-  dark-shift: "#a5bdb0"
+  dark-better: "#74cfc3"
+  dark-shift: "#aab9d8"
   dark-s1: "#91b4ff"
-  dark-s2: "#e5bb69"
+  dark-s2: "#a7bce8"
   dark-s3: "#c2a6f1"
   dark-s4: "#85c0df"
   dark-s5: "#e5a5d1"
-  dark-s6: "#c2cb81"
+  dark-s6: "#b8ade3"
   dark-s7: "#8fb2d3"
-  dark-s8: "#d6b88f"
+  dark-s8: "#d6abdd"
 typography:
   body:
     fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
@@ -99,13 +99,13 @@ components:
 
 ## Overview
 
-Square geometry and aligned measurement columns give the viewer a precise reading order. Pale green and dark green grounds run continuously through the workspace; fine rules separate evidence without floating panels. System sans typography keeps dense controls and tables readable.
+Square geometry and aligned measurement columns give the viewer a precise reading order. Cool white and dark navy grounds run continuously through the workspace; fine rules separate evidence without floating panels. System sans typography keeps dense controls and tables readable.
 
 ## Colors
 
-The primary green accent anchors links, active navigation, selected platform buttons and solver bars. The pale green selection wash marks chosen filters, catalogue entries and compatibility rows. Page, rail and surface share one ground in each theme, so content reads as a continuous workspace.
+The primary blue accent anchors links, active navigation, selected platform buttons and solver bars. The pale blue selection wash marks chosen filters, catalogue entries and compatibility rows. Page, rail and surface share one ground in each theme, so content reads as a continuous workspace.
 
-Ink, secondary ink and muted text establish hierarchy; line, axis, control and grid colours separate content and support charts. Worse and better colours label measured direction, while shift stays neutral. The eight series colours identify environments independently of status. Their blue, amber and purple hues belong to chart data, never the navigation identity. Dark mode preserves these roles with a dark green ground and lighter text and series colours.
+Ink, secondary ink and muted text establish hierarchy; line, axis, control and grid colours separate content and support charts. Red and teal label worse and better results, while shift stays neutral. The eight series colours identify environments independently of navigation and status. Dark mode preserves these roles with a dark navy ground and lighter text and series colours.
 
 ## Typography
 
@@ -146,5 +146,5 @@ Benchmark labels use a readable fallback, with original identifiers in detail vi
 - Do preserve native links, visible keyboard focus and a data table behind every chart.
 - Do show original identifiers where a reader needs to reproduce a result.
 - Do keep new screens within the same data-driven viewer contract.
-- Don't introduce cobalt navigation, rounded panels or decorative shadows.
+- Don't introduce rounded panels or decorative shadows.
 - Don't turn current failures or dated installation files into an unsupported passing claim.

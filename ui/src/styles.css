@@ -1,56 +1,56 @@
 /* Series colours identify environments; separate status colours identify release changes. */
 :root {
   color-scheme: light;
-  --page: #edf3ef;
-  --rail: #edf3ef;
-  --surface: #edf3ef;
-  --ink: #183f36;
-  --ink-2: #3e5d52;
-  --muted: #50695f;
-  --grid: #d9e3dc;
-  --axis: #8aa79a;
-  --line: #b5c9bf;
-  --control: #50695f;
-  --accent: #235c4b;
-  --accent-wash: #d3e3d8;
+  --page: #f8f9fc;
+  --rail: #f8f9fc;
+  --surface: #f8f9fc;
+  --ink: #172b65;
+  --ink-2: #42547d;
+  --muted: #536084;
+  --grid: #e3e8f3;
+  --axis: #8d9cc0;
+  --line: #bfc9e4;
+  --control: #536084;
+  --accent: #1636b9;
+  --accent-wash: #dce5fb;
   --worse: #a13236;
-  --better: #245e33;
-  --shift: #3e5d52;
+  --better: #006c65;
+  --shift: #42547d;
   --s1: #315bba;
-  --s2: #9a6500;
+  --s2: #526d91;
   --s3: #7757ac;
   --s4: #416d86;
   --s5: #9b427c;
-  --s6: #6f7132;
+  --s6: #68618f;
   --s7: #3a6880;
-  --s8: #79613f;
+  --s8: #885b8b;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --page: #15231f;
-    --rail: #15231f;
-    --surface: #15231f;
-    --ink: #edf3ef;
-    --ink-2: #c2d5ca;
-    --muted: #a5bdb0;
-    --grid: #2b4438;
-    --axis: #648574;
-    --line: #3c5a4a;
-    --control: #91ad9c;
-    --accent: #a3d2b8;
-    --accent-wash: #2c493b;
+    --page: #141d32;
+    --rail: #141d32;
+    --surface: #141d32;
+    --ink: #f8f9fc;
+    --ink-2: #c7d2ed;
+    --muted: #aab9d8;
+    --grid: #2a3755;
+    --axis: #6b7fa9;
+    --line: #3d4d70;
+    --control: #9aadd2;
+    --accent: #b3c5ff;
+    --accent-wash: #2c3d67;
     --worse: #ffafb0;
-    --better: #a2d78d;
-    --shift: #a5bdb0;
+    --better: #74cfc3;
+    --shift: #aab9d8;
     --s1: #91b4ff;
-    --s2: #e5bb69;
+    --s2: #a7bce8;
     --s3: #c2a6f1;
     --s4: #85c0df;
     --s5: #e5a5d1;
-    --s6: #c2cb81;
+    --s6: #b8ade3;
     --s7: #8fb2d3;
-    --s8: #d6b88f;
+    --s8: #d6abdd;
   }
 }
 * {

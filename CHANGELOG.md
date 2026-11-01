@@ -52,8 +52,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `just ui-data OUT` writes the results as the data a new benchmark UI reads: an `index.json`
   and one report per commit in Bencher Metric Format. ui/schema/ describes both, and the tests
   check the output against it. The UI itself is in ui/, with its own changelog.
-- The new viewer is the site's homepage and is also at `ui/`; the asv pages stay at `asv.html`
-  until it shows everything they show ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).
+- The new viewer is the site's homepage and is also at `ui/`
+  ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).
   `just ui-serve` builds it and serves it locally with the committed real data, to look at a UI change.
 - `just ui-data` also lists what changed along each series: moves between two releases that are
   larger than the case's own noise, and Apache Otava's change points. It needs uv, which runs

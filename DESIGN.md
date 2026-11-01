@@ -3,8 +3,6 @@ name: Benchmark viewer
 description: A scientific evidence workspace for tested setups and measured changes
 colors:
   page: "#f8f9fc"
-  rail: "#f8f9fc"
-  surface: "#f8f9fc"
   ink: "#172b65"
   ink-2: "#42547d"
   muted: "#536084"
@@ -26,8 +24,6 @@ colors:
   s7: "#3a6880"
   s8: "#885b8b"
   dark-page: "#141d32"
-  dark-rail: "#141d32"
-  dark-surface: "#141d32"
   dark-ink: "#f8f9fc"
   dark-ink-2: "#c7d2ed"
   dark-muted: "#aab9d8"
@@ -82,12 +78,12 @@ components:
     textColor: "{colors.accent}"
     rounded: "{rounded.control}"
   chart:
-    backgroundColor: "{colors.surface}"
+    backgroundColor: "{colors.page}"
     rounded: "{rounded.chart}"
     padding: "24px 24px 20px"
   primary-download:
     backgroundColor: "{colors.accent}"
-    textColor: "{colors.surface}"
+    textColor: "{colors.page}"
     rounded: "{rounded.control}"
     padding: "9px 14px"
   selected-platform:
@@ -103,7 +99,7 @@ Square geometry and aligned measurement columns give the viewer a precise readin
 
 ## Colors
 
-The primary blue accent anchors links, active navigation, selected platform buttons and solver bars. The pale blue selection wash marks chosen filters, catalogue entries and compatibility rows. Page, rail and surface share one ground in each theme, so content reads as a continuous workspace.
+The primary blue accent anchors links, active navigation, selected platform buttons and solver bars. The pale blue selection wash marks chosen filters, catalogue entries and compatibility rows. Page, rail and panels share one ground (`page`) in each theme, so content reads as a continuous workspace.
 
 Ink, secondary ink and muted text establish hierarchy; line, axis, control and grid colours separate content and support charts. Red and teal label worse and better results, while shift stays neutral. The eight series colours identify environments independently of navigation and status. Dark mode preserves these roles with a dark navy ground and lighter text and series colours.
 
@@ -133,7 +129,7 @@ All corners are square, including controls, charts, selections and detail frames
 
 ## Components
 
-Primary downloads use accent fill with surface-coloured text, the primary-download padding and a 40px minimum height. Data ordering chooses the primary file; other installation files remain links. Pressed platform buttons use solid accent fill with page-coloured text. Chosen direction filters and catalogue entries use the selection wash; active masthead navigation uses an accent underline.
+Primary downloads use accent fill with page-coloured text, the primary-download padding and a 40px minimum height. Data ordering chooses the primary file; other installation files remain links. Pressed platform buttons use solid accent fill with page-coloured text. Chosen direction filters and catalogue entries use the selection wash; active masthead navigation uses an accent underline.
 
 Search fields and selects use the surface ground and control stroke. Links thicken their underline on hover. Buttons and catalogue entries use the selection wash on hover; row hover uses a faint selection wash. Native-control and catalogue colour transitions last 150ms only when reduced motion is not requested. All interactive controls retain visible keyboard focus.
 

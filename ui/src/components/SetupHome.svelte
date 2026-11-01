@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { BenchmarkIndex, Guidance } from "../lib/contract";
-import { checkKind, dateLabel, statusLabel } from "../lib/guidance";
+import { checkKind, dateLabel, statusLabel, statusTone } from "../lib/guidance";
 import { benchmarkLabel, format, latestChanges, noiseText, percent, type View, writeView } from "../lib/history";
 import CheckDetail from "./CheckDetail.svelte";
 
@@ -57,7 +57,7 @@ const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ??
       </section>
     {/if}
   </div>
-  <aside class="release-brief" aria-labelledby="release-brief-heading">
+  <section class="release-brief" aria-labelledby="release-brief-heading">
     <h2 id="release-brief-heading">What changed?</h2><p>Changes beyond measured noise in each package's latest release.</p>
     {#each moves as row(row.change.case+row.change.machine+row.way)}
       {@const next={bench:row.bench.id,params:row.params,measure:row.change.measure,machine:row.change.machine}}
@@ -65,7 +65,7 @@ const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ??
     {/each}
     {#if moves.length===0}<p class="coverage-text">No release changes beyond measured noise were published.</p>{/if}
     <a class="section-link" href={writeView({page:"changes",params:[]})} onclick={(e)=>follow(e,{page:"changes",params:[]})}>Open all release changes</a>
-    {#if related.length}<section class="current-coverage"><h3>Current check coverage</h3><ul>{#each additional.slice(0,4) as cell(cell.id)}<li><a href={writeView({page:"compatibility",platform:cell.platform,check:cell.id,params:[]})} onclick={(e)=>follow(e,{page:"compatibility",platform:cell.platform,check:cell.id,params:[]})}>{cell.label} · Python {cell.python}</a><span class:worse={cell.status==="failure"}>{checkKind(cell.kind)} · {statusLabel(cell.status)}</span></li>{/each}</ul>{#if additional.length===0}<p>No full upstream test-suite result is published for this platform.</p>{/if}<p>These checks cover installation and calculations; they are separate from timing regressions.</p></section>{/if}
+    {#if related.length}<section class="current-coverage"><h3>Current check coverage</h3><ul>{#each additional.slice(0,4) as cell(cell.id)}<li><a href={writeView({page:"compatibility",platform:cell.platform,check:cell.id,params:[]})} onclick={(e)=>follow(e,{page:"compatibility",platform:cell.platform,check:cell.id,params:[]})}>{cell.label} · Python {cell.python}</a><span class={statusTone(cell.status)}>{checkKind(cell.kind)} · {statusLabel(cell.status)}</span></li>{/each}</ul>{#if additional.length===0}<p>No full upstream test-suite result is published for this platform.</p>{/if}<p>These checks cover installation and calculations; they are separate from timing regressions.</p></section>{/if}
 
-  </aside>
+  </section>
 </div>

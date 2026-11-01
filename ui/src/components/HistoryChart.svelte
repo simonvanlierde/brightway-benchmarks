@@ -151,13 +151,13 @@ $effect(() => {
         ),
       ),
       picked ? Plot.ruleX([picked.label], { stroke: v("--ink"), strokeOpacity: 0.4 }) : null,
-      Plot.tip(tips, Plot.pointerX({ x: "label", y: "y", title: "text", fill: v("--surface"), stroke: v("--axis") })),
+      Plot.tip(tips, Plot.pointerX({ x: "label", y: "y", title: "text", fill: v("--page"), stroke: v("--axis") })),
       picked
         ? Plot.tip([picked], {
             x: "label",
             y: "y",
             title: "text",
-            fill: v("--surface"),
+            fill: v("--page"),
             stroke: v("--axis"),
           })
         : null,
@@ -200,7 +200,7 @@ function download() {
   copy.querySelectorAll("[data-mark='tip']").forEach((t) => {
     t.remove();
   });
-  const bg = getComputedStyle(host).getPropertyValue("--surface").trim();
+  const bg = getComputedStyle(host).getPropertyValue("--page").trim();
   const text = copy.outerHTML
     .replace(/var\(--plot-background\)/g, bg)
     .replace(/<svg([^>]*?) style="/, `<svg$1 style="background:${bg};font-family:system-ui,sans-serif;`);

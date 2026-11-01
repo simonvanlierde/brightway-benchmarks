@@ -214,6 +214,27 @@ test("overview filters scope their counts and survive a shared URL", async ({ pa
   await expect(page.locator(".latest-table tbody tr").first()).toContainText("bw_processing");
 });
 
+test("clearing a shared package filter stays on release changes", async ({ page }) => {
+  // A link from before the page parameter: the filters alone chose the changes page.
+  await page.goto("?group=bw-processing-dfb1fd2e3103");
+  const heading = page.getByRole("heading", { name: "What moved in the latest releases" });
+  await expect(heading).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("3 of 3 changes shown");
+  await page.getByLabel("Package", { exact: true }).selectOption({ label: "All packages" });
+  await expect(heading).toBeVisible();
+  await expect(page).toHaveURL(/page=changes/);
+  await page.reload();
+  await expect(heading).toBeVisible();
+});
+
+test("a link to another page moves keyboard focus to that page", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("link", { name: "Open all release changes" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+  await expect(page.locator("#main")).toBeFocused();
+});
+
 test("catalogue search accepts readable names and original identifiers", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("?page=explorer");

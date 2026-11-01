@@ -1,5 +1,5 @@
 <script lang="ts">
-import { checkKind, dateLabel, type GuidanceCheck, statusLabel } from "../lib/guidance";
+import { checkKind, dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/guidance";
 
 let { check }: { check: GuidanceCheck } = $props();
 const saved = $derived(check.lastPassed);
@@ -7,7 +7,7 @@ const primary = $derived(saved?.files[0]);
 </script>
 
 <div class="check-detail">
-  <p class="check-outcome" class:better={check.status === "success"} class:worse={check.status === "failure" || check.status === "timed_out"}>
+  <p class={["check-outcome", statusTone(check.status)]}>
     {checkKind(check.kind)} · {statusLabel(check.status)}
   </p>
   <p class="coverage-text">{check.coverage}</p>

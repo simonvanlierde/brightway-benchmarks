@@ -16,6 +16,13 @@ export function statusLabel(status: string): string {
   );
 }
 
+/** The colour class a check result takes: passed is better, failed or timed out is worse. */
+export function statusTone(status: string): "better" | "worse" | undefined {
+  if (status === "success") return "better";
+  if (status === "failure" || status === "timed_out") return "worse";
+  return undefined;
+}
+
 export function checkKind(kind: GuidanceCheck["kind"]): string {
   return { smoke: "Smoke calculations", suites: "Upstream test suites", diagnostic: "Diagnostic checks" }[kind];
 }

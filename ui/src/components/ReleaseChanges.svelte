@@ -32,12 +32,13 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
         </header>
         <div class="overview-toolbar">
           <div class="direction-filter" role="group" aria-label="Filter changes">
-            <button class:chosen={direction === "all"} aria-pressed={direction === "all"} onclick={() => go({ ...view, direction: "all" })}>All changes <span>{packageChanges.length}</span></button>
-            <button class:chosen={direction === "worse"} aria-pressed={direction === "worse"} onclick={() => go({ ...view, direction: "worse" })}>Worse <span class="worse">{worse}</span></button>
-            <button class:chosen={direction === "better"} aria-pressed={direction === "better"} onclick={() => go({ ...view, direction: "better" })}>Better <span class="better">{better}</span></button>
+            <button class:chosen={direction === "all"} aria-pressed={direction === "all"} onclick={() => go({ ...view, page: "changes", direction: "all" })}>All changes <span>{packageChanges.length}</span></button>
+            <button class:chosen={direction === "worse"} aria-pressed={direction === "worse"} onclick={() => go({ ...view, page: "changes", direction: "worse" })}>Worse <span class="worse">{worse}</span></button>
+            <button class:chosen={direction === "better"} aria-pressed={direction === "better"} onclick={() => go({ ...view, page: "changes", direction: "better" })}>Better <span class="better">{better}</span></button>
           </div>
-          <div class="package-filter"><label class="sr" for="package-filter">Package</label><select id="package-filter" value={packageId} onchange={(e) => go({ ...view, group: e.currentTarget.value })}><option value="">All packages</option>{#each index.groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}</select></div>
+          <div class="package-filter"><label class="sr" for="package-filter">Package</label><select id="package-filter" value={packageId} onchange={(e) => go({ ...view, page: "changes", group: e.currentTarget.value })}><option value="">All packages</option>{#each index.groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}</select></div>
         </div>
+        <p class="sr" role="status">{filtered.length} of {packageChanges.length} changes shown</p>
         {#if !exported}
           <p class="empty">Changes were not exported with this data, so there is nothing to compare here.</p>
         {:else if latest.length === 0}
@@ -49,7 +50,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
           <div class="scroll gap" role="region" aria-label="Latest changes" tabindex="0">
             <table class="latest-table responsive-table">
               <caption>
-                {filtered.length} changes shown. Worse first, then the largest change; noise is the threshold each change exceeded.
+                Worse first, then the largest change; noise is the threshold each change exceeded.
               </caption>
               <thead>
                 <tr>

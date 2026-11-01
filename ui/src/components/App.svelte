@@ -1,4 +1,5 @@
 <script lang="ts">
+import { tick } from "svelte";
 import {
   type BenchmarkIndex,
   type BenchmarkReport,
@@ -104,16 +105,15 @@ $effect(() => {
 
 /** Show NEXT, and keep it in the URL; a new benchmark is a new history entry, a new setting is not. */
 function go(next: View) {
-  const push =
-    next.bench !== view.bench ||
-    pageOf(next) !== pageOf(view) ||
-    next.platform !== view.platform ||
-    next.check !== view.check;
+  const moved = pageOf(next) !== pageOf(view);
+  const push = next.bench !== view.bench || moved || next.platform !== view.platform || next.check !== view.check;
   view = next;
   const url = writeView(next) || location.pathname;
   if (push) history.pushState(null, "", url);
   else history.replaceState(null, "", url);
   if (push) scrollTo({ top: 0 });
+  // The link that led here may be gone, so start keyboard focus at the new page.
+  if (moved) tick().then(() => document.getElementById("main")?.focus({ preventScroll: true }));
 }
 
 function follow(e: MouseEvent, next: View) {

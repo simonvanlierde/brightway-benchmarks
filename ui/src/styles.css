@@ -2,8 +2,6 @@
 :root {
   color-scheme: light;
   --page: #f8f9fc;
-  --rail: #f8f9fc;
-  --surface: #f8f9fc;
   --ink: #172b65;
   --ink-2: #42547d;
   --muted: #536084;
@@ -29,8 +27,6 @@
   :root {
     color-scheme: dark;
     --page: #141d32;
-    --rail: #141d32;
-    --surface: #141d32;
     --ink: #f8f9fc;
     --ink-2: #c7d2ed;
     --muted: #aab9d8;
@@ -93,7 +89,7 @@ select {
   font: inherit;
   font-size: 0.9375rem;
   color: var(--ink);
-  background: var(--surface);
+  background: var(--page);
   border: 1px solid var(--control);
   padding: 6px 8px;
   min-height: 36px;
@@ -101,7 +97,7 @@ select {
 }
 figure {
   margin: 0;
-  background: var(--surface);
+  background: var(--page);
   border: 1px solid var(--line);
   padding: 24px 24px 20px;
 }
@@ -152,7 +148,7 @@ input {
   padding: 8px 10px;
   border: 1px solid var(--control);
   color: var(--ink);
-  background: var(--surface);
+  background: var(--page);
   caret-color: var(--accent);
 }
 button,
@@ -177,6 +173,10 @@ input::placeholder {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+/* A scroll region clips an outside outline on its first column. */
+.scroll :focus-visible {
+  outline-offset: -2px;
+}
 code,
 .mono {
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -184,7 +184,7 @@ code,
 }
 .top {
   border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  background: var(--page);
 }
 .top-inner {
   margin: 0 auto;
@@ -206,7 +206,7 @@ code,
 }
 .rail {
   font-size: 0.875rem;
-  background: var(--rail);
+  background: var(--page);
   padding: 18px 22px;
   border-bottom: 1px solid var(--line);
 }
@@ -220,7 +220,7 @@ code,
   left: 16px;
   top: -48px;
   padding: 8px 12px;
-  background: var(--surface);
+  background: var(--page);
   border: 1px solid var(--control);
   z-index: 1;
 }
@@ -299,11 +299,11 @@ code,
   padding: 22px;
   margin-top: 24px;
   border-style: solid;
-  background: var(--surface);
+  background: var(--page);
 }
 .skeleton {
   height: 320px;
-  background: var(--surface);
+  background: var(--page);
   border: 1px solid var(--line);
 }
 .sr {
@@ -440,7 +440,7 @@ code,
   padding: 9px 14px;
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: var(--surface);
+  color: var(--page);
   font-size: 0.8rem;
   font-weight: 650;
   text-decoration: none;
@@ -500,8 +500,7 @@ code,
   padding-top: 22px;
   border-top: 1px solid var(--accent);
 }
-.release-brief > :where(h2, p, a),
-.current-coverage {
+.release-brief > :where(h2, p, a) {
   grid-column: 1 / -1;
 }
 .brief-change {
@@ -515,6 +514,7 @@ code,
   margin-top: 7px;
 }
 .current-coverage {
+  grid-column: 1 / -1;
   padding-top: 16px;
   margin-top: 18px;
   border-top: 1px solid var(--line);
@@ -616,7 +616,7 @@ select:hover {
 .chart svg {
   display: block;
   overflow: visible;
-  --plot-background: var(--surface);
+  --plot-background: var(--page);
 }
 button:hover {
   background: var(--accent-wash);
@@ -905,7 +905,7 @@ tbody tr:hover {
 }
 .compat-table thead th {
   font-size: 0.72rem;
-  background: color-mix(in srgb, var(--page) 45%, var(--surface));
+  background: var(--page);
 }
 .compat-detail > header h2 {
   font-size: 1.2rem;

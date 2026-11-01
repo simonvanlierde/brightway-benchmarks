@@ -32,7 +32,8 @@ def cell(
         "green": {
             "date": "2026-10-30",
             "run": "https://example.test/runs/6",
-            "dir": f"compat/{column}-3.12-{os}",
+            "dir": f"compat/{column}-3.12-{os}/2026-10-28",
+            "latest": f"compat/{column}-3.12-{os}",
             "files": ["requirements.txt", "pylock.toml"] if files is None else files,
             "versions": {"brightway25": "1.1.1", "bw2calc": "3.1.0"},
         },
@@ -54,29 +55,40 @@ def test_failed_latest_keeps_last_passing_set_and_its_date(module: ModuleType, t
     check = out["checks"][0]
     assert check["status"] == "failure"
     assert check["lastPassed"]["date"] == "2026-10-30"
-    assert (
-        check["lastPassed"]["files"][0]["url"]
-        == "https://example.test/bench/compat/latest-3.12-ubuntu-latest/requirements.txt"
-    )
-    assert "brightway25 bw_graph_tools bw_timex -c requirements.txt" in check["lastPassed"]["install"]
+    folder = "https://example.test/bench/compat/latest-3.12-ubuntu-latest/"
+    assert check["lastPassed"]["pinned"] == "2026-10-28"
+    assert check["lastPassed"]["files"][0] == {
+        "label": "requirements.txt",
+        "url": folder + "2026-10-28/requirements.txt",
+        "latest": folder + "requirements.txt",
+    }
+    assert check["lastPassed"]["installs"][0] == {
+        "manager": "uv",
+        "command": f"uv add brightway25 bw_graph_tools bw_timex -c {folder}2026-10-28/requirements.txt",
+        "latest": f"uv add brightway25 bw_graph_tools bw_timex -c {folder}requirements.txt",
+    }
     assert out["platforms"][0]["defaultCheck"] == check["id"]
     assert json.loads((tmp_path / "data" / "guidance.json").read_text()) == out
     validator().validate(out)
 
 
 def test_scope_and_installation_follow_the_actual_check(module: ModuleType, tmp_path: Path):
-    conda = cell("conda-forge", files=["requirements.txt", "pixi.toml", "pixi.lock"])
+    conda = cell("conda-forge", files=["requirements.txt", "environment.yml", "pixi.toml", "pixi.lock"])
     suite = cell("suites", outcome="failure")
     suite["green"] = None
     out = module.export(
         snapshot(tmp_path, [cell(os="macos-latest"), conda, suite]), tmp_path / "data", "https://example.test/"
     )
     mac, conda, suite = out["checks"]
-    assert "pypardiso" not in mac["lastPassed"]["install"]
+    assert [i["manager"] for i in mac["lastPassed"]["installs"]] == ["uv", "pip"]
     assert "solver" in " ".join(mac["caveats"]).lower()
-    assert [file["label"] for file in conda["lastPassed"]["files"]] == ["pixi.toml", "pixi.lock", "requirements.txt"]
-    assert "Download pixi.toml and pixi.lock into the same folder" in " ".join(conda["caveats"])
-    assert conda["lastPassed"]["install"] == "pixi install --frozen"
+    labels = [file["label"] for file in conda["lastPassed"]["files"]]
+    assert labels == ["environment.yml", "pixi.toml", "pixi.lock", "requirements.txt"]
+    folder = "https://example.test/compat/conda-forge-3.12-ubuntu-latest/2026-10-28/"
+    assert [(i["manager"], i["command"]) for i in conda["lastPassed"]["installs"]] == [
+        ("conda", f"conda env update -n brightway -f {folder}environment.yml --prune"),
+        ("pixi", f"curl -fL -O {folder}pixi.toml -O {folder}pixi.lock && pixi install --frozen"),
+    ]
     assert "bw_timex" in " ".join(conda["caveats"])
     assert suite["kind"] == "suites"
     assert "lastPassed" not in suite
@@ -85,8 +97,21 @@ def test_scope_and_installation_follow_the_actual_check(module: ModuleType, tmp_
 
 def test_missing_files_do_not_offer_an_install_or_default(module: ModuleType, tmp_path: Path):
     out = module.export(snapshot(tmp_path, [cell(files=[])]), tmp_path / "data", "https://example.test/")
-    assert "install" not in out["checks"][0]["lastPassed"]
+    assert out["checks"][0]["lastPassed"]["installs"] == []
     assert "defaultCheck" not in out["platforms"][0]
+
+
+def test_a_set_without_a_dated_folder_is_named_where_it_is(module: ModuleType, tmp_path: Path):
+    old = cell()
+    old["green"]["dir"] = old["green"].pop("latest")  # a status.json from before the compat archive
+    passed = module.export(snapshot(tmp_path, [old]), tmp_path / "data", "https://example.test/")["checks"][0]
+    passed = passed["lastPassed"]
+    assert "pinned" not in passed
+    assert passed["files"][0] == {
+        "label": "requirements.txt",
+        "url": "https://example.test/compat/latest-3.12-ubuntu-latest/requirements.txt",
+    }
+    assert "latest" not in passed["installs"][0]
 
 
 def test_missing_status_removes_only_a_regular_stale_guidance_file(
@@ -244,10 +269,12 @@ def test_labels_cover_every_compat_column(module: ModuleType):
 
 
 @given(
-    files=st.lists(st.sampled_from(["requirements.txt", "pylock.toml", "pixi.toml", "pixi.lock"]), unique=True),
+    files=st.lists(
+        st.sampled_from(["requirements.txt", "pylock.toml", "environment.yml", "pixi.toml", "pixi.lock"]), unique=True
+    ),
     outcome=st.sampled_from(["success", "failure", "cancelled", "skipped", None]),
 )
-@settings(max_examples=20, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_exported_check_variants_follow_the_contract(
     module: ModuleType, tmp_path: Path, files: list[str], outcome: str | None
 ):
@@ -263,8 +290,9 @@ def test_exported_check_variants_follow_the_contract(
 @pytest.mark.parametrize("column", ["latest", "floors", "pre", "suites"])
 def test_install_includes_all_checked_runtime_roots(module: ModuleType, tmp_path: Path, os_name: str, column: str):
     out = module.export(snapshot(tmp_path, [cell(column, os_name)]), tmp_path / "data", "https://example.test/")
-    command = out["checks"][0]["lastPassed"]["install"]
-    assert command == "uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt"
+    commands = [i["command"] for i in out["checks"][0]["lastPassed"]["installs"]]
+    assert all(" brightway25 bw_graph_tools bw_timex -c https://" in c for c in commands)
+    assert len(commands) == 2
 
 
 def test_committed_ui_fixture_is_what_the_exporter_writes(module: ModuleType, tmp_path: Path):

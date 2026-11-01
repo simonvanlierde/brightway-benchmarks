@@ -51,13 +51,30 @@ randonneur = "*"
 randonneur_data = "*"
 stats_arrays = "*"
 pypardiso = "*"
+
+# The test harness in an environment of its own, solved together with the default one, so the
+# default environment (what pixi users install) and environment.yml hold no test tools.
+[feature.test.dependencies]
 pytest = "*"
 pytest-codspeed = "==5.0.3"
+
+[environments]
+test = { features = ["test"], solve-group = "default" }
 EOF
     pixi lock --quiet --no-config --manifest-path "$venv/pixi.toml"
     cp "$venv/pixi.toml" "$venv/pixi.lock" "$out/"
-    pixi install --quiet --no-config --frozen --manifest-path "$venv/pixi.toml"
-    py=$venv/.pixi/envs/default/bin/python
+    pixi install --quiet --no-config --frozen -e test --manifest-path "$venv/pixi.toml"
+    py=$venv/.pixi/envs/test/bin/python
+    # The default environment's conda packages at their locked versions, for plain conda users.
+    pixi list --no-config --frozen --json -e default --manifest-path "$venv/pixi.toml" >"$venv/default.json"
+    "$py" - "$venv/default.json" >"$out/environment.yml" <<'EOF'
+import json, sys
+print("# The tested conda-forge set (linux-64). conda env update -n brightway -f environment.yml --prune")
+print("channels:\n  - conda-forge\ndependencies:")
+for p in sorted(json.load(open(sys.argv[1])), key=lambda p: p["name"]):
+    if p["kind"] == "conda":
+        print(f"  - {p['name']}=={p['version']}")
+EOF
     # The Python packages in the set, named as uv names them, for the job summary and the site.
     "$py" -c 'import importlib.metadata as m, re
 print("\n".join(sorted({re.sub("[-_.]+", "-", d.name).lower() + "==" + d.version for d in m.distributions()})))' \
@@ -117,7 +134,8 @@ EOF
         compile --no-annotate --resolution lowest-direct --no-build -c "$out/raised.txt" -o "$out/requirements.txt"
     ;;
 esac
-compile --no-annotate -o "$out/pylock.toml" <"$out/requirements.txt"
+# --python-version: the lock would otherwise require this runner's patch release (>=3.12.15).
+compile --no-annotate --python-version "$python" -o "$out/pylock.toml" <"$out/requirements.txt"
 uv pip install --quiet --python "$py" -r "$out/requirements.txt"
 [ "$column" != suites ] || exec sh scripts/compat-suites.sh "$py" "$out"
 BWBENCH_STRICT=${BWBENCH_STRICT-1} PYTHONPATH=benchmarks "$py" -m pytest -p no:cacheprovider --rootdir benchmarks/codspeed benchmarks/codspeed -v

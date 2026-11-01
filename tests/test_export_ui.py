@@ -386,6 +386,70 @@ def test_descriptions_follow_the_shown_values(export_ui: ModuleType):
     assert bench["params"][1] == {"name": "unknown", "values": ["1"]}
 
 
+def test_links_follow_the_shown_values_and_the_solver(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    files = {
+        f"m/11111111-{i}": result("11" * 20, env + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))
+        for i, env in enumerate(["uv-py3.12-pypardiso", "uv-py3.12"])
+    }
+    results = layout(tmp_path, files)
+    (tmp_path / "asv" / "s.json").write_text(json.dumps({"benchmark_dir": "../benchmarks/bench_bw2calc"}))
+    about = tmp_path / "descriptions.toml"
+    about.write_text(
+        '[links.solvers]\nPyPardiso = "https://example.org/pardiso"\n'
+        '[links.values.cls]\nIterativeLCA = "https://example.org/iterative"\n'
+        '[links.groups]\ns = "https://example.org/s"\n'
+    )
+    monkeypatch.setattr(export_ui, "DESCRIPTIONS", about)
+    monkeypatch.setattr(export_ui, "FINDINGS", tmp_path / "none.toml")
+    (tmp_path / "none.toml").write_text("findings = []\n")
+    index, _ = run(export_ui, results, monkeypatch)
+    schema("index").validate(index)
+    assert {e.get("label"): e.get("url") for e in index["environments"]} == {
+        "PyPardiso": "https://example.org/pardiso",
+        "SuperLU": None,
+    }
+    bench = next(b for b in index["benchmarks"] if b["name"] == TIME)
+    assert bench["params"][1]["links"] == ["", "https://example.org/iterative"]
+    assert bench["url"].endswith("/blob/main/benchmarks/bench_bw2calc/bench_lca.py")
+    assert index["groups"][0]["url"] == "https://example.org/s"
+
+
+def test_a_finding_opens_its_history_or_stops_the_export(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    files = {"m/11111111-a": result("11" * 20, "a" + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))}
+    results = layout(tmp_path, files)
+    found = tmp_path / "findings.toml"
+    monkeypatch.setattr(export_ui, "FINDINGS", found)
+    entry = 'title = "T"\ntext = "X."\ngroup = "s"\nbenchmark = "%s"\nparams = %s\ndoc = "d"\n'
+    other = 'title = "O"\ntext = "Y."\ngroup = "elsewhere"\nbenchmark = "b"\nparams = {}\ndoc = "e"\n'
+    found.write_text("[[findings]]\n" + entry % (TIME, '{ cls = "IterativeLCA" }') + "[[findings]]\n" + other)
+    index, _ = run(export_ui, results, monkeypatch)
+    schema("index").validate(index)
+    bench = next(b for b in index["benchmarks"] if b["name"] == TIME)
+    assert index["findings"] == [
+        {
+            "title": "T",
+            "text": "X.",
+            "benchmark": bench["id"],
+            "params": ["", "IterativeLCA"],
+            "url": "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/findings.md#d",
+        }
+    ]  # the finding about a group this export lacks is left out
+    for params, error in [('{ cls = "Fast" }', "no value Fast"), ('{ solver = "x" }', "no parameter solver")]:
+        found.write_text("[[findings]]\n" + entry % (TIME, params))
+        shutil.rmtree(tmp_path / "out")
+        with pytest.raises(SystemExit, match=error):
+            run(export_ui, results, monkeypatch)
+
+
+def test_every_finding_opens_a_history_in_the_published_data(export_ui: ModuleType):
+    index = json.loads((ROOT / "ui" / "test" / "fixtures" / "real" / "index.json").read_text())
+    assert len(export_ui.findings(index)) == len(export_ui.tomllib.loads(export_ui.FINDINGS.read_text())["findings"])
+
+
 def test_every_benchmark_and_parameter_the_ui_shows_is_described():
     index = json.loads((ROOT / "ui" / "test" / "fixtures" / "real" / "index.json").read_text())
     assert [b["name"] for b in index["benchmarks"] if not b.get("description")] == []

@@ -8,7 +8,7 @@
   "required": ["format_version", "title", "intro", "snapshot", "platforms", "checks"],
   "properties": {
     "format_version": {
-      "const": 1
+      "const": 2
     },
     "title": {
       "type": "string",
@@ -106,7 +106,7 @@
           "lastPassed": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["date", "run", "packages", "files"],
+            "required": ["date", "run", "packages", "files", "installs"],
             "properties": {
               "date": {
                 "type": "string",
@@ -136,8 +136,13 @@
                   }
                 }
               },
+              "pinned": {
+                "description": "The date of the set the URLs name; a later passing check of the same set keeps it. Present when files and installs also name the address that follows the newest set (their latest).",
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              },
               "files": {
-                "description": "Primary download first.",
+                "description": "The files of the set, the package managers' own first.",
                 "type": "array",
                 "items": {
                   "type": "object",
@@ -152,13 +157,32 @@
                       "type": "string",
                       "minLength": 1,
                       "pattern": "^https?://[^\\s]+$"
+                    },
+                    "latest": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^https?://[^\\s]+$"
                     }
                   }
                 }
               },
-              "install": {
-                "type": "string",
-                "minLength": 1
+              "installs": {
+                "description": "One command per package manager that installs this set, reading its file from the URL.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["manager", "command"],
+                  "properties": {
+                    "manager": { "enum": ["uv", "pip", "conda", "pixi"] },
+                    "command": { "type": "string", "minLength": 1 },
+                    "latest": {
+                      "description": "The same command at the address that follows the newest passing set.",
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
               }
             }
           }

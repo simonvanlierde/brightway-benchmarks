@@ -112,3 +112,45 @@ jobs:
           path: ${{ env.OUT }}
           include-hidden-files: true
           retention-days: 90
+
+  # Each set that passed goes to the `compat` branch under a dated folder, so the install commands
+  # on the site name a set that never changes, and a set outlives its artifact's 90 days. The site
+  # workflow publishes that branch.
+  archive:
+    name: archive the green sets
+    needs: compat
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # pushes the compat branch
+      actions: read # this run's jobs and the green sets
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check out the archive
+        run: |
+          url="https://github.com/$GITHUB_REPOSITORY"
+          if git ls-remote --exit-code --heads "$url" compat >/dev/null; then
+            git clone --quiet --branch compat --single-branch "$url" archive
+          else
+            git init --quiet -b compat archive
+          fi
+
+      - run: python3 scripts/compat_site.py archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMPAT_RUN_ID: ${{ github.run_id }}
+
+      - name: Push the archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |-
+          cd archive
+          git add -A
+          git diff --cached --quiet && exit 0
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit --quiet -m "compat: $(date -u +%F) from ${GITHUB_SHA::7}"
+          git push --quiet "https://x-access-token:${GH_TOKEN}@github.com/$GITHUB_REPOSITORY" HEAD:compat

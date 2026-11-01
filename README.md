@@ -17,8 +17,8 @@ them and the results can be published. One real database sits beside them: USEEI
 public domain), downloaded from [files.brightway.dev](https://files.brightway.dev/USEEIO-1.1.tar.gz)
 by a pinned SHA-256 when `BWBENCH_SIZES=useeio` asks for it.
 
-Every case's history is on the
-[benchmark pages](https://simonvanlierde.com/brightway-benchmarks/).
+Every case's history is in the
+[benchmark explorer](https://simonvanlierde.com/brightway-benchmarks/).
 
 ## Results so far
 
@@ -36,10 +36,9 @@ most users:
 
 ## Install a set that works
 
-The [homepage](https://simonvanlierde.com/brightway-benchmarks/) shows a tested starting setup,
-solver measurements and recent release changes. The
-[compatibility view](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility) shows
-the latest check and last passing set for each tested environment, including coverage gaps.
+The [Setup page](https://simonvanlierde.com/brightway-benchmarks/) shows a tested starting setup
+and the latest check and last passing set for each tested environment, including coverage gaps.
+It gives install commands for uv, pip, conda and pixi, pinned to a dated set.
 [docs/running.md](docs/running.md#install-a-set-that-works) explains the installation files.
 
 ## Run it yourself

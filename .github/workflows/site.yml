@@ -1,6 +1,7 @@
 name: site
 
-# Builds the asv history site from the `results` branch and publishes it on GitHub Pages.
+# Builds the viewer and its data from the `results` and `compat` branches and publishes them on
+# GitHub Pages.
 # Daily after the nightly compat run (03:41 UTC, a few minutes), so the compatibility checks
 # stay current; GitHub often starts it hours late. A push to main that changes the viewer or
 # the scripts that write its data also rebuilds it, so a merged UI change goes live at once.
@@ -18,8 +19,6 @@ on:
       - "scripts/export_guidance.py"
       - "scripts/release_changes.py"
       - "scripts/change_points.py"
-      - "scripts/compat_site.py"
-      - "scripts/site_index.py"
       - "benchmarks/descriptions.toml"
       - ".github/workflows/site.yml"
   workflow_dispatch:
@@ -35,12 +34,9 @@ jobs:
   build:
     name: build the site
     runs-on: ubuntu-latest
-    # Builds the box image (it only needs asv here), then asv publish per subject,
-    # which clones each upstream repository for its tags.
     timeout-minutes: 60
     permissions:
       contents: read
-      actions: read # the compat workflow's last green sets (scripts/compat_site.py)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -59,10 +55,8 @@ jobs:
 
       # just from PyPI (rust-just), so no extra action is needed.
       - run: uvx --from rust-just==1.58.0 just site
-        env:
-          GH_TOKEN: ${{ github.token }} # gh, for scripts/compat_site.py
 
-      # The viewer serves the homepage and ui/; asv.html and subject pages retain the full history.
+      # The viewer serves the homepage and ui/; asv.html and the subject pages redirect to it.
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         with:
           package_json_file: ui/package.json

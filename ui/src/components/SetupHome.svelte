@@ -34,6 +34,10 @@ const results = $derived(
   selected ? [selected, ...mine.filter((c) => c !== selected && statusTone(c.status) === "worse")] : [],
 );
 const at = (c: GuidanceCheck): View => ({ page: "home", platform: c.platform, check: c.id, params: [] });
+function choose(platform: string) {
+  const { check: _, ...rest } = view; // a new platform starts on its default check
+  go({ ...rest, page: "home", platform });
+}
 // A check chosen in the grid below shows its set above: take keyboard focus (and the screen) there.
 function pick(e: MouseEvent, c: GuidanceCheck) {
   follow(e, at(c));
@@ -76,7 +80,7 @@ $effect(() => {
 <div class="home-columns">
   <div class="setup-column">
     {#if guidance && platform}
-      <div class="platform-tabs" role="group" aria-label="Choose a platform">{#each guidance.platforms as p (p.id)}<button type="button" aria-pressed={platform.id === p.id} onclick={() => go({ ...view, page: "home", platform: p.id, check: undefined })}>{p.label}</button>{/each}</div>
+      <div class="platform-tabs" role="group" aria-label="Choose a platform">{#each guidance.platforms as p (p.id)}<button type="button" aria-pressed={platform.id === p.id} onclick={() => choose(p.id)}>{p.label}</button>{/each}</div>
       {#if selected}
         <InstallSet {selected} checks={mine} platform={platform.label} />
         <ul class="result-line" aria-label="Check results on {platform.label}">

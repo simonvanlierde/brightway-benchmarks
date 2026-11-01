@@ -9,6 +9,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Compatibility snapshot reports name newly failing jobs, recoveries and continuing failures,
+  with links to both runs ([running](docs/running.md#report-newly-failing-jobs)).
+- `scripts/solver_factorize.py --cudss` times NVIDIA's cuDSS GPU solver on the real ecoinvent matrix: a
+  first factorization and one that reuses its analysis, as a Monte Carlo draw does. `--pardiso` now
+  times PARDISO's reuse too ([method](docs/method.md)).
 - `scripts/calibration_sweep.py` writes seed-by-seed measurement reports for the experimental input-sharing controls. Missing results, worker errors and failed calibration guards return a failure status while preserving the report ([calibration experiments](docs/calibration-sweep.md)).
 - `scripts/solver_factorize.py --cudss-updates` checks cuDSS against CPU solves while changing
   matrix values at fixed sparsity and reports separate phase timings. The existing `--cudss`

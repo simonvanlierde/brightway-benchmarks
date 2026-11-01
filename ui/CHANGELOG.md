@@ -9,9 +9,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Home leads with a tested platform setup, saved package versions and installation files, measured solver alternatives, and both regressions and improvements. Compatibility exposes platform and Python filters, check coverage and current results beside dated last-passing environments ([viewer](README.md#what-it-shows)).
-- Home, Compatibility, Release changes and Benchmark explorer have dedicated navigation and shareable URLs. Existing benchmark links and the compatibility anchor still work; missing guidance leaves histories available ([viewer](README.md#what-it-shows)).
-- Search benchmarks by readable name or original identifier. Filter latest changes by package and direction, with counts scoped to the selected package and shareable filter URLs ([viewer](README.md#what-it-shows)).
+- Home shows a tested setup for your platform, with its installation files, measured solver alternatives and the latest release changes ([viewer](README.md#what-it-shows)).
+- A Compatibility page lists every check by platform and Python version, with the last environment that passed.
+- Each page has its own shareable URL, and old benchmark links and homepage anchors still work.
+- Search benchmarks by name, and filter release changes by package and direction.
 - A JSON Schema for the data: an index (format version 1) and reports in Bencher Metric
   Format v0.
 - `src/lib/contract.ts` loads both from a configurable URL and checks them against the schema
@@ -29,10 +30,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- A flat blue workspace uses square controls, fine rules and aligned measurements. Chart series use cool colours; red and teal mark worse and better results. Home places the solver comparison beside the tested setup, with release changes below ([design](../DESIGN.md)).
-- The viewer separates its searchable catalogue from the evidence workspace, with clearer hierarchy and chart colours distinct from release-change status. Change tables reflow into labelled rows on phones ([viewer](README.md#what-it-shows)).
+- A new flat blue look, with red and teal kept for worse and better results ([design](../DESIGN.md)).
+- Change tables reflow into labelled rows on phones.
 
 ### Fixed
 
-- Opening a change keeps the machine that produced it; multi-machine rows identify that machine. Narrow charts keep their first and last release labels within the tick budget ([viewer](README.md#what-it-shows)).
-- Unknown benchmark links explain how to recover ([viewer](README.md#what-it-shows)).
+- Opening a change keeps the machine that measured it, and narrow charts keep their first and last release labels.
+- A link to an unknown benchmark says how to find it.

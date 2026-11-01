@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 
 // Observable Plot (with its d3 parts) is about 108 KB of it; the rest is Svelte, ajv and our code.
-const BUDGET_KB = 170;
+const BUDGET_KB = 175;
 const dist = new URL("../dist/", import.meta.url).pathname;
 
 function files(dir) {

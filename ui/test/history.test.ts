@@ -233,5 +233,6 @@ describe("page routing", () => {
     expect(pageOf({ params: [], page: "unknown" })).toBe("home");
     expect(pageOf(readView("", "#works-together"))).toBe("compatibility");
     expect(pageOf(readView("?page=changes", "#works-together"))).toBe("changes");
+    expect(pageOf(readView("", "#latest-release"))).toBe("changes");
   });
 });

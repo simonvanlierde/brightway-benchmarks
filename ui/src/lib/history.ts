@@ -36,7 +36,9 @@ export function readView(search: string, hash = ""): View {
     const value = q.get(key);
     if (value) view[key] = value;
   }
+  // The old asv homepage's section anchors.
   if (!search && hash === "#works-together") view.page = "compatibility";
+  if (!search && hash === "#latest-release") view.page = "changes";
   return view;
 }
 

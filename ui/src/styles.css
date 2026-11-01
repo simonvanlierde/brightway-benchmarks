@@ -1421,6 +1421,15 @@ details.data[open] summary {
   .chart svg {
     forced-color-adjust: auto;
   }
+  /* High contrast drops background fills, so a chosen control needs a line of its own. */
+  .direction-filter button.chosen,
+  .platform-tabs button[aria-pressed="true"],
+  .compat-table tr.selected,
+  .rail li a[aria-current="page"],
+  .rail .home[aria-current] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
 }
 
 .compat-table tr.selected .cell-subline {

@@ -9,10 +9,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- The homepage combines a tested setup, measured solver alternatives and recent regressions
-  and improvements. Its Compatibility tab shows the latest checks, coverage and last passing
-  installation files; the full asv history remains available ([viewer](ui/README.md)).
-- The benchmark viewer is easier to navigate and inspect on desktop and phones ([viewer](ui/README.md#what-it-shows), [UI changelog](ui/CHANGELOG.md)).
+- The homepage shows a tested Brightway setup, measured solver alternatives and the latest
+  release changes ([viewer](ui/README.md), [UI changelog](ui/CHANGELOG.md)).
 - `scripts/solver_factorize.py --cudss` times NVIDIA's cuDSS GPU solver on the real ecoinvent matrix: a
   first factorization and one that reuses its analysis, as a Monte Carlo draw does. `--pardiso` now
   times PARDISO's reuse too ([method](docs/method.md)).

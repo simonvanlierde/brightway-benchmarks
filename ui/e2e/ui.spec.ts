@@ -227,6 +227,15 @@ test("clearing a shared package filter stays on release changes", async ({ page 
   await expect(heading).toBeVisible();
 });
 
+test("chosen filters stay visible in high contrast mode", async ({ page }) => {
+  await page.emulateMedia({ forcedColors: "active" });
+  await page.goto("?page=changes&direction=worse");
+  const outline = (name: RegExp) =>
+    page.getByRole("button", { name }).evaluate((b) => getComputedStyle(b).outlineStyle);
+  expect(await outline(/^Worse/)).toBe("solid");
+  expect(await outline(/^Better/)).toBe("none");
+});
+
 test("a link to another page moves keyboard focus to that page", async ({ page }) => {
   await page.goto("./");
   await page.getByRole("link", { name: "Open all release changes" }).focus();

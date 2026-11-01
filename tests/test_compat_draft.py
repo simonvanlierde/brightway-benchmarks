@@ -8,11 +8,16 @@ import sys
 import zipfile
 from pathlib import Path
 
+import pytest
+
 REPO = Path(__file__).resolve().parents[1]
 SCRIPT = REPO / "scripts" / "compat_draft.py"
 
 GH = """#!/bin/sh
 case "$*" in
+*/workflows/compat.yml) echo '{"id": 11}' ;;
+*repos/simonvanlierde/brightway-benchmarks) echo '{"id": 100}' ;;
+*/runs/500) cat "$FAKE/run.json" ;;
 */zip) cat "$FAKE/green.zip" ;;
 */artifacts*) cat "$FAKE/artifacts.jsonl" ;;
 *) exit 1 ;;
@@ -24,7 +29,14 @@ NOW = "brightway25==1.1.0\nbw2calc==3.1.0\nnumpy==2.5.0\nnewdep==1.0\n"
 
 
 def run(
-    tmp_path: Path, *, now: str | None, suites: str | None = None, prev: str | None = PREV, green: bool = False
+    tmp_path: Path,
+    *,
+    now: str | None,
+    suites: str | None = None,
+    prev: str | None = PREV,
+    green: bool = False,
+    source: dict | None = None,
+    head_repository_id: int = 100,
 ) -> str:
     out = tmp_path / "3.12-suites"
     out.mkdir()
@@ -47,7 +59,29 @@ def run(
         with zipfile.ZipFile(buf, "w") as z:
             z.writestr("requirements.txt", PREV)
         (tmp_path / "green.zip").write_bytes(buf.getvalue())
-        a = {"id": 5, "expired": False, "workflow_run": {"head_branch": "main"}}
+        a = {
+            "id": 5,
+            "expired": False,
+            "workflow_run": {
+                "id": 500,
+                "head_branch": "main",
+                "repository_id": 100,
+                "head_repository_id": head_repository_id,
+            },
+        }
+        (tmp_path / "run.json").write_text(
+            json.dumps(
+                {
+                    "workflow_id": 11,
+                    "path": ".github/workflows/compat.yml",
+                    "event": "workflow_dispatch",
+                    "head_branch": "main",
+                    "repository": {"id": 100},
+                    "head_repository": {"id": 100},
+                }
+                | (source or {})
+            )
+        )
         (tmp_path / "artifacts.jsonl").write_text(json.dumps(a) + "\n")
         env |= {"FAKE": str(tmp_path), "GREEN": "compat-green-suites-3.12-ubuntu-latest"}
     subprocess.run([sys.executable, SCRIPT, out, prev_path], env=env, check=True)
@@ -75,3 +109,17 @@ def test_resolve_failure_and_no_green_set(tmp_path: Path) -> None:
 def test_fetches_the_last_green_set(tmp_path: Path) -> None:
     text = run(tmp_path, now=NOW, green=True)
     assert "- bw2calc: 3.0.0 -> 3.1.0" in text
+
+
+@pytest.mark.parametrize(
+    ("source", "head_repository_id"),
+    [
+        ({"event": "pull_request"}, 100),
+        ({"workflow_id": 22}, 100),
+        ({}, 200),
+    ],
+)
+def test_draft_ignores_untrusted_main_artifacts(tmp_path: Path, source: dict, head_repository_id: int) -> None:
+    text = run(tmp_path, now=NOW, green=True, source=source, head_repository_id=head_repository_id)
+    assert "No green set to compare with" in text
+    assert not (tmp_path / "prev.txt").exists()

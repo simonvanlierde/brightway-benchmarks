@@ -1,6 +1,7 @@
 import hashlib
 import os
 import types
+from itertools import pairwise
 from pathlib import Path
 
 import numpy as np
@@ -110,11 +111,28 @@ def test_same_region_by_length_follows_its_curve():
         system("smoke", same_region_by_length=(0.5, 0.5))
 
 
-def test_copy_lists_and_bundles():
-    s_copies = system("smoke", copies=0.5, copy_keep=0.8, seed=0)
-    assert s_copies.technosphere().nnz > 0
-    s_bundles = system("smoke", bundles=0.5, seed=0)
-    assert s_bundles.technosphere().nnz > 0
+@pytest.mark.parametrize(("control", "axis"), [("copies", 0), ("bundles", 1)])
+def test_copy_lists_and_bundles(control: str, axis: int):
+    def adjacent_overlap(s: synth.System, axis: int) -> float:
+        pattern = s.technosphere().astype(bool)
+        pattern.setdiag(0)
+        pattern.eliminate_zeros()
+        matrix = pattern.tocsc() if axis == 0 else pattern.tocsr()
+        lists = [set(matrix.indices[matrix.indptr[j] : matrix.indptr[j + 1]]) for j in range(matrix.shape[0])]
+        overlaps = [len(a & b) / len(a | b) for a, b in pairwise(lists) if a and b]
+        return float(np.mean(overlaps))
+
+    baseline = system("smoke", seed=0)
+    changed = system(
+        "smoke", seed=0, copies=0.8 if control == "copies" else 0.0, bundles=0.8 if control == "bundles" else 0.0
+    )
+    # Copies share suppliers down columns; bundles share consumers across rows.
+    overlap = adjacent_overlap(changed, axis)
+    assert overlap > adjacent_overlap(baseline, axis) + 0.2
+    assert overlap > adjacent_overlap(changed, 1 - axis) + 0.2
+    np.testing.assert_array_equal(changed.technosphere().diagonal(), np.ones(changed.profile.products))
+    cells = changed.tech_rows * changed.profile.products + changed.tech_cols
+    assert np.unique(cells).size == cells.size
 
 
 def test_sector_markets_share_one_pool_across_regions():

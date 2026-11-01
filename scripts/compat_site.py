@@ -44,6 +44,38 @@ def gh(*args: str) -> bytes:
     return subprocess.run(["gh", "api", *args], check=True, capture_output=True).stdout  # noqa: S603, S607 - gh on PATH, our own API paths
 
 
+class GreenArtifacts:
+    """Accept only sets produced by this repository's main-branch compat workflow."""
+
+    def __init__(self) -> None:
+        self.repository = json.loads(gh(f"repos/{REPO}"))["id"]
+        self.workflow = json.loads(gh(f"repos/{REPO}/actions/workflows/compat.yml"))["id"]
+        self.runs: dict[int, bool] = {}
+
+    def __call__(self, artifact: dict) -> bool:
+        """Check artifact origin and cache the producing run's provenance."""
+        run = artifact["workflow_run"]
+        if (
+            artifact["expired"]
+            or run.get("head_branch") != "main"
+            or run.get("repository_id") != self.repository
+            or run.get("head_repository_id") != self.repository
+        ):
+            return False
+        run_id = run["id"]
+        if run_id not in self.runs:
+            source = json.loads(gh(f"repos/{REPO}/actions/runs/{run_id}"))
+            self.runs[run_id] = (
+                source.get("workflow_id") == self.workflow
+                and source.get("path") == ".github/workflows/compat.yml"
+                and source.get("event") in {"schedule", "workflow_dispatch"}
+                and source.get("head_branch") == "main"
+                and source.get("repository", {}).get("id") == self.repository
+                and (source.get("head_repository") or {}).get("id") == self.repository
+            )
+        return self.runs[run_id]
+
+
 def versions(requirements: str) -> dict[str, str]:
     """The SHOWN packages' versions in a requirements.txt."""
     pairs = (line.split("==", 1) for line in requirements.splitlines() if "==" in line)
@@ -62,7 +94,7 @@ def own(site: Path, path: Path) -> Path:
 def newest(cell: Path) -> Path | None:
     """CELL's newest dated set, if it has one: 2026-11-01.2 is the day's second set."""
     dated = [d for d in cell.glob("????-??-??*") if d.is_dir()] if cell.is_dir() else []
-    return max(dated, key=lambda d: (d.name[:10], int(d.name[11:] or 1)), default=None)
+    return max(dated, key=lambda d: (d.name[:10], int(d.name[11:] or 1))) if dated else None
 
 
 def keep(site: Path, cell: Path, files: dict[str, bytes], date: str, run: str) -> Path:
@@ -126,9 +158,12 @@ def main(site: Path) -> None:
     # Newest first, so the first artifact of each name is its newest.
     lines = gh("--paginate", f"repos/{REPO}/actions/artifacts?per_page=100", "--jq", ".artifacts[] | @json")
     green: dict[str, dict] = {}
+    trusted = GreenArtifacts()
     for a in map(json.loads, lines.splitlines()):
-        if a["name"].startswith(GREEN) and a["workflow_run"]["head_branch"] == "main" and not a["expired"]:
-            green.setdefault(a["name"].removeprefix(GREEN), a)
+        if a["name"].startswith(GREEN):
+            cell = a["name"].removeprefix(GREEN)
+            if cell not in green and trusted(a):
+                green[cell] = a
     out = own(site, site / "compat")
     cells = []
     for job in jobs:

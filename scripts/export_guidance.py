@@ -12,6 +12,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import urlencode, urljoin, urlsplit
 
 from compat_site import FILES
+from output_path import output_path
 
 PUBLIC_BASE = "https://simonvanlierde.com/brightway-benchmarks/"
 PLATFORMS = {
@@ -190,12 +191,10 @@ def export(status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE) ->
     """Write guidance.json using the supplied snapshot and already exported benchmark reports."""
     public_base = web_url(public_base).rstrip("/") + "/"
     target = data_dir / "guidance.json"
-    if target.is_symlink():
-        msg = "Refusing to replace a guidance.json symlink"
-        raise ValueError(msg)
+    output_path(target)
     if not status_path.is_file():
         print(f"{status_path} not found (run `just site` first): no setup guidance", file=sys.stderr)
-        target.unlink(missing_ok=True)
+        output_path(target).unlink(missing_ok=True)
         return None
     status = json.loads(status_path.read_text())
     out = {
@@ -243,7 +242,7 @@ def export(status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE) ->
     if comparison := solver_comparison(data_dir):
         out["solverComparison"] = comparison
     data_dir.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(out, indent=2) + "\n")
+    output_path(target).write_text(json.dumps(out, indent=2) + "\n")
     return out
 
 

@@ -612,3 +612,44 @@ def test_a_commit_hash_that_is_not_a_hash_stops_the_export(
     files = {"m/11111111-a": result("../../escape", "a" + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))}
     with pytest.raises(SystemExit, match="not a full hash"):
         run(export_ui, layout(tmp_path, files), monkeypatch)
+
+
+@pytest.mark.parametrize("link", ["index", "reports", "root", "ancestor"])
+def test_output_symlinks_are_rejected_before_reports_are_removed(export_ui: ModuleType, tmp_path: Path, link: str):
+    results = tmp_path / "results"
+    results.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    victim = outside / "sentinel"
+    victim.write_text("keep")
+    out = tmp_path / "out"
+    if link == "root":
+        out.symlink_to(outside, target_is_directory=True)
+    elif link == "ancestor":
+        out.symlink_to(outside, target_is_directory=True)
+        out = out / "nested"
+        out.mkdir()
+    else:
+        out.mkdir()
+    if link == "index":
+        (out / "index.json").symlink_to(victim)
+    if link == "reports":
+        (out / "reports").symlink_to(outside, target_is_directory=True)
+    else:
+        (out / "reports").mkdir()
+        (out / "reports" / "old.json").write_text("old report")
+    with pytest.raises(ValueError, match="symlink"):
+        export_ui.export(results, out)
+    assert victim.read_text() == "keep"
+    if link != "reports":
+        assert (out / "reports" / "old.json").read_text() == "old report"
+
+
+def test_json_write_rejects_a_symlink_in_a_report_path(export_ui: ModuleType, tmp_path: Path):
+    victim = tmp_path / "victim.json"
+    victim.write_text("keep")
+    target = tmp_path / "report.json"
+    target.symlink_to(victim)
+    with pytest.raises(ValueError, match="symlink"):
+        export_ui.write(target, {"latency": {"value": 1}})
+    assert victim.read_text() == "keep"

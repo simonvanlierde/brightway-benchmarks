@@ -59,6 +59,7 @@ def usage() -> dict:
 
 def subset(release: Path, size: str, root: Path) -> Path:
     """A folder laid out like a release (datasets/ beside MasterData/) holding SIZE dataset files."""
+    release = release.resolve()
     if size == "all":
         return release
     files = sorted((release / "datasets").glob("*.spold"))

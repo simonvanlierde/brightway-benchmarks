@@ -69,7 +69,6 @@ jobs:
       - run: |
           mkdir -p site/ui
           cp -r ui/dist/. site/ui/
-          cp site/index.html site/asv.html
           cp ui/dist/index.html site/index.html
           uvx --from rust-just==1.58.0 just ui-data site/ui/data
 

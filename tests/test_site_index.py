@@ -30,8 +30,10 @@ def test_links_each_subject_back_once(tmp_path: Path):
     (tmp_path / "bw2calc" / "index.html").write_text(NAV)
     for _ in range(2):  # a rebuild of the index must not add a second tab
         subprocess.run([sys.executable, SCRIPT, tmp_path], check=True, capture_output=True)
-    back = '<li><a href="../index.html">All benchmarks</a></li>'
+    back = '<li><a href="../asv.html">All benchmarks</a></li>'
     assert (tmp_path / "bw2calc" / "index.html").read_text() == back + NAV
+    # The back link's target survives the viewer taking over index.html.
+    assert (tmp_path / "asv.html").read_text() == (tmp_path / "index.html").read_text()
 
 
 def test_refuses_a_subject_page_without_asvs_menu(tmp_path: Path):

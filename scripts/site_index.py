@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Write site/index.html linking each subject's asv site, and link each asv site back to it.
 
+The same page also goes to site/asv.html, which the site workflow keeps when the viewer
+takes over index.html; the back links point there.
+
 With SITE_DIR/compat/status.json (from compat_site.py) the page also gets the "Works together
 today" table: each compat job's state in the latest run and its last green set.
 
@@ -43,7 +46,7 @@ def own(path: Path) -> Path:
 subjects = sorted(p.name for p in site.iterdir() if (p / "index.html").exists())
 # asv's navbar has no link out of a subject's site, so add one as its first tab.
 NAV = '<li id="nav-li-" class="active">'
-BACK = '<li><a href="../index.html">All benchmarks</a></li>'
+BACK = '<li><a href="../asv.html">All benchmarks</a></li>'
 for s in subjects:
     page = own(site / s / "index.html")
     text = page.read_text()
@@ -127,7 +130,7 @@ dependencies, so part of the change may not be the package's own.</p>
 """
 
 
-own(site / "index.html").write_text(f"""<!doctype html>
+front = f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -194,5 +197,7 @@ along a line, so compare points within a line, not between machines
 Built {datetime.now(UTC):%Y-%m-%d}.</footer>
 </body>
 </html>
-""")
+"""
+for name in ("index.html", "asv.html"):
+    own(site / name).write_text(front)
 print(f"{site / 'index.html'}: {len(subjects)} subjects")

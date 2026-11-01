@@ -25,19 +25,41 @@ const colors = {
   darkBetter: "#74cfc3",
 };
 
-// 1. Scalable SVG Favicon
+// 1. Scalable SVG Favicon: Fuses benchmark columns with the Brightway Delaunay leaf
 const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <title>Brightway Benchmarks</title>
   <rect width="32" height="32" fill="${colors.darkPage}" />
   <rect x="0.5" y="0.5" width="31" height="31" fill="none" stroke="${colors.darkGrid}" stroke-width="1" />
-  <!-- Baseline rule -->
-  <line x1="5" y1="25" x2="27" y2="25" stroke="${colors.darkLine}" stroke-width="1.5" />
-  <!-- Benchmark columns: SuperLU (baseline), PyPardiso (intermediate), UMFPACK (optimal) -->
-  <rect x="6" y="18" width="5" height="7" fill="${colors.darkAxis}" />
-  <rect x="13.5" y="12" width="5" height="13" fill="${colors.darkAccent}" />
-  <rect x="21" y="6" width="5" height="19" fill="${colors.darkBetter}" />
-  <!-- Benchmark dot on top of the fastest column -->
-  <rect x="22.5" y="7.5" width="2" height="2" fill="${colors.darkInk}" />
+  <!-- Benchmark baseline -->
+  <line x1="4" y1="26" x2="28" y2="26" stroke="${colors.darkLine}" stroke-width="1.2" />
+  <!-- Benchmark Bar 1: SuperLU baseline (grey-blue) -->
+  <rect x="5.5" y="18" width="4.5" height="8" fill="${colors.darkAxis}" />
+  <!-- Benchmark Bar 2: PyPardiso (series blue) -->
+  <rect x="12" y="12" width="4.5" height="14" fill="${colors.darkAccent}" />
+  <!-- Position 3: Brightway Triangulated Leaf (optimal) -->
+  <!-- Facet fills with tonal variation -->
+  <polygon points="18.5,25.5 15.5,18 20,18" fill="${colors.darkBetter}" fill-opacity="0.35" />
+  <polygon points="18.5,25.5 20,18 25,22" fill="${colors.darkBetter}" fill-opacity="0.25" />
+  <polygon points="20,18 25,22 27.5,16" fill="${colors.darkBetter}" fill-opacity="0.45" />
+  <polygon points="15.5,18 17.5,11 22,12" fill="${colors.darkBetter}" fill-opacity="0.5" />
+  <polygon points="15.5,18 20,18 22,12" fill="${colors.darkBetter}" fill-opacity="0.3" />
+  <polygon points="20,18 22,12 27.5,16" fill="${colors.darkBetter}" fill-opacity="0.4" />
+  <polygon points="22,12 27.5,16 27,10" fill="${colors.darkBetter}" fill-opacity="0.6" />
+  <polygon points="17.5,11 25.5,5 22,12" fill="${colors.darkBetter}" fill-opacity="0.75" />
+  <polygon points="22,12 25.5,5 27,10" fill="${colors.darkBetter}" fill-opacity="0.85" />
+  <!-- Leaf contour and triangulation wireframe (Brightway signature) -->
+  <g stroke="${colors.darkInk}" stroke-width="0.75" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M 18.5 25.5 C 14.5 18 17 9 25.5 5 C 29 11 29 21 18.5 25.5 Z" stroke-width="1.1" stroke="${colors.darkInk}" />
+    <line x1="18.5" y1="25.5" x2="25.5" y2="5" stroke-width="1.2" stroke="${colors.darkInk}" />
+    <line x1="15.5" y1="18" x2="20" y2="18" />
+    <line x1="20" y1="18" x2="27.5" y2="16" />
+    <line x1="17.5" y1="11" x2="22" y2="12" />
+    <line x1="22" y1="12" x2="27" y2="10" />
+    <line x1="18.5" y1="25.5" x2="25" y2="22" />
+    <line x1="25" y1="22" x2="27.5" y2="16" />
+  </g>
+  <!-- Benchmark measurement target node at apex -->
+  <rect x="24.5" y="4" width="2" height="2" fill="${colors.darkInk}" />
 </svg>`;
 
 writeFileSync(join(publicDir, "favicon.svg"), `${faviconSvg}\n`, "utf8");

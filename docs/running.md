@@ -10,9 +10,9 @@ You need Docker and [just](https://just.systems); `just results-commit` also nee
 just smoke                       # each package's oldest and latest release, small database
 just bench bw2calc               # every bw2calc release listed in asv/bw2calc.hashes
 just bench bw2data "4.7^!" -e    # one release; extra arguments go to asv
-just site                        # build the history pages in site/
+just site                        # the compat archive and the old-link redirects in site/
 just release-changes bw2calc     # what moved in bw2calc's latest release, as a Markdown table
-just ui-data site/data           # results/ as the UI's data; guidance.json too after `just site`
+just ui-data site/data           # results/ as the viewer's data; guidance.json too after `just site`
 just ui-serve                    # build the UI and serve it on 127.0.0.1:4400, to look at a change
 just results-commit              # keep results/ on the local results branch, for publishing
 just solver-lci klu ecoinvent    # bw2calc 3.1.0's own lci() with one solver, KLU here
@@ -88,8 +88,11 @@ fresh environment and runs every case once at the `smoke` size, untimed.
 bw_timex pulls in PyPardiso on Linux x86_64, so there bw2calc solves with PyPardiso.
 
 Each run writes to `.asv/compat/PYTHON-COLUMN/`: `requirements.txt`, and `pylock.toml` with
-each wheel's hash for that job's operating system. `conda-forge` also writes `pixi.toml` and
-`pixi.lock`. `suites` writes `suites.txt` with each package's result and `suites/PACKAGE.log`.
+each wheel's hash for that job's operating system. `pylock.toml` says `requires-python >=3.12`,
+so an older patch release such as Ubuntu 24.04's 3.12.3 can use it. `conda-forge` also writes
+`environment.yml` (every conda package of the user environment at its locked version; pytest
+lives in a separate pixi `test` environment), `pixi.toml` and `pixi.lock`. `suites` writes
+`suites.txt` with each package's result and `suites/PACKAGE.log`.
 
 ### The nightly runs
 
@@ -113,25 +116,43 @@ failures as first observations. Cancelled, skipped and absent jobs are listed se
 they do not count as failures or recoveries. An invalid snapshot fails the command, so
 an automation should replace its saved baseline only after the report succeeds.
 
+### The compat archive
+
+The `archive` job of the `compat` workflow runs on `main` after the matrix. It runs
+`scripts/compat_site.py`, which takes each job's newest passing set and writes it to the
+`compat` branch. A set that differs from the job's previous one goes to
+`compat/COLUMN-PYTHON-OS/YYYY-MM-DD/`, with `set.json` for its date and run. The undated
+`compat/COLUMN-PYTHON-OS/` folder follows the newest set; its `set.json` keeps the latest
+passing date and run even when that set has not changed. A dated folder never changes, and it
+stays after GitHub deletes the run's artifacts at 90 days. `compat/status.json` summarizes how
+each job ended. `just site` copies the branch into `site/compat`; the site workflow publishes it.
+
 ### Install a set that works
 
-The site's [compatibility view](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility)
+The site's [Setup page](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility)
 shows the latest result and last passing set for each job. Check the date and coverage before
 choosing a set. Smoke calculations and full package test suites are separate checks.
 
-In a fresh Python environment, download that set's `requirements.txt` and use it as constraints:
+The page gives one command per tool. URL is a dated folder, so the command installs the same
+set each time; the page also copies the command for the undated folder, which follows the newest
+passing set:
 
 ```sh
-uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt
+uv add brightway25 bw_graph_tools bw_timex -c URL/requirements.txt
+pip install brightway25 bw_graph_tools bw_timex -c URL/requirements.txt
+conda env update -n brightway-tested -f URL/environment.yml --prune
+curl -fL -O URL/pixi.toml -O URL/pixi.lock && pixi install --frozen
 ```
 
-These are the runtime libraries the PyPI compatibility job checks together. Constraints pin
-versions but do not install packages themselves. The full requirements file also includes the
-test harness; `uv pip install -r requirements.txt` installs that complete recorded environment.
-
-For the `conda-forge` row, download `pixi.toml` and `pixi.lock` into one folder and run
-`pixi install --frozen` there. A set is kept for 90 days, as long as GitHub keeps the
-workflow's artifacts.
+The first two use the runtime libraries the PyPI compatibility job checks together.
+Constraints pin versions but do not install packages themselves. `uv add` adds them to the
+project in the current folder, so it needs a `pyproject.toml` whose `requires-python` starts at
+the set's Python version or later: uv resolves for every Python the project allows. The full
+requirements file also includes the test harness; `uv pip install -r requirements.txt` installs
+that complete recorded environment. The conda command creates the `brightway-tested`
+environment if it is missing and is safe to rerun; `--prune` removes anything else in it, so
+keep your own packages in another environment. The conda and pixi commands use the
+`conda-forge` row.
 
 ## Environment variables
 

@@ -37,7 +37,7 @@ def artifact(id_: int, name: str, created: str, branch: str = "main", *, expired
 
 
 def run_site(tmp_path: Path, jobs: list[tuple[str, str]], artifacts: list[dict], *, ok: bool = True) -> dict:
-    fake = tmp_path / "fake"
+    fake = tmp_path / f"fake{len(list(tmp_path.glob('fake*')))}"  # a second call keeps the first's archive
     fake.mkdir()
     (fake / "gh").write_text(GH)
     (fake / "gh").chmod(0o755)
@@ -48,12 +48,13 @@ def run_site(tmp_path: Path, jobs: list[tuple[str, str]], artifacts: list[dict],
     for a in artifacts:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as z:
-            z.writestr("requirements.txt", f"brightway25==1.1.{a['id']}\nbw2calc==3.1.0\nnumpy==2.5.4\npytest==9.0.1\n")
+            version = a.get("set", a["id"])  # a test may give two artifacts the same set
+            z.writestr("requirements.txt", f"brightway25==1.1.{version}\nbw2calc==3.1.0\nnumpy==2.5.4\npytest==9.0.1\n")
             if "conda-forge" in a["name"]:
                 z.writestr("pixi.toml", "[workspace]\n")
                 z.writestr("pixi.lock", f"# set {a['id']}\n")
             else:
-                z.writestr("pylock.toml", f"# set {a['id']}\n")
+                z.writestr("pylock.toml", f"# set {version}\n")
         (fake / f"{a['id']}.zip").write_bytes(buf.getvalue())
     site = tmp_path / "site"
     out = subprocess.run(
@@ -101,7 +102,8 @@ def test_keeps_each_jobs_newest_green_set_from_main(tmp_path: Path):
         "green": {
             "date": "2026-10-27",
             "run": "https://github.com/o/r/actions/runs/500",
-            "dir": "compat/latest-3.12-ubuntu-latest",
+            "dir": "compat/latest-3.12-ubuntu-latest/2026-10-27",
+            "latest": "compat/latest-3.12-ubuntu-latest",
             "files": ["requirements.txt", "pylock.toml"],
             "versions": {"brightway25": "1.1.5", "bw2calc": "3.1.0", "numpy": "2.5.4"},
         },
@@ -112,6 +114,53 @@ def test_keeps_each_jobs_newest_green_set_from_main(tmp_path: Path):
     cell = tmp_path / "site" / "compat" / "latest-3.12-ubuntu-latest"
     assert (cell / "pylock.toml").read_text() == "# set 5\n"
     assert "pytest==9.0.1" in (cell / "requirements.txt").read_text()
+
+
+def test_dates_a_set_once_and_keeps_it_after_its_artifact_expires(tmp_path: Path):
+    jobs = [("latest · Python 3.12 on ubuntu-latest", "success")]
+    cell = tmp_path / "site" / "compat" / "latest-3.12-ubuntu-latest"
+    run_site(tmp_path, jobs, [artifact(4, "compat-green-latest-3.12-ubuntu-latest", "2026-10-26T04:00:00Z")])
+    # The next day's set is the same, so the command that names the 26th stays the newest.
+    same = artifact(5, "compat-green-latest-3.12-ubuntu-latest", "2026-10-27T04:00:00Z") | {"set": 4}
+    green = run_site(tmp_path, jobs, [same])["cells"][0]["green"]
+    assert (green["date"], green["dir"]) == ("2026-10-27", "compat/latest-3.12-ubuntu-latest/2026-10-26")
+    # A changed set gets its own folder; the undated one follows it, the 26th stays as it was.
+    changed = artifact(6, "compat-green-latest-3.12-ubuntu-latest", "2026-10-28T04:00:00Z")
+    green = run_site(tmp_path, jobs, [changed])["cells"][0]["green"]
+    assert green["dir"] == "compat/latest-3.12-ubuntu-latest/2026-10-28"
+    assert (cell / "pylock.toml").read_text() == "# set 6\n"
+    assert (cell / "2026-10-26" / "pylock.toml").read_text() == "# set 4\n"
+    # Red past the artifacts' 90 days: the archive still names the last green set.
+    status = run_site(tmp_path, [("latest · Python 3.12 on ubuntu-latest", "failure")], [])
+    green = status["cells"][0]["green"]
+    assert (green["date"], green["run"]) == ("2026-10-28", "https://github.com/o/r/actions/runs/600")
+    assert green["versions"]["brightway25"] == "1.1.6"
+
+
+def test_a_second_set_on_the_same_day_leaves_the_first_one_alone(tmp_path: Path):
+    jobs = [("latest · Python 3.12 on ubuntu-latest", "success")]
+    cell = tmp_path / "site" / "compat" / "latest-3.12-ubuntu-latest"
+    run_site(tmp_path, jobs, [artifact(4, "compat-green-latest-3.12-ubuntu-latest", "2026-10-26T04:00:00Z")])
+    # A rerun at noon finds a new release: the morning's pinned command must still install set 4.
+    noon = artifact(5, "compat-green-latest-3.12-ubuntu-latest", "2026-10-26T12:00:00Z")
+    green = run_site(tmp_path, jobs, [noon])["cells"][0]["green"]
+    assert green["dir"] == "compat/latest-3.12-ubuntu-latest/2026-10-26.2"
+    assert (cell / "2026-10-26" / "pylock.toml").read_text() == "# set 4\n"
+    assert (cell / "pylock.toml").read_text() == "# set 5\n"
+    # The same set again the next day keeps the newest folder and names the newest passing run.
+    again = artifact(6, "compat-green-latest-3.12-ubuntu-latest", "2026-10-27T04:00:00Z") | {"set": 5}
+    green = run_site(tmp_path, jobs, [again])["cells"][0]["green"]
+    assert green["dir"] == "compat/latest-3.12-ubuntu-latest/2026-10-26.2"
+    assert green["run"] == "https://github.com/o/r/actions/runs/600"
+
+
+def test_expired_artifact_keeps_the_latest_pass_of_an_unchanged_set(tmp_path: Path):
+    jobs = [("latest · Python 3.12 on ubuntu-latest", "success")]
+    run_site(tmp_path, jobs, [artifact(4, "compat-green-latest-3.12-ubuntu-latest", "2026-10-26T04:00:00Z")])
+    same = artifact(5, "compat-green-latest-3.12-ubuntu-latest", "2026-10-27T04:00:00Z") | {"set": 4}
+    before = run_site(tmp_path, jobs, [same])["cells"][0]["green"]
+    after = run_site(tmp_path, [(jobs[0][0], "failure")], [])["cells"][0]["green"]
+    assert after == before
 
 
 def test_keeps_the_conda_forge_set_with_its_pixi_lock(tmp_path: Path):
@@ -138,56 +187,6 @@ def test_compat_workflow_names_jobs_and_green_sets_as_the_script_reads_them():
     assert "name: compat-green-${{ matrix.column }}-${{ matrix.python }}-${{ matrix.os }}" in workflow
     green = workflow.split("name: compat-green-")[0].rsplit("- uses:", 1)[1]
     assert "if: success()" in green
-
-
-def test_index_shows_the_table(tmp_path: Path):
-    status = {
-        "date": "2026-10-27",
-        "run": "https://example.test/runs/7",
-        "cells": [
-            {
-                "column": "latest",
-                "python": "3.12",
-                "os": "ubuntu-latest",
-                "today": "success",
-                "green": {
-                    "date": "2026-10-27",
-                    "run": "https://example.test/runs/7",
-                    "dir": "compat/latest-3.12-ubuntu-latest",
-                    "files": ["requirements.txt", "pylock.toml"],
-                    "versions": {"brightway25": "1.1.1", "numpy": "2.5.4"},
-                },
-            },
-            {
-                "column": "conda-forge",
-                "python": "3.12",
-                "os": "ubuntu-latest",
-                "today": "success",
-                "green": {
-                    "date": "2026-10-27",
-                    "run": "https://example.test/runs/7",
-                    "dir": "compat/conda-forge-3.12-ubuntu-latest",
-                    "files": ["requirements.txt", "pixi.toml", "pixi.lock"],
-                    "versions": {"bw2calc": "3.1.0", "numpy": "2.5.4"},
-                },
-            },
-            {"column": "floors", "python": "3.12", "os": "ubuntu-latest", "today": "failure", "green": None},
-        ],
-    }
-    (tmp_path / "compat").mkdir()
-    (tmp_path / "compat" / "status.json").write_text(json.dumps(status))
-    subprocess.run([sys.executable, REPO / "scripts" / "site_index.py", tmp_path], check=True, capture_output=True)
-    page = (tmp_path / "index.html").read_text()
-    assert "Works together today" in page
-    assert (
-        '<td class="ok">green</td><td><a href="https://example.test/runs/7">2026-10-27</a></td><td>1.1.1</td>' in page
-    )
-    assert '<a href="compat/latest-3.12-ubuntu-latest/pylock.toml">pylock.toml</a>' in page
-    assert '<td class="bad">failure</td><td>none kept</td>' in page
-    # A package conda-forge lacks reads so in its row, and the row links the pixi files.
-    assert "<td>not on conda-forge</td><td>3.1.0</td><td>not on conda-forge</td>" in page
-    assert '<a href="compat/conda-forge-3.12-ubuntu-latest/pixi.lock">pixi.lock</a>' in page
-    assert "conda-forge-3.12-ubuntu-latest/pylock.toml" not in page
 
 
 def test_refuses_to_write_through_a_symlink_the_box_planted(tmp_path: Path):

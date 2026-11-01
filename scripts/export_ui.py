@@ -42,7 +42,7 @@ PROJECT = {
     "url": REPO,
     "links": [
         {"name": "Method", "url": f"{REPO}/blob/main/docs/method.md"},
-        {"name": "Full benchmark history", "url": "https://simonvanlierde.com/brightway-benchmarks/asv.html"},
+        {"name": "Cite", "url": "https://doi.org/10.5281/zenodo.23727602"},
     ],
 }
 MEASURES = {  # asv type -> (measure id, scale to the unit)
@@ -63,6 +63,7 @@ MEASURE_INFO = [  # asv gives a time's median and a peak memory's highest reside
 REPORT_FORMAT = "bmf/v0"
 CHANGE_POINTS = Path(__file__).with_name("change_points.py")
 DESCRIPTIONS = Path(__file__).resolve().parents[1] / "benchmarks" / "descriptions.toml"
+FINDINGS = DESCRIPTIONS.with_name("findings.toml")
 
 
 def slug(name: str) -> str:
@@ -232,9 +233,9 @@ def label(value: str) -> str:
 
 
 def describe(benchmarks: list[dict], about: dict) -> None:
-    """Add ABOUT's text (descriptions.toml) to each benchmark, its parameters and their values.
+    """Add ABOUT's text and links (descriptions.toml) to each benchmark, its parameters and values.
 
-    Value notes line up with the parameter's values, an empty string where there is none.
+    Value notes and links line up with the parameter's values, an empty string where there is none.
     """
     for bench in benchmarks:
         if text := about.get("benchmarks", {}).get(bench["name"]):
@@ -248,6 +249,71 @@ def describe(benchmarks: list[dict], about: dict) -> None:
             notes = [known.get(shown, "") for shown in axis.get("labels", axis["values"])]
             if any(notes):
                 axis["notes"] = notes
+            known = about.get("links", {}).get("values", {}).get(axis["name"], {})
+            links = [known.get(shown, "") for shown in axis.get("labels", axis["values"])]
+            if any(links):
+                axis["links"] = links
+
+
+def link(groups: list[dict], catalog: "Catalog", sources: dict[str, str], links: dict) -> None:
+    """Add LINKS' pages (descriptions.toml) to groups and environments, and each benchmark's source.
+
+    An environment links the solver its label starts with: "UMFPACK, MKL" links UMFPACK.
+    """
+    for g in groups:
+        if url := links.get("groups", {}).get(g["name"]):
+            g["url"] = url
+    for env in catalog.envs.values():
+        if url := links.get("solvers", {}).get(re.split(r",| on | · ", env.get("label", ""))[0]):
+            env["url"] = url
+    root = Path(__file__).resolve().parents[1]
+    for bench in catalog.benchmarks.values():
+        folder = sources.get(bench["group"])
+        source = f"{folder}/{bench['name'].split('.')[0]}.py"
+        if folder and (root / source).is_file():
+            bench["url"] = f"{REPO}/blob/main/{source}"
+
+
+def findings(index: dict) -> list[dict]:
+    """FINDINGS' entries, each naming its benchmark's id and a label per axis.
+
+    A finding about a group this export lacks is left out; one that names a benchmark, parameter or
+    value its group lacks fails the export, as its link would open the wrong history.
+    """
+    path = FINDINGS
+    groups = {g["name"]: g["id"] for g in index["groups"]}
+    out = []
+    for f in tomllib.loads(path.read_text())["findings"]:
+        if f["group"] not in groups:
+            continue
+        bench = next(
+            (b for b in index["benchmarks"] if b["group"] == groups.get(f["group"]) and b["name"] == f["benchmark"]),
+            None,
+        )
+        if bench is None:
+            msg = f"{path.name}: no benchmark {f['benchmark']} in {f['group']}"
+            raise SystemExit(msg)
+        names = [axis["name"] for axis in bench["params"]]
+        if unknown := set(f["params"]) - set(names):
+            msg = f"{path.name}: {f['benchmark']} has no parameter {', '.join(sorted(unknown))}"
+            raise SystemExit(msg)
+        params = []
+        for axis in bench["params"]:
+            value = f["params"].get(axis["name"], "")
+            if value and value not in axis.get("labels", axis["values"]):
+                msg = f"{path.name}: {f['benchmark']}'s {axis['name']} has no value {value}"
+                raise SystemExit(msg)
+            params.append(value)
+        out.append(
+            {
+                "title": f["title"],
+                "text": f["text"],
+                "benchmark": bench["id"],
+                "params": params,
+                "url": f"{REPO}/blob/main/docs/findings.md#{f['doc']}",
+            }
+        )
+    return out
 
 
 # (case, machine, measure) -> one (commit, value, spread or None) per commit, oldest first
@@ -330,6 +396,7 @@ def export(results: Path, out: Path) -> dict:
     # A report from an earlier export that this one does not list would linger unseen.
     shutil.rmtree(out / "reports", ignore_errors=True)
     groups, commits, reports = [], [], []
+    sources: dict[str, str] = {}  # group -> its benchmarks' folder in this repository
     series: Series = {}
     machines: dict[str, dict] = {}
     catalog = Catalog()
@@ -339,6 +406,7 @@ def export(results: Path, out: Path) -> dict:
         conf_file = Path(f"asv/{subject}.json")
         conf = json.loads(conf_file.read_text()) if conf_file.exists() else {}
         groups.append({"id": group, "name": subject} | ({"url": conf["project_url"]} if "project_url" in conf else {}))
+        sources[group] = conf.get("benchmark_dir", "").removeprefix("../")
         info = {k: v for k, v in json.loads(meta.read_text()).items() if isinstance(v, dict)}  # skips "version"
         dates: dict[str, int] = {}
         found: list[tuple[str, str, dict]] = []  # (machine id, commit, report)
@@ -368,7 +436,9 @@ def export(results: Path, out: Path) -> dict:
                 for measure, m in metric.items():
                     series.setdefault((case, machine_id, measure), []).append((commit, m["value"], spread(m)))
     released = {c["id"] for c in commits if "release" in c}
-    describe(list(catalog.benchmarks.values()), tomllib.loads(DESCRIPTIONS.read_text()))
+    about = tomllib.loads(DESCRIPTIONS.read_text())
+    describe(list(catalog.benchmarks.values()), about)
+    link(groups, catalog, sources, about.get("links", {}))
     index = {
         "format_version": 1,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
@@ -383,6 +453,7 @@ def export(results: Path, out: Path) -> dict:
         "reports": reports,
         "changes": ordered(release_changes(series, released) + change_points(series), series),
     }
+    index["findings"] = findings(index)
     write(out / "index.json", index)
     return index
 

@@ -9,14 +9,18 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Home shows a tested setup for your platform, with its installation files, measured solver alternatives and the latest release changes ([viewer](README.md#what-it-shows)).
-- A Compatibility page lists every check by platform and Python version, with the last environment that passed.
+- Two pages, Setup and Benchmarks, with a benchmark search in the masthead ([viewer](README.md#what-it-shows)).
+- Setup gives an install command for uv, pip, conda or pixi, pinned to a dated set that does not change, with a link that copies the newest one.
+- Setup lists every check by platform and Python version in a grid; select one to install its set.
+- Setup and Benchmarks show curated findings, each linked to the chart behind it.
 - Each page has its own shareable URL, and old benchmark links and homepage anchors still work.
 - Search benchmarks by name, and filter release changes by package and direction.
 - Release changes lists regressions first, with improvements grouped by benchmark.
-- A chart's legend buttons bring one environment forward, and the explorer opens on the newest regression.
-- Home says which machine timed the solvers, and notes when that is not your platform.
-- Home lists the other checks on your platform, such as a failing upstream test suite, next to the setup, and the install command has a copy button.
+- A chart's legend buttons bring one environment forward.
+- Benchmarks opens on the findings and the latest release changes, each change with a small history line.
+- A benchmark explains each parameter under its control, and links its values, solvers and source to their documentation.
+- Setup says which machine timed the solvers, and notes when that is not your platform.
+- Setup lists a failing check on your platform, such as an upstream test suite, before the install command, and the command has a copy button.
 - Charts with three releases or fewer set environments a little apart, and commits that are not releases draw faint, with a count under the chart.
 - The explorer explains each benchmark, its parameters and the values you choose, such as what `JacobiGMRESLCA` does.
 - A JSON Schema for the data: an index (format version 1) and reports in Bencher Metric
@@ -41,5 +45,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Setup shows test results and coverage before Copy, and offers optional instructions for a new uv project ([viewer](README.md#what-it-shows)).
+- Phones show checks for the selected platform and collapse longer parameter explanations. Desktop check grids indicate hidden columns ([viewer](README.md#what-it-shows)).
+- Benchmark search keeps keyboard focus while typing and shows matches on phones ([viewer](README.md#what-it-shows)).
+- Release-change history lines keep each package's commits separate, and benchmark explanations meet the 12px minimum text size ([viewer](README.md#what-it-shows)).
 - Opening a change keeps the machine that measured it, and narrow charts keep their first and last release labels.
 - A link to an unknown benchmark says how to find it.

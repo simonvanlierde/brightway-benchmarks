@@ -33,19 +33,26 @@ venv*)
 esac
 """
 
-# Logs each call; `pixi lock` writes pixi.lock next to the manifest, and `pixi install` makes the
-# environment's python, which logs its arguments and prints a package for `-c`.
+# Logs each call; `pixi lock` writes pixi.lock next to the manifest, `pixi list` prints the default
+# environment, and `pixi install` makes the test environment's python, which logs its arguments,
+# prints a package for `-c` and runs a script from stdin (`-`) for real.
 PIXI = """#!/bin/sh
 echo "pixi $*" >>"$LOG"
 for a; do manifest=$a; done
 env=$(dirname "$manifest")
 case $1 in
 lock) echo "lock for $(sed -n 's/^python = //p' "$manifest")" >"$env/pixi.lock" ;;
+list)
+    echo '[{"name": "python", "version": "3.13.1", "build": "h9e4cc4f_102_cp313", "kind": "conda"},'
+    echo ' {"name": "bw2calc", "version": "3.1.0", "build": "pyhd8ed1ab_0", "kind": "conda"},'
+    echo ' {"name": "x", "version": "1", "kind": "pypi"}]'
+    ;;
 install)
-    mkdir -p "$env/.pixi/envs/default/bin"
-    py=$env/.pixi/envs/default/bin/python
+    mkdir -p "$env/.pixi/envs/test/bin"
+    py=$env/.pixi/envs/test/bin/python
     echo '#!/bin/sh' >"$py"
     echo '[ "$1" = -c ] && { echo bw2calc==3.1.0; exit; }' >>"$py"
+    echo '[ "$1" = - ] && exec python3 "$@"' >>"$py"
     echo 'echo "python $* PYTHONPATH=$PYTHONPATH strict=$BWBENCH_STRICT" >>"$LOG"' >>"$py"
     chmod +x "$py"
     ;;
@@ -167,12 +174,19 @@ def test_conda_forge_installs_with_pixi_and_leaves_out_what_it_lacks(repo: Path)
     log = (repo / "log").read_text().splitlines()
     assert not [line for line in log if not line.startswith(("pixi ", "python "))]  # no uv
     assert log[0].startswith("pixi lock")
-    assert "--frozen" in log[1]
+    assert "--frozen -e test" in log[1]
     # The set is on record before the cases run: the manifest, its lock and the Python packages.
     cell = repo / ".asv" / "compat" / "3.13-conda-forge"
     assert 'python = "3.13.*"' in (cell / "pixi.toml").read_text()
     assert (cell / "pixi.lock").read_text() == 'lock for "3.13.*"\n'
     assert (cell / "requirements.txt").read_text() == "bw2calc==3.1.0\n"
+    # plain conda gets the default environment, without the test harness, at the locked builds
+    assert "[feature.test.dependencies]\npytest = " in (cell / "pixi.toml").read_text()
+    conda = (cell / "environment.yml").read_text()
+    assert conda.endswith(
+        "channels:\n  - conda-forge\ndependencies:\n"
+        "  - bw2calc=3.1.0=pyhd8ed1ab_0\n  - python=3.13.1=h9e4cc4f_102_cp313\n"
+    )
     run = log[-1]
     assert run.startswith("python -m pytest")
     assert run.endswith("PYTHONPATH=benchmarks strict=1")

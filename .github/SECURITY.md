@@ -62,7 +62,7 @@ what stops each:
   when it leaves the tolerance, and each run records the exact versions it installed. The
   check runs in the same box as the release it times, so it cannot catch a release written
   to fool it: read the results diff before pushing the `results` branch. Host scripts that
-  read what the box wrote (`site_index.py`, `just stack`) refuse to follow a symlink.
+  read what the box wrote (`compat_site.py`, `just stack`) refuse to follow a symlink.
 - **A leaked secret.** The workflows use only GitHub's short-lived token, `.env` files are
   ignored, and secret scanning with push protection and the betterleaks hook refuse a
   commit that holds a known secret.

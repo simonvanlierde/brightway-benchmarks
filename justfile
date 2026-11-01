@@ -98,17 +98,30 @@ release-changes subject:
 compat python="3.12" column="latest":
     BWBENCH_TARGET={{ if column == "conda-forge" { "conda" } else { "box" } }} BWBENCH_MEM=${BWBENCH_MEM:-6g} scripts/box.sh scripts/compat.sh {{ python }} {{ column }}
 
-# Build the static history site in site/ from results/ (one asv site per subject plus an index).
-# The index's compat table comes from the compat workflow's artifacts, read through `gh`.
+# Build the static site in site/, around the viewer the site workflow adds: the compat archive (the
+# `compat` branch, which the compat workflow writes) and redirects from the old asv pages.
 site:
     #!/usr/bin/env bash
     set -euo pipefail
+    mkdir -p site
+    if git fetch --quiet origin compat 2>/dev/null; then git archive FETCH_HEAD compat | tar -x -C site
+    else echo "no compat branch yet, so the site has no setup guidance" >&2
+    fi
     for conf in asv/*.json; do
       s=$(basename "$conf" .json)
-      if [ -d "results/$s" ]; then scripts/box.sh scripts/asv.sh "$s" publish; fi
+      # `just ui-data` reads release tags from asv's mirror; commits and tags are enough.
+      repo=$(python3 -c 'import json, sys; print(json.loads("".join(l for l in open(sys.argv[1]) if not l.lstrip().startswith("//")))["repo"])' "$conf")
+      [ -d ".asv/$s" ] || git clone --quiet --bare --filter=tree:0 "$repo" ".asv/$s"
+      # Old links into asv's pages: SUBJECT/index.html#NAME opens NAME's history in the viewer.
+      mkdir -p "site/$s"
+      printf '%s\n' '<!doctype html><meta charset="utf-8"><title>Moved</title>' \
+        "<script>location.replace('../?page=explorer&group=$s'+(location.hash.length>1?'&bench='+encodeURIComponent(location.hash.slice(1).split('?')[0]):''))</script>" \
+        '<p>The benchmark histories have moved to <a href="../?page=explorer">the explorer</a>.</p>' >"site/$s/index.html"
     done
-    scripts/compat_site.py site
-    scripts/site_index.py site
+    # The old landing page's anchors (#works-together, #latest-release) still mean something to the viewer.
+    printf '%s\n' '<!doctype html><meta charset="utf-8"><title>Moved</title>' \
+      "<script>location.replace(location.hash ? './' + location.hash : './?page=explorer')</script>" \
+      '<p>The benchmark histories have moved to <a href="./?page=explorer">the explorer</a>.</p>' >site/asv.html
 
 # Build the viewer and serve it on 127.0.0.1:PORT with the committed real data, to look at a UI
 # change (a PR checked out with `gh pr checkout`). From a laptop: ssh -L PORT:localhost:PORT HOST.

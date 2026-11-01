@@ -90,6 +90,12 @@
           "label": {
             "description": "A short name to show, such as the solver it runs; without it, show a short form of the name.",
             "type": "string"
+          },
+          "url": {
+            "description": "Where to read about what the label names.",
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https?://"
           }
         }
       }
@@ -105,6 +111,12 @@
           "group": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
           "description": { "description": "What it measures, for readers.", "type": "string" },
+          "url": {
+            "description": "Its source, how it measures.",
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https?://"
+          },
           "measures": {
             "description": "The measure ids its metrics use.",
             "type": "array",
@@ -133,6 +145,11 @@
                   "description": "What each value means, in the order of values; empty where there is none.",
                   "type": "array",
                   "items": { "type": "string" }
+                },
+                "links": {
+                  "description": "Where to read about each value, in the order of values; empty where there is none.",
+                  "type": "array",
+                  "items": { "type": "string", "pattern": "^(https?://.+)?$" }
                 }
               }
             }
@@ -225,6 +242,25 @@
             "minimum": 0
           },
           "pvalue": { "description": "change-point only: the significance test's p-value.", "type": "number" }
+        }
+      }
+    },
+    "findings": {
+      "description": "What the histories show, in the order to show them, each with the view that shows it.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "text", "benchmark", "params"],
+        "properties": {
+          "title": { "type": "string" },
+          "text": { "description": "One or two sentences with the numbers.", "type": "string" },
+          "benchmark": { "$ref": "#/$defs/id" },
+          "params": {
+            "description": "The value to show, as a label, for each axis of the benchmark that the view fixes; in axis order, empty to keep the default.",
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "url": { "description": "The full account.", "type": "string", "format": "uri", "pattern": "^https?://" }
         }
       }
     }

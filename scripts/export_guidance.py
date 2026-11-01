@@ -39,24 +39,57 @@ def web_url(value: str) -> str:
     return value
 
 
-def _passing_set(green: dict, column: str, public_base: str) -> dict:
-    directory = PurePosixPath(green["dir"])
-    if directory.is_absolute() or ".." in directory.parts or directory.parts[:1] != ("compat",):
+# What every install command names; the constraints file pins the rest of the tested set.
+PACKAGES = "brightway25 bw_graph_tools bw_timex"
+
+
+def _installs(column: str, files: list[str], folder: str) -> list[dict]:
+    """One command per package manager for the set in FOLDER (a URL ending in /), read from there."""
+    if column == "conda-forge":
+        out = []
+        if "environment.yml" in files:
+            # update, not create: it makes the environment when missing, so a rerun is harmless. Its
+            # own name, because --prune removes whatever else an environment holds.
+            out.append(("conda", f"conda env update -n brightway-tested -f {folder}environment.yml --prune"))
+        if {"pixi.toml", "pixi.lock"} <= set(files):
+            out.append(("pixi", f"curl -fL -O {folder}pixi.toml -O {folder}pixi.lock && pixi install --frozen"))
+        return [{"manager": m, "command": c} for m, c in out]
+    if "requirements.txt" not in files:
+        return []
+    return [
+        {"manager": "uv", "command": f"uv add {PACKAGES} -c {folder}requirements.txt"},
+        {"manager": "pip", "command": f"pip install {PACKAGES} -c {folder}requirements.txt"},
+    ]
+
+
+def _folder(public_base: str, directory: str) -> str:
+    path = PurePosixPath(directory)
+    if path.is_absolute() or ".." in path.parts or path.parts[:1] != ("compat",):
         msg = "Compatibility files must stay under compat/"
         raise ValueError(msg)
+    return urljoin(public_base, f"{path}/")
+
+
+def _passing_set(green: dict, column: str, public_base: str) -> dict:
+    dated = _folder(public_base, green["dir"])
+    # A set from the compat archive has a dated folder and an undated one that follows the newest set.
+    latest = _folder(public_base, green["latest"]) if green.get("latest", green["dir"]) != green["dir"] else None
     files = [name for name in FILES if name in green["files"]]
     if column == "conda-forge":
-        files.sort(key=lambda name: not name.startswith("pixi"))  # stable: pixi.toml, pixi.lock, then the rest
+        files.sort(key=lambda name: name == "requirements.txt")  # stable: the conda files, then the rest
     out = {
         "date": green["date"],
         "run": web_url(green["run"]),
         "packages": [{"name": name, "version": version} for name, version in green["versions"].items()],
-        "files": [{"label": name, "url": urljoin(public_base, f"{directory}/{name}")} for name in files],
+        "files": [
+            {"label": name, "url": dated + name} | ({"latest": latest + name} if latest else {}) for name in files
+        ],
+        "installs": _installs(column, files, dated),
     }
-    if column == "conda-forge" and {"pixi.toml", "pixi.lock"} <= set(files):
-        out["install"] = "pixi install --frozen"
-    elif column != "conda-forge" and "requirements.txt" in files:
-        out["install"] = "uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt"
+    if latest:
+        out["pinned"] = PurePosixPath(green["dir"]).name[:10]  # 2026-11-01.2 is that day's second set
+        for install, follow in zip(out["installs"], _installs(column, files, latest), strict=True):
+            install["latest"] = follow["command"]
     return out
 
 
@@ -150,7 +183,7 @@ def export(status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE) ->
         return None
     status = json.loads(status_path.read_text())
     out = {
-        "format_version": 1,
+        "format_version": 2,
         "title": "A tested Brightway setup",
         "intro": "A tested starting point for your platform, with the measurements behind the alternatives.",
         "snapshot": {"date": status["date"], "run": web_url(status["run"])},
@@ -184,12 +217,9 @@ def export(status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE) ->
             check["caveats"].append(
                 "bw_graph_tools and bw_timex are omitted because this conda-forge set does not provide them."
             )
-            check["caveats"].append(
-                "Download pixi.toml and pixi.lock into the same folder before running pixi install --frozen."
-            )
         if green := cell.get("green"):
             check["lastPassed"] = _passing_set(green, column, public_base)
-            if column == "latest" and cell["python"] == "3.12" and check["lastPassed"].get("install"):
+            if column == "latest" and cell["python"] == "3.12" and check["lastPassed"]["installs"]:
                 entry["defaultCheck"] = check["id"]
         out["checks"].append(check)
     out["platforms"] = [platforms[key] for key in ("linux", "macos", "windows") if key in platforms]

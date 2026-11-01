@@ -59,3 +59,34 @@ adjoint  = "FastScoresOnlyMultiLCA, solving one transposed system per impact met
 [values.refinement]
 on  = "UMFPACK's default: it refines the solution after solving."
 off = "Refinement turned off (UMFPACK_IRSTEP=0)."
+
+# Where a reader looks a term up: docs.brightway.dev where it has a page, otherwise the project's
+# own. The viewer links the term itself. A benchmark links its source file, which
+# scripts/export_ui.py finds from asv's benchmark_dir, so it needs no entry here.
+[links.groups]
+bw2calc         = "https://docs.brightway.dev/en/latest/content/api/bw2calc/index.html"
+"bw2calc-conda" = "https://docs.brightway.dev/en/latest/content/api/bw2calc/index.html"
+bw2data         = "https://docs.brightway.dev/en/latest/content/api/bw2data/index.html"
+
+# By the solver an environment's label starts with ("UMFPACK, MKL" and "UMFPACK on Aᵀ" are UMFPACK).
+[links.solvers]
+UMFPACK   = "https://scikit-umfpack.github.io/scikit-umfpack/"
+PyPardiso = "https://github.com/haasad/PyPardiso"
+KLU       = "https://pypi.org/project/pyklu/"
+SuperLU   = "https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.linalg.splu.html"
+
+[links.values.size]
+smoke     = "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/method.md#the-synthetic-databases"
+ecoinvent = "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/method.md#the-synthetic-databases"
+exiobase  = "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/method.md#the-synthetic-databases"
+useeio    = "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/method.md#the-real-database"
+
+[links.values.cls]
+LCA            = "https://docs.brightway.dev/en/latest/content/api/bw2calc/lca/index.html#bw2calc.lca.LCA"
+IterativeLCA   = "https://docs.brightway.dev/en/latest/content/api/bw2calc/iterative_lca/index.html#bw2calc.iterative_lca.IterativeLCA"
+JacobiGMRESLCA = "https://docs.brightway.dev/en/latest/content/api/bw2calc/jacobi_gmres_lca/index.html#bw2calc.jacobi_gmres_lca.JacobiGMRESLCA"
+
+[links.values.variant]
+MultiLCA = "https://docs.brightway.dev/en/latest/content/api/bw2calc/multi_lca/index.html#bw2calc.multi_lca.MultiLCA"
+forward  = "https://docs.brightway.dev/en/latest/content/api/bw2calc/fast_scores/index.html#bw2calc.fast_scores.FastScoresOnlyMultiLCA"
+adjoint  = "https://docs.brightway.dev/en/latest/content/api/bw2calc/fast_scores/index.html#bw2calc.fast_scores.FastScoresOnlyMultiLCA"

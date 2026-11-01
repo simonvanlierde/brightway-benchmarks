@@ -31,7 +31,7 @@ The LU factorization is 98% of one score under PyPardiso, and 99% of a Monte Car
 release from 2.0 to 3.1.0 changed these times. `JacobiGMRESLCA` (from 2.4.0) gives a
 score in 150 ms, with a relative error of 1.4e-9, on the synthetic matrix only.
 
-Graph: [bw2calc, one score](https://simonvanlierde.com/brightway-benchmarks/bw2calc/index.html#bench_lca.SingleScore.time_first_score).
+Graph: [bw2calc, one score](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.SingleScore.time_first_score).
 Rerun: [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py).
 
 ### Keep the factorization for repeated solves
@@ -46,7 +46,7 @@ With UMFPACK, a second functional unit on the stored factorization takes 33.6 ms
 5.2 to 0.09 s, and SuperLU's first score takes 19.1 s after a warm-up solve, against 19.2 s
 without.
 
-Graph: [bw2calc, second functional unit](https://simonvanlierde.com/brightway-benchmarks/bw2calc/index.html#bench_lca.NewDemand.time_redo_lci).
+Graph: [bw2calc, second functional unit](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.NewDemand.time_redo_lci).
 Rerun: [`bench_lca.NewDemand`](../benchmarks/bench_bw2calc/bench_lca.py).
 
 ### UMFPACK's speed depends on its BLAS and its refinement step
@@ -77,7 +77,7 @@ comes from [`scripts/solver_factorize.py`](../scripts/solver_factorize.py) throu
 `lu_solver`. The second times UMFPACK's direct solve of Aᵀx = b. MKL takes no refinement step.
 With refinement off, conda-forge's UMFPACK is about 30% slower per solve than the PyPI build.
 
-Graph: [bw2calc-conda, one score](https://simonvanlierde.com/brightway-benchmarks/bw2calc-conda/index.html#bench_lca.SingleScore.time_first_score).
+Graph: [bw2calc-conda, one score](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc-conda&bench=bench_lca.SingleScore.time_first_score).
 Rerun: [`bench_lca.NewDemandRefinement`](../benchmarks/bench_bw2calc/bench_lca.py).
 
 ### bw2calc 3.0.0 slowed `IterativeLCA` without PyPardiso, and 3.1.0 fixed it
@@ -100,6 +100,31 @@ A in 2.5.0 and 3.0.0, as did 3.0.0's `IterativeLCA`. 3.1.0 factorizes Aᵀ
 
 Rerun: [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py), and
 `just solver-lci umfpack ecoinvent 3.0.0` for `lci(factorize=True)`.
+
+### bw2calc 3.0.0 doubled JacobiGMRESLCA's Monte Carlo time
+
+**bw2calc 3.0.0 made `JacobiGMRESLCA` about 2.2 times slower in Monte Carlo, with every solver.
+3.1.0 has not fixed it.**
+
+What it means for you: for Monte Carlo with `JacobiGMRESLCA`, 2.5.0 is about twice as fast.
+Nothing else changes.
+
+The case is ten draws after the first score, on the ecoinvent-sized synthetic database. The
+class never factorizes, so the solver makes no difference.
+
+| bw2calc | Solvers | `JacobiGMRESLCA`, 10 draws |
+| --- | --- | --- |
+| 2.5.0 | KLU, UMFPACK, UMFPACK on Aᵀ, SuperLU | 0.324 s (0.323 to 0.325 s) |
+| 3.0.0 | the same, and PyPardiso | 0.700 s (0.696 to 0.708 s) |
+| 2.4.0, conda-forge builds | UMFPACK, UMFPACK on MKL, SuperLU | 0.330 s |
+| 3.1.0, conda-forge builds | the same | 0.702 s |
+
+The slowdown starts with the commit that made `JacobiGMRESLCA` a subclass of `IterativeLCA`
+([brightway2-calc#161](https://github.com/brightway-lca/brightway2-calc/pull/161)). A single
+score with `JacobiGMRESLCA` did not change.
+
+Graph: [bw2calc, Monte Carlo](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.MonteCarlo.time_iterations).
+Rerun: [`bench_lca.MonteCarlo`](../benchmarks/bench_bw2calc/bench_lca.py).
 
 ### Every new LCA object under PyPardiso searches for MKL again
 
@@ -134,7 +159,7 @@ Writing an ecoinvent-sized database takes 15.3 s on 4.6.2 and 4.7, and 15.1 s on
 raw SQLite `executemany` took 10.4 s, and #270, the next commit, 15.4 s. These times come from
 asv's `--interleave-rounds`.
 
-Graph: [bw2data, database write](https://simonvanlierde.com/brightway-benchmarks/bw2data/index.html#bench_write.DatabaseWrite.time_write).
+Graph: [bw2data, database write](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2data&bench=bench_write.DatabaseWrite.time_write).
 Rerun: [`bench_write.DatabaseWrite`](../benchmarks/bench_bw2data/bench_write.py).
 
 ## bw_timex
@@ -155,7 +180,7 @@ In 1.3.0, a database block without a cached LU was factorized again on every sol
 [bw_timex#234](https://github.com/brightway-lca/bw_timex/pull/234), in 1.3.2, factorizes each
 block once.
 
-Graph: [bw_timex, time-explicit LCI](https://simonvanlierde.com/brightway-benchmarks/bw_timex/index.html#bench_timex.TimelineLCI.time_lci).
+Graph: [bw_timex, time-explicit LCI](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw_timex&bench=bench_timex.TimelineLCI.time_lci).
 Rerun: [`bench_timex.TimelineLCI`](../benchmarks/bench_bw_timex/bench_timex.py).
 
 ## bw_graph_tools
@@ -172,7 +197,7 @@ later.
 | EXIOBASE | 2 | 1.14 minutes | 11.3 s |
 | EXIOBASE | 100 | over asv's 15-minute limit | 2.25 minutes |
 
-Graph: [bw_graph_tools, traversal](https://simonvanlierde.com/brightway-benchmarks/bw_graph_tools/index.html#bench_traversal.Traversal.time_traverse).
+Graph: [bw_graph_tools, traversal](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw_graph_tools&bench=bench_traversal.Traversal.time_traverse).
 Rerun: [`bench_traversal.Traversal`](../benchmarks/bench_bw_graph_tools/bench_traversal.py).
 
 ### Without PyPardiso, traversal is hundreds of times slower
@@ -202,7 +227,7 @@ matrix_utils 0.9 builds a matrix from 1,000 groups in 724 ms on bw_processing 1.
 on #113. [matrix_utils#48](https://github.com/brightway-lca/matrix_utils/pull/48) takes those
 to 695 and 404 ms. Since 0.6, matrix_utils itself builds 11% slower at 1,000 groups.
 
-Graph: [bw_processing, resource groups](https://simonvanlierde.com/brightway-benchmarks/bw_processing/index.html#bench_datapackage.Groups.time_groups).
+Graph: [bw_processing, resource groups](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw_processing&bench=bench_datapackage.Groups.time_groups).
 Rerun: [`bench_datapackage.Groups`](../benchmarks/bench_bw_processing/bench_datapackage.py) and
 [`bench_mapped_matrix.MappedMatrixBuild`](../benchmarks/bench_matrix_utils/bench_mapped_matrix.py).
 

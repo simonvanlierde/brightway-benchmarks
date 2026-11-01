@@ -7,8 +7,20 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- The asv-generated history pages. Old links to them redirect to the benchmark explorer
+  ([running](docs/running.md#benchmarks)).
+
 ### Added
 
+- Install sets that never change: each set that differs from the last is kept in a dated folder
+  on the `compat` branch, and stays after GitHub deletes the run's artifacts
+  ([running](docs/running.md#the-compat-archive)).
+- The `conda-forge` compat column writes `environment.yml`, so `conda env update` installs the
+  tested set ([running](docs/running.md#install-a-set-that-works)).
+- A finding on `JacobiGMRESLCA`'s Monte Carlo time, which doubled in bw2calc 3.0.0
+  ([findings](docs/findings.md#bw2calc-300-doubled-jacobigmreslcas-monte-carlo-time)).
 - The homepage shows a tested Brightway setup, measured solver alternatives and the latest
   release changes ([viewer](ui/README.md), [UI changelog](ui/CHANGELOG.md)).
 - Experimental controls for sharing synthetic input lists and varying locality by list length.
@@ -40,8 +52,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `just ui-data OUT` writes the results as the data a new benchmark UI reads: an `index.json`
   and one report per commit in Bencher Metric Format. ui/schema/ describes both, and the tests
   check the output against it. The UI itself is in ui/, with its own changelog.
-- The new viewer is the site's homepage and is also at `ui/`; the asv pages stay at `asv.html`
-  until it shows everything they show ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).
+- The new viewer is the site's homepage and is also at `ui/`
+  ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).
   `just ui-serve` builds it and serves it locally with the committed real data, to look at a UI change.
 - `just ui-data` also lists what changed along each series: moves between two releases that are
   larger than the case's own noise, and Apache Otava's change points. It needs uv, which runs
@@ -96,6 +108,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Archived setup sets keep their latest passing date and run after the artifacts expire
+  ([compat archive](docs/running.md#the-compat-archive)).
+- `pylock.toml` refused Python patch releases older than the CI runner's, such as Ubuntu
+  24.04's 3.12.3. It now asks for Python 3.12 or newer
+  ([running](docs/running.md#compat)).
 - Hash-only experiments no longer count as releases in the viewer or `just release-changes`.
   They remain visible in each benchmark's history ([running](docs/running.md#add-a-release)).
 - A run no longer fails after its benchmarks pass when an asv environment has lost its

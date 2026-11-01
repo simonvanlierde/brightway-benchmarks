@@ -13,7 +13,7 @@ comparison prefers two results on the same stack, the current one (asv/SUBJECT.s
 first; when there are none, it compares across stacks and flags the row, because then the
 dependencies moved too, not only the package.
 Release tags resolve through asv's mirror of the upstream repository, .asv/SUBJECT, which
-``asv run`` and ``asv publish`` create.
+``asv run`` and ``just site`` create.
 """
 
 import hashlib

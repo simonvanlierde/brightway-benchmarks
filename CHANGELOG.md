@@ -9,6 +9,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Compatibility snapshot reports name newly failing jobs, recoveries and continuing failures,
+  with links to both runs ([running](docs/running.md#report-newly-failing-jobs)).
 - `scripts/solver_factorize.py --cudss` times NVIDIA's cuDSS GPU solver on the real ecoinvent matrix: a
   first factorization and one that reuses its analysis, as a Monte Carlo draw does. `--pardiso` now
   times PARDISO's reuse too ([method](docs/method.md)).

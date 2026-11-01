@@ -1,22 +1,53 @@
 ---
 name: Benchmark viewer
-description: A scientific evidence workspace for release histories and measured changes
+description: A scientific evidence workspace for tested setups and measured changes
 colors:
-  page: "#f5f6fa"
-  surface: "#ffffff"
-  navigation: "#edf0f8"
-  text: "#20283d"
-  secondary-text: "#4c576d"
-  muted-text: "#637087"
-  accent: "#3d4fa8"
-  selection: "#dfe5fa"
-  worse: "#b03045"
-  better: "#006c5c"
-  dark-page: "#151a26"
-  dark-surface: "#1b2231"
-  dark-navigation: "#1d263b"
-  dark-text: "#edf0f8"
-  dark-accent: "#b3c1ff"
+  page: "#edf3ef"
+  rail: "#edf3ef"
+  surface: "#edf3ef"
+  ink: "#183f36"
+  ink-2: "#3e5d52"
+  muted: "#50695f"
+  grid: "#d9e3dc"
+  axis: "#8aa79a"
+  line: "#b5c9bf"
+  control: "#50695f"
+  accent: "#235c4b"
+  accent-wash: "#d3e3d8"
+  worse: "#a13236"
+  better: "#245e33"
+  shift: "#3e5d52"
+  s1: "#315bba"
+  s2: "#9a6500"
+  s3: "#7757ac"
+  s4: "#416d86"
+  s5: "#9b427c"
+  s6: "#6f7132"
+  s7: "#3a6880"
+  s8: "#79613f"
+  dark-page: "#15231f"
+  dark-rail: "#15231f"
+  dark-surface: "#15231f"
+  dark-ink: "#edf3ef"
+  dark-ink-2: "#c2d5ca"
+  dark-muted: "#a5bdb0"
+  dark-grid: "#2b4438"
+  dark-axis: "#648574"
+  dark-line: "#3c5a4a"
+  dark-control: "#91ad9c"
+  dark-accent: "#a3d2b8"
+  dark-accent-wash: "#2c493b"
+  dark-worse: "#ffafb0"
+  dark-better: "#a2d78d"
+  dark-shift: "#a5bdb0"
+  dark-s1: "#91b4ff"
+  dark-s2: "#e5bb69"
+  dark-s3: "#c2a6f1"
+  dark-s4: "#85c0df"
+  dark-s5: "#e5a5d1"
+  dark-s6: "#c2cb81"
+  dark-s7: "#8fb2d3"
+  dark-s8: "#d6b88f"
 typography:
   body:
     fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
@@ -26,77 +57,94 @@ typography:
     fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
     fontSize: "clamp(1.7rem, 2.7vw, 2.4rem)"
     fontWeight: 650
+    lineHeight: 1.25
     letterSpacing: "-0.035em"
   home-title:
     fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
-    fontSize: "clamp(1.7rem, 2.5vw, 2.25rem)"
+    fontSize: "clamp(2rem, 3.5vw, 3.4rem)"
     fontWeight: 650
+    lineHeight: 1.25
     letterSpacing: "-0.035em"
+  mono:
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+    fontSize: "0.875em"
 rounded:
-  control: "7px"
-  panel: "12px"
-  chart: "14px"
+  control: "0"
+  panel: "0"
+  chart: "0"
 spacing:
   compact: "6px"
   field: "18px"
   desktop-content: "40px"
 components:
   selected-navigation:
-    backgroundColor: "{colors.selection}"
+    backgroundColor: "{colors.accent-wash}"
     textColor: "{colors.accent}"
+    rounded: "{rounded.control}"
   chart:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.chart}"
+    padding: "24px 24px 20px"
   primary-download:
     backgroundColor: "{colors.accent}"
     textColor: "{colors.surface}"
     rounded: "{rounded.control}"
     padding: "9px 14px"
   selected-platform:
-    backgroundColor: "{colors.selection}"
-    textColor: "{colors.accent}"
+    backgroundColor: "{colors.accent}"
+    textColor: "{colors.page}"
     rounded: "{rounded.control}"
     padding: "7px 18px"
 ---
 
 ## Overview
 
-A working screen for inspecting evidence. The homepage leads with a tested setup and its coverage; compact evidence for both regressions and improvements sits beside it. Changes and their uncertainty lead the dedicated maintainer views. Avoid decorative metrics or claims that the data does not support.
+Square geometry and aligned measurement columns give the viewer a precise reading order. Pale green and dark green grounds run continuously through the workspace; fine rules separate evidence without floating panels. System sans typography keeps dense controls and tables readable.
 
 ## Colors
 
-The indigo navigation ground separates the catalogue from the evidence workspace. Selection uses indigo, while red and teal identify worse and better results. Series use a separate fixed categorical palette in `ui/src/styles.css`; outlined symbols distinguish coincident lines. Dark mode keeps the same roles with lighter text and series colours.
+The primary green accent anchors links, active navigation, selected platform buttons and solver bars. The pale green selection wash marks chosen filters, catalogue entries and compatibility rows. Page, rail and surface share one ground in each theme, so content reads as a continuous workspace.
+
+Ink, secondary ink and muted text establish hierarchy; line, axis, control and grid colours separate content and support charts. Worse and better colours label measured direction, while shift stays neutral. The eight series colours identify environments independently of status. Their blue, amber and purple hues belong to chart data, never the navigation identity. Dark mode preserves these roles with a dark green ground and lighter text and series colours.
 
 ## Typography
 
-Use the system sans stack for readable controls and dense tables. Titles carry the page hierarchy through size and weight. Monospace belongs to original identifiers and environment specifications. Measurements use tabular numerals. Keep explanatory prose within 68 characters per line where space allows.
+Use the system sans stack for headings, controls and tables. Page titles and the larger Home title share a restrained weight and tight tracking; both use the title tokens above. At phone widths, page titles become 1.8rem and the Home title becomes 2.1rem. Section titles range from 1.25rem for setup and summary to 1.5rem for solver evidence.
+
+Monospace belongs to original identifiers and environment specifications. Measurements use tabular numerals and right-aligned numeric columns. Solver timing values are prominent (1.55rem on larger screens, 1.1rem on phones). Keep explanatory prose within about 68 characters per line where space allows.
 
 ## Layout
 
-A compact masthead links Home, Compatibility, Release changes and Benchmark explorer. Home uses a broad setup-and-solver column beside a smaller change summary. Compatibility pairs a filterable check table with a 370px selected detail pane. At 75rem and below, the detail stacks below the table and the masthead navigation moves to a separate scrolling row. Selecting a check reveals its detail pane. At 55rem and below, Home stacks the change summary below the setup and solver evidence.
+The compact masthead links Home, Compatibility, Release changes and Benchmark explorer. The outer frame is capped at 96rem; full-width view content is capped at 1440px. Desktop content uses the spacing token above, while wide explorer views increase their side padding to 56px at 90rem.
 
-Only the benchmark explorer has a catalogue rail. At 60rem and above, it is 16.5rem wide and scrolls independently. Below that width it becomes a disclosure. Release-change filters sit directly above the changes they control; benchmark parameters sit directly above the chart.
+Home places setup and solver evidence side by side in a 1:1.15 grid, with a full-width maintainer summary below. The summary divides changes into two columns. Setup and solver sections begin on matching rules; timing columns align within the solver table. At 75rem and below, the Home columns become equal, setup installation files and pins stack, Compatibility detail moves below its table, and masthead navigation becomes a separate scrolling row. At 55rem and below, setup, solver evidence and maintainer summary stack. The wider stacked setup can again show files and pins side by side. At 39rem and below, those details and summary columns each become a single column.
 
-At 39rem and below, change tables reflow into labelled rows and installation details stack into one column. Full measurement tables retain horizontal scrolling in their own focusable region. Charts reduce tick density without dropping keyboard access to any release.
+Compatibility pairs its filterable check table with a 370px selected-detail pane on wide screens. Only Benchmark explorer has a catalogue rail: at 60rem and above it is 16.5rem wide, sticky and independently scrollable; below that it becomes a disclosure. Filters sit directly above the evidence they control.
+
+At 39rem and below, release-change tables reflow into labelled rows. Full measurement tables retain horizontal scrolling in their own focusable region. Charts reduce tick density without dropping keyboard access to any release.
 
 ## Elevation & Depth
 
-Use surfaces and one-pixel borders to separate content. Avoid decorative shadows. A chart has one frame; the controls and data table belong to the same workspace rather than nested cards.
+Use continuous surfaces and one-pixel rules to divide content. Do not add decorative shadows. Charts and selected compatibility details have a single fine frame; controls and data tables belong to the same workspace rather than nested cards.
 
 ## Shapes
 
-Controls use the control radius. Compatibility panels use the panel radius; setup, summary and chart frames use the chart radius. Use a two-pixel visible focus outline and standard native inputs.
+All corners are square, including controls, charts, selections and detail frames. Use a two-pixel visible focus outline with a two-pixel offset and preserve native inputs. Rules and aligned edges establish structure without rounded or floating cards.
 
 ## Components
 
-The primary download uses the accent background and surface-coloured text, with 9px by 14px padding and a 40px minimum height. Data ordering chooses its file; other installation files remain links. Platform choices use selection fill with accent text when pressed. Native controls share the visible focus outline.
+Primary downloads use accent fill with surface-coloured text, the primary-download padding and a 40px minimum height. Data ordering chooses the primary file; other installation files remain links. Pressed platform buttons use solid accent fill with page-coloured text. Chosen direction filters and catalogue entries use the selection wash; active masthead navigation uses an accent underline.
 
-Benchmark labels use a readable fallback, with original identifiers in the detail view and link titles. Ambiguous labels include their identifiers. Search accepts either form. Package and direction filters update their counts together, and their selections live in the URL. Empty filters and unknown benchmark links explain how to recover. Platform controls select a published setup directly, without a wizard. Saved installation files carry their passing date; a current failure never becomes a passing claim. Smoke calculations and upstream test suites keep separate coverage labels. External project and method links sit in the footer.
+Search fields and selects use the surface ground and control stroke. Links thicken their underline on hover. Buttons and catalogue entries use the selection wash on hover; row hover uses a faint selection wash. Native-control and catalogue colour transitions last 150ms only when reduced motion is not requested. All interactive controls retain visible keyboard focus.
+
+Benchmark labels use a readable fallback, with original identifiers in detail views and link titles. Ambiguous labels include their identifiers; search accepts either form. Filter counts update together and selections live in the URL. Empty filters and unknown links explain how to recover. Platform controls select a published setup directly. Saved files carry their passing date; smoke calculations and upstream test suites keep separate coverage labels. External project and method links sit in the footer.
 
 ## Do's and Don'ts
 
-- Put each change beside the noise threshold it exceeded.
-- Pair status colours with words; keep categorical series separate from status.
-- Preserve native links, keyboard access and a data table behind every chart.
-- Show original identifiers where a reader needs to reproduce a result.
-- Keep new screens within the same data-driven viewer contract.
+- Do put each change beside the noise threshold it exceeded.
+- Do pair status colours with words and keep categorical series separate from status.
+- Do preserve native links, visible keyboard focus and a data table behind every chart.
+- Do show original identifiers where a reader needs to reproduce a result.
+- Do keep new screens within the same data-driven viewer contract.
+- Don't introduce cobalt navigation, rounded panels or decorative shadows.
+- Don't turn current failures or dated installation files into an unsupported passing claim.

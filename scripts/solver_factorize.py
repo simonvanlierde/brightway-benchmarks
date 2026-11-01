@@ -21,10 +21,13 @@ To time conda-forge's builds, run the script with the python of an asv ``rattler
 with ``PYTHONPATH=src``.
 
 ``--cudss`` adds NVIDIA's cuDSS on the GPU (add ``--gpus all`` to ``docker run``): plan and
-factorize, then a second factorization with the plan reused, as a Monte Carlo draw does. It needs
+factorize, then refactorize the same values with the plan reused. This is not a Monte Carlo draw. It needs
 ``nvmath-python[cu12]==1.0.0`` and ``nvidia-cudss-cu12==0.8.0.10`` in a real venv (``uv venv``
 plus ``uv pip install``, then that venv's python): under ``uv run --with``, nvmath cannot find
-the CUDA libraries.
+the CUDA libraries. ``--cudss-updates`` instead measures three deterministic row-rescaled
+value updates, with a new independent SuperLU reference for each. Construction/initial transfer,
+analysis, update/transfer, numeric factorization and solve/return transfer are separate wall times.
+CPU validation and value generation are excluded; no complete LCA draw is measured.
 """
 
 # First, so the BLAS thread pin lands before numpy loads (bwbench warns otherwise).
@@ -33,8 +36,11 @@ import os
 import statistics
 import sys
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Iterator
 from concurrent.futures import ProcessPoolExecutor
+from contextlib import ExitStack
+from dataclasses import dataclass
+from functools import partial
 from importlib.metadata import version
 from pathlib import Path
 
@@ -78,35 +84,165 @@ def timed[T](f: Callable[[], T], reps: int = 3) -> tuple[float, T]:
     return statistics.median(times), out
 
 
-def time_cudss(a: sparse.csr_matrix, b: np.ndarray) -> tuple[float, Solve, str]:
-    """Time cuDSS (through nvmath-python) on ``a``: plan and factorize, then factorize again.
-
-    The second is a Monte Carlo draw: new values in the same pattern, so the plan (the
-    reordering) is reused. Host arrays in and out, so the transfers are timed too.
-    """
-    import logging  # noqa: PLC0415
-
+def warm_cudss() -> None:
+    """Initialize the CUDA context before recording GPU phase timings."""
     import nvmath.sparse.advanced as sa  # noqa: PLC0415
 
-    logging.getLogger().setLevel(logging.ERROR)  # nvmath warns on every reset_operands(a=...)
-    # The CUDA context and library load once per process: keep them out of every timing.
-    w = sa.DirectSolver(sparse.identity(100, format="csr"), np.ones(100))
-    w.plan(), w.factorize(), w.free()
+    with ExitStack() as resources:
+        solver = sa.DirectSolver(sparse.identity(100, format="csr"), np.ones(100))
+        resources.callback(solver.free)
+        solver.plan()
+        solver.factorize()
 
-    def first() -> sa.DirectSolver:
-        d = sa.DirectSolver(a, b)
-        d.plan()
-        d.factorize()
-        return d
 
-    s, d = timed(first)
+def time_cudss(a: sparse.csr_matrix, b: np.ndarray, *, resources: ExitStack | None = None) -> tuple[float, Solve, str]:
+    """Time initial cuDSS setup and unchanged-value refactorization, including host transfers.
 
-    def refactorize() -> None:
-        d.reset_operands(a=a.copy())
-        d.factorize()
+    The returned solve retains one solver; ``resources`` releases it after its last use.
+    """
+    import nvmath.sparse.advanced as sa  # noqa: PLC0415
 
-    again, _ = timed(refactorize)
-    return s, lambda r: (d.reset_operands(b=r), d.solve())[1], f" refactorize {again:.3f} s"
+    warm_cudss()
+    retained = None
+    times = []
+    try:
+        for _ in range(3):
+            if retained is not None:
+                retained.free()
+                retained = None
+            start = time.perf_counter()
+            retained = sa.DirectSolver(a, b)
+            retained.plan()
+            retained.factorize()
+            times.append(time.perf_counter() - start)
+        solver = retained
+        seconds = statistics.median(times)
+        again, _ = timed(lambda: (solver.reset_operands(a=a.copy()), solver.factorize()))
+    except BaseException:
+        if retained is not None:
+            retained.free()
+        raise
+    if resources is not None:
+        resources.callback(solver.free)
+    return seconds, lambda r: (solver.reset_operands(b=r), solver.solve())[1], f" unchanged refactorize {again:.3f} s"
+
+
+@dataclass(frozen=True)
+class CudssUpdate:
+    """One completed and checked update; all phase times are wall-clock seconds."""
+
+    replanned: bool
+    setup_s: float
+    analysis_s: float
+    update_s: float
+    factorize_s: float
+    solve_s: float
+    relative_error: float
+    backward_error: float
+
+
+def value_updates(a: sparse.csr_matrix, count: int = 3) -> Iterator[sparse.csr_matrix]:
+    """Yield deterministic row-rescaled matrices, preserving sparsity and invertibility.
+
+    This controlled numerical update is not an LCA uncertainty sample.
+    """
+    if count < 1:
+        msg = "At least one value update is required"
+        raise ValueError(msg)
+    rng = np.random.default_rng(0)
+    for _ in range(count):
+        updated = a.copy()
+        scale = rng.uniform(0.98, 1.02, a.shape[0])
+        updated.data *= np.repeat(scale, np.diff(a.indptr))
+        if np.array_equal(updated.data, a.data):
+            msg = "Value update did not change any matrix entries"
+            raise ValueError(msg)
+        yield updated
+
+
+def cudss_updates(a: sparse.csr_matrix, b: np.ndarray, updates: Iterable[sparse.csr_matrix]) -> list[CudssUpdate]:
+    """Time blocking host-operand cuDSS phases, rejecting incorrect results.
+
+    Setup includes construction and initial host-to-device copies; update includes
+    reset_operands and its host-to-device copies. Analysis, numeric factorization,
+    and solve are separate; solve includes the device-to-host result copy. Value
+    generation, pattern checks and CPU reference validation are outside those times.
+    A changed CSR pattern recreates the solver and analysis before factorization.
+    """
+    import nvmath.sparse.advanced as sa  # noqa: PLC0415
+
+    if (
+        a.shape[0] != a.shape[1]
+        or b.shape != (a.shape[0],)
+        or not np.isfinite(a.data).all()
+        or not np.isfinite(b).all()
+    ):
+        msg = "Initial matrix and demand must be square, compatible and finite"
+        raise ValueError(msg)
+    results = []
+    previous = a.copy()
+    with ExitStack() as resources:
+        setup_s, solver = timed(lambda: sa.DirectSolver(a, b), reps=1)
+        resources.callback(solver.free)
+        analysis_s, _ = timed(solver.plan, reps=1)
+        for matrix in updates:
+            if matrix.shape != a.shape or not np.isfinite(matrix.data).all():
+                msg = "Updated matrix must have the original shape and finite values"
+                raise ValueError(msg)
+            same = np.array_equal(matrix.indptr, previous.indptr) and np.array_equal(matrix.indices, previous.indices)
+            if same and np.array_equal(matrix.data, previous.data):
+                msg = "Updated matrix has unchanged values"
+                raise ValueError(msg)
+            if same:
+                update_s, _ = timed(partial(solver.reset_operands, a=matrix), reps=1)
+            else:
+                resources.close()
+                setup_s, solver = timed(partial(sa.DirectSolver, matrix, b), reps=1)
+                resources.callback(solver.free)
+                analysis_s, _ = timed(solver.plan, reps=1)
+                update_s = 0.0
+            factorize_s, _ = timed(solver.factorize, reps=1)
+            solve_s, x = timed(solver.solve, reps=1)
+            x = np.asarray(x)
+            if x.shape != b.shape or not np.isfinite(x).all():
+                msg = "cuDSS update failed CPU reference: solution shape or values are invalid"
+                raise AssertionError(msg)
+            reference = spsolve(matrix, b, use_umfpack=False)
+            scale = max(float(np.abs(reference).max()), np.finfo(float).tiny)
+            relative = float(np.abs(x - reference).max() / scale)
+            residual = float(np.abs(matrix @ x - b).max())
+            norm = float(abs(matrix).sum(axis=1).max() * np.abs(x).max() + np.abs(b).max())
+            backward = residual / norm if norm else residual
+            if not relative <= bwbench.DIRECT_RTOL or not backward <= bwbench.DIRECT_RTOL:
+                msg = f"cuDSS update failed CPU reference: relative error {relative:.3g}, backward error {backward:.3g}"
+                raise AssertionError(msg)
+            results.append(
+                CudssUpdate(not same, setup_s, analysis_s, update_s, factorize_s, solve_s, relative, backward)
+            )
+            previous = matrix.copy()
+            setup_s = analysis_s = 0.0
+    if not results:
+        msg = "At least one updated matrix is required"
+        raise ValueError(msg)
+    return results
+
+
+def report_updates(a: sparse.csr_matrix, b: np.ndarray) -> None:
+    """Print phase timings only after every update passed its correctness checks."""
+    warm_cudss()
+    print("  cuDSS controlled row-scaled updates (not Monte Carlo draws):", flush=True)
+    print(
+        "  seconds: setup/initial transfer | analysis | update/transfer | factorize | solve/return transfer",
+        flush=True,
+    )
+    for number, result in enumerate(cudss_updates(a, b, value_updates(a)), 1):
+        print(
+            f"    update {number}: {result.setup_s:.3g} {result.analysis_s:.3g} {result.update_s:.3g}"
+            f" {result.factorize_s:.3g} {result.solve_s:.3g}; replanned {result.replanned}"
+            f"; CPU relative error {result.relative_error:.3g}, backward error {result.backward_error:.3g}",
+            flush=True,
+        )
+    print(f"  process peak RSS (includes CPU validation): {bwbench.peak_rss_bytes() / 1e6:.3g} MB", flush=True)
 
 
 def main() -> None:  # noqa: PLR0915  (one block per solver)
@@ -133,6 +269,10 @@ def main() -> None:  # noqa: PLR0915  (one block per solver)
     libs = {Path(line.split()[-1]).name for line in Path("/proc/self/maps").read_text().splitlines()}
     blas = sorted(lib for lib in libs if lib.startswith("lib") and ("blas" in lib or "mkl_rt" in lib))
     print(f"  BLAS loaded: {', '.join(blas)}", flush=True)
+
+    if "--cudss-updates" in sys.argv:
+        report_updates(a, b)
+        return
 
     xs = {}
     c = rng.random(n)  # a positive characterization row, to compare scores
@@ -182,7 +322,8 @@ def main() -> None:  # noqa: PLR0915  (one block per solver)
         report("PARDISO pypardiso (A)", s, lambda r: p.solve(a, r), f" refactorize {again:.3f} s")
 
     if "--cudss" in sys.argv:
-        report(f"cuDSS nvmath {version('nvidia-cudss-cu12')} (A)", *time_cudss(a, b))
+        with ExitStack() as resources:
+            report(f"cuDSS nvmath {version('nvidia-cudss-cu12')} (A)", *time_cudss(a, b, resources=resources))
 
     # Backward error |Ax - b| / (|A| |x| + |b|) (inf norms), and the score's distance from UMFPACK's.
     norm_a = abs(a).sum(axis=1).max()

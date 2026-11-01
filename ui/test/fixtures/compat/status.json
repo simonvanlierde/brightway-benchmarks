@@ -1,0 +1,164 @@
+{
+  "date": "2026-10-31",
+  "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+  "cells": [
+    {
+      "column": "latest",
+      "python": "3.12",
+      "os": "macos-latest",
+      "today": "success",
+      "green": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "dir": "compat/latest-3.12-macos-latest",
+        "files": ["requirements.txt", "pylock.toml"],
+        "versions": {
+          "brightway25": "1.1.1",
+          "bw2calc": "3.1.0",
+          "bw2data": "4.8",
+          "bw2io": "0.9.17",
+          "numpy": "2.5.4"
+        }
+      }
+    },
+    {
+      "column": "latest",
+      "python": "3.12",
+      "os": "ubuntu-latest",
+      "today": "success",
+      "green": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "dir": "compat/latest-3.12-ubuntu-latest",
+        "files": ["requirements.txt", "pylock.toml"],
+        "versions": {
+          "brightway25": "1.1.1",
+          "bw2calc": "3.1.0",
+          "bw2data": "4.8",
+          "bw2io": "0.9.17",
+          "numpy": "2.5.4"
+        }
+      }
+    },
+    {
+      "column": "latest",
+      "python": "3.12",
+      "os": "windows-latest",
+      "today": "success",
+      "green": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "dir": "compat/latest-3.12-windows-latest",
+        "files": ["requirements.txt", "pylock.toml"],
+        "versions": {
+          "brightway25": "1.1.1",
+          "bw2calc": "3.1.0",
+          "bw2data": "4.8",
+          "bw2io": "0.9.17",
+          "numpy": "2.5.4"
+        }
+      }
+    },
+    {
+      "column": "latest",
+      "python": "3.13",
+      "os": "ubuntu-latest",
+      "today": "success",
+      "green": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "dir": "compat/latest-3.13-ubuntu-latest",
+        "files": ["requirements.txt", "pylock.toml"],
+        "versions": {
+          "brightway25": "1.1.1",
+          "bw2calc": "3.1.0",
+          "bw2data": "4.8",
+          "bw2io": "0.9.17",
+          "numpy": "2.5.4"
+        }
+      }
+    },
+    {
+      "column": "latest",
+      "python": "3.14",
+      "os": "ubuntu-latest",
+      "today": "success",
+      "green": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "dir": "compat/latest-3.14-ubuntu-latest",
+        "files": ["requirements.txt", "pylock.toml"],
+        "versions": {
+          "brightway25": "1.1.1",
+          "bw2calc": "3.1.0",
+          "bw2data": "4.8",
+          "bw2io": "0.9.17",
+          "numpy": "2.5.4"
+        }
+      }
+    },
+    {
+      "column": "floors",
+      "python": "3.12",
+      "os": "ubuntu-latest",
+      "today": "success",
+      "green": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "dir": "compat/floors-3.12-ubuntu-latest",
+        "files": ["requirements.txt", "pylock.toml"],
+        "versions": {
+          "brightway25": "1.1.1",
+          "bw2calc": "3.1.0",
+          "bw2data": "4.8",
+          "bw2io": "0.9.17",
+          "numpy": "1.26.0"
+        }
+      }
+    },
+    {
+      "column": "pre",
+      "python": "3.14",
+      "os": "ubuntu-latest",
+      "today": "success",
+      "green": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "dir": "compat/pre-3.14-ubuntu-latest",
+        "files": ["requirements.txt", "pylock.toml"],
+        "versions": {
+          "brightway25": "1.1.1",
+          "bw2calc": "3.1.0",
+          "bw2data": "4.8",
+          "bw2io": "0.9.17",
+          "numpy": "2.5.4"
+        }
+      }
+    },
+    {
+      "column": "conda-forge",
+      "python": "3.12",
+      "os": "ubuntu-latest",
+      "today": "success",
+      "green": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "dir": "compat/conda-forge-3.12-ubuntu-latest",
+        "files": ["requirements.txt", "pixi.toml", "pixi.lock"],
+        "versions": {
+          "bw2calc": "3.1.0",
+          "bw2data": "4.8",
+          "bw2io": "0.9.17",
+          "numpy": "2.5.4"
+        }
+      }
+    },
+    {
+      "column": "suites",
+      "python": "3.12",
+      "os": "ubuntu-latest",
+      "today": "failure",
+      "green": null
+    }
+  ]
+}

@@ -16,4 +16,5 @@ the old one's status to `superseded by 0007`, naming the new record's number.
 
 ## Index
 
-- [0001. Our own benchmark UI, on an open data contract](0001-own-benchmark-ui.md): accepted
+- [0001. Our own benchmark UI, on an open data contract](0001-own-benchmark-ui.md): accepted; amended by 0002
+- [0002. A tested setup and benchmark evidence on the homepage](0002-setup-and-benchmark-homepage.md): accepted

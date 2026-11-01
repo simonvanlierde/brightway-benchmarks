@@ -2,12 +2,14 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import type { BenchmarkIndex, BenchmarkReport } from "../src/lib/contract";
 import {
+  benchmarkLabel,
   breakable,
   changesFor,
   displayNames,
   format,
   latestChanges,
   lines,
+  pageOf,
   percent,
   pickParams,
   pText,
@@ -31,7 +33,14 @@ async function fixture(): Promise<[BenchmarkIndex, Map<string, BenchmarkReport>]
 
 describe("the view in the URL", () => {
   it("survives a round trip, parameters in order", () => {
-    const view = { bench: "b-1", params: ["ecoinvent", "a, b&c"], measure: "latency", machine: "m" };
+    const view = {
+      bench: "b-1",
+      params: ["ecoinvent", "a, b&c"],
+      measure: "latency",
+      machine: "m",
+      group: "g",
+      direction: "worse",
+    };
     expect(readView(writeView(view))).toEqual(view);
   });
 
@@ -190,5 +199,40 @@ describe("latestChanges order", () => {
       ["better", 0.5],
       ["better", 0.95],
     ]);
+  });
+});
+
+describe("readable benchmark names", () => {
+  it("keeps activity context and distinguishes memory from time", () => {
+    expect(benchmarkLabel("bench_lca.MultiScores.time_scores")).toBe("Multi Scores");
+    expect(benchmarkLabel("bench_import.timeraw_import_bw2calc")).toBe("Import bw2calc");
+    expect(benchmarkLabel("bench_write.DatabaseWrite.peakmem_write")).toBe("Database Write · Peak memory");
+    expect(benchmarkLabel("plain")).toBe("Plain");
+  });
+});
+
+describe("narrow chart ticks", () => {
+  it("keeps both endpoints without exceeding the tick budget", () => {
+    const steps = Array.from({ length: 15 }, (_, i) => ({ label: `1.${i}`, released: true }));
+    expect(ticksFor(steps, 3)).toEqual(["1.0", "1.7", "1.14"]);
+  });
+});
+
+describe("primary navigation state", () => {
+  it("preserves the page, platform, Python and selected check in a shared link", () => {
+    const view = { params: [], page: "compatibility", platform: "linux", python: "3.12", check: "linux-312-latest" };
+    expect(readView(writeView(view))).toEqual(view);
+  });
+});
+
+describe("page routing", () => {
+  it("keeps legacy histories, overview filters and the compatibility anchor", () => {
+    expect(pageOf({ params: [], bench: "known-bench" })).toBe("explorer");
+    expect(pageOf({ params: [], direction: "worse" })).toBe("changes");
+    expect(pageOf({ params: [], page: "home" })).toBe("home");
+    expect(pageOf({ params: [], page: "unknown" })).toBe("home");
+    expect(pageOf(readView("", "#works-together"))).toBe("compatibility");
+    expect(pageOf(readView("?page=changes", "#works-together"))).toBe("changes");
+    expect(pageOf(readView("", "#latest-release"))).toBe("changes");
   });
 });

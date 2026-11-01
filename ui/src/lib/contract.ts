@@ -1,11 +1,13 @@
 // The one module that knows the data's format: the rest of the UI imports its types from here.
 import { Ajv2020, type ValidateFunction } from "ajv/dist/2020.js";
+import guidanceSchema from "../../schema/guidance.schema.json" with { type: "json" };
 import indexSchema from "../../schema/index.schema.json" with { type: "json" };
 import reportSchema from "../../schema/report.schema.json" with { type: "json" };
+import type { Guidance } from "./guidance.gen";
 import type { BenchmarkIndex } from "./index.gen";
 import type { BenchmarkReport } from "./report.gen";
 
-export type { BenchmarkIndex, BenchmarkReport };
+export type { BenchmarkIndex, BenchmarkReport, Guidance };
 export type Report = BenchmarkIndex["reports"][number];
 export type Change = NonNullable<BenchmarkIndex["changes"]>[number];
 
@@ -15,6 +17,7 @@ export const REPORT_FORMATS: readonly string[] = ["bmf/v0"];
 // NOTE: formats go unchecked here, to keep ajv-formats out of the page. The exporter's tests
 // check date-time; uri is unchecked.
 const ajv = new Ajv2020({ allErrors: true, validateFormats: false });
+const checkGuidance = ajv.compile<Guidance>(guidanceSchema);
 const checkIndex = ajv.compile<BenchmarkIndex>(indexSchema);
 const checkReport = ajv.compile<BenchmarkReport>(reportSchema);
 
@@ -36,13 +39,14 @@ export function folder(base: string | URL, from: string | undefined = globalThis
   return new URL(text.endsWith("/") ? text : `${text}/`, from);
 }
 
-async function getJson(url: URL, fetcher: typeof fetch): Promise<unknown> {
+async function getJson(url: URL, fetcher: typeof fetch, optional = false): Promise<unknown> {
   let response: Response;
   try {
     response = await fetcher(url);
   } catch (error) {
     throw new ContractError(`${url}: ${error}`, "missing", { cause: error });
   }
+  if (optional && response.status === 404) return undefined;
   if (!response.ok) throw new ContractError(`${url}: HTTP ${response.status}`, "missing");
   try {
     return await response.json();
@@ -124,4 +128,30 @@ export async function loadReport(
 ): Promise<BenchmarkReport> {
   const url = new URL(report.path, folder(base));
   return valid(checkReport, await getJson(url, fetcher), url);
+}
+
+/** Optional setup guidance beside index.json; a missing file leaves the benchmark viewer usable. */
+export async function loadGuidance(base: string | URL, fetcher: typeof fetch = fetch): Promise<Guidance | undefined> {
+  const url = new URL("guidance.json", folder(base));
+  const data = await getJson(url, fetcher, true);
+  if (data === undefined) return undefined;
+  const version = (data as { format_version?: unknown } | null)?.format_version;
+  if (version !== FORMAT_VERSION) {
+    throw new ContractError(`${url}: format_version ${version}, this UI reads ${FORMAT_VERSION}`, "version");
+  }
+  const guidance = valid(checkGuidance, data, url);
+  const platforms = new Set(guidance.platforms.map((p) => p.id));
+  const checks = new Map(guidance.checks.map((c) => [c.id, c]));
+  if (platforms.size !== guidance.platforms.length || checks.size !== guidance.checks.length) {
+    throw new ContractError(`${url}: duplicate platform or check id`);
+  }
+  for (const check of guidance.checks) {
+    if (!platforms.has(check.platform)) throw new ContractError(`${url}: unknown platform ${check.platform}`);
+  }
+  for (const platform of guidance.platforms) {
+    if (platform.defaultCheck && checks.get(platform.defaultCheck)?.platform !== platform.id) {
+      throw new ContractError(`${url}: invalid defaultCheck for ${platform.id}`);
+    }
+  }
+  return guidance;
 }

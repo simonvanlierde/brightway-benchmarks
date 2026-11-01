@@ -80,6 +80,10 @@ export interface BenchmarkIndex {
     group: Id;
     name: string;
     /**
+     * What it measures, for readers.
+     */
+    description?: string;
+    /**
      * The measure ids its metrics use.
      *
      * @minItems 1
@@ -88,6 +92,10 @@ export interface BenchmarkIndex {
     params: {
       name: string;
       /**
+       * What the parameter means.
+       */
+      description?: string;
+      /**
        * As cases give them, in display order.
        */
       values: string[];
@@ -95,6 +103,10 @@ export interface BenchmarkIndex {
        * How to show each value; without it, show the values.
        */
       labels?: string[];
+      /**
+       * What each value means, in the order of values; empty where there is none.
+       */
+      notes?: string[];
     }[];
   }[];
   /**

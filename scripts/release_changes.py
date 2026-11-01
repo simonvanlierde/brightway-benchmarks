@@ -106,16 +106,19 @@ def pick(stacks: Iterable[str], current: str) -> str:
 
 
 def releases(subject: str, tool: str) -> dict[str, str]:
-    """Each release's commit (8 characters) -> its line in asv/SUBJECT.hashes, in that order.
+    """Each release's commit (8 characters) -> its tag in asv/SUBJECT.hashes, in that order.
 
     A tag that asv's mirror, .asv/SUBJECT, lacks is left out and named on stderr as TOOL: a
-    missing or stale mirror would otherwise drop releases unannounced.
+    missing or stale mirror would otherwise drop releases unannounced. Hash-only experiments
+    are not releases.
     """
     hashes = Path(f"asv/{subject}.hashes")
     out, missing = {}, []
     for tag in hashes.read_text().split() if hashes.exists() else []:
+        if SHA.fullmatch(tag):
+            continue
         commit = sha(Path(".asv") / subject, tag)
-        if commit == tag[:8] and not SHA.fullmatch(tag):  # sha() fell back to the tag; a full hash needs no mirror
+        if commit == tag[:8]:  # sha() fell back to the unresolved tag
             missing.append(tag)
         else:
             out[commit] = tag

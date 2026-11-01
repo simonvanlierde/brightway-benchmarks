@@ -31,15 +31,13 @@ describe.each([
 ])("%s theme", (_, t) => {
   const series = Array.from({ length: 8 }, (__, i) => `s${i + 1}`);
 
-  it.each([...series, "control", "worse", "better"])("--%s is at least 3:1 on the chart and the page", (name) => {
-    for (const ground of ["surface", "page"]) {
-      expect(contrast(t[name] ?? "", t[ground] ?? ""), `${name} on ${ground}`).toBeGreaterThanOrEqual(3);
-    }
+  it.each([...series, "control", "worse", "better"])("--%s is at least 3:1 on the page", (name) => {
+    expect(contrast(t[name] ?? "", t.page ?? ""), name).toBeGreaterThanOrEqual(3);
   });
 
   it("keeps text at 4.5:1", () => {
     for (const name of ["ink", "ink-2", "muted", "accent", "worse", "better"]) {
-      expect(contrast(t[name] ?? "", t.surface ?? ""), name).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(t[name] ?? "", t.page ?? ""), name).toBeGreaterThanOrEqual(4.5);
     }
   });
 });

@@ -1,0 +1,61 @@
+# What each benchmark and parameter means, for readers of the viewer. scripts/export_ui.py
+# copies these into index.json and warns about a benchmark without an entry; tests/test_export_ui.py
+# also checks the UI fixture. Write for Brightway users: plain words, no internal issue numbers.
+
+[benchmarks]
+"bench_import.timeraw_import_bw2calc"                      = "Importing bw2calc in a fresh Python process."
+"bench_import.timeraw_import_bw2data"                      = "Importing bw2data in a fresh Python process."
+"bench_lca.SingleScore.time_first_score"                   = "One demand and one impact method from scratch: build the matrices, factorize, solve and characterize."
+"bench_lca.SingleScore.peakmem_first_score"                = "The process's peak memory for that first score, building the inputs included."
+"bench_lca.SingleScore.track_relative_error"               = "How far the first score is from a float64 reference, so a fast but wrong result shows."
+"bench_lca.NewDemand.time_redo_lci"                        = "A second demand on a system already solved once: the solve alone, reusing the first factorization where the class can."
+"bench_lca.NewDemand.track_relative_error"                 = "How far the second demand's score is from the reference."
+"bench_lca.NewDemandRefinement.time_redo_lci_refinement"   = "The second-demand solve with UMFPACK's iterative refinement on or off."
+"bench_lca.NewDemandRefinement.track_refinement_steps"     = "How many refinement steps UMFPACK took for the solve."
+"bench_lca.NewDemandRefinement.track_relative_error"       = "How far the score is from the reference, with refinement on or off."
+"bench_lca.MultiScores.time_scores"                        = "Several demands against three impact methods in one calculation."
+"bench_lca.MonteCarlo.time_iterations"                     = "Monte Carlo draws after the first score; each draw samples new matrix values and solves again."
+"bench_write.DatabaseWrite.time_write"                     = "Writing a synthetic database into a new bw2data project."
+"bench_write.DatabaseWrite.peakmem_write"                  = "The process's peak memory while writing that database, building it included."
+"bench_write.DatabaseWrite.track_score_error"              = "How far a score from the written database is from the reference."
+"bench_traversal.Traversal.time_traverse"                  = "A supply chain graph traversal from one product with bw_graph_tools, after an LCA, cutting off below 0.1% of the score."
+"bench_traversal.Traversal.track_calculation_count"        = "How many calculations the traversal made."
+"bench_datapackage.EntriesPath.time_add_entries"           = "Adding matrix entries to a new datapackage with add_entries."
+"bench_datapackage.EntriesPath.time_vars_iterator"         = "Adding the same entries with add_persistent_vector_from_iterator, for comparison."
+"bench_datapackage.Groups.time_groups"                     = "Listing the resource groups of a datapackage."
+"bench_timex.TimelineLCI.time_lci"                         = "The time-explicit inventory of a bw_timex timeline over two background databases (2020 and 2030)."
+"bench_timex.TimelineLCI.track_static_score_error"         = "How far bw_timex's static score is from a plain bw2calc LCA of the same system."
+"bench_mapped_matrix.MappedMatrixBuild.time_mapped_matrix" = "Building a technosphere matrix from a datapackage with matrix_utils' MappedMatrix."
+
+# A parameter's meaning, the same in every benchmark that has it.
+[params]
+size       = "The synthetic system the case runs on."
+cls        = "The bw2calc class that does the calculation."
+demands    = "How many functional units are calculated together."
+variant    = "How the scores are calculated."
+iterations = "How many Monte Carlo draws are timed after the first score."
+refinement = "UMFPACK's iterative refinement after each solve."
+max_calc   = "The most calculations the traversal may make."
+entries    = "How many matrix entries are added."
+groups     = "How many resource groups the datapackage holds, one matrix entry each."
+steps      = "How many yearly steps each background exchange is spread over."
+
+# A parameter value's meaning, by parameter and value as the viewer shows it.
+[values.size]
+smoke     = "200 products: a quick check that the case runs."
+useeio    = "388 products and 1,871 elementary flows, shaped like USEEIO 1.1."
+ecoinvent = "26,533 products and 4,000 elementary flows, shaped like ecoinvent 3.12 cut-off."
+
+[values.cls]
+LCA            = "Solves directly, factorizing the technosphere matrix; Monte Carlo refactorizes on every draw."
+IterativeLCA   = "Factorizes once and reuses that factorization for later solves."
+JacobiGMRESLCA = "Solves by GMRES with a Jacobi preconditioner and never factorizes."
+
+[values.variant]
+MultiLCA = "bw2calc's MultiLCA, which keeps each demand's full inventory."
+forward  = "FastScoresOnlyMultiLCA, solving one system per demand and keeping only scores."
+adjoint  = "FastScoresOnlyMultiLCA, solving one transposed system per impact method instead of one per demand."
+
+[values.refinement]
+on  = "UMFPACK's default: it refines the solution after solving."
+off = "Refinement turned off (UMFPACK_IRSTEP=0)."

@@ -9,6 +9,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The homepage shows a tested Brightway setup, measured solver alternatives and the latest
+  release changes ([viewer](ui/README.md), [UI changelog](ui/CHANGELOG.md)).
 - Experimental controls for sharing synthetic input lists and varying locality by list length.
   They stay off in registered profiles, so existing benchmark histories keep their versions
   ([method](docs/method.md#experimental-input-sharing)).
@@ -38,14 +40,16 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `just ui-data OUT` writes the results as the data a new benchmark UI reads: an `index.json`
   and one report per commit in Bencher Metric Format. ui/schema/ describes both, and the tests
   check the output against it. The UI itself is in ui/, with its own changelog.
-- The new viewer is on the site at `ui/`, beside the asv pages, which stay until it shows
-  everything they show ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)). `just ui-serve`
-  builds it and serves it locally with the committed real data, to look at a UI change.
+- The new viewer is the site's homepage and is also at `ui/`; the asv pages stay at `asv.html`
+  until it shows everything they show ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).
+  `just ui-serve` builds it and serves it locally with the committed real data, to look at a UI change.
 - `just ui-data` also lists what changed along each series: moves between two releases that are
   larger than the case's own noise, and Apache Otava's change points. It needs uv, which runs
   Otava in an environment of its own ([scripts/export_ui.py](scripts/export_ui.py)). Each time's
   bounds are now the middle half of its samples, not asv's 99% interval, and bw2calc's
   environments carry their solver's name, with the BLAS where the environment pins one.
+- `just ui-data` adds what each benchmark, parameter and value means, from
+  [`benchmarks/descriptions.toml`](benchmarks/descriptions.toml), for the viewer to show.
 - A table of what moved in each package's latest release: every case whose time or memory
   changed by more than its noise allows since the release before (three times the spread of its
   samples, and at least 2%), per environment, including cases that failed
@@ -92,6 +96,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Hash-only experiments no longer count as releases in the viewer or `just release-changes`.
+  They remain visible in each benchmark's history ([running](docs/running.md#add-a-release)).
 - A run no longer fails after its benchmarks pass when an asv environment has lost its
   interpreter, as happens when its uv cache is cleaned: the lock files skip that folder.
 

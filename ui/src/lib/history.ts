@@ -11,15 +11,34 @@ export interface View {
   params: string[];
   measure?: string;
   machine?: string;
+  group?: string;
+  direction?: string;
+  page?: string;
+  platform?: string;
+  python?: string;
+  check?: string;
 }
 
-export function readView(search: string): View {
+export function readView(search: string, hash = ""): View {
   const q = new URLSearchParams(search);
   const view: View = { params: q.getAll("p") };
-  for (const key of ["bench", "measure", "machine"] as const) {
+  for (const key of [
+    "bench",
+    "measure",
+    "machine",
+    "group",
+    "direction",
+    "page",
+    "platform",
+    "python",
+    "check",
+  ] as const) {
     const value = q.get(key);
     if (value) view[key] = value;
   }
+  // The old asv homepage's section anchors.
+  if (!search && hash === "#works-together") view.page = "compatibility";
+  if (!search && hash === "#latest-release") view.page = "changes";
   return view;
 }
 
@@ -29,6 +48,11 @@ export function writeView(view: View): string {
   for (const p of view.params) q.append("p", p);
   if (view.measure) q.set("measure", view.measure);
   if (view.machine) q.set("machine", view.machine);
+  if (view.group) q.set("group", view.group);
+  if (view.direction && view.direction !== "all") q.set("direction", view.direction);
+  for (const key of ["page", "platform", "python", "check"] as const) {
+    if (view[key]) q.set(key, view[key]);
+  }
   const text = q.toString();
   return text ? `?${text}` : "";
 }
@@ -245,6 +269,24 @@ export function latestChanges(index: BenchmarkIndex): LatestChange[] {
   return out.sort((a, b) => rank[a.way] - rank[b.way] || size(b) - size(a));
 }
 
+export interface ChangeGroup {
+  bench: Benchmark;
+  group: BenchmarkIndex["groups"][number];
+  rows: LatestChange[];
+}
+
+/** ROWS gathered per benchmark and machine, in the order each first appears; rows keep their order. */
+export function byBenchmark(rows: LatestChange[]): ChangeGroup[] {
+  const out = new Map<string, ChangeGroup>();
+  for (const row of rows) {
+    const key = `${row.bench.id}/${row.change.machine}`;
+    const found = out.get(key);
+    if (found) found.rows.push(row);
+    else out.set(key, { bench: row.bench, group: row.group, rows: [row] });
+  }
+  return [...out.values()];
+}
+
 /** TEXT cut after each "." and "_", so a long dotted or snake_case name can break there (<wbr>). */
 export function breakable(text: string): string[] {
   return text.split(/(?<=[._])/);
@@ -254,12 +296,39 @@ export function breakable(text: string): string[] {
 export function ticksFor(steps: { label: string; released: boolean }[], most: number): string[] {
   const named = steps.filter((s) => s.released);
   const pool = (named.length > 1 ? named : steps).map((s) => s.label);
-  const every = Math.max(1, Math.ceil(pool.length / Math.max(2, most)));
-  return pool.filter((_, i) => i % every === 0 || i === pool.length - 1);
+  const count = Math.max(2, Math.floor(most));
+  if (pool.length <= count) return pool;
+  return Array.from({ length: count }, (_, i) => pool[Math.round((i * (pool.length - 1)) / (count - 1))] ?? "");
 }
 
 /** A p-value as the tables show it: "p < 0.001" below that, else two significant figures. */
 export function pText(p: number | undefined): string {
   if (p === undefined) return "p unknown";
   return p < 0.001 ? "p < 0.001" : `p = ${p.toPrecision(2)}`;
+}
+
+/** A readable fallback for benchmark identifiers; the original name stays available in the detail view. */
+export function benchmarkLabel(name: string): string {
+  const parts = name.split(".");
+  const method = parts.pop() ?? name;
+  const owner = parts.length > 1 ? (parts.pop() ?? "") : "";
+  const words = (text: string) => text.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replaceAll("_", " ");
+  const action = words(method.replace(/^(timeraw|time|peakmem|track)_/, ""));
+  const context = words(owner);
+  const label =
+    context && action.split(" ").every((w) => context.toLowerCase().includes(w.toLowerCase()))
+      ? context
+      : context
+        ? `${context} · ${action}`
+        : action;
+  const text = label.charAt(0).toUpperCase() + label.slice(1);
+  return method.startsWith("peakmem_") ? `${text} · Peak memory` : text;
+}
+
+/** Existing benchmark links keep opening histories; older overview filters keep opening release changes. */
+export function pageOf(view: View): "home" | "compatibility" | "changes" | "explorer" {
+  if (view.bench) return "explorer";
+  if (view.page === "compatibility" || view.page === "changes" || view.page === "explorer") return view.page;
+  if (!view.page && (view.group || view.direction)) return "changes";
+  return "home";
 }

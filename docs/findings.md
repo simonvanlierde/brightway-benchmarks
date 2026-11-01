@@ -237,7 +237,7 @@ The compat `suites` and `floors` columns ([running](running.md#compat)) found th
 
 **conda-forge gets a Brightway release only once its feedstock merges the update.** bw2calc
 stayed at 2.4.0 there until 3.1.0 landed on 2026-10-18. bw_graph_tools and bw_timex are not
-on conda-forge yet. Check the `conda-forge` row of the
-[works together today](https://simonvanlierde.com/brightway-benchmarks/#works-together) table
+on conda-forge yet. Check the `conda-forge` rows of the
+[compatibility view](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility)
 before you install from there.
 Rerun: `just compat 3.12 conda-forge`.

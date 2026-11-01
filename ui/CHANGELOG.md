@@ -9,6 +9,16 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Home shows a tested setup for your platform, with its installation files, measured solver alternatives and the latest release changes ([viewer](README.md#what-it-shows)).
+- A Compatibility page lists every check by platform and Python version, with the last environment that passed.
+- Each page has its own shareable URL, and old benchmark links and homepage anchors still work.
+- Search benchmarks by name, and filter release changes by package and direction.
+- Release changes lists regressions first, with improvements grouped by benchmark.
+- A chart's legend buttons bring one environment forward, and the explorer opens on the newest regression.
+- Home says which machine timed the solvers, and notes when that is not your platform.
+- Home lists the other checks on your platform, such as a failing upstream test suite, next to the setup, and the install command has a copy button.
+- Charts with three releases or fewer set environments a little apart, and commits that are not releases draw faint, with a count under the chart.
+- The explorer explains each benchmark, its parameters and the values you choose, such as what `JacobiGMRESLCA` does.
 - A JSON Schema for the data: an index (format version 1) and reports in Bencher Metric
   Format v0.
 - `src/lib/contract.ts` loads both from a configurable URL and checks them against the schema
@@ -23,3 +33,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   release against its noise or as a change point.
 - Optional `label` on environments and `bounds` on measures in the index: the name to show for
   an environment, and what a metric's lower and upper values are.
+
+### Changed
+
+- A new flat blue look, with red and teal kept for worse and better results ([design](../DESIGN.md)).
+- Change tables reflow into labelled rows on phones, and no text is smaller than 12px.
+
+### Fixed
+
+- Opening a change keeps the machine that measured it, and narrow charts keep their first and last release labels.
+- A link to an unknown benchmark says how to find it.

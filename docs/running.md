@@ -12,7 +12,7 @@ just bench bw2calc               # every bw2calc release listed in asv/bw2calc.h
 just bench bw2data "4.7^!" -e    # one release; extra arguments go to asv
 just site                        # build the history pages in site/
 just release-changes bw2calc     # what moved in bw2calc's latest release, as a Markdown table
-just ui-data site/data           # results/ as the data the UI in ui/ reads
+just ui-data site/data           # results/ as the UI's data; guidance.json too after `just site`
 just ui-serve                    # build the UI and serve it on 127.0.0.1:4400, to look at a change
 just results-commit              # keep results/ on the local results branch, for publishing
 just solver-lci klu ecoinvent    # bw2calc 3.1.0's own lci() with one solver, KLU here
@@ -26,6 +26,9 @@ already succeeded, so a stopped run resumes.
 
 The `codspeed` workflow runs `benchmarks/codspeed` on each pull request and push to `main`
 ([CodSpeed](https://app.codspeed.io/simonvanlierde/brightway-benchmarks)).
+`just ui-data` copies what each benchmark and parameter means from
+[`benchmarks/descriptions.toml`](../benchmarks/descriptions.toml); it warns about a benchmark
+that has no entry there, so add one with each new benchmark.
 `just results-commit` refuses results that name this host or a name in
 `BWBENCH_PRIVATE_NAMES`.
 
@@ -62,6 +65,9 @@ benchmark, otherwise with exit 137. Set `BWBENCH_MEM` to give it more.
 4. Run `just stack-check <package>`, and drop the releases that no longer run on it.
 
 [method.md](method.md#how-the-results-stay-reproducible) says why the set is fixed.
+
+Hash-only entries in `asv/<package>.hashes` are experiments. They stay in the history, but
+the viewer and `just release-changes` compare release tags only.
 
 ## Compat
 
@@ -109,13 +115,19 @@ an automation should replace its saved baseline only after the report succeeds.
 
 ### Install a set that works
 
-The site's [works together today](https://simonvanlierde.com/brightway-benchmarks/#works-together)
-table shows the latest nightly result per job and the last set that passed. Download its
-`requirements.txt` and use it as constraints:
+The site's [compatibility view](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility)
+shows the latest result and last passing set for each job. Check the date and coverage before
+choosing a set. Smoke calculations and full package test suites are separate checks.
+
+In a fresh Python environment, download that set's `requirements.txt` and use it as constraints:
 
 ```sh
-uv pip install brightway25 -c requirements.txt
+uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt
 ```
+
+These are the runtime libraries the PyPI compatibility job checks together. Constraints pin
+versions but do not install packages themselves. The full requirements file also includes the
+test harness; `uv pip install -r requirements.txt` installs that complete recorded environment.
 
 For the `conda-forge` row, download `pixi.toml` and `pixi.lock` into one folder and run
 `pixi install --frozen` there. A set is kept for 90 days, as long as GitHub keeps the

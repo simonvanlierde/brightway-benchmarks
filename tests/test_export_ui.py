@@ -202,8 +202,8 @@ def test_the_export_follows_the_schema(export_ui: ModuleType, tmp_path: Path, mo
     check = schema("report")
     for report in reports.values():
         check.validate(report)
-    # A release named by its commit, not a tag, is shown by its first 8 characters.
-    assert [c.get("release") for c in index["commits"]] == ["11111111", None]
+    # Hash-only experiments remain in the history without becoming releases.
+    assert [c.get("release") for c in index["commits"]] == [None, None]
     # Every id a record names is one the index defines.
     ids = {k: {x["id"] for x in index[k]} for k in ("groups", "measures", "machines", "environments", "benchmarks")}
     assert {m for b in index["benchmarks"] for m in b["measures"]} <= ids["measures"]
@@ -228,9 +228,9 @@ def test_the_export_follows_the_schema(export_ui: ModuleType, tmp_path: Path, mo
         "peak-memory": ("lower", "max"),
     }
     # The axes hold the values that ran: IterativeLCA failed in every commit.
-    assert index["benchmarks"][0]["params"] == [
-        {"name": "size", "values": ["'ecoinvent'"], "labels": ["ecoinvent"]},
-        {"name": "cls", "values": ["'LCA'"], "labels": ["LCA"]},
+    assert [(a["name"], a["values"], a["labels"]) for a in index["benchmarks"][0]["params"]] == [
+        ("size", ["'ecoinvent'"], ["ecoinvent"]),
+        ("cls", ["'LCA'"], ["LCA"]),
     ]
 
 
@@ -316,6 +316,26 @@ def test_a_release_tag_resolves_through_the_mirror(
     assert capsys.readouterr().err == "export_ui: .asv/s lacks 2.0; `just bench s` refreshes it\n"
 
 
+def test_a_fork_commit_is_not_the_latest_release(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    commits = [("11" * 20, 1.0), ("22" * 20, 1.5), ("33" * 20, 3.0)]
+    files = {
+        f"m/{c[:8]}-a": result(c, "a" + STACK, (i + 1) * 1_000_000, [v, None], ([v, None], [v, None]))
+        for i, (c, v) in enumerate(commits)
+    }
+    results = layout(tmp_path, files)
+    (tmp_path / "asv" / "s.hashes").write_text(f"1.0\n2.0\n{commits[-1][0]}\n")
+    release_changes = importlib.import_module("release_changes")
+    monkeypatch.setattr(release_changes, "sha", lambda _, tag: {"1.0": "11111111", "2.0": "22222222"}.get(tag, tag[:8]))
+    index, reports = run(export_ui, results, monkeypatch)
+    assert [c.get("release") for c in index["commits"]] == ["1.0", "2.0", None]
+    assert len(reports) == 3
+    assert [(c["baseline"], c["commit"]) for c in index["changes"] if c["method"] == "release"] == [
+        (commits[0][0], commits[1][0])
+    ]
+
+
 def test_axes_follow_benchmarks_json_and_show_plain_values(
     export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -327,7 +347,8 @@ def test_axes_follow_benchmarks_json_and_show_plain_values(
     info = INFO | {TIME: {"type": "time", "param_names": NAMES, "params": params}}
     index, _ = run(export_ui, layout(tmp_path, files, info=info), monkeypatch)
     (time,) = [b for b in index["benchmarks"] if b["name"] == TIME]
-    assert time["params"] == [
+    shown = ("name", "values", "labels")
+    assert [{k: a[k] for k in shown} for a in time["params"]] == [
         {"name": "size", "values": ["'ecoinvent'"], "labels": ["ecoinvent"]},
         # Listed values first, in benchmarks.json's order; then the rest as they came. Text that
         # is not a Python literal is shown as it is.
@@ -342,6 +363,33 @@ def test_axes_follow_benchmarks_json_and_show_plain_values(
         ("'ecoinvent'", "'IterativeLCA'"),
         ("'ecoinvent'", "<lambda>"),
     }
+
+
+def test_descriptions_follow_the_shown_values(export_ui: ModuleType):
+    bench = {
+        "name": "b",
+        "params": [
+            {"name": "cls", "values": ["'LCA'", "'Other'"], "labels": ["LCA", "Other"]},
+            {"name": "unknown", "values": ["1"]},
+        ],
+    }
+    about = {"benchmarks": {"b": "Bee."}, "params": {"cls": "The class."}, "values": {"cls": {"LCA": "Direct."}}}
+    export_ui.describe([bench], about)
+    assert bench["description"] == "Bee."
+    assert bench["params"][0] == {
+        "name": "cls",
+        "values": ["'LCA'", "'Other'"],
+        "labels": ["LCA", "Other"],
+        "description": "The class.",
+        "notes": ["Direct.", ""],
+    }
+    assert bench["params"][1] == {"name": "unknown", "values": ["1"]}
+
+
+def test_every_benchmark_and_parameter_the_ui_shows_is_described():
+    index = json.loads((ROOT / "ui" / "test" / "fixtures" / "real" / "index.json").read_text())
+    assert [b["name"] for b in index["benchmarks"] if not b.get("description")] == []
+    assert {a["name"] for b in index["benchmarks"] for a in b["params"] if not a.get("description")} == set()
 
 
 def test_a_name_without_letters_still_makes_an_id(export_ui: ModuleType):
@@ -395,7 +443,11 @@ def test_changes_land_in_the_index_with_their_commits(
         for i, (c, v) in enumerate(commits)  # a 2% spread
     }
     results = layout(tmp_path, files)
-    (results.parent / "asv" / "s.hashes").write_text("".join(f"{c}\n" for c, _ in commits))
+    (results.parent / "asv" / "s.hashes").write_text("1.0\n2.0\n3.0\n")
+    release_changes = importlib.import_module("release_changes")
+    monkeypatch.setattr(
+        release_changes, "sha", lambda _, tag: {"1.0": "11111111", "2.0": "22222222", "3.0": "33333333"}[tag]
+    )
     seen = []
 
     def otava(values: list[list[float]]) -> list[list[dict]]:

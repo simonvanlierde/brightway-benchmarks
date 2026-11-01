@@ -104,6 +104,7 @@
           "id": { "$ref": "#/$defs/id" },
           "group": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
+          "description": { "description": "What it measures, for readers.", "type": "string" },
           "measures": {
             "description": "The measure ids its metrics use.",
             "type": "array",
@@ -117,6 +118,7 @@
               "required": ["name", "values"],
               "properties": {
                 "name": { "type": "string" },
+                "description": { "description": "What the parameter means.", "type": "string" },
                 "values": {
                   "description": "As cases give them, in display order.",
                   "type": "array",
@@ -124,6 +126,11 @@
                 },
                 "labels": {
                   "description": "How to show each value; without it, show the values.",
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "notes": {
+                  "description": "What each value means, in the order of values; empty where there is none.",
                   "type": "array",
                   "items": { "type": "string" }
                 }

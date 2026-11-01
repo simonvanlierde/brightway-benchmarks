@@ -83,7 +83,7 @@ fresh environment and runs every case once at the `smoke` size, untimed.
 - `conda-forge`: the same set from conda-forge with pixi, without the bw_graph_tools and
   bw_timex cases. Linux only.
 - `suites`: like `latest`, but runs the test suites of bw2data, bw2calc, bw2io, bw_processing,
-  matrix_utils, bw_graph_tools and bw_timex, from each package's GitHub tag. Linux only.
+  matrix_utils, bw_graph_tools and bw_timex, from each package's GitHub tag.
 
 bw_timex pulls in PyPardiso on Linux x86_64, so there bw2calc solves with PyPardiso.
 

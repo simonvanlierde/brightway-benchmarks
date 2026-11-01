@@ -109,7 +109,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Selecting a compatibility check keeps its install set and URL aligned, and desktop setup controls share a row. Check explanations use the table’s labels ([viewer](ui/README.md#what-it-shows)).
+- Selecting a compatibility check keeps its install set and URL aligned. Check explanations use the table’s labels ([viewer](ui/README.md#what-it-shows)).
 - Archived setup sets keep their latest passing date and run after the artifacts expire
   ([compat archive](docs/running.md#the-compat-archive)).
 - `pylock.toml` refused Python patch releases older than the CI runner's, such as Ubuntu

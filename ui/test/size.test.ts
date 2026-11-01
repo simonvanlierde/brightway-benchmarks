@@ -45,14 +45,31 @@ it("includes lazy JavaScript chunks in the viewer budget", () => {
   writeFileSync(join(dir, "dist/_astro/app.js"), `const data = "${content(100)}";`);
   writeFileSync(join(dir, "dist/_astro/lazy-chart.js"), `const data = "${content(100)}";`);
   writeFileSync(join(dir, "dist/about/index.html"), "<main>About</main>");
-  expect(run(dir).status).toBe(1);
+  const result = run(dir);
+  expect(result.status, result.stdout + result.stderr).toBe(1);
+  expect(result.stdout).toMatch(/index.html \d+\.\d KB gzipped, budget 180 KB/);
 });
 
 it("fails when a static page itself exceeds the budget", () => {
   const dir = fixture();
   writeFileSync(join(dir, "dist/index.html"), "<main>Viewer</main>");
   writeFileSync(join(dir, "dist/about/index.html"), `<main>${content(21)}</main>`);
-  expect(run(dir).status).toBe(1);
+  const result = run(dir);
+  expect(result.status, result.stdout + result.stderr).toBe(1);
+  expect(result.stdout).toMatch(/about\/index.html \d+\.\d KB gzipped, budget 20 KB/);
+});
+
+it("counts a linked stylesheet toward a static page's budget", () => {
+  const dir = fixture();
+  writeFileSync(join(dir, "dist/index.html"), "<main>Viewer</main>");
+  writeFileSync(
+    join(dir, "dist/about/index.html"),
+    '<link rel="stylesheet" href="/_astro/about.css"><main>About</main>',
+  );
+  writeFileSync(join(dir, "dist/_astro/about.css"), `body::after { content: "${content(21)}"; }`);
+  const result = run(dir);
+  expect(result.status, result.stdout + result.stderr).toBe(1);
+  expect(result.stdout).toMatch(/about\/index.html \d+\.\d KB gzipped, budget 20 KB/);
 });
 
 it("keeps an inline theme script within the static-page budget", () => {

@@ -9,7 +9,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- A sun/moon toggle remembers the chosen theme. Check freshness sits beside All checks, GitHub and build identity sit in the footer, and an About page explains the project and privacy, with search and sharing metadata ([viewer](README.md#what-it-shows)).
+- A sun/moon toggle remembers the chosen theme.
+- An About page explains the project and privacy, with search and sharing metadata. Check freshness sits beside All checks, and GitHub and build identity sit in the footer ([viewer](README.md#what-it-shows)).
 - Two pages, Setup and Benchmarks, with a benchmark search in the masthead ([viewer](README.md#what-it-shows)).
 - Setup gives an install command for uv, pip, conda or pixi, pinned to a dated set that does not change, with a link that copies the newest one.
 - Setup lists every check by platform and Python version in a grid; select one to install its set.

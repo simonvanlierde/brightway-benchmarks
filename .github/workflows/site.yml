@@ -1,14 +1,27 @@
 name: site
 
 # Builds the asv history site from the `results` branch and publishes it on GitHub Pages.
-# Daily after the nightly compat run (03:41 UTC, a few minutes), so the "works together
-# today" table stays current; run it by hand after pushing new results (`just results-commit`
-# prints the commands): a push to `results` cannot start it, because that branch holds data
-# only, no workflows.
+# Daily after the nightly compat run (03:41 UTC, a few minutes), so the compatibility checks
+# stay current; GitHub often starts it hours late. A push to main that changes the viewer or
+# the scripts that write its data also rebuilds it, so a merged UI change goes live at once.
+# Run it by hand after pushing new results (`just results-commit` prints the commands): a push
+# to `results` cannot start it, because that branch holds data only, no workflows.
 
 on:
   schedule:
     - cron: "17 5 * * *" # daily 05:17 UTC
+  push:
+    branches: [main]
+    paths:
+      - "ui/**"
+      - "scripts/export_ui.py"
+      - "scripts/export_guidance.py"
+      - "scripts/release_changes.py"
+      - "scripts/change_points.py"
+      - "scripts/compat_site.py"
+      - "scripts/site_index.py"
+      - "benchmarks/descriptions.toml"
+      - ".github/workflows/site.yml"
   workflow_dispatch:
 
 permissions:

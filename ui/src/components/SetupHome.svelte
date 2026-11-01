@@ -28,7 +28,12 @@ const changes = $derived(latestChanges(index));
 const moves = $derived(
   [changes.find((c) => c.way === "worse"), changes.find((c) => c.way === "better")].filter((c) => c !== undefined),
 );
-const additional = $derived(related.filter((c) => c.kind === "suites" || c.status !== "success"));
+// Failures first: they qualify the passing setup above them.
+const additional = $derived(
+  related
+    .filter((c) => c.kind === "suites" || c.status !== "success")
+    .sort((a, b) => Number(a.status === "success") - Number(b.status === "success")),
+);
 const comparison = $derived(guidance?.solverComparison);
 const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ?? [])));
 </script>
@@ -44,8 +49,17 @@ const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ??
       <section class="setup-panel" aria-labelledby="setup-heading">
         <div class="setup-heading"><h2 id="setup-heading">Your starting point</h2><span>{platform.label}{#if check}{` · Python ${check.python}`}{/if}</span></div>
         <div class="platform-tabs" role="group" aria-label="Choose a platform">{#each guidance.platforms as p(p.id)}<button type="button" aria-pressed={platform.id===p.id} onclick={()=>go({...view,page:"home",platform:p.id})}>{p.label}</button>{/each}</div>
-        {#if check}<CheckDetail {check}/>{:else}<p class="no-saved">No passing setup files are published for {platform.label}. Inspect compatibility for check coverage.</p>{/if}
-        <div class="setup-coverage"><div><strong>Check coverage</strong><p>Smoke calculations and full upstream tests are separate checks.</p></div><a href={writeView({page:"compatibility",platform:platform.id,params:[]})} onclick={(e)=>follow(e,{page:"compatibility",platform:platform.id,params:[]})}>Inspect compatibility</a></div>
+        {#snippet others()}
+          <div class="other-checks">
+            <strong>Other checks on {platform?.label}</strong>
+            {#if additional.length}
+              <ul>{#each additional.slice(0,4) as cell(cell.id)}<li><a href={writeView({page:"compatibility",platform:cell.platform,check:cell.id,params:[]})} onclick={(e)=>follow(e,{page:"compatibility",platform:cell.platform,check:cell.id,params:[]})}>{cell.label} · Python {cell.python}</a> <span class={statusTone(cell.status)}>{#if cell.label !== checkKind(cell.kind)}{checkKind(cell.kind)} · {/if}{statusLabel(cell.status)}</span></li>{/each}</ul>
+            {:else}<p>No full upstream test-suite result is published for {platform?.label}.</p>{/if}
+            <a href={writeView({page:"compatibility",platform:platform?.id,params:[]})} onclick={(e)=>follow(e,{page:"compatibility",platform:platform?.id,params:[]})}>Inspect compatibility</a>
+          </div>
+        {/snippet}
+        {#if check}<CheckDetail {check} related={others}/>{:else}<p class="no-saved">No passing setup files are published for {platform.label}. Inspect compatibility for check coverage.</p>{/if}
+        {#if !check}{@render others()}{/if}
       </section>
     {:else if !ready}<p class="empty" aria-live="polite">Loading tested setups…</p>
     {:else}<section class="setup-panel"><h2>Explore the available evidence</h2><p class="coverage-text">Setup guidance is unavailable. Benchmark histories and release changes remain available.</p><a href={writeView({page:"explorer",params:[]})} onclick={(e)=>follow(e,{page:"explorer",params:[]})}>Open the benchmark explorer</a></section>{/if}
@@ -66,7 +80,6 @@ const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ??
     {/each}
     {#if moves.length===0}<p class="coverage-text">No release changes beyond measured noise were published.</p>{/if}
     <a class="section-link" href={writeView({page:"changes",params:[]})} onclick={(e)=>follow(e,{page:"changes",params:[]})}>Open all release changes</a>
-    {#if related.length}<section class="current-coverage"><h3>Current check coverage</h3><ul>{#each additional.slice(0,4) as cell(cell.id)}<li><a href={writeView({page:"compatibility",platform:cell.platform,check:cell.id,params:[]})} onclick={(e)=>follow(e,{page:"compatibility",platform:cell.platform,check:cell.id,params:[]})}>{cell.label} · Python {cell.python}</a><span class={statusTone(cell.status)}>{#if cell.label !== checkKind(cell.kind)}{checkKind(cell.kind)} · {/if}{statusLabel(cell.status)}</span></li>{/each}</ul>{#if additional.length===0}<p>No full upstream test-suite result is published for this platform.</p>{/if}<p>These checks cover installation and calculations; they are separate from timing regressions.</p></section>{/if}
 
   </section>
 </div>

@@ -51,7 +51,7 @@ hold `guidance.json`.
 
 ## What it shows
 
-Home starts with a tested setup for the selected platform: current check coverage, last passing package versions and installation files. The exporter orders the primary installation file first; the viewer uses that order for its download action. On wider screens, the solver comparison sits beside the setup, with regressions and improvements below. These timings use the benchmark stack named with the comparison, which may differ from the setup's compatibility snapshot.
+Home starts with a tested setup for the selected platform: the check it passed, the other checks on that platform (failures first), then the last passing package versions and installation files. The exporter orders the primary installation file first; the viewer uses that order for its download action. On wider screens, the solver comparison sits beside the setup, with regressions and improvements below. These timings use the benchmark stack named with the comparison, which may differ from the setup's compatibility snapshot.
 
 Compatibility lists the published platform and Python checks. Filter the table and select a row to inspect its coverage, current result and saved environment. A smoke pass and an upstream test-suite pass are separate claims. If the current check fails, the earlier passing files keep their date and run link.
 

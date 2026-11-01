@@ -504,6 +504,27 @@ code,
 .install-command {
   margin-top: 18px;
 }
+.other-checks {
+  margin: 16px 0 0;
+  padding: 12px 0 14px;
+  border-block: 1px solid var(--line);
+  font-size: 0.8rem;
+}
+.other-checks strong {
+  font-weight: 650;
+}
+.other-checks ul {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 8px;
+}
+.other-checks li {
+  margin: 6px 0;
+}
+.other-checks p {
+  margin: 6px 0 8px;
+  color: var(--ink-2);
+}
 
 .package-pins {
   min-width: 0;
@@ -516,17 +537,6 @@ code,
   font-size: 0.875rem;
   padding: 12px 0 22px;
   margin: 0;
-}
-.setup-coverage {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-  align-items: center;
-  margin: 18px 0 0;
-  padding: 14px 0;
-  border-top: 1px solid var(--line);
-  background: transparent;
-  font-size: 0.8rem;
 }
 .solver-evidence {
   min-width: 0;
@@ -560,12 +570,6 @@ code,
   font-size: 0.8rem;
   font-weight: 650;
   margin-top: 7px;
-}
-.current-coverage {
-  grid-column: 1 / -1;
-  padding-top: 16px;
-  margin-top: 18px;
-  border-top: 1px solid var(--line);
 }
 .compat-workspace {
   display: grid;
@@ -778,6 +782,12 @@ details.data {
 .install-command code {
   font-size: 1em;
 }
+.install-command .copy {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+}
 .package-pins table {
   font-size: 0.8rem;
 }
@@ -793,16 +803,6 @@ details.data {
   font-weight: 600;
 }
 
-.setup-coverage strong {
-  font-weight: 650;
-}
-.setup-coverage p {
-  margin: 3px 0 0;
-  color: var(--ink-2);
-}
-.setup-coverage > a {
-  flex: none;
-}
 .solver-evidence h2 {
   font-size: 1.5rem;
   font-weight: 650;
@@ -854,21 +854,6 @@ details.data {
   font-size: 0.8rem;
   color: var(--ink-2);
   margin: 7px 0 0;
-}
-.current-coverage ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.current-coverage li {
-  margin: 11px 0;
-  font-size: 0.8rem;
-}
-.current-coverage p {
-  margin: 7px 0 10px;
-  color: var(--ink-2);
-  font-size: 0.8rem;
-  line-height: 1.6;
 }
 
 .compat-filters > div {
@@ -986,11 +971,6 @@ tbody tr:hover {
 }
 .brief-change h3 a {
   color: var(--ink);
-}
-.current-coverage li > span {
-  display: block;
-  font-size: 0.8rem;
-  margin-top: 3px;
 }
 .compat-table thead th {
   font-size: 0.8rem;
@@ -1130,10 +1110,6 @@ tbody tr:hover {
   margin: 0;
   font-size: 1rem;
   font-weight: 650;
-}
-.view .current-coverage h3 {
-  margin: 0 0 9px;
-  font-size: 1rem;
 }
 .compat-table td:last-child {
   white-space: nowrap;
@@ -1329,13 +1305,6 @@ details.data[open] summary {
   .saved-header {
     display: block;
   }
-  .setup-coverage {
-    margin-left: 0;
-    margin-right: 0;
-    padding: 14px 0;
-    gap: 18px;
-    align-items: flex-start;
-  }
   .compat-filters {
     padding: 14px;
   }
@@ -1402,9 +1371,6 @@ details.data[open] summary {
   .saved-header p {
     text-align: left;
     margin-top: 7px;
-  }
-  .setup-coverage > a {
-    max-width: 100px;
   }
   .brief-change > div {
     display: block;

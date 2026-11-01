@@ -40,7 +40,7 @@ const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" 
   <rect x="22.5" y="7.5" width="2" height="2" fill="${colors.darkInk}" />
 </svg>`;
 
-writeFileSync(join(publicDir, "favicon.svg"), faviconSvg, "utf8");
+writeFileSync(join(publicDir, "favicon.svg"), `${faviconSvg}\n`, "utf8");
 
 // Convert a PNG buffer into an ICO format container
 function pngToIco(pngBuffer, width = 32, height = 32) {

@@ -19,5 +19,12 @@ randonneur = "*"
 randonneur_data = "*"
 stats_arrays = "*"
 pypardiso = "*"
+
+# The test harness in an environment of its own, solved together with the default one, so the
+# default environment (what pixi users install) and environment.yml hold no test tools.
+[feature.test.dependencies]
 pytest = "*"
 pytest-codspeed = "==5.0.3"
+
+[environments]
+test = { features = ["test"], solve-group = "default" }

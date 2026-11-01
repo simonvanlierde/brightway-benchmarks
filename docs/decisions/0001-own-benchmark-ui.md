@@ -1,6 +1,6 @@
 # 0001. Our own benchmark UI, on an open data contract
 
-- Status: accepted
+- Status: accepted; audience priority and landing page amended by [0002](0002-setup-and-benchmark-homepage.md)
 - Date: 2026-10-30
 
 ## Context

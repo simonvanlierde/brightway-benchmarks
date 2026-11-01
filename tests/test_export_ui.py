@@ -202,8 +202,8 @@ def test_the_export_follows_the_schema(export_ui: ModuleType, tmp_path: Path, mo
     check = schema("report")
     for report in reports.values():
         check.validate(report)
-    # A release named by its commit, not a tag, is shown by its first 8 characters.
-    assert [c.get("release") for c in index["commits"]] == ["11111111", None]
+    # Hash-only experiments remain in the history without becoming releases.
+    assert [c.get("release") for c in index["commits"]] == [None, None]
     # Every id a record names is one the index defines.
     ids = {k: {x["id"] for x in index[k]} for k in ("groups", "measures", "machines", "environments", "benchmarks")}
     assert {m for b in index["benchmarks"] for m in b["measures"]} <= ids["measures"]
@@ -316,6 +316,26 @@ def test_a_release_tag_resolves_through_the_mirror(
     assert capsys.readouterr().err == "export_ui: .asv/s lacks 2.0; `just bench s` refreshes it\n"
 
 
+def test_a_fork_commit_is_not_the_latest_release(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    commits = [("11" * 20, 1.0), ("22" * 20, 1.5), ("33" * 20, 3.0)]
+    files = {
+        f"m/{c[:8]}-a": result(c, "a" + STACK, (i + 1) * 1_000_000, [v, None], ([v, None], [v, None]))
+        for i, (c, v) in enumerate(commits)
+    }
+    results = layout(tmp_path, files)
+    (tmp_path / "asv" / "s.hashes").write_text(f"1.0\n2.0\n{commits[-1][0]}\n")
+    release_changes = importlib.import_module("release_changes")
+    monkeypatch.setattr(release_changes, "sha", lambda _, tag: {"1.0": "11111111", "2.0": "22222222"}.get(tag, tag[:8]))
+    index, reports = run(export_ui, results, monkeypatch)
+    assert [c.get("release") for c in index["commits"]] == ["1.0", "2.0", None]
+    assert len(reports) == 3
+    assert [(c["baseline"], c["commit"]) for c in index["changes"] if c["method"] == "release"] == [
+        (commits[0][0], commits[1][0])
+    ]
+
+
 def test_axes_follow_benchmarks_json_and_show_plain_values(
     export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -395,7 +415,11 @@ def test_changes_land_in_the_index_with_their_commits(
         for i, (c, v) in enumerate(commits)  # a 2% spread
     }
     results = layout(tmp_path, files)
-    (results.parent / "asv" / "s.hashes").write_text("".join(f"{c}\n" for c, _ in commits))
+    (results.parent / "asv" / "s.hashes").write_text("1.0\n2.0\n3.0\n")
+    release_changes = importlib.import_module("release_changes")
+    monkeypatch.setattr(
+        release_changes, "sha", lambda _, tag: {"1.0": "11111111", "2.0": "22222222", "3.0": "33333333"}[tag]
+    )
     seen = []
 
     def otava(values: list[list[float]]) -> list[list[dict]]:

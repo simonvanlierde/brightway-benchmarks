@@ -149,10 +149,10 @@ def test_cli_prints_a_markdown_table(tmp_path: Path):
     ]
 
 
-def test_a_commit_listed_by_its_hash_needs_no_mirror(module: ModuleType, tmp_path: Path, capsys: pytest.CaptureFixture):
+def test_hash_only_experiments_are_not_releases(module: ModuleType, tmp_path: Path, capsys: pytest.CaptureFixture):
     commit = "106d62717c8867012fd9a91a46726c66c898f162"  # asv names its results by the hash itself
     (tmp_path / "asv" / "s.hashes").write_text(f"1.0\n{commit}\n")
-    module.changes(tmp_path / "results", "s")
+    assert module.releases("s", "release_changes") == {"1.000000": "1.0"}
     assert "lacks" not in capsys.readouterr().err
 
 

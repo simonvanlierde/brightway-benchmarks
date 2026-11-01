@@ -120,6 +120,7 @@ ui-serve port="4400":
 # Needs uv: change points come from Apache Otava, in an environment of its own.
 ui-data out:
     python3 scripts/export_ui.py results {{ out }}
+    python3 scripts/export_guidance.py site/compat/status.json {{ out }}
 
 # Commit results/ to the local `results` branch for the site; refuses results that name this host.
 results-commit:

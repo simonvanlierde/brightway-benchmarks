@@ -1,5 +1,8 @@
+import { readFile } from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
+import type { Guidance } from "../src/lib/contract";
+import { latestChanges } from "../src/lib/history";
 
 // Screenshots go to SHOTS when it is set, so a reviewer can look at them; CI keeps them as an artifact.
 const shots = process.env.SHOTS ?? "test-results/shots";
@@ -13,15 +16,17 @@ async function chart(page: Page, url: string) {
 
 test.describe("looks", () => {
   for (const [name, scheme, width, height] of [
-    ["light", "light", 1280, 900],
-    ["dark", "dark", 1280, 900],
-    ["phone", "light", 375, 812],
-    ["phone-dark", "dark", 375, 812],
+    ["light", "light", 1440, 1000],
+    ["dark", "dark", 1440, 1000],
+    ["phone", "light", 390, 844],
+    ["phone-dark", "dark", 390, 844],
   ] as const) {
     test(name, async ({ page }) => {
       await page.setViewportSize({ width, height });
       await page.emulateMedia({ colorScheme: scheme });
       await chart(page, SCORES);
+      await page.mouse.move(0, 0);
+      await page.screenshot({ path: `${shots}/bench-${name}-viewport.png` });
       await page.locator(".chart").focus();
       await page.keyboard.press("End");
       await page.getByText(/^Data table/).click();
@@ -29,9 +34,10 @@ test.describe("looks", () => {
       await page.screenshot({ path: `${shots}/bench-${name}.png`, fullPage: true });
       // Nothing wider than the screen: the tables scroll inside their own box.
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      await page.goto("./");
+      await page.goto("?page=changes");
       await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
       await page.screenshot({ path: `${shots}/start-${name}.png`, fullPage: true });
+      await page.screenshot({ path: `${shots}/start-${name}-viewport.png` });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     });
   }
@@ -44,16 +50,14 @@ test("the view lives in the URL, and back goes back", async ({ page }) => {
   await page.reload();
   await expect(page.getByLabel("variant", { exact: true })).toHaveValue("adjoint");
   await expect(page.getByLabel("demands", { exact: true })).toHaveValue("3");
-  await page.getByRole("link", { name: "bench_import.timeraw_import_bw2calc" }).first().click();
-  await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveText(
-    "bench_import.timeraw_import_bw2calc",
-  );
+  await page.getByRole("link", { name: "Import bw2calc" }).first().click();
+  await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveText("Import bw2calc");
   await page.goBack();
   await expect(page.getByLabel("variant", { exact: true })).toHaveValue("adjoint");
 });
 
 test("the start page links each change to its chart", async ({ page }) => {
-  await page.goto("./");
+  await page.goto("?page=changes");
   const first = page.locator("tbody tr").first().getByRole("link");
   const name = await first.textContent();
   await first.click();
@@ -113,7 +117,7 @@ test("the chart downloads as a standalone SVG", async ({ page }) => {
 
 test("a missing data folder says what went wrong", async ({ page }) => {
   await page.route("**/data/index.json", (route) => route.fulfill({ status: 404, body: "" }));
-  await page.goto("./");
+  await page.goto("?page=changes");
   await expect(page.getByRole("alert")).toContainText("HTTP 404");
   await expect(page.getByRole("alert")).toContainText("Check that index.json is in the data folder");
 });
@@ -124,11 +128,11 @@ test("a newer format says so, in the main column", async ({ page }) => {
     const index = await (await route.fetch()).json();
     await route.fulfill({ json: { ...index, format_version: 99 } });
   });
-  await page.goto("./");
+  await page.goto("?page=changes");
   await expect(page.getByRole("alert")).toContainText("format_version 99");
   await expect(page.getByRole("alert")).toContainText("newer or older format");
-  const box = await page.getByRole("alert").boundingBox();
-  expect(box?.x ?? 0).toBeGreaterThan(300); // beside the rail's column, not in it
+  await expect(page.getByRole("main").getByRole("alert")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test("one missing report leaves the rest of the chart", async ({ page }) => {
@@ -147,7 +151,7 @@ test("data without changes says they were not exported", async ({ page }) => {
     const { changes: _, ...index } = await (await route.fetch()).json();
     await route.fulfill({ json: index });
   });
-  await page.goto("./");
+  await page.goto("?page=changes");
   await expect(page.getByText("Changes were not exported")).toBeVisible();
 });
 
@@ -168,7 +172,7 @@ for (const [scheme, width] of [
   ["dark", 375],
 ] as const) {
   for (const [where, url] of [
-    ["start", "./"],
+    ["start", "?page=changes"],
     ["benchmark", SCORES],
   ] as const) {
     test(`axe: no WCAG 2.2 AA violations, ${where}, ${scheme}, ${width} px`, async ({ page }) => {
@@ -190,3 +194,266 @@ for (const [scheme, width] of [
     });
   }
 }
+
+test("overview filters scope their counts and survive a shared URL", async ({ page }) => {
+  await page.goto("?page=changes");
+  await expect(page.getByRole("button", { name: /^Worse/ })).toBeVisible();
+  await page.getByLabel("Package", { exact: true }).selectOption({ label: "bw_processing" });
+  await expect(page.getByRole("button", { name: /^All changes/ })).toHaveText("All changes 3");
+  await expect(page.getByRole("button", { name: /^Worse/ })).toHaveText("Worse 0");
+  await expect(page.getByRole("button", { name: /^Better/ })).toHaveText("Better 3");
+  await page.getByRole("button", { name: /^Worse/ }).click();
+  await expect(page.getByText("No changes match these filters")).toBeVisible();
+  await expect(page).toHaveURL(/group=bw-processing/);
+  await expect(page).toHaveURL(/direction=worse/);
+  await page.reload();
+  await expect(page.getByRole("button", { name: /^Worse/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByLabel("Package", { exact: true })).toHaveValue("bw-processing-dfb1fd2e3103");
+  await page.getByRole("button", { name: /^Better/ }).click();
+  await expect(page.locator(".latest-table tbody tr")).toHaveCount(3);
+  await expect(page.locator(".latest-table tbody tr").first()).toContainText("bw_processing");
+});
+
+test("catalogue search accepts readable names and original identifiers", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("?page=explorer");
+  const search = page.getByRole("searchbox", { name: "Find a benchmark" });
+  await search.fill("Multi Scores");
+  await expect(page.getByRole("navigation", { name: "Benchmarks" }).locator("li a")).toHaveCount(2);
+  await search.fill("timeraw_import_bw2calc");
+  await expect(page.getByRole("navigation", { name: "Benchmarks" }).locator("li a")).toHaveCount(2);
+  await search.fill("missing-case");
+  await expect(page.getByText("No benchmarks match")).toBeVisible();
+  await search.fill("");
+  await page
+    .getByRole("navigation", { name: "Benchmarks" })
+    .getByRole("link", { name: "Import bw2calc" })
+    .first()
+    .click();
+  await expect(page.locator(".benchmark-id")).toContainText("bench_import.timeraw_import_bw2calc");
+});
+
+test("an unknown benchmark link names the problem", async ({ page }) => {
+  await page.goto("?bench=missing-case");
+  await expect(page.getByRole("status")).toContainText("This benchmark is not in the current data");
+});
+
+test("a change opens the same machine's history", async ({ page }) => {
+  await page.route("**/data/index.json", async (route) => {
+    const index = await (await route.fetch()).json();
+    const row = latestChanges(index)[0];
+    if (!row) throw new Error("fixture has no latest change");
+    const machine = { id: "comparison-machine", name: "Comparison machine" };
+    index.machines.push(machine);
+    index.reports.push(...index.reports.map((report: { machine: string }) => ({ ...report, machine: machine.id })));
+    index.changes = [{ ...row.change, machine: machine.id }];
+    await route.fulfill({ json: index });
+  });
+  await page.goto("?page=changes");
+  const row = page.locator(".latest-table tbody tr").first();
+  const rowText = await row.textContent();
+  await row.getByRole("link").click();
+  await expect(page).toHaveURL(/machine=comparison-machine/);
+  await expect(page.getByLabel("Machine", { exact: true })).toHaveValue("comparison-machine");
+  expect(rowText).toContain("Comparison machine");
+  await expect(page.locator(".chart svg")).toBeVisible();
+});
+
+test("home separates tested setups, compatibility and benchmark evidence", async ({ page }) => {
+  await page.goto("./");
+  const main = page.getByRole("navigation", { name: "Main", exact: true });
+  await expect(main.getByRole("link", { name: "Home", exact: true })).toBeVisible();
+  await expect(main.getByRole("link", { name: "Compatibility", exact: true })).toBeVisible();
+  await expect(main.getByRole("link", { name: "Release changes", exact: true })).toBeVisible();
+  await expect(main.getByRole("link", { name: "Benchmark explorer", exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Benchmarks", exact: true })).toHaveCount(0);
+  await main.getByRole("link", { name: "Compatibility", exact: true }).click();
+  await expect(page).toHaveURL(/page=compatibility/);
+  await page.goBack();
+  await expect(main.getByRole("link", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page");
+});
+
+test.describe("guidance looks", () => {
+  for (const [name, scheme, width, height] of [
+    ["light", "light", 1440, 1000],
+    ["dark", "dark", 1440, 1000],
+    ["phone", "light", 390, 844],
+    ["phone-dark", "dark", 390, 844],
+  ] as const) {
+    test(name, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.goto("?page=home&platform=linux");
+      await page.getByRole("link", { name: "Download requirements.txt", exact: true }).waitFor();
+      await page.screenshot({ path: `${shots}/home-${name}-viewport.png` });
+      await page.screenshot({ path: `${shots}/home-${name}.png`, fullPage: true });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      await page
+        .getByRole("navigation", { name: "Main", exact: true })
+        .getByRole("link", { name: "Compatibility", exact: true })
+        .click();
+      await page.locator(".compat-table tbody tr").first().waitFor();
+      await page.screenshot({ path: `${shots}/compatibility-${name}-viewport.png` });
+      await page.screenshot({ path: `${shots}/compatibility-${name}.png`, fullPage: true });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+  }
+});
+
+const guidanceFixture = async (): Promise<Guidance> =>
+  JSON.parse(await readFile(new URL("../test/fixtures/real/guidance.json", import.meta.url), "utf8"));
+
+test("platform setups keep their pins, install command and URL together", async ({ page }) => {
+  const data = await guidanceFixture();
+  await page.goto("?page=home&platform=linux");
+  const windows = data.platforms.find((p) => p.id === "windows");
+  const check = data.checks.find((c) => c.id === windows?.defaultCheck);
+  if (!windows || !check?.lastPassed?.install) throw new Error("fixture lacks a Windows setup");
+  await page.getByRole("button", { name: windows.label, exact: true }).click();
+  await expect(page).toHaveURL(/platform=windows/);
+  await expect(page.locator(".install-command pre")).toHaveText(check.lastPassed.install);
+  await expect(page.getByRole("link", { name: "Download requirements.txt", exact: true })).toHaveAttribute(
+    "href",
+    check.lastPassed.files.find((f) => f.label === "requirements.txt")?.url ?? "",
+  );
+  await page.reload();
+  await expect(page.getByRole("button", { name: windows.label, exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.goBack();
+  await expect(page.getByRole("button", { name: "Linux", exact: true })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("compatibility selection and filters survive shared URLs and back", async ({ page }) => {
+  await page.goto("?page=compatibility");
+  await page.getByLabel("Platform", { exact: true }).selectOption("linux");
+  await page.getByLabel("Python", { exact: true }).selectOption("3.12");
+  const suites = page.locator(".compat-table tbody tr").filter({ hasText: "Upstream test suites" });
+  await suites.getByRole("link").first().click();
+  await expect(page).toHaveURL(/check=suites-/);
+  await expect(page.getByRole("complementary", { name: "Selected check" })).toContainText(
+    "Upstream test suites · Failed",
+  );
+  const link = page.url();
+  await page.reload();
+  await expect(page.getByLabel("Platform", { exact: true })).toHaveValue("linux");
+  await expect(page.getByLabel("Python", { exact: true })).toHaveValue("3.12");
+  await expect(page.getByRole("complementary", { name: "Selected check" })).toContainText(
+    "Upstream test suites · Failed",
+  );
+  await page
+    .getByRole("navigation", { name: "Main", exact: true })
+    .getByRole("link", { name: "Home", exact: true })
+    .click();
+  await expect(page).toHaveTitle(/^Home ·/);
+  await page.goBack();
+  await expect(page).toHaveURL(link);
+  await expect(page).toHaveTitle(/^Compatibility ·/);
+});
+
+test("a failed current check keeps its older passing files clearly dated", async ({ page }) => {
+  const data = await guidanceFixture();
+  const current = data.checks.find((c) => c.id === data.platforms.find((p) => p.id === "linux")?.defaultCheck);
+  if (!current?.lastPassed) throw new Error("fixture lacks Linux saved set");
+  current.status = "failure";
+  current.lastPassed.date = "2026-10-30";
+  await page.route("**/data/guidance.json", (route) => route.fulfill({ json: data }));
+  await page.goto("?page=home&platform=linux");
+  await expect(page.locator(".check-outcome")).toHaveText("Smoke calculations · Failed");
+  await expect(page.getByText("The current check did not pass.")).toBeVisible();
+  await expect(page.locator(".saved-header")).toContainText("Oct 30, 2026");
+  await expect(page.getByRole("link", { name: "Download requirements.txt", exact: true })).toBeVisible();
+});
+
+for (const [label, status, json] of [
+  ["absent", 404, {}],
+  ["invalid", 200, { format_version: 99 }],
+  ["failed", 500, {}],
+] as const) {
+  test(`${label} guidance leaves benchmark navigation usable`, async ({ page }) => {
+    await page.route("**/data/guidance.json", (route) => route.fulfill({ status, json }));
+    await page.goto("./");
+    await expect(page.getByRole("heading", { name: "Explore the available evidence", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Download requirements.txt", exact: true })).toHaveCount(0);
+    if (status !== 404) await expect(page.getByRole("status")).toContainText("Setup guidance could not be loaded");
+    await page
+      .getByRole("navigation", { name: "Main", exact: true })
+      .getByRole("link", { name: "Benchmark explorer", exact: true })
+      .click();
+    await expect(page.locator(".chart svg")).toBeVisible();
+  });
+}
+
+test("home includes both change directions and solver links retain the measured view", async ({ page }) => {
+  const data = await guidanceFixture();
+  await page.goto("?page=home&platform=linux");
+  await expect(page.locator(".brief-change .worse")).toBeVisible();
+  await expect(page.locator(".brief-change .better")).toBeVisible();
+  const index = JSON.parse(await readFile(new URL("../test/fixtures/real/index.json", import.meta.url), "utf8"));
+  const changes = latestChanges(index);
+  for (const [at, way] of ["worse", "better"].entries()) {
+    const row = changes.find((c) => c.way === way);
+    if (!row) throw new Error(`fixture lacks a ${way} change`);
+    const href = await page.locator(".brief-change h3 a").nth(at).getAttribute("href");
+    const linked = new URL(href ?? "", "http://example.test").searchParams;
+    expect(linked.get("machine")).toBe(row.change.machine);
+    expect(linked.get("bench")).toBe(row.bench.id);
+  }
+  const solver = data.solverComparison?.rows[0];
+  if (!solver) throw new Error("fixture lacks solver comparison");
+  const expected = new URL(solver.href, "http://example.test").searchParams;
+  await page.getByRole("link", { name: solver.label, exact: true }).click();
+  const got = new URL(page.url()).searchParams;
+  for (const key of ["bench", "machine", "measure"]) expect(got.get(key)).toBe(expected.get(key));
+  expect(got.getAll("p")).toEqual(expected.getAll("p"));
+  await expect(page.locator(".chart svg")).toBeVisible();
+});
+
+test("legacy compatibility anchors open the compatibility tab", async ({ page }) => {
+  await page.goto("./#works-together");
+  await expect(
+    page
+      .getByRole("navigation", { name: "Main", exact: true })
+      .getByRole("link", { name: "Compatibility", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  await expect(page).toHaveTitle(/^Compatibility ·/);
+});
+
+test("phone check selection reveals and focuses the saved environment", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("?page=compatibility&platform=linux&python=3.12");
+  await page
+    .locator(".compat-table tbody tr")
+    .filter({ hasText: "Upstream test suites" })
+    .getByRole("link")
+    .first()
+    .click();
+  await expect(page.locator("#selected-check")).toBeFocused();
+  const box = await page.locator("#selected-check").boundingBox();
+  expect(box?.y ?? -1).toBeGreaterThanOrEqual(0);
+  expect(box?.y ?? 1000).toBeLessThan(844);
+});
+
+for (const scheme of ["light", "dark"] as const) {
+  for (const width of [1440, 390]) {
+    for (const route of ["home", "compatibility"]) {
+      test(`guidance axe: ${route}, ${scheme}, ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ colorScheme: scheme });
+        await page.goto(`?page=${route}&platform=linux`);
+        await page.getByRole("link", { name: "Download requirements.txt", exact: true }).waitFor();
+        const result = await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"])
+          .analyze();
+        expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" | ")}`)).toEqual([]);
+      });
+    }
+  }
+}
+
+test("a conda environment offers its manifest and lock before other files", async ({ page }) => {
+  await page.goto("?page=compatibility");
+  await page.locator(".compat-table tbody tr").filter({ hasText: "conda-forge" }).getByRole("link").first().click();
+  const detail = page.getByRole("complementary", { name: "Selected check" });
+  await expect(detail.locator(".primary-action")).toHaveText("Download pixi.toml");
+  await expect(detail.getByRole("link", { name: "pixi.lock", exact: true })).toBeVisible();
+  await expect(detail.locator(".install-command pre")).toContainText("pixi");
+});

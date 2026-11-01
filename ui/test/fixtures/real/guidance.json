@@ -1,0 +1,453 @@
+{
+  "format_version": 1,
+  "title": "A tested Brightway setup",
+  "intro": "A verified starting point for your platform, with the measurements behind the alternatives.",
+  "snapshot": {
+    "date": "2026-10-31",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845"
+  },
+  "platforms": [
+    {
+      "id": "linux",
+      "label": "Linux",
+      "defaultCheck": "latest-3.12-ubuntu-latest"
+    },
+    {
+      "id": "macos",
+      "label": "macOS",
+      "defaultCheck": "latest-3.12-macos-latest"
+    },
+    {
+      "id": "windows",
+      "label": "Windows",
+      "defaultCheck": "latest-3.12-windows-latest"
+    }
+  ],
+  "checks": [
+    {
+      "id": "latest-3.12-macos-latest",
+      "platform": "macos",
+      "python": "3.12",
+      "label": "Latest releases",
+      "kind": "smoke",
+      "status": "success",
+      "coverage": "Small-database calculation checks",
+      "caveats": [
+        "Fast-solver cases are skipped on this macOS runner; this is not a validation of every solver."
+      ],
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+      "lastPassed": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "packages": [
+          {
+            "name": "brightway25",
+            "version": "1.1.1"
+          },
+          {
+            "name": "bw2calc",
+            "version": "3.1.0"
+          },
+          {
+            "name": "bw2data",
+            "version": "4.8"
+          },
+          {
+            "name": "bw2io",
+            "version": "0.9.17"
+          },
+          {
+            "name": "numpy",
+            "version": "2.5.4"
+          }
+        ],
+        "files": [
+          {
+            "label": "requirements.txt",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-macos-latest/requirements.txt"
+          },
+          {
+            "label": "pylock.toml",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-macos-latest/pylock.toml"
+          }
+        ],
+        "install": "uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt"
+      }
+    },
+    {
+      "id": "latest-3.12-ubuntu-latest",
+      "platform": "linux",
+      "python": "3.12",
+      "label": "Latest releases",
+      "kind": "smoke",
+      "status": "success",
+      "coverage": "Small-database calculation checks",
+      "caveats": [],
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+      "lastPassed": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "packages": [
+          {
+            "name": "brightway25",
+            "version": "1.1.1"
+          },
+          {
+            "name": "bw2calc",
+            "version": "3.1.0"
+          },
+          {
+            "name": "bw2data",
+            "version": "4.8"
+          },
+          {
+            "name": "bw2io",
+            "version": "0.9.17"
+          },
+          {
+            "name": "numpy",
+            "version": "2.5.4"
+          }
+        ],
+        "files": [
+          {
+            "label": "requirements.txt",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-ubuntu-latest/requirements.txt"
+          },
+          {
+            "label": "pylock.toml",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-ubuntu-latest/pylock.toml"
+          }
+        ],
+        "install": "uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt"
+      }
+    },
+    {
+      "id": "latest-3.12-windows-latest",
+      "platform": "windows",
+      "python": "3.12",
+      "label": "Latest releases",
+      "kind": "smoke",
+      "status": "success",
+      "coverage": "Small-database calculation checks",
+      "caveats": [],
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+      "lastPassed": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "packages": [
+          {
+            "name": "brightway25",
+            "version": "1.1.1"
+          },
+          {
+            "name": "bw2calc",
+            "version": "3.1.0"
+          },
+          {
+            "name": "bw2data",
+            "version": "4.8"
+          },
+          {
+            "name": "bw2io",
+            "version": "0.9.17"
+          },
+          {
+            "name": "numpy",
+            "version": "2.5.4"
+          }
+        ],
+        "files": [
+          {
+            "label": "requirements.txt",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-windows-latest/requirements.txt"
+          },
+          {
+            "label": "pylock.toml",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-windows-latest/pylock.toml"
+          }
+        ],
+        "install": "uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt"
+      }
+    },
+    {
+      "id": "latest-3.13-ubuntu-latest",
+      "platform": "linux",
+      "python": "3.13",
+      "label": "Latest releases",
+      "kind": "smoke",
+      "status": "success",
+      "coverage": "Small-database calculation checks",
+      "caveats": [],
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+      "lastPassed": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "packages": [
+          {
+            "name": "brightway25",
+            "version": "1.1.1"
+          },
+          {
+            "name": "bw2calc",
+            "version": "3.1.0"
+          },
+          {
+            "name": "bw2data",
+            "version": "4.8"
+          },
+          {
+            "name": "bw2io",
+            "version": "0.9.17"
+          },
+          {
+            "name": "numpy",
+            "version": "2.5.4"
+          }
+        ],
+        "files": [
+          {
+            "label": "requirements.txt",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-ubuntu-latest/requirements.txt"
+          },
+          {
+            "label": "pylock.toml",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-ubuntu-latest/pylock.toml"
+          }
+        ],
+        "install": "uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt"
+      }
+    },
+    {
+      "id": "latest-3.14-ubuntu-latest",
+      "platform": "linux",
+      "python": "3.14",
+      "label": "Latest releases",
+      "kind": "smoke",
+      "status": "success",
+      "coverage": "Small-database calculation checks",
+      "caveats": [],
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+      "lastPassed": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "packages": [
+          {
+            "name": "brightway25",
+            "version": "1.1.1"
+          },
+          {
+            "name": "bw2calc",
+            "version": "3.1.0"
+          },
+          {
+            "name": "bw2data",
+            "version": "4.8"
+          },
+          {
+            "name": "bw2io",
+            "version": "0.9.17"
+          },
+          {
+            "name": "numpy",
+            "version": "2.5.4"
+          }
+        ],
+        "files": [
+          {
+            "label": "requirements.txt",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.14-ubuntu-latest/requirements.txt"
+          },
+          {
+            "label": "pylock.toml",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.14-ubuntu-latest/pylock.toml"
+          }
+        ],
+        "install": "uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt"
+      }
+    },
+    {
+      "id": "floors-3.12-ubuntu-latest",
+      "platform": "linux",
+      "python": "3.12",
+      "label": "Dependency floors",
+      "kind": "diagnostic",
+      "status": "success",
+      "coverage": "Small-database calculation checks",
+      "caveats": [],
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+      "lastPassed": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "packages": [
+          {
+            "name": "brightway25",
+            "version": "1.1.1"
+          },
+          {
+            "name": "bw2calc",
+            "version": "3.1.0"
+          },
+          {
+            "name": "bw2data",
+            "version": "4.8"
+          },
+          {
+            "name": "bw2io",
+            "version": "0.9.17"
+          },
+          {
+            "name": "numpy",
+            "version": "1.26.0"
+          }
+        ],
+        "files": [
+          {
+            "label": "requirements.txt",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.12-ubuntu-latest/requirements.txt"
+          },
+          {
+            "label": "pylock.toml",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.12-ubuntu-latest/pylock.toml"
+          }
+        ],
+        "install": "uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt"
+      }
+    },
+    {
+      "id": "pre-3.14-ubuntu-latest",
+      "platform": "linux",
+      "python": "3.14",
+      "label": "Pre-releases",
+      "kind": "diagnostic",
+      "status": "success",
+      "coverage": "Small-database calculation checks",
+      "caveats": [],
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+      "lastPassed": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "packages": [
+          {
+            "name": "brightway25",
+            "version": "1.1.1"
+          },
+          {
+            "name": "bw2calc",
+            "version": "3.1.0"
+          },
+          {
+            "name": "bw2data",
+            "version": "4.8"
+          },
+          {
+            "name": "bw2io",
+            "version": "0.9.17"
+          },
+          {
+            "name": "numpy",
+            "version": "2.5.4"
+          }
+        ],
+        "files": [
+          {
+            "label": "requirements.txt",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/pre-3.14-ubuntu-latest/requirements.txt"
+          },
+          {
+            "label": "pylock.toml",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/pre-3.14-ubuntu-latest/pylock.toml"
+          }
+        ],
+        "install": "uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt"
+      }
+    },
+    {
+      "id": "conda-forge-3.12-ubuntu-latest",
+      "platform": "linux",
+      "python": "3.12",
+      "label": "conda-forge",
+      "kind": "diagnostic",
+      "status": "success",
+      "coverage": "Small-database calculation checks",
+      "caveats": [
+        "bw_graph_tools and bw_timex are omitted because this conda-forge set does not provide them.",
+        "Download pixi.toml and pixi.lock into the same folder before running pixi install --frozen."
+      ],
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+      "lastPassed": {
+        "date": "2026-10-31",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845",
+        "packages": [
+          {
+            "name": "bw2calc",
+            "version": "3.1.0"
+          },
+          {
+            "name": "bw2data",
+            "version": "4.8"
+          },
+          {
+            "name": "bw2io",
+            "version": "0.9.17"
+          },
+          {
+            "name": "numpy",
+            "version": "2.5.4"
+          }
+        ],
+        "files": [
+          {
+            "label": "pixi.toml",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/pixi.toml"
+          },
+          {
+            "label": "pixi.lock",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/pixi.lock"
+          },
+          {
+            "label": "requirements.txt",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/requirements.txt"
+          }
+        ],
+        "install": "pixi install --frozen"
+      }
+    },
+    {
+      "id": "suites-3.12-ubuntu-latest",
+      "platform": "linux",
+      "python": "3.12",
+      "label": "Upstream test suites",
+      "kind": "suites",
+      "status": "failure",
+      "coverage": "Package test suites",
+      "caveats": [],
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845"
+    }
+  ],
+  "solverComparison": {
+    "title": "Solver alternatives, with measured evidence",
+    "context": "First LCA score \u00b7 bw2calc 3.1.0 \u00b7 synthetic ecoinvent-sized database \u00b7 pinned-x86-1",
+    "note": "These fixed benchmark environments differ from the compatibility snapshot. Timings do not predict every workflow or machine.",
+    "rows": [
+      {
+        "label": "UMFPACK \u00b7 conda-forge",
+        "value": 2618418468.9991527,
+        "unit": "ns",
+        "href": "?bench=bw2calc-conda-bench-lca-singlescore-time-first-scor-7266cbe9fcd4&measure=latency&machine=pinned-x86-1-2504b6871767&p=ecoinvent&p=LCA"
+      },
+      {
+        "label": "PyPardiso",
+        "value": 10095737354.509766,
+        "unit": "ns",
+        "href": "?bench=bw2calc-bench-lca-singlescore-time-first-score-0523b3edee8d&measure=latency&machine=pinned-x86-1-2504b6871767&p=ecoinvent&p=LCA"
+      },
+      {
+        "label": "SuperLU",
+        "value": 27755975419.509922,
+        "unit": "ns",
+        "href": "?bench=bw2calc-bench-lca-singlescore-time-first-score-0523b3edee8d&measure=latency&machine=pinned-x86-1-2504b6871767&p=ecoinvent&p=LCA"
+      }
+    ]
+  }
+}

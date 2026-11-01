@@ -5,6 +5,7 @@ A static site that shows benchmark results. It reads two kinds of JSON file, whi
 
 - `index.json`: the benchmarks, their parameters, environments, machines, commits, releases and
   reports ([index.schema.json](schema/index.schema.json)).
+- optional `guidance.json`: tested setups, compatibility coverage and curated comparisons ([guidance.schema.json](schema/guidance.schema.json));
 - one report per commit and machine, in [Bencher Metric Format](https://bencher.dev/docs/reference/bencher-metric-format/)
   v0 ([report.schema.json](schema/report.schema.json)).
 
@@ -46,14 +47,17 @@ The data folder must hold `index.json`, with each report at the `path` the index
 
 ## What it shows
 
-The start page lists what moved beyond its noise in each group's newest release. Each
-benchmark has a page: its history over the group's commits, one line per environment, for the
-parameters, measure and machine picked above the chart. These live in the URL (`bench`, one `p`
-per parameter axis, `measure`, `machine`), so a link opens the same view. Below the chart are the
-changes the index lists for those lines, and a table with every value.
+Home starts with a tested setup for the selected platform: current check coverage, last passing package versions and installation files. The exporter orders the primary installation file first; the viewer uses that order for its download action. It puts a measured solver comparison beside a compact summary of both regressions and improvements. These timings use the benchmark stack named with the comparison, which may differ from the setup's compatibility snapshot.
 
-The chart takes focus: the arrow keys, Home and End step through the releases, and the same text
-as the pointer's tip is read out.
+Compatibility lists the published platform and Python checks. Filter the table and select a row to inspect its coverage, current result and saved environment. A smoke pass and an upstream test-suite pass are separate claims. If the current check fails, the earlier passing files keep their date and run link.
+
+Release changes lists what moved beyond its noise in each group's newest release. Filter by package or change direction; counts follow the selected package. Benchmark explorer has a searchable catalogue and each benchmark's history, one line per environment. Original identifiers remain in link titles and the detail view.
+
+Primary views, platform selections, compatibility filters, selected checks and benchmark settings live in the URL. Existing `?bench=` links still open the same history, and `#works-together` opens Compatibility. Each chart has a data table and an SVG download; arrow keys, Home and End read its releases.
+
+On phones, change tables reflow into labelled rows. Compatibility and measurement tables scroll inside their own focusable region. Selecting a compatibility row reveals its detail pane.
+
+If optional guidance is missing or cannot be read, the viewer explains the gap and keeps benchmark histories available. It never fills missing setups or measurements with example values.
 
 ## The data
 

@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+"""Export setup and solver evidence beside index.json, without fetching external data.
+
+Usage: export_guidance.py COMPAT_STATUS UI_DATA_DIR [--public-base SITE_URL].
+"""
+
+import argparse
+import json
+import math
+from pathlib import Path, PurePosixPath
+from urllib.parse import urlencode, urljoin, urlsplit
+
+PUBLIC_BASE = "https://simonvanlierde.com/brightway-benchmarks/"
+PLATFORMS = {
+    "ubuntu-latest": ("linux", "Linux"),
+    "macos-latest": ("macos", "macOS"),
+    "windows-latest": ("windows", "Windows"),
+}
+LABELS = {
+    "latest": "Latest releases",
+    "floors": "Dependency floors",
+    "pre": "Pre-releases",
+    "conda-forge": "conda-forge",
+    "suites": "Upstream test suites",
+}
+FILES = {"requirements.txt", "pylock.toml", "pixi.toml", "pixi.lock"}
+
+
+def web_url(value: str) -> str:
+    """A public link must name an HTTP(S) host, never an executable URL."""
+    parsed = urlsplit(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        msg = f"Not an HTTP(S) URL: {value}"
+        raise ValueError(msg)
+    return value
+
+
+def _passing_set(green: dict, column: str, public_base: str) -> dict:
+    directory = PurePosixPath(green["dir"])
+    if directory.is_absolute() or ".." in directory.parts or directory.parts[:1] != ("compat",):
+        msg = "Compatibility files must stay under compat/"
+        raise ValueError(msg)
+    files = [name for name in green["files"] if name in FILES]
+    if column == "conda-forge":
+        files.sort(key=("pixi.toml", "pixi.lock", "requirements.txt", "pylock.toml").index)
+    out = {
+        "date": green["date"],
+        "run": web_url(green["run"]),
+        "packages": [{"name": name, "version": version} for name, version in green["versions"].items()],
+        "files": [{"label": name, "url": urljoin(public_base, f"{directory}/{name}")} for name in files],
+    }
+    if column == "conda-forge" and {"pixi.toml", "pixi.lock"} <= set(files):
+        out["install"] = "pixi install --frozen"
+    elif column != "conda-forge" and "requirements.txt" in files:
+        out["install"] = "uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt"
+    return out
+
+
+def _solver_cases(index: dict, groups: dict) -> dict:
+    """Index the supported first-score comparisons once, outside the report loop."""
+    benches = {b["id"]: b for b in index["benchmarks"] if b["name"] == "bench_lca.SingleScore.time_first_score"}
+    envs = {e["id"]: e for e in index["environments"]}
+    selected = {}
+    for case in index["cases"]:
+        bench = benches.get(case["benchmark"])
+        if not bench or case["params"] != ["'ecoinvent'", "'LCA'"]:
+            continue
+        env = envs[case["environment"]]
+        group, label = groups.get(bench["group"]), env.get("label")
+        name = {("bw2calc", "PyPardiso"): "PyPardiso", ("bw2calc", "SuperLU"): "SuperLU"}.get((group, label))
+        if group == "bw2calc-conda" and label == "UMFPACK" and "mkl" not in env.get("name", "").lower():
+            name = "UMFPACK · conda-forge"
+        if name:
+            selected.setdefault(bench["group"], []).append((case, bench, name))
+    return selected
+
+
+def _read_report(data_dir: Path, name: str) -> dict | None:
+    """Read an optional report without following references outside its data directory."""
+    relative = PurePosixPath(name)
+    path = data_dir / relative
+    if (
+        relative.is_absolute()
+        or ".." in relative.parts
+        or path.is_symlink()
+        or not path.resolve().is_relative_to(data_dir.resolve())
+    ):
+        msg = "Benchmark report must stay inside the data directory"
+        raise ValueError(msg)
+    return json.loads(path.read_text()) if path.is_file() else None
+
+
+def solver_comparison(data_dir: Path) -> dict | None:
+    """Compare three installed solver paths only when the release and machine match."""
+    path = data_dir / "index.json"
+    if not path.is_file():
+        return None
+    index = json.loads(path.read_text())
+    groups = {g["id"]: g["name"] for g in index["groups"]}
+    candidates = _solver_cases(index, groups)
+    commits = {(c["group"], c["id"]): c for c in index["commits"] if c.get("release")}
+    latest = max((c["date"] for c in commits.values() if groups.get(c["group"]) == "bw2calc"), default=None)
+    releases = {c["release"] for c in commits.values() if c["date"] == latest and groups.get(c["group"]) == "bw2calc"}
+    selected: dict[tuple[str, str], dict[str, dict]] = {}
+    for report in index["reports"]:
+        commit = commits.get((report["group"], report["commit"]))
+        if not commit or commit["release"] not in releases:
+            continue
+        metrics = _read_report(data_dir, report["path"])
+        if metrics is None:
+            continue
+        rows = selected.setdefault((report["machine"], commit["release"]), {})
+        for case, bench, name in candidates.get(report["group"], []):
+            value = metrics.get(case["id"], {}).get("latency", {}).get("value")
+            if not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+                continue
+            query = urlencode({"bench": bench["id"], "measure": "latency", "machine": report["machine"]})
+            query += "&" + urlencode([("p", "ecoinvent"), ("p", "LCA")])
+            rows[name] = {"label": name, "value": value, "unit": "ns", "href": f"?{query}"}
+    for (machine, release), rows in sorted(selected.items()):
+        if len(rows) == 3:
+            machine_name = next((m["name"] for m in index["machines"] if m["id"] == machine), machine)
+            return {
+                "title": "Solver alternatives, with measured evidence",
+                "context": f"First LCA score · bw2calc {release} · synthetic ecoinvent-sized database · {machine_name}",
+                "note": (
+                    "These fixed benchmark environments differ from the compatibility snapshot. "
+                    "Timings do not predict every workflow or machine."
+                ),
+                "rows": [rows[name] for name in ("UMFPACK · conda-forge", "PyPardiso", "SuperLU")],
+            }
+    return None
+
+
+def export(status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE) -> dict | None:
+    """Write guidance.json using the supplied snapshot and already exported benchmark reports."""
+    public_base = web_url(public_base).rstrip("/") + "/"
+    target = data_dir / "guidance.json"
+    if target.is_symlink():
+        msg = "Refusing to replace a guidance.json symlink"
+        raise ValueError(msg)
+    if not status_path.is_file():
+        target.unlink(missing_ok=True)
+        return None
+    status = json.loads(status_path.read_text())
+    out = {
+        "format_version": 1,
+        "title": "A tested Brightway setup",
+        "intro": "A verified starting point for your platform, with the measurements behind the alternatives.",
+        "snapshot": {"date": status["date"], "run": web_url(status["run"])},
+        "platforms": [],
+        "checks": [],
+    }
+    platforms = {}
+    for cell in status["cells"]:
+        os_name = cell["os"]
+        if os_name not in PLATFORMS:
+            continue
+        platform, label = PLATFORMS[os_name]
+        entry = platforms.setdefault(platform, {"id": platform, "label": label})
+        column = cell["column"]
+        check = {
+            "id": f"{column}-{cell['python']}-{os_name}",
+            "platform": platform,
+            "python": cell["python"],
+            "label": LABELS.get(column, column),
+            "kind": "suites" if column == "suites" else "smoke" if column == "latest" else "diagnostic",
+            "status": cell["today"] or "unknown",
+            "coverage": "Package test suites" if column == "suites" else "Small-database calculation checks",
+            "caveats": [],
+            "run": web_url(status["run"]),
+        }
+        if os_name == "macos-latest" and column != "suites":
+            check["caveats"].append(
+                "Fast-solver cases are skipped on this macOS runner; this is not a validation of every solver."
+            )
+        if column == "conda-forge":
+            check["caveats"].append(
+                "bw_graph_tools and bw_timex are omitted because this conda-forge set does not provide them."
+            )
+            check["caveats"].append(
+                "Download pixi.toml and pixi.lock into the same folder before running pixi install --frozen."
+            )
+        if green := cell.get("green"):
+            check["lastPassed"] = _passing_set(green, column, public_base)
+            if column == "latest" and cell["python"] == "3.12" and check["lastPassed"].get("install"):
+                entry["defaultCheck"] = check["id"]
+        out["checks"].append(check)
+    out["platforms"] = [platforms[key] for key in ("linux", "macos", "windows") if key in platforms]
+    if comparison := solver_comparison(data_dir):
+        out["solverComparison"] = comparison
+    data_dir.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(out, indent=2) + "\n")
+    return out
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("status", type=Path)
+    parser.add_argument("data", type=Path)
+    parser.add_argument("--public-base", default=PUBLIC_BASE)
+    args = parser.parse_args()
+    export(args.status, args.data, args.public_base)

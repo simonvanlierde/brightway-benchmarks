@@ -36,10 +36,11 @@ most users:
 
 ## Install a set that works
 
-Each night the newest Brightway releases are installed together and every case runs once. The
-site's [works together today](https://simonvanlierde.com/brightway-benchmarks/#works-together)
-table links the last set that passed; [docs/running.md](docs/running.md#install-a-set-that-works)
-says how to install it.
+The [homepage](https://simonvanlierde.com/brightway-benchmarks/) shows a tested starting setup,
+solver measurements and recent release changes. The
+[compatibility view](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility) shows
+the latest check and last passing set for each tested environment, including coverage gaps.
+[docs/running.md](docs/running.md#install-a-set-that-works) explains the installation files.
 
 ## Run it yourself
 

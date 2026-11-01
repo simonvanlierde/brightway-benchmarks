@@ -9,6 +9,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- The homepage combines a tested setup, measured solver alternatives and recent regressions
+  and improvements. Its Compatibility tab shows the latest checks, coverage and last passing
+  installation files; the full asv history remains available ([viewer](ui/README.md)).
+- The benchmark viewer is easier to navigate and inspect on desktop and phones ([viewer](ui/README.md#what-it-shows), [UI changelog](ui/CHANGELOG.md)).
 - `scripts/solver_factorize.py --cudss` times NVIDIA's cuDSS GPU solver on the real ecoinvent matrix: a
   first factorization and one that reuses its analysis, as a Monte Carlo draw does. `--pardiso` now
   times PARDISO's reuse too ([method](docs/method.md)).
@@ -82,6 +86,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Hash-only experiments no longer count as releases in the viewer or `just release-changes`.
+  They remain visible in each benchmark's history ([running](docs/running.md#add-a-release)).
 - A run no longer fails after its benchmarks pass when an asv environment has lost its
   interpreter, as happens when its uv cache is cleaned: the lock files skip that folder.
 

@@ -39,7 +39,10 @@ PROJECT = {
     "name": "brightway-benchmarks",
     "description": "Continuous benchmarks for the Brightway LCA stack on seeded synthetic matrices",
     "url": REPO,
-    "links": [{"name": "Method", "url": f"{REPO}/blob/main/docs/method.md"}],
+    "links": [
+        {"name": "Method", "url": f"{REPO}/blob/main/docs/method.md"},
+        {"name": "Full benchmark history", "url": "https://simonvanlierde.com/brightway-benchmarks/asv.html"},
+    ],
 }
 MEASURES = {  # asv type -> (measure id, scale to the unit)
     "time": ("latency", 1e9),
@@ -334,7 +337,7 @@ def export(results: Path, out: Path) -> dict:
         envs = [e for (s, _), e in catalog.envs.items() if s == subject]
         for env, text in zip(envs, solver_labels([e["name"] for e in envs]) or [], strict=False):
             env["label"] = text
-        tags = {c: t[:8] if SHA.fullmatch(t) else t for c, t in releases(subject, "export_ui").items()}
+        tags = releases(subject, "export_ui")
         for commit, date in sorted(dates.items(), key=lambda c: (c[1], c[0])):
             tag = tags.get(commit[:8])
             commits.append({"id": commit, "group": group, "date": iso(date)} | ({"release": tag} if tag else {}))

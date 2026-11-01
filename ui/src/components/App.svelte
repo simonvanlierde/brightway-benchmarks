@@ -3,20 +3,23 @@ import {
   type BenchmarkIndex,
   type BenchmarkReport,
   ContractError,
+  type Guidance,
+  loadGuidance,
   loadIndex,
   loadReport,
   type Report,
 } from "../lib/contract";
 import {
   axisLabels,
+  benchmarkLabel,
   breakable,
   changesFor,
   commitName,
   format,
   type Line,
-  latestChanges,
   lines as linesOf,
   noiseText,
+  pageOf,
   paramLabels,
   percent,
   pickParams,
@@ -26,6 +29,9 @@ import {
   verdict,
   writeView,
 } from "../lib/history";
+import Compatibility from "./Compatibility.svelte";
+import ReleaseChanges from "./ReleaseChanges.svelte";
+import SetupHome from "./SetupHome.svelte";
 
 let { base }: { base: string } = $props();
 
@@ -35,13 +41,22 @@ const chart = () => (chartModule ??= import("./HistoryChart.svelte"));
 
 let index = $state<BenchmarkIndex>();
 let error = $state<string>();
+let guidance = $state<Guidance>();
+let guidanceReady = $state(false);
+let guidanceError = $state<string>();
 let errorKind = $state<ContractError["kind"]>("invalid");
-let view = $state<View>(readView(location.search));
+let view = $state<View>(readView(location.search, location.hash));
 let reports = $state<Map<string, BenchmarkReport>>();
 let reportError = $state<string>();
 let missing = $state(0); // reports that did not load; the chart draws the rest
 const cache = new Map<string, Promise<BenchmarkReport>>();
 // The rail is a disclosure on a phone and always open beside the view on a wide screen.
+const PAGES = [
+  ["home", "Home"],
+  ["compatibility", "Compatibility"],
+  ["changes", "Release changes"],
+  ["explorer", "Benchmark explorer"],
+] as const;
 const WIDE = "(min-width: 60rem)";
 let wide = $state(matchMedia(WIDE).matches);
 
@@ -64,16 +79,36 @@ $effect(() => {
       errorKind = reason instanceof ContractError ? reason.kind : "missing";
     },
   );
+  loadGuidance(base)
+    .then(
+      (data) => {
+        guidance = data;
+      },
+      (reason: unknown) => {
+        guidanceError = String(reason);
+      },
+    )
+    .finally(() => {
+      guidanceReady = true;
+    });
   const back = () => {
-    view = readView(location.search);
+    view = readView(location.search, location.hash);
   };
   addEventListener("popstate", back);
-  return () => removeEventListener("popstate", back);
+  addEventListener("hashchange", back);
+  return () => {
+    removeEventListener("popstate", back);
+    removeEventListener("hashchange", back);
+  };
 });
 
 /** Show NEXT, and keep it in the URL; a new benchmark is a new history entry, a new setting is not. */
 function go(next: View) {
-  const push = next.bench !== view.bench;
+  const push =
+    next.bench !== view.bench ||
+    pageOf(next) !== pageOf(view) ||
+    next.platform !== view.platform ||
+    next.check !== view.check;
   view = next;
   const url = writeView(next) || location.pathname;
   if (push) history.pushState(null, "", url);
@@ -87,7 +122,14 @@ function follow(e: MouseEvent, next: View) {
   go(next);
 }
 
-const bench = $derived(index?.benchmarks.find((b) => b.id === view.bench));
+const page = $derived(pageOf(view));
+const bench = $derived(
+  view.bench
+    ? index?.benchmarks.find((b) => b.id === view.bench)
+    : page === "explorer"
+      ? index?.benchmarks[0]
+      : undefined,
+);
 const group = $derived(bench && index?.groups.find((g) => g.id === bench.group));
 const params = $derived(bench ? pickParams(bench, view.params) : []);
 const measureId = $derived(bench && (bench.measures.find((m) => m === view.measure) ?? bench.measures[0]));
@@ -142,17 +184,27 @@ const paramText = $derived(
 const commits = $derived(index && bench ? index.commits.filter((c) => c.group === bench.group) : []);
 const label = (id: string) => commitName(index?.commits.find((x) => x.id === id) ?? { id });
 const short = (caseId: string) => shown.find((l) => l.case === caseId)?.short ?? caseId;
-const latest = $derived(index ? latestChanges(index) : []);
 const exported = $derived(index?.changes !== undefined);
-const worse = $derived(latest.filter((r) => r.way === "worse").length);
+
 const HINTS: Record<ContractError["kind"], string> = {
-  missing: "Check that index.json is in the data folder this site was built with, then reload.",
-  version: "The data is in a newer or older format than this page reads: rebuild the site, or export the data again.",
-  invalid:
-    "The data does not have the shape the schema gives: export it again with the exporter that matches this site.",
+  missing: "Check that index.json is in the data folder, then reload.",
+  version: "The data uses a newer or older format. Rebuild the site or export it again.",
+  invalid: "Export the data again with the matching exporter.",
 };
 const unit = $derived(measure?.unit ?? "");
 let tableOpen = $state(false);
+let search = $state("");
+const matching = $derived(
+  index?.benchmarks.filter((b) => `${b.name} ${benchmarkLabel(b.name)}`.toLowerCase().includes(search.toLowerCase())) ??
+    [],
+);
+function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
+  const text = benchmarkLabel(b.name);
+  const collisions = index?.benchmarks.filter(
+    (other) => other.group === b.group && benchmarkLabel(other.name) === text,
+  );
+  return collisions && collisions.length > 1 ? `${text} (${b.name})` : text;
+}
 const tableRows = $derived.by(() => {
   const byCommit = shown.map((l) => new Map(l.points.map((p) => [p.commit, p])));
   return commits.map((c) => ({ c, cells: byCommit.map((m) => m.get(c.id)) })).filter((r) => r.cells.some((x) => x));
@@ -171,25 +223,26 @@ function setParam(i: number, value: string) {
 
 $effect(() => {
   const name = index?.project.name ?? "Benchmarks";
-  document.title = bench ? `${bench.name} · ${name}` : name;
+  document.title = bench
+    ? `${bench.name} · ${name}`
+    : `${{ home: "Home", compatibility: "Compatibility", changes: "Release changes", explorer: "Benchmark explorer" }[page]} · ${name}`;
 });
 </script>
 
 <a class="skip" href="#main">Skip to the results</a>
 <header class="top">
   <div class="top-inner">
-    <h1><a href={location.pathname} onclick={(e) => follow(e, { params: [] })}>{index?.project.name ?? "Benchmarks"}</a></h1>
-    {#if index?.project.description}<p>{index.project.description}</p>{/if}
-    {#if index?.project.links?.length}
-      <nav aria-label="Project">
-        {#each index.project.links as link (link.url)}<a href={link.url}>{link.name}</a>{/each}
-        {#if index.project.url}<a href={index.project.url}>Source</a>{/if}
-      </nav>
-    {/if}
+    <h1><a href={location.pathname} onclick={(e) => follow(e, { params: [] })}><svg class="brand-mark" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 19V5M3 19h18M6 15l4-6 5 3 6-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>{index?.project.name ?? "Benchmarks"}</a></h1>
+    <nav class="primary-nav" aria-label="Main">
+      {#each PAGES as [id, text] (id)}
+        <a href={writeView({page:id,params:[]})} aria-current={page === id ? "page" : undefined} onclick={(e) => follow(e, {page:id,params:[]})}>{text}</a>
+      {/each}
+    </nav>
+
   </div>
 </header>
 
-<div class="frame">
+<div class="frame" class:fullwidth={page !== "explorer"}>
   {#if error}
     <main class="view" id="main" tabindex="-1">
       <div class="empty" role="alert">
@@ -204,23 +257,30 @@ $effect(() => {
       <div class="skeleton"></div>
     </main>
   {:else}
+    {#if page === "explorer"}
     <nav class="rail" aria-label="Benchmarks">
       <details open={wide}>
         <summary>{bench ? "All benchmarks" : "Benchmarks"}</summary>
-        <a class="home" href={location.pathname} aria-current={bench ? undefined : "page"} onclick={(e) => follow(e, { params: [] })}
-          >Latest changes</a
+        <a class="home" href={writeView({page:"explorer",params:[]})} aria-current={bench ? undefined : "page"} onclick={(e) => follow(e, { page:"explorer", params: [] })}
+          >All benchmarks</a
         >
-        {#each index.groups as g (g.id)}
+        <div class="search-field">
+          <label for="benchmark-search">Find a benchmark</label>
+          <input id="benchmark-search" type="search" bind:value={search} placeholder="Search benchmarks…" />
+        </div>
+        {#if matching.length === 0}<p class="rail-empty">No benchmarks match “{search}”.</p>{/if}
+        {#each index.groups.filter((g) => matching.some((b) => b.group === g.id)) as g (g.id)}
           <h2 id="rail-{g.id}">{g.name}</h2>
           <ul aria-labelledby="rail-{g.id}">
-            {#each index.benchmarks.filter((b) => b.group === g.id) as b (b.id)}
+            {#each matching.filter((b) => b.group === g.id) as b (b.id)}
               {@const next = { bench: b.id, params: [] }}
               <li>
                 <a
                   href={writeView(next)}
                   aria-current={b.id === bench?.id ? "page" : undefined}
                   onclick={(e) => follow(e, next)}
-                  >{#each breakable(b.name) as part, k (k)}{part}<wbr />{/each}</a
+                  title={b.name}
+                  >{labelOf(b)}</a
                 >
               </li>
             {/each}
@@ -228,61 +288,24 @@ $effect(() => {
         {/each}
       </details>
     </nav>
+    {/if}
 
     <main class="view" id="main" tabindex="-1">
-      {#if !bench}
-        <header>
-          <h2>What moved in the latest releases</h2>
-          <p class="lede">
-            Each case compared between its package's last two releases. A move counts only when it is larger than that
-            case's measured noise, which the exporter worked out from each run's spread.
-          </p>
-        </header>
-        {#if !exported}
-          <p class="empty">Changes were not exported with this data, so there is nothing to compare here.</p>
-        {:else if latest.length === 0}
-          <p class="empty">Nothing moved beyond its noise in any package's latest release.</p>
-        {:else}
-          <!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region must take focus to scroll by keyboard -->
-          <div class="scroll gap" role="region" aria-label="Latest changes" tabindex="0">
-            <table>
-              <caption>
-                {worse} worse, {latest.length - worse} better, beyond their noise; worse first, then the largest change.
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Benchmark</th>
-                  <th scope="col" class="num">Change</th>
-                  <th scope="col">Environment</th>
-                  <th scope="col">Releases</th>
-                </tr>
-              </thead>
-              <tbody>
-                {#each latest as row, i (i)}
-                  {@const next = { bench: row.bench.id, params: row.params, measure: row.change.measure }}
-                  <tr>
-                    <th scope="row" class="wrap">
-                      <span class="quiet">{row.group.name}</span><br />
-                      <a href={writeView(next)} onclick={(e) => follow(e, next)}
-                        >{#each breakable(row.bench.name) as part, k (k)}{part}<wbr />{/each}</a
-                      >
-                      {#if row.params.length}<br /><span class="quiet">{row.params.join(", ")}</span>{/if}
-                    </th>
-                    <td class="num">
-                      <span class={row.way}>{percent(row.change.ratio)} {row.way}</span><br />
-                      <span class="quiet">noise {noiseText(row.change)}</span>
-                    </td>
-                    <td class="wrap">{row.env}</td>
-                    <td class="nowrap">{row.from} → {row.to}</td>
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
-          </div>
-        {/if}
+      {#if guidanceError && (page === "home" || page === "compatibility")}<p class="empty" role="status">Setup guidance could not be loaded. Benchmark histories remain available. {guidanceError}</p>{/if}
+      {#if page === "home"}
+        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} />
+      {:else if page === "compatibility"}
+        <Compatibility {guidance} ready={guidanceReady} {view} {go} {follow} />
+      {:else if !bench && page === "changes"}
+        <ReleaseChanges {index} {view} {go} {follow} />
+      {:else if !bench}
+        {#if view.bench}<p class="empty" role="status">This benchmark is not in the current data. Choose one from the catalogue.</p>{/if}
+        <header><h2>Explore benchmark histories</h2><p>Choose a benchmark from the catalogue to compare releases, environments and measurements.</p></header>
+
       {:else}
         <header>
-          <h2>{#each breakable(bench.name) as part, k (k)}{part}<wbr />{/each}</h2>
+          <h2>{labelOf(bench)}</h2>
+          <p class="benchmark-id"><code>{#each breakable(bench.name) as part, k (k)}{part}<wbr />{/each}</code></p>
           <p>
             {#if group?.url}<a href={group.url}>{group.name}</a>{:else}{group?.name}{/if}
             · {measure?.name ?? measureId}{measure?.statistic ? `, ${measure.statistic}` : ""}{measure?.better
@@ -370,7 +393,7 @@ $effect(() => {
           {:else}
             <!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region must take focus to scroll by keyboard -->
             <div class="scroll" role="region" aria-label="Changes" tabindex="0">
-              <table aria-labelledby="changes-h">
+              <table class="responsive-table" aria-labelledby="changes-h">
                 <thead>
                   <tr>
                     <th scope="col">Release</th>
@@ -384,9 +407,9 @@ $effect(() => {
                     {@const way = verdict(c.ratio, measure?.better)}
                     <tr>
                       <th scope="row" class="nowrap">{label(c.baseline)} → {label(c.commit)}</th>
-                      <td class="num {way}">{percent(c.ratio)} {way}</td>
-                      <td class="wrap">{short(c.case)}</td>
-                      <td class="nowrap">
+                      <td class="num {way}" data-label="Change">{percent(c.ratio)} {way}</td>
+                      <td class="wrap" data-label="Environment">{short(c.case)}</td>
+                      <td class="nowrap" data-label="Evidence">
                         {c.method === "release" ? `release vs. noise ${noiseText(c)}` : `level shift (Otava), ${pText(c.pvalue)}`}
                       </td>
                     </tr>
@@ -441,6 +464,14 @@ $effect(() => {
           </details>
         {/if}
       {/if}
+
     </main>
   {/if}
 </div>
+
+<footer class="site-footer">    {#if index?.project.links?.length}
+      <nav aria-label="Project">
+        {#each index.project.links as link (link.url)}<a href={link.url}>{link.name}</a>{/each}
+        {#if index.project.url}<a href={index.project.url}>Source</a>{/if}
+      </nav>
+    {/if}</footer>

@@ -63,6 +63,9 @@ benchmark, otherwise with exit 137. Set `BWBENCH_MEM` to give it more.
 
 [method.md](method.md#how-the-results-stay-reproducible) says why the set is fixed.
 
+Hash-only entries in `asv/<package>.hashes` are experiments. They stay in the history, but
+the viewer and `just release-changes` compare release tags only.
+
 ## Compat
 
 `just compat PYTHON [COLUMN]`, as in `just compat 3.12 floors`, asks whether the newest
@@ -95,13 +98,19 @@ since neither installs from PyPI there.
 
 ### Install a set that works
 
-The site's [works together today](https://simonvanlierde.com/brightway-benchmarks/#works-together)
-table shows the latest nightly result per job and the last set that passed. Download its
-`requirements.txt` and use it as constraints:
+The site's [compatibility view](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility)
+shows the latest result and last passing set for each job. Check the date and coverage before
+choosing a set. Smoke calculations and full package test suites are separate checks.
+
+In a fresh Python environment, download that set's `requirements.txt` and use it as constraints:
 
 ```sh
-uv pip install brightway25 -c requirements.txt
+uv pip install brightway25 bw_graph_tools bw_timex -c requirements.txt
 ```
+
+These are the runtime libraries the PyPI compatibility job checks together. Constraints pin
+versions but do not install packages themselves. The full requirements file also includes the
+test harness; `uv pip install -r requirements.txt` installs that complete recorded environment.
 
 For the `conda-forge` row, download `pixi.toml` and `pixi.lock` into one folder and run
 `pixi install --frozen` there. A set is kept for 90 days, as long as GitHub keeps the

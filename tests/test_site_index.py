@@ -1,11 +1,13 @@
 """scripts/site_index.py on a site folder with one asv subject and one stray folder."""
 
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "site_index.py"
+GIT = shutil.which("git") or "git"
 NAV = '<li id="nav-li-" class="active"><a href="#/">Benchmark grid</a></li>'  # asv's menu, first tab
 
 
@@ -76,10 +78,23 @@ def test_lists_what_moved_in_the_latest_release(tmp_path: Path):
     site = tmp_path / "site"
     (site / "bw2calc").mkdir(parents=True)
     (site / "bw2calc" / "index.html").write_text(NAV)
-    # Raw commits as releases: with no asv mirror to look tags up in, each stands for itself.
-    old, new = "aaaaaaaa" + "0" * 32, "bbbbbbbb" + "0" * 32
+    mirror = tmp_path / ".asv" / "bw2calc"
+    git = [GIT, "--git-dir", str(mirror)]
+    subprocess.run([GIT, "init", "-q", "--bare", str(mirror)], check=True)
+    tree = subprocess.run([*git, "mktree"], input="", capture_output=True, text=True, check=True).stdout.strip()
+    commits = []
+    for tag in ("1.0", "2.0"):
+        commit = subprocess.run(
+            [*git, "-c", "user.name=t", "-c", "user.email=t@t.test", "commit-tree", tree, "-m", tag],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+        subprocess.run([*git, "tag", tag, commit], check=True)
+        commits.append(commit)
+    old, new = commits
     (tmp_path / "asv").mkdir()
-    (tmp_path / "asv" / "bw2calc.hashes").write_text(f"{old}\n{new}\n")
+    (tmp_path / "asv" / "bw2calc.hashes").write_text("1.0\n2.0\n")
     machine = tmp_path / "results" / "bw2calc" / "m"
     machine.mkdir(parents=True)
     for commit, seconds in ((old, 45.0), (new, 9.05)):

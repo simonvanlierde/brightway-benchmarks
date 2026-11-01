@@ -139,21 +139,19 @@ def test_sector_markets_share_one_pool_across_regions():
     assert jaccard("sector") > 2 * jaccard("region")  # 0.18 against 0.075 at seed 0
 
 
-def test_copy_long_lists_shares_inputs_in_sector():
-    s = system("ecoinvent", products=6000, copy_long=1.0, copy_long_min=17, seed=0)
-    assert s.sector is not None
-    x = (s.technosphere() != 0).astype(np.float64).tolil()
-    x.setdiag(0)
-    x = x.tocsc()
-    x.eliminate_zeros()
-    length = np.diff(x.indptr)
-    long = np.flatnonzero(length >= 17)
-    q = x[:, long]
-    shared = (q.T @ q).toarray()
-    jac = shared / (length[long][:, None] + length[long][None, :] - shared)
-    np.fill_diagonal(jac, -1.0)
-    best = jac.max(axis=1)
-    assert np.mean(best >= 0.5) > 0.4
+def test_copy_long_lists_shares_inputs_only_in_its_sector():
+    cols = np.repeat(np.arange(8, 16), 3)
+    rows = np.concatenate([np.roll(np.arange(4) + (4 if c >= 12 else 0), c % 4)[:3] for c in range(8, 16)])
+    sector = np.array([0] * 12 + [1] * 4)
+    p = synth.profile("smoke", products=16, copy_long_min=3, copy_max=4)
+    got_rows, got_cols = synth._copy_long_lists(  # noqa: SLF001
+        np.random.default_rng(0), rows, cols, sector, p, share=1.0
+    )
+    assert got_rows.size == rows.size
+    assert np.all(got_rows[got_cols < 12] < 4)
+    assert np.all(got_rows[got_cols >= 12] >= 4)
+    lists = [set(got_rows[got_cols == c]) for c in range(8, 16)]
+    assert len({frozenset(inputs) for inputs in lists}) < 8  # some variants inherited a template
 
 
 def test_bw2data_form_has_every_exchange():
@@ -204,6 +202,31 @@ def test_cache_folder_follows_everything_that_shapes_the_files(monkeypatch: pyte
     assert len({base, key(seed=1), key(uncertain=True), key(bwp_version="1.5"), key(products=8_000)}) == 5
     monkeypatch.setattr(synth, "GENERATOR_VERSION", "test")
     assert key() != base
+
+
+def test_default_experiments_keep_the_existing_history_version():
+    assert synth.profile_version() == "3-05303220"
+    assert synth.profile("smoke").digest() == "08db63889250"
+
+
+@pytest.mark.parametrize(
+    "override",
+    [
+        {"same_region_by_length": (0.6, 0.4, 0.2, 0.1, 0.05)},
+        {"copies": 0.5},
+        {"bundles": 0.5},
+        {"copy_long": 0.85},
+        {"copy_long_min": 18},
+        {"copy_zipf": 2.2},
+        {"copy_max": 30},
+        {"copy_keep": 0.8},
+        {"markets": 0.5},
+        {"market_min": 18},
+        {"market_by": "sector"},
+    ],
+)
+def test_experimental_overrides_change_the_digest(override: dict[str, object]):
+    assert synth.profile("ecoinvent", **override).digest() != synth.profile("ecoinvent").digest()
 
 
 def test_new_measurements_in_the_calibration_file_keep_the_digest(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):

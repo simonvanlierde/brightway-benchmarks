@@ -1,8 +1,9 @@
 """scripts/measure_stats.py on three hand-written ecospold2 datasets (the real release is licensed)."""
 
-import importlib.util
 import json
-import sys
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
+from importlib import import_module
 from pathlib import Path
 from types import ModuleType
 
@@ -58,13 +59,9 @@ def dataset(
 
 @pytest.fixture
 def script(monkeypatch: pytest.MonkeyPatch):
-    spec = importlib.util.spec_from_file_location("measure_stats", SCRIPT)
-    assert spec is not None
-    assert spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    monkeypatch.setitem(sys.modules, "measure_stats", module)  # the worker pool imports read() by name
-    spec.loader.exec_module(module)
-    return module
+    # Fresh worker processes must be able to import the parser by its module name.
+    monkeypatch.syspath_prepend(str(SCRIPT.parent))
+    return import_module("measure_stats")
 
 
 def release(tmp_path: Path, files: dict[str, str]) -> Path:
@@ -201,3 +198,13 @@ def test_two_datasets_sharing_a_reference_product_are_an_error(tmp_path: Path, s
     )
     with pytest.raises(ValueError, match="share a reference product"):
         script.main(folder, tmp_path / "stats.json")
+
+
+@pytest.mark.parametrize("start_method", ["spawn", "forkserver"])
+def test_parser_is_importable_by_fresh_worker(tmp_path: Path, script: ModuleType, start_method: str):
+    if start_method not in multiprocessing.get_all_start_methods():
+        pytest.skip(f"{start_method} is unavailable on this platform")
+    folder = release(tmp_path, {"A_pa": dataset("A", "pa", 1.0, "CH", "3510", [("B", "pb", 0.5)])})
+    with ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context(start_method)) as pool:
+        record = pool.submit(script.read, folder / "datasets" / "A_pa.spold").result()
+    assert record == (("A", "pa"), 1.0, "CH", "35", [(("B", "pb"), 0.5)])

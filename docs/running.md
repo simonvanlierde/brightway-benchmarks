@@ -99,6 +99,20 @@ turns the run red, so check the other jobs yourself. On macOS and
 Windows the job runs on the runner, not the box. On macOS the PyPardiso and UMFPACK cases skip,
 since neither installs from PyPI there.
 
+### Report newly failing jobs
+
+Save the published `compat/status.json` after each report. Compare that snapshot with the
+next one to name jobs that changed from success to failure, recoveries and continuing failures:
+
+```sh
+python3 scripts/compat_changes.py previous-status.json current-status.json
+```
+
+The report links both workflow runs. A missing previous file starts a baseline and labels
+failures as first observations. Cancelled, skipped and absent jobs are listed separately;
+they do not count as failures or recoveries. An invalid snapshot fails the command, so
+an automation should replace its saved baseline only after the report succeeds.
+
 ### Install a set that works
 
 The site's [compatibility view](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility)

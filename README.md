@@ -57,6 +57,7 @@ just compat 3.13                           # today's releases together on Python
 
 - [Findings](docs/findings.md): what the histories show
 - [Method](docs/method.md): what is measured, the synthetic databases, the noise floor
+- [Calibration experiments](docs/calibration-sweep.md): compare input-sharing controls and inspect failed guards
 - [Running](docs/running.md): every recipe, the compat columns and the `BWBENCH_*` variables
 - [CONTRIBUTING.md](.github/CONTRIBUTING.md): checks, tests and how to sign off commits
 - [SECURITY.md](.github/SECURITY.md) and the [assurance case](docs/assurance-case.md)

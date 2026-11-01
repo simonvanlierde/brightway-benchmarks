@@ -11,9 +11,19 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The homepage shows a tested Brightway setup, measured solver alternatives and the latest
   release changes ([viewer](ui/README.md), [UI changelog](ui/CHANGELOG.md)).
+- Experimental controls for sharing synthetic input lists and varying locality by list length.
+  They stay off in registered profiles, so existing benchmark histories keep their versions
+  ([method](docs/method.md#experimental-input-sharing)).
+- Compatibility snapshot reports name newly failing jobs, recoveries and continuing failures,
+  with links to both runs ([running](docs/running.md#report-newly-failing-jobs)).
 - `scripts/solver_factorize.py --cudss` times NVIDIA's cuDSS GPU solver on the real ecoinvent matrix: a
   first factorization and one that reuses its analysis, as a Monte Carlo draw does. `--pardiso` now
   times PARDISO's reuse too ([method](docs/method.md)).
+- `scripts/calibration_sweep.py` writes seed-by-seed measurement reports for the experimental input-sharing controls. Missing results, worker errors and failed calibration guards return a failure status while preserving the report ([calibration experiments](docs/calibration-sweep.md)).
+- `scripts/solver_factorize.py --cudss-updates` checks cuDSS against CPU solves while changing
+  matrix values at fixed sparsity and reports separate phase timings. The existing `--cudss`
+  and `--pardiso` refactorization probes keep their values unchanged; these are not complete
+  Monte Carlo draws ([method](docs/method.md)).
 - When a `floors`, `pre`, `conda-forge` or `suites` compat job fails, its summary and artifact now
   hold a draft of an upstream issue: the failed test IDs (or the resolve error), the versions, the
   pins that changed since the job's last green set, and the run URL. Posting it is left to a person.

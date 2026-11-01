@@ -37,7 +37,12 @@ The profile is harder on a direct solver than real ecoinvent: SuperLU's factors 
 as many entries as the matrix, against 175 for ecoinvent. So SuperLU times overstate real
 ecoinvent ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)). With a
 licence of your own, [`scripts/solver_factorize.py`](../scripts/solver_factorize.py) times each
-direct solver on the real matrix, and with `--cudss` NVIDIA's cuDSS on a GPU.
+direct solver on the real matrix, and with `--cudss` NVIDIA's cuDSS on a GPU. That option
+refactorizes unchanged values. `--cudss-updates` instead applies three deterministic row-scaled
+value updates at fixed sparsity, checking every solution against SuperLU and its backward
+error. It separates construction/initial transfer, analysis, update/transfer, factorization and
+solve/return transfer. Value generation and CPU checks are outside those phase times; neither
+option measures a complete Monte Carlo draw.
 
 `just bw2io-import synthetic smoke,ecoinvent` times bw2io's ecoSpold2 import without a licence:
 it writes a profile's system as ecoSpold2 files with bw2io's own `biosphere3` flows, so every
@@ -49,6 +54,19 @@ per exchange, so datasets with few intermediate exchanges get fewer (7.2 a datas
 Review text, which bw2io skips, makes up the rest. At `ecoinvent` size the import peaks at 3.97 GB,
 against 4.5 GB for the real release. `just bw2io-import RELEASE_FOLDER all` does the same on a
 licensed release, read-only.
+
+### Experimental input sharing
+
+`bwbench.synth.system` accepts overrides for calibration experiments. `copy_long` copies long
+input lists within a sector; `copies` and `bundles` copy input or consumer lists in runs.
+`markets` draws long lists from one pool per region, or per sector with `market_by="sector"`.
+`same_region_by_length` sets locality separately for the five input-list length bands in
+[`OVERLAP_BANDS`](../src/bwbench/synth.py).
+
+These controls are off in every registered profile. They do not fix
+[#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54): `copy_long=0.85` lowers
+fill, but shrinks the largest loop below the calibration test's accepted range.
+Default controls preserve existing cache keys and benchmark histories; overrides get separate keys.
 
 ## The real database
 

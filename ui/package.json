@@ -18,6 +18,7 @@
     "test": "vitest run",
     "fmt": "biome check --write .",
     "size": "node scripts/size.mjs",
+    "assets": "node scripts/generate-assets.mjs",
     "e2e": "playwright test"
   },
   "dependencies": {

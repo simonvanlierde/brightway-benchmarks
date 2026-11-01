@@ -4,10 +4,19 @@ import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 
 const root = new URL("..", import.meta.url).pathname;
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json" };
+const TYPES = {
+  ".html": "text/html",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".ico": "image/x-icon",
+};
 
 createServer((req, res) => {
-  const path = normalize(decodeURIComponent(new URL(req.url ?? "/", "http://x").pathname));
+  const requested = normalize(decodeURIComponent(new URL(req.url ?? "/", "http://x").pathname));
+  const path = requested.startsWith("/ui/") ? requested.slice(3) : requested;
   const file = path.startsWith("/data/")
     ? join(root, "test/fixtures/real", path.slice("/data/".length))
     : join(root, "dist", path.endsWith("/") ? `${path}index.html` : path);

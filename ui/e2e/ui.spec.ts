@@ -700,3 +700,19 @@ test("new uv projects get a complete copyable setup for the selected Python and 
   await page.getByRole("combobox", { name: "Package manager" }).selectOption("conda");
   await expect(start).toHaveCount(0);
 });
+
+test("the page publishes a favicon and Open Graph metadata", async ({ page, request }) => {
+  await page.goto("/");
+  const icon = page.locator("link[rel='icon'][type='image/svg+xml']");
+  await expect(icon).toHaveAttribute("href", /favicon\.svg$/);
+  const ogImage = page.locator("meta[property='og:image']");
+  await expect(ogImage).toHaveAttribute("content", /og\.png$/);
+
+  const iconRes = await request.get("/favicon.svg");
+  expect(iconRes.status()).toBe(200);
+  expect(iconRes.headers()["content-type"]).toBe("image/svg+xml");
+
+  const ogRes = await request.get("/og.png");
+  expect(ogRes.status()).toBe(200);
+  expect(ogRes.headers()["content-type"]).toBe("image/png");
+});

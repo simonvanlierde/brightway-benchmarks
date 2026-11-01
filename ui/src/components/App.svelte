@@ -33,6 +33,7 @@ import {
   writeView,
 } from "../lib/history";
 import Findings from "./Findings.svelte";
+import LogoMark from "./LogoMark.svelte";
 import ReleaseChanges from "./ReleaseChanges.svelte";
 import SetupHome from "./SetupHome.svelte";
 
@@ -301,7 +302,7 @@ $effect(() => {
 <a class="skip" href="#main">Skip to the results</a>
 <header class="top">
   <div class="top-inner">
-    <h1><a href={location.pathname} onclick={(e) => follow(e, { params: [] })}><svg class="brand-mark" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 19V5M3 19h18M6 15l4-6 5 3 6-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>{index?.project.name ?? "Benchmarks"}</a></h1>
+    <h1><a href={location.pathname} onclick={(e) => follow(e, { params: [] })}><LogoMark size={24} /><span>{index?.project.name === "brightway-benchmarks" ? "Brightway Benchmarks" : (index?.project.name ?? "Brightway Benchmarks")}</span></a></h1>
     <nav class="primary-nav" aria-label="Main" bind:this={masthead}>
       {#each PAGES as [id, text] (id)}
         <a href={writeView({page:id,params:[]})} aria-current={page === id ? "page" : undefined} onclick={(e) => follow(e, {page:id,params:[]})}>{text}</a>

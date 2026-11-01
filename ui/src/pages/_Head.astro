@@ -1,10 +1,14 @@
 ---
+import { softwareJsonLd } from "../lib/structured-data";
+
 interface Props {
   title: string;
   description: string;
   canonical: string;
 }
 const { title, description, canonical } = Astro.props;
+const image = "https://simonvanlierde.com/brightway-benchmarks/ui/og.png";
+const imageAlt = "Brightway benchmarks: tested installation sets and a comparison of measured solver times.";
 ---
 
 <meta charset="utf-8" />
@@ -15,15 +19,25 @@ const { title, description, canonical } = Astro.props;
 <meta name="robots" content="index,follow" />
 <link rel="canonical" href={canonical} />
 <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+<link rel="icon" type="image/x-icon" sizes="32x32" href={`${import.meta.env.BASE_URL}favicon.ico`} />
+<link rel="apple-touch-icon" sizes="180x180" href={`${import.meta.env.BASE_URL}apple-touch-icon.png`} />
 <link rel="sitemap" type="application/xml" href="https://simonvanlierde.com/brightway-benchmarks/sitemap.xml" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="brightway-benchmarks" />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonical} />
-<meta name="twitter:card" content="summary" />
+<meta property="og:image" content={image} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:alt" content={imageAlt} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content={image} />
+<meta name="twitter:image:alt" content={imageAlt} />
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
+<script type="application/ld+json" is:inline set:html={softwareJsonLd()} />
 <script is:inline>
   (() => {
     const root = document.documentElement;

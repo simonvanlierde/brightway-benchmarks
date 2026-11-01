@@ -5,6 +5,7 @@ import { dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/g
 import { benchmarkLabel, format, latestChanges, noiseText, percent, type View, writeView } from "../lib/history";
 import Findings from "./Findings.svelte";
 import InstallSet from "./InstallSet.svelte";
+import LogoMark from "./LogoMark.svelte";
 
 let {
   guidance,
@@ -87,7 +88,7 @@ $effect(() => {
 </script>
 
 <header class="home-intro">
-  <div><h2>{guidance?.title ?? index.project.name}</h2><p>{guidance?.intro ?? index.project.description ?? "Explore benchmark measurements and release changes."}</p></div>
+  <div><div class="home-brand-lockup"><span class="home-emblem"><LogoMark size={36} /></span><h2>{guidance?.title ?? index.project.name}</h2></div><p>{guidance?.intro ?? index.project.description ?? "Explore benchmark measurements and release changes."}</p></div>
 
   <p class="brightway-about"><a href="https://docs.brightway.dev/en/latest/">Brightway</a> is an open-source Python framework for life cycle assessment (LCA).</p>
 </header>

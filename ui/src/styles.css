@@ -1585,3 +1585,18 @@ table.check-grid td a[aria-current="true"] {
     gap: 8px;
   }
 }
+
+.home-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.home-emblem {
+  display: flex;
+  flex: none;
+}
+@media (max-width: 39rem) {
+  .home-emblem {
+    display: none;
+  }
+}

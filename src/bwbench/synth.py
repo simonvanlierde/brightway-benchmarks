@@ -89,10 +89,21 @@ class Profile:
     hub_cap: int = 1100  # most draws one supplier is expected to get
     back: float = 0.15  # share of drawn inputs from anywhere in the order: they close the loops
     same_region: float = 0.23  # share of drawn inputs from the consumer's region
+    same_region_by_length: tuple[float, ...] = ()  # same_region per OVERLAP_BANDS band of the consumer's list length
     same_sector: float = 0.28  # the same for its sector
     regions: int = 20
     sectors: int = 40
     treatment: float = 0.126  # share of products that are waste treatments
+    copies: float = 0.0  # share of products in a run that shares most of one input list (regional variants)
+    bundles: float = 0.0  # share of suppliers in a run that sells to mostly the same consumers
+    copy_long: float = 0.0  # share of long input lists that are regional copies in the same sector
+    copy_long_min: int = 17  # shortest input list that counts as a long list for regional copies
+    copy_zipf: float = 2.1  # runs have 1 + Zipf(copy_zipf) products: mostly pairs, a few dozens
+    copy_max: int = 60  # caps the longest runs
+    copy_keep: float = 1.0  # share of the template's list a run member takes; it keeps the rest of its own
+    markets: float = 0.0  # share of a long input list drawn from its pool (market_by), as markets of one product do
+    market_min: int = 17  # shortest input list (in draws) that counts as a market
+    market_by: str = "region"  # whose pool a market draws from: its region's, or its sector's across regions
     amount_sigma: float = 3.5  # lognormal spread of input amounts within a column, before units
     units: float = 0.3  # standard deviation of log10 of each product's unit
     radius: float = 0.78  # spectral radius of X
@@ -402,7 +413,117 @@ def _draw(
     return order[pick], hi > lo
 
 
-def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
+def _apply_template(
+    rng: np.random.Generator,
+    rows: NDArray,
+    cols: NDArray,
+    template: NDArray,
+    p: Profile,
+) -> tuple[NDArray, NDArray]:
+    """Substitute variants' inputs with a share of their template's inputs."""
+    variant = template != np.arange(p.products)
+    if not np.any(variant):
+        return rows, cols
+    borrowed = sparse.csc_matrix((np.ones(rows.size, dtype=bool), (rows, cols)), shape=(p.products, p.products))[
+        :, template
+    ].tocoo()
+    take = ~variant[borrowed.col] | (rng.random(borrowed.nnz) < p.copy_keep)
+    own = variant[cols] & (rng.random(cols.size) >= p.copy_keep)
+    return (
+        np.concatenate([borrowed.row[take].astype(np.int64), rows[own]]),
+        np.concatenate([borrowed.col[take].astype(np.int64), cols[own]]),
+    )
+
+
+def _copy_lists(
+    rng: np.random.Generator, rows: NDArray, cols: NDArray, p: Profile, share: float
+) -> tuple[NDArray, NDArray]:
+    """Give runs of products mostly one input list, as the regional variants of one technology have.
+
+    A run starts at a product, its template, and each product right after it in the order
+    takes a ``p.copy_keep`` share of the template's inputs and keeps the rest of its own.
+    Runs start often enough that about ``p.copies`` of all products sit in one. Repeated
+    cells, and a variant buying from itself, are left for ``_off_diagonal_once`` to drop.
+    """
+    n = p.products
+    sizes = np.minimum(1 + rng.zipf(p.copy_zipf, n), p.copy_max)
+    mean = float(sizes.mean())
+    starts = rng.random(n) < share / (mean * (1 - share) + share)
+    template = np.arange(n)
+    j = 0
+    while j < n:
+        if starts[j]:
+            template[j + 1 : j + sizes[j]] = j
+            j += int(sizes[j])
+        else:
+            j += 1
+    return _apply_template(rng, rows, cols, template, p)
+
+
+def _copy_long_lists(
+    rng: np.random.Generator,
+    rows: NDArray,
+    cols: NDArray,
+    sector: NDArray,
+    p: Profile,
+    share: float,
+) -> tuple[NDArray, NDArray]:
+    """Copy long input lists across regional variants in the same sector.
+
+    In ecoinvent, long lists repeat because regional variants of one technology (activity)
+    share nearly all their inputs. This groups long lists by sector and has variants take
+    a ``p.copy_keep`` share of their template's inputs.
+    """
+    n = p.products
+    length = np.bincount(cols, minlength=n)
+    long_cols = np.flatnonzero(length >= p.copy_long_min)
+    if long_cols.size < 2 or share <= 0:
+        return rows, cols
+
+    template = np.arange(n)
+    for sec in np.unique(sector[long_cols]):
+        sec_long = long_cols[sector[long_cols] == sec]
+        if sec_long.size >= 2:
+            perm = rng.permutation(sec_long)
+            i = 0
+            while i < perm.size:
+                sz = int(np.minimum(1 + rng.zipf(p.copy_zipf), p.copy_max))
+                cluster = perm[i : i + sz]
+                if cluster.size >= 2 and rng.random() < share:
+                    t = cluster[0]
+                    template[cluster[1:]] = t
+                i += sz
+
+    return _apply_template(rng, rows, cols, template, p)
+
+
+def _market_lists(rng: np.random.Generator, rows: NDArray, cols: NDArray, family: NDArray, p: Profile) -> NDArray:
+    """Let long input lists of one family draw mostly from one pool of suppliers, as markets do.
+
+    The pool is the list of the family's longest member. Each other list of at least
+    ``p.market_min`` draws swaps a ``p.markets`` share of its draws for a window of the
+    pool, from a random offset: no list takes a pool supplier twice, and the lengths stay.
+    ``cols`` must be sorted, as the draws are. Returns the new ``rows``.
+    """
+    n = p.products
+    length = np.bincount(cols, minlength=n)
+    start = np.concatenate([[0], np.cumsum(length)])
+    market = np.flatnonzero(length >= p.market_min)
+    by_family = market[np.lexsort((-length[market], family[market]))]
+    _, first = np.unique(family[by_family], return_index=True)
+    pool = np.full(family.max() + 1, -1)
+    pool[family[by_family[first]]] = by_family[first]
+    t = pool[family[cols]]
+    offset = rng.random(n)
+    swap = np.flatnonzero((length[cols] >= p.market_min) & (t != cols) & (rng.random(cols.size) < p.markets))
+    c, t = cols[swap], t[swap]
+    at = start[t] + (np.floor(offset[c] * length[t]).astype(np.int64) + swap - start[c]) % length[t]
+    rows = rows.copy()
+    rows[swap] = rows[at]  # the pool's own draws are never swapped
+    return rows
+
+
+def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:  # noqa: PLR0915
     """The supply-chain structure the module docstring describes, scaled to ``p.radius`` at most.
 
     Position 0 is the most basic product and position n - 1 the most finished one; product
@@ -427,7 +548,14 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
     for _ in range(5):
         weight = np.minimum(weight, p.hub_cap * weight.sum() / max(cols.size, 1))
     pool = rng.random(cols.size)
-    pool = np.where(pool < p.same_region, 1, np.where(pool < p.same_region + p.same_sector, 2, 0))
+    region = p.same_region
+    if p.same_region_by_length:  # short lists buy locally, long ones across regions, as in ecoinvent
+        if len(p.same_region_by_length) != len(OVERLAP_BANDS):
+            msg = f"same_region_by_length must have {len(OVERLAP_BANDS)} elements, got {len(p.same_region_by_length)}"
+            raise ValueError(msg)
+        band = np.searchsorted([low for low, _ in OVERLAP_BANDS[1:]], k[cols], side="right")
+        region = np.asarray(p.same_region_by_length)[band]
+    pool = np.where(pool < region, 1, np.where(pool < region + p.same_sector, 2, 0))
     groups = (np.zeros(n, dtype=np.int64), rng.integers(0, p.regions, n), rng.integers(0, p.sectors, n))
     rows = np.empty(cols.size, dtype=np.int64)
     found = np.empty(cols.size, dtype=bool)
@@ -435,8 +563,19 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
         m = pool == i
         rows[m], found[m] = _draw(rng, cols[m], weight, group, p.back)
 
-    rows = np.concatenate([suppliers, rows[found]])
-    cols = np.concatenate([consumers, cols[found]])
+    rows, cols, pool = rows[found], cols[found], pool[found]
+    # Not the inputs every seller's first consumer takes: without them some suppliers would sell to nobody.
+    if p.markets:  # one pool per region or sector; draws from the consumer's own sector (region) stay its own
+        own = {"region": 2, "sector": 1}[p.market_by]
+        rows[pool != own] = _market_lists(rng, rows[pool != own], cols[pool != own], groups[3 - own], p)
+    if p.bundles:
+        cols, rows = _copy_lists(rng, cols, rows, p, p.bundles)
+    if p.copies:
+        rows, cols = _copy_lists(rng, rows, cols, p, p.copies)
+    if p.copy_long:
+        rows, cols = _copy_long_lists(rng, rows, cols, groups[2], p, p.copy_long)
+    rows = np.concatenate([suppliers, rows])
+    cols = np.concatenate([consumers, cols])
     rows, cols = _off_diagonal_once(rows, cols, n)
 
     # Amounts free of units: lognormal, each column summing to 1, then all scaled to the radius.

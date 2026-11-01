@@ -81,6 +81,81 @@ def test_profiles_take_overrides():
         system("smoke", no_such_field=1)
 
 
+def test_market_lists_draw_from_their_family_pool():
+    # Products 0 and 1 are one family, 2 and 3 another; 0 and 2 are the longest, so the pools.
+    lengths = [20, 18, 30, 3]
+    cols = np.repeat(np.arange(4), lengths)
+    rows = np.arange(cols.size) + 100  # every draw a different supplier
+    p = synth.profile("smoke", products=4, markets=1.0, market_min=17)
+    got = synth._market_lists(np.random.default_rng(0), rows, cols, np.array([0, 0, 1, 1]), p)  # noqa: SLF001
+    assert np.array_equal(got[cols != 1], rows[cols != 1])  # the pools, and a list too short to be a market
+    assert set(got[cols == 1]) <= set(rows[cols == 0])  # all from its own family's pool
+    assert np.unique(got[cols == 1]).size == 18  # never one supplier twice: the length stays
+
+
+def test_same_region_by_length_follows_its_curve():
+    curve = (0.6, 0.4, 0.2, 0.1, 0.05)  # one share per band of OVERLAP_BANDS
+    s = system("ecoinvent", products=6000, same_region_by_length=curve, seed=0)
+    assert s.region is not None
+    a = (s.technosphere() != 0).tocoo()
+    off = a.row != a.col
+    rows, cols = a.row[off], a.col[off]
+    length = np.bincount(cols, minlength=s.profile.products)[cols]
+    local = s.region[rows] == s.region[cols]
+    for (low, high), want in zip(synth.OVERLAP_BANDS[:3], curve, strict=False):
+        m = (length >= low) & (length <= high)
+        assert local[m].mean() == pytest.approx(want, abs=0.08)
+
+    with pytest.raises(ValueError, match="same_region_by_length must have 5 elements"):
+        system("smoke", same_region_by_length=(0.5, 0.5))
+
+
+def test_copy_lists_and_bundles():
+    s_copies = system("smoke", copies=0.5, copy_keep=0.8, seed=0)
+    assert s_copies.technosphere().nnz > 0
+    s_bundles = system("smoke", bundles=0.5, seed=0)
+    assert s_bundles.technosphere().nnz > 0
+
+
+def test_sector_markets_share_one_pool_across_regions():
+    def jaccard(market_by: str) -> float:
+        """Mean input-list Jaccard of two long lists in one sector and different regions."""
+        s = system("ecoinvent", products=6000, markets=1.0, market_by=market_by)
+        assert s.region is not None
+        assert s.sector is not None
+        x = (s.technosphere() != 0).astype(np.float64).tolil()
+        x.setdiag(0)
+        x = x.tocsc()
+        x.eliminate_zeros()
+        length = np.diff(x.indptr)
+        long = np.flatnonzero(length >= s.profile.market_min)
+        q = x[:, long]
+        shared = (q.T @ q).toarray()
+        jac = shared / (length[long][:, None] + length[long][None, :] - shared)
+        sector, region = s.sector[long], s.region[long]
+        pair = (sector[:, None] == sector[None, :]) & (region[:, None] != region[None, :])
+        return float(jac[pair].mean())
+
+    assert jaccard("sector") > 2 * jaccard("region")  # 0.18 against 0.075 at seed 0
+
+
+def test_copy_long_lists_shares_inputs_in_sector():
+    s = system("ecoinvent", products=6000, copy_long=1.0, copy_long_min=17, seed=0)
+    assert s.sector is not None
+    x = (s.technosphere() != 0).astype(np.float64).tolil()
+    x.setdiag(0)
+    x = x.tocsc()
+    x.eliminate_zeros()
+    length = np.diff(x.indptr)
+    long = np.flatnonzero(length >= 17)
+    q = x[:, long]
+    shared = (q.T @ q).toarray()
+    jac = shared / (length[long][:, None] + length[long][None, :] - shared)
+    np.fill_diagonal(jac, -1.0)
+    best = jac.max(axis=1)
+    assert np.mean(best >= 0.5) > 0.4
+
+
 def test_bw2data_form_has_every_exchange():
     s = system("smoke")
     bio, tech, cfs = as_bw2data(s)

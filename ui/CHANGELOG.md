@@ -9,6 +9,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Favicon and Open Graph preview cards featuring an adaptive Brightway Delaunay leaf emblem that switches with light and dark themes ([viewer](README.md#what-it-shows)).
 - Two pages, Setup and Benchmarks, with a benchmark search in the masthead ([viewer](README.md#what-it-shows)).
 - Setup gives an install command for uv, pip, conda or pixi, pinned to a dated set that does not change, with a link that copies the newest one.
 - Setup lists every check by platform and Python version in a grid; select one to install its set.

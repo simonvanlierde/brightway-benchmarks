@@ -468,7 +468,7 @@ code,
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 6px 16px;
-  margin: 0 0 16px;
+  margin: 16px 0;
   font-size: 0.8rem;
   color: var(--ink-2);
 }

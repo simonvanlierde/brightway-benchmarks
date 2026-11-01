@@ -30,8 +30,11 @@ function stored(): Manager {
     return "uv";
   }
 }
-let manager = $state<Manager>(stored());
+// The user's own choice; an explicit check may show another manager without changing it.
+let picked = stored();
+let manager = $state<Manager>(picked);
 function remember(next: Manager) {
+  picked = next;
   manager = next;
   copied = "";
   try {
@@ -66,10 +69,8 @@ $effect(() => {
   const explicit = explicitCheck;
   untrack(() => {
     copied = "";
-    if (explicit && !has(check, manager)) {
-      const first = check.lastPassed?.installs[0]?.manager;
-      if (first) remember(first);
-    }
+    if (!explicit || has(check, picked)) manager = picked;
+    else if (!has(check, manager)) manager = check.lastPassed?.installs[0]?.manager ?? manager;
   });
 });
 const saved = $derived(source?.lastPassed);
@@ -137,7 +138,7 @@ async function copy(text: string, what: string) {
     <p class="install-meta">
       {#if saved.pinned && install.latest}
         {@const latest = install.latest}
-        Pinned to {dateLabel(saved.pinned)} · <button type="button" class="text-button" onclick={() => copy(latest, "latest")}>Copy latest</button>
+        Pinned to {dateLabel(saved.pinned)} <button type="button" class="text-button" onclick={() => copy(latest, "latest")}>Copy latest</button>
       {:else}
         Passed {dateLabel(saved.date)}
       {/if}

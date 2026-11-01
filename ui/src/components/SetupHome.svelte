@@ -32,7 +32,10 @@ const selected = $derived(
 const at = (c: GuidanceCheck): View => ({ page: "home", platform: c.platform, check: c.id, params: [] });
 function choose(platform: string) {
   const { check: _, ...rest } = view; // a new platform starts on its default check
+  // The select moves in or out of InstallSet when the platform has no passing set: keep its focus.
+  const focused = document.activeElement?.id === "setup-platform";
   go({ ...rest, page: "home", platform });
+  if (focused) tick().then(() => document.getElementById("setup-platform")?.focus());
 }
 // A check chosen in the grid below shows its set above: take keyboard focus (and the screen) there.
 function pick(e: MouseEvent, c: GuidanceCheck) {
@@ -99,7 +102,7 @@ $effect(() => {
         </select>
       {/snippet}
       {#if selected}
-        <InstallSet {selected} checks={mine} platform={platform.label} {platformChoice} explicitCheck={!!view.check} onSelectCheck={(c) => go({ page: "home", platform: c.platform, check: c.id, params: [] })} />
+        <InstallSet {selected} checks={mine} platform={platform.label} {platformChoice} explicitCheck={!!chosen} onSelectCheck={(c) => go({ page: "home", platform: c.platform, check: c.id, params: [] })} />
       {:else}
         {@render platformChoice()}
         <p class="no-saved">No passing set is published for {platform.label}. The checks below show what was tried.</p>
@@ -108,7 +111,7 @@ $effect(() => {
       <section class="all-checks" id="all-checks" aria-labelledby="all-checks-heading">
         <div class="checks-heading">
           <h2 id="all-checks-heading"><span class="desktop-checks">All checks</span><span class="phone-checks">{platform.label} checks</span></h2>
-          <small class="checks-date"><a href={guidance.snapshot.run} aria-label="Latest published checks, {dateLabel(guidance.snapshot.date)}">{dateLabel(guidance.snapshot.date)}</a></small>
+          <small class="checks-date"><a href={guidance.snapshot.run}>Checked {dateLabel(guidance.snapshot.date)}</a></small>
         </div>
         <div class="desktop-checks"><p class="check-help" id="check-instructions"><span>Select a check to view its install set above.</span><span hidden={!overflowing}>Scroll to see all check types.</span></p></div>
         <ul class="platform-checks phone-checks" aria-label="{platform.label} checks">

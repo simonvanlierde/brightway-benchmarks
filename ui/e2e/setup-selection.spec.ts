@@ -1,4 +1,6 @@
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
+import type { Guidance } from "../src/lib/contract";
 
 const command = ".install-set > .install-command";
 const condaCheck = "conda-forge-3.12-ubuntu-latest";
@@ -68,4 +70,36 @@ test("manager changes preserve an explicitly selected Python version", async ({ 
   await page.getByLabel("Package manager", { exact: true }).selectOption("conda");
   await expect(page).toHaveURL(/check=latest-3\.14-ubuntu-latest/);
   await expect(page.locator(command)).toHaveCount(0);
+});
+
+test("a conda check link does not remember conda for other platforms", async ({ page }) => {
+  await page.goto(`?platform=linux&check=${condaCheck}`);
+  await expect(page.getByLabel("Package manager", { exact: true })).toHaveValue("conda");
+  await page.getByLabel("Operating system", { exact: true }).selectOption("macos");
+  await expect(page).toHaveURL(/platform=macos/);
+  await expect(page.locator(`${command} pre`)).toContainText("/compat/latest-3.12-macos");
+  await expect(page.getByLabel("Package manager", { exact: true })).not.toHaveValue("conda");
+  expect(await page.evaluate(() => localStorage.getItem("bwbench.manager"))).not.toBe("conda");
+});
+
+test("an unknown check id keeps the saved manager's cross-check set", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("bwbench.manager", "conda"));
+  await page.goto("?platform=linux&check=no-such-check");
+  await expect(page.locator(`${command} pre`)).toContainText("/compat/conda-forge-");
+  await expect(page.getByLabel("Package manager", { exact: true })).toHaveValue("conda");
+});
+
+test("the OS select keeps focus when the new platform has no passing set", async ({ page }) => {
+  const data: Guidance = JSON.parse(
+    await readFile(new URL("../test/fixtures/real/guidance.json", import.meta.url), "utf8"),
+  );
+  data.checks = data.checks.filter((c) => c.platform !== "macos");
+  for (const p of data.platforms) if (p.id === "macos") delete p.defaultCheck;
+  await page.route("**/data/guidance.json", (route) => route.fulfill({ json: data }));
+  await page.goto("?platform=linux");
+  const os = page.getByLabel("Operating system", { exact: true });
+  await os.focus();
+  await os.selectOption("macos");
+  await expect(page.locator(".no-saved")).toContainText("No passing set is published for macOS");
+  await expect(page.getByLabel("Operating system", { exact: true })).toBeFocused();
 });

@@ -228,9 +228,9 @@ def test_the_export_follows_the_schema(export_ui: ModuleType, tmp_path: Path, mo
         "peak-memory": ("lower", "max"),
     }
     # The axes hold the values that ran: IterativeLCA failed in every commit.
-    assert index["benchmarks"][0]["params"] == [
-        {"name": "size", "values": ["'ecoinvent'"], "labels": ["ecoinvent"]},
-        {"name": "cls", "values": ["'LCA'"], "labels": ["LCA"]},
+    assert [(a["name"], a["values"], a["labels"]) for a in index["benchmarks"][0]["params"]] == [
+        ("size", ["'ecoinvent'"], ["ecoinvent"]),
+        ("cls", ["'LCA'"], ["LCA"]),
     ]
 
 
@@ -347,7 +347,8 @@ def test_axes_follow_benchmarks_json_and_show_plain_values(
     info = INFO | {TIME: {"type": "time", "param_names": NAMES, "params": params}}
     index, _ = run(export_ui, layout(tmp_path, files, info=info), monkeypatch)
     (time,) = [b for b in index["benchmarks"] if b["name"] == TIME]
-    assert time["params"] == [
+    shown = ("name", "values", "labels")
+    assert [{k: a[k] for k in shown} for a in time["params"]] == [
         {"name": "size", "values": ["'ecoinvent'"], "labels": ["ecoinvent"]},
         # Listed values first, in benchmarks.json's order; then the rest as they came. Text that
         # is not a Python literal is shown as it is.
@@ -362,6 +363,33 @@ def test_axes_follow_benchmarks_json_and_show_plain_values(
         ("'ecoinvent'", "'IterativeLCA'"),
         ("'ecoinvent'", "<lambda>"),
     }
+
+
+def test_descriptions_follow_the_shown_values(export_ui: ModuleType):
+    bench = {
+        "name": "b",
+        "params": [
+            {"name": "cls", "values": ["'LCA'", "'Other'"], "labels": ["LCA", "Other"]},
+            {"name": "unknown", "values": ["1"]},
+        ],
+    }
+    about = {"benchmarks": {"b": "Bee."}, "params": {"cls": "The class."}, "values": {"cls": {"LCA": "Direct."}}}
+    export_ui.describe([bench], about)
+    assert bench["description"] == "Bee."
+    assert bench["params"][0] == {
+        "name": "cls",
+        "values": ["'LCA'", "'Other'"],
+        "labels": ["LCA", "Other"],
+        "description": "The class.",
+        "notes": ["Direct.", ""],
+    }
+    assert bench["params"][1] == {"name": "unknown", "values": ["1"]}
+
+
+def test_every_benchmark_and_parameter_the_ui_shows_is_described():
+    index = json.loads((ROOT / "ui" / "test" / "fixtures" / "real" / "index.json").read_text())
+    assert [b["name"] for b in index["benchmarks"] if not b.get("description")] == []
+    assert {a["name"] for b in index["benchmarks"] for a in b["params"] if not a.get("description")} == set()
 
 
 def test_a_name_without_letters_still_makes_an_id(export_ui: ModuleType):

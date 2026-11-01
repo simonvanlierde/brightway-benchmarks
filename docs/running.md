@@ -26,6 +26,9 @@ already succeeded, so a stopped run resumes.
 
 The `codspeed` workflow runs `benchmarks/codspeed` on each pull request and push to `main`
 ([CodSpeed](https://app.codspeed.io/simonvanlierde/brightway-benchmarks)).
+`just ui-data` copies what each benchmark and parameter means from
+[`benchmarks/descriptions.toml`](../benchmarks/descriptions.toml); it warns about a benchmark
+that has no entry there, so add one with each new benchmark.
 `just results-commit` refuses results that name this host or a name in
 `BWBENCH_PRIVATE_NAMES`.
 

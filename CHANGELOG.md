@@ -38,6 +38,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Otava in an environment of its own ([scripts/export_ui.py](scripts/export_ui.py)). Each time's
   bounds are now the middle half of its samples, not asv's 99% interval, and bw2calc's
   environments carry their solver's name, with the BLAS where the environment pins one.
+- `just ui-data` adds what each benchmark, parameter and value means, from
+  [`benchmarks/descriptions.toml`](benchmarks/descriptions.toml), for the viewer to show.
 - A table of what moved in each package's latest release: every case whose time or memory
   changed by more than its noise allows since the release before (three times the spread of its
   samples, and at least 2%), per environment, including cases that failed

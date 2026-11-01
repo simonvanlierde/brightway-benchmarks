@@ -28,6 +28,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -61,6 +62,7 @@ MEASURE_INFO = [  # asv gives a time's median and a peak memory's highest reside
 ]
 REPORT_FORMAT = "bmf/v0"
 CHANGE_POINTS = Path(__file__).with_name("change_points.py")
+DESCRIPTIONS = Path(__file__).resolve().parents[1] / "benchmarks" / "descriptions.toml"
 
 
 def slug(name: str) -> str:
@@ -229,6 +231,25 @@ def label(value: str) -> str:
         return value
 
 
+def describe(benchmarks: list[dict], about: dict) -> None:
+    """Add ABOUT's text (descriptions.toml) to each benchmark, its parameters and their values.
+
+    Value notes line up with the parameter's values, an empty string where there is none.
+    """
+    for bench in benchmarks:
+        if text := about.get("benchmarks", {}).get(bench["name"]):
+            bench["description"] = text
+        else:
+            print(f"export_ui: {bench['name']} has no entry in {DESCRIPTIONS.name}", file=sys.stderr)
+        for axis in bench["params"]:
+            if text := about.get("params", {}).get(axis["name"]):
+                axis["description"] = text
+            known = about.get("values", {}).get(axis["name"], {})
+            notes = [known.get(shown, "") for shown in axis.get("labels", axis["values"])]
+            if any(notes):
+                axis["notes"] = notes
+
+
 # (case, machine, measure) -> one (commit, value, spread or None) per commit, oldest first
 Series = dict[tuple[str, str, str], list[tuple[str, float, float | None]]]
 
@@ -347,6 +368,7 @@ def export(results: Path, out: Path) -> dict:
                 for measure, m in metric.items():
                     series.setdefault((case, machine_id, measure), []).append((commit, m["value"], spread(m)))
     released = {c["id"] for c in commits if "release" in c}
+    describe(list(catalog.benchmarks.values()), tomllib.loads(DESCRIPTIONS.read_text()))
     index = {
         "format_version": 1,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),

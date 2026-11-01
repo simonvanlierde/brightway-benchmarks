@@ -1138,7 +1138,7 @@ so a chosen control needs a line of its own. */
   min-height: 38px;
 }
 
-/* Setup: install first, then the result, then every check. */
+/* Setup keeps the test coverage beside the command it qualifies. */
 .setup-column,
 .evidence-column {
   min-width: 0;
@@ -1205,8 +1205,8 @@ so a chosen control needs a line of its own. */
 .text-button {
   border: 0;
   background: none;
-  padding: 0;
-  min-height: 0;
+  padding: 8px;
+  min-height: 44px;
   color: var(--accent);
   font: inherit;
   text-decoration: underline;
@@ -1239,9 +1239,8 @@ so a chosen control needs a line of its own. */
 }
 .result-line {
   list-style: none;
-  padding: 12px 0 0;
-  margin: 14px 0 0;
-  border-top: 1px solid var(--line);
+  padding: 0;
+  margin: 10px 0;
   display: flex;
   flex-wrap: wrap;
   gap: 4px 20px;
@@ -1383,5 +1382,108 @@ table.check-grid td a[aria-current="true"] {
   }
   .masthead-search {
     flex-basis: 100%;
+  }
+}
+
+.phone-checks,
+.parameter-details {
+  display: none;
+}
+.check-scroll-hint {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin: 0 0 6px;
+}
+.check-grid th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--page);
+}
+.new-project {
+  margin-top: 10px;
+  font-size: 0.8rem;
+}
+.view details.new-project summary,
+.view details.parameter-details summary {
+  cursor: pointer;
+  color: var(--accent);
+  min-height: 44px;
+  align-content: center;
+}
+.view .new-project p {
+  margin: 0 0 8px;
+}
+.new-project .copy {
+  max-width: 8rem;
+}
+@media (max-width: 39rem) {
+  .desktop-checks,
+  .parameter-inline {
+    display: none;
+  }
+  .phone-checks,
+  .parameter-details {
+    display: block;
+  }
+  .top-inner {
+    padding-block: 10px;
+    gap: 4px 12px;
+  }
+  .rail {
+    padding-block: 8px;
+  }
+  .view {
+    padding-top: 20px;
+  }
+  .parameter-details {
+    margin: 0 0 12px;
+  }
+  .parameter-details dl {
+    margin: 0 0 12px;
+  }
+  .parameter-details dt {
+    font-weight: 650;
+    font-size: 0.8rem;
+    margin-top: 8px;
+  }
+  .parameter-details dd {
+    margin: 0;
+  }
+  .install-command {
+    flex-direction: column;
+  }
+  .install-command pre {
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+  .install-command .copy {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    min-height: 44px;
+    max-width: none;
+  }
+  .platform-checks {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .platform-checks a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.875rem;
+  }
+  .platform-checks small {
+    display: block;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+  .platform-checks a[aria-current] {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
   }
 }

@@ -36,6 +36,8 @@ import Findings from "./Findings.svelte";
 import ReleaseChanges from "./ReleaseChanges.svelte";
 import SetupHome from "./SetupHome.svelte";
 
+type Axis = BenchmarkIndex["benchmarks"][number]["params"][number];
+
 let { base }: { base: string } = $props();
 
 // Fetched with the first chart, so the start page does not load Plot.
@@ -284,6 +286,14 @@ $effect(() => {
 });
 </script>
 
+{#snippet parameterNote(axis: Axis, i: number)}
+  {@const value = bench ? paramLabels(bench, params)[i] ?? "" : ""}
+  {@const at = (axis.labels ?? axis.values).indexOf(value)}
+  {@const note = axis.notes?.[at]}
+  {@const link = axis.links?.[at]}
+  {axis.description}{#if note}{" "}{#if link && axis.values.length > 1}<a href={link}>{value}</a>{:else}<strong>{value}</strong>{/if}: {note}{/if}
+{/snippet}
+
 <a class="skip" href="#main">Skip to the results</a>
 <header class="top">
   <div class="top-inner">
@@ -385,7 +395,7 @@ $effect(() => {
                 </select>
               {/if}
               {#if axis.description || note}
-                <p class="field-note">{axis.description}{#if note}{" "}{#if link && labels.length > 1}<a href={link}>{value}</a>{:else}<strong>{value}</strong>{/if}: {note}{/if}</p>
+                <p class="field-note parameter-inline">{@render parameterNote(axis, i)}</p>
               {/if}
             </div>
           {/each}
@@ -406,6 +416,13 @@ $effect(() => {
             </div>
           {/if}
         </div>
+
+        {#if bench.params.some((axis) => axis.description || axis.notes?.some(Boolean))}
+          <details class="parameter-details">
+            <summary>Parameter details</summary>
+            <dl>{#each bench.params as axis, i (axis.name)}<dt>{axis.name}</dt><dd class="field-note">{@render parameterNote(axis, i)}</dd>{/each}</dl>
+          </details>
+        {/if}
 
         {#if reportError}
           <div class="empty" role="alert"><p>The results for this benchmark did not load: {reportError}</p></div>

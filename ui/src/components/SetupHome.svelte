@@ -29,10 +29,6 @@ const mine = $derived(guidance?.checks.filter((c) => c.platform === platform?.id
 const selected = $derived(
   chosen ?? mine.find((c) => c.id === platform?.defaultCheck) ?? mine.find((c) => c.lastPassed),
 );
-// The selected check, then the platform's failures: they qualify the set above them.
-const results = $derived(
-  selected ? [selected, ...mine.filter((c) => c !== selected && statusTone(c.status) === "worse")] : [],
-);
 const at = (c: GuidanceCheck): View => ({ page: "home", platform: c.platform, check: c.id, params: [] });
 function choose(platform: string) {
   const { check: _, ...rest } = view; // a new platform starts on its default check
@@ -59,6 +55,21 @@ const rows = $derived.by(() => {
   return [...out.values()].sort((a, b) => a.label.localeCompare(b.label, "en", { numeric: true }));
 });
 
+let grid = $state<HTMLDivElement>();
+let overflowing = $state(false);
+$effect(() => {
+  if (!grid) return;
+  const element = grid;
+  const update = () => {
+    overflowing = element.scrollWidth > element.clientWidth;
+  };
+  const observer = new ResizeObserver(update);
+  observer.observe(element);
+  if (element.firstElementChild) observer.observe(element.firstElementChild);
+  update();
+  return () => observer.disconnect();
+});
+
 const changes = $derived(latestChanges(index));
 const moves = $derived(
   [changes.find((c) => c.way === "worse"), changes.find((c) => c.way === "better")].filter((c) => c !== undefined),
@@ -83,20 +94,20 @@ $effect(() => {
       <div class="platform-tabs" role="group" aria-label="Choose a platform">{#each guidance.platforms as p (p.id)}<button type="button" aria-pressed={platform.id === p.id} onclick={() => choose(p.id)}>{p.label}</button>{/each}</div>
       {#if selected}
         <InstallSet {selected} checks={mine} platform={platform.label} />
-        <ul class="result-line" aria-label="Check results on {platform.label}">
-          {#each results as c (c.id)}
-            <li><a href={c.run} title="Open the check's run">{c.label} · Python {c.python}</a> <span class={statusTone(c.status)}>{statusLabel(c.status)}</span></li>
-          {/each}
-        </ul>
-        {#if selected.caveats.length}<ul class="caveats">{#each selected.caveats as caveat (caveat)}<li>{caveat}</li>{/each}</ul>{/if}
       {:else}
         <p class="no-saved">No passing set is published for {platform.label}. The checks below show what was tried.</p>
       {/if}
 
       <section class="all-checks" id="all-checks" aria-labelledby="all-checks-heading">
-        <h2 id="all-checks-heading">All checks</h2>
+        <h2 id="all-checks-heading"><span class="desktop-checks">All checks</span><span class="phone-checks">{platform.label} checks</span></h2>
+        <p class="check-scroll-hint desktop-checks" hidden={!overflowing}>Scroll to see all check types.</p>
+        <ul class="platform-checks phone-checks" aria-label="{platform.label} checks">
+          {#each mine as c (c.id)}
+            <li><a href={writeView(at(c))} onclick={(e) => pick(e, c)} aria-current={c.id === selected?.id ? "true" : undefined}><span><span class="sr">{platform.label} · </span>{c.label}{" "}<small>Python {c.python}</small></span>{" "}<strong class={statusTone(c.status)}>{statusLabel(c.status)}</strong></a></li>
+          {/each}
+        </ul>
         <!-- svelte-ignore a11y_no_noninteractive_tabindex: the table scrolls inside a keyboard-focusable region -->
-        <div class="scroll" role="region" aria-label="Check grid" tabindex="0">
+        <div class="scroll desktop-checks" role="region" aria-label="Check grid" tabindex="0" bind:this={grid}>
           <table class="check-grid">
             <caption>Select a check to install its set above.</caption>
             <thead><tr><th scope="col">Platform</th>{#each columns as col (col)}<th scope="col">{col}</th>{/each}</tr></thead>

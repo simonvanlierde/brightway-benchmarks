@@ -409,7 +409,7 @@ test("each page's main content fits a 1440 by 900 laptop screen", async ({ page 
     expect(box && box.y + box.height, selector).toBeLessThanOrEqual(900);
   };
   await page.goto("?platform=linux");
-  await page.locator(".install-command").waitFor();
+  await page.locator(".install-set > .install-command").waitFor();
   await fits(".result-line");
   await page.goto("?page=explorer");
   await page.locator(".findings").waitFor();
@@ -440,18 +440,18 @@ test.describe("guidance looks", () => {
 const guidanceFixture = async (): Promise<Guidance> =>
   JSON.parse(await readFile(new URL("../test/fixtures/real/guidance.json", import.meta.url), "utf8"));
 
-test("a failing check on the platform sits under the install command", async ({ page }) => {
+test("check qualifications precede the install command", async ({ page }) => {
   await page.goto("?platform=linux");
   const results = page.getByRole("list", { name: "Check results on Linux" });
   await expect(results.getByRole("listitem")).toHaveText([
-    "Latest releases · Python 3.12 Passed",
+    "Smoke calculations · Latest releases · Python 3.12 Passed",
     "Upstream test suites · Python 3.12 Failed",
   ]);
   const after = await results.evaluate(
     (el) =>
       !!(
-        el.compareDocumentPosition(document.querySelector(".install-command") as Node) &
-        Node.DOCUMENT_POSITION_PRECEDING
+        el.compareDocumentPosition(document.querySelector(".install-set > .install-command") as Node) &
+        Node.DOCUMENT_POSITION_FOLLOWING
       ),
   );
   expect(after).toBe(true);
@@ -461,10 +461,10 @@ test("the install command copies", async ({ page, context, browserName }) => {
   test.skip(browserName !== "chromium", "clipboard permissions are Chromium's");
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("?platform=windows");
-  await page.locator(".install-command").getByRole("button", { name: "Copy" }).click();
+  await page.locator(".install-set > .install-command").getByRole("button", { name: "Copy" }).click();
   await expect(page.locator(".install-meta [role=status]")).toHaveText("Copied command");
   const text = await page.evaluate(() => navigator.clipboard.readText());
-  await expect(page.locator(".install-command pre")).toHaveText(text);
+  await expect(page.locator(".install-set > .install-command pre")).toHaveText(text);
   await page.getByRole("button", { name: "Copy latest" }).click();
   const latest = await page.evaluate(() => navigator.clipboard.readText());
   expect(latest).toContain("/compat/latest-3.12-windows-latest/requirements.txt");
@@ -497,7 +497,7 @@ test("platform setups keep their pins, install command and URL together", async 
   if (!windows || !check?.lastPassed || !uv) throw new Error("fixture lacks a Windows setup");
   await page.getByRole("button", { name: windows.label, exact: true }).click();
   await expect(page).toHaveURL(/platform=windows/);
-  await expect(page.locator(".install-command pre")).toHaveText(uv.command);
+  await expect(page.locator(".install-set > .install-command pre")).toHaveText(uv.command);
   await expect(page.getByRole("link", { name: "requirements.txt", exact: true })).toHaveAttribute(
     "href",
     check.lastPassed.files.find((f) => f.label === "requirements.txt")?.url ?? "",
@@ -514,13 +514,13 @@ test("a check chosen in the grid shows its set and survives shared URLs and back
   await cell.click();
   await expect(page).toHaveURL(/check=pre-3\.14-/);
   await expect(page.locator("#install-heading")).toBeFocused();
-  await expect(page.locator(".install-command pre")).toContainText("pre-3.14-ubuntu-latest");
+  await expect(page.locator(".install-set > .install-command pre")).toContainText("pre-3.14-ubuntu-latest");
   await expect(cell).toHaveAttribute("aria-current", "true");
   const link = page.url();
   await page.reload();
-  await expect(page.locator(".install-command pre")).toContainText("pre-3.14-ubuntu-latest");
+  await expect(page.locator(".install-set > .install-command pre")).toContainText("pre-3.14-ubuntu-latest");
   await page.getByRole("button", { name: "macOS", exact: true }).click();
-  await expect(page.locator(".install-command pre")).toContainText("macos-latest");
+  await expect(page.locator(".install-set > .install-command pre")).toContainText("macos-latest");
   await page.goBack();
   await expect(page).toHaveURL(link);
   await expect(page).toHaveTitle(/^Setup ·/);
@@ -535,10 +535,10 @@ test("a failed current check keeps its older passing files clearly dated", async
   await page.route("**/data/guidance.json", (route) => route.fulfill({ json: data }));
   await page.goto("?page=home&platform=linux");
   await expect(page.getByRole("list", { name: "Check results on Linux" }).getByRole("listitem").first()).toHaveText(
-    "Latest releases · Python 3.12 Failed",
+    "Smoke calculations · Latest releases · Python 3.12 Failed",
   );
   await expect(page.locator(".saved-warning")).toHaveText(
-    "The latest Latest releases check did not pass; this is the set that passed on Oct 30, 2026.",
+    "The latest run of Latest releases did not pass; this is the set that passed on Oct 30, 2026.",
   );
   await expect(page.getByRole("link", { name: "requirements.txt", exact: true })).toBeVisible();
 });
@@ -587,12 +587,12 @@ test("home includes both change directions and solver links retain the measured 
   await expect(page.locator(".chart svg")).toBeVisible();
 });
 
-test("on a phone, a check chosen in the grid brings its install command into view", async ({ page }) => {
+test("on a phone, a check chosen in the list brings its install command into view", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("?platform=linux");
-  await page.getByRole("link", { name: "Linux · Python 3.13, Latest releases: Passed" }).click();
+  await page.getByRole("link", { name: "Linux · Latest releases Python 3.13 Passed" }).click();
   await expect(page.locator("#install-heading")).toBeFocused();
-  await expect(page.locator(".install-command")).toBeInViewport();
+  await expect(page.locator(".install-set > .install-command")).toBeInViewport();
 });
 
 for (const scheme of ["light", "dark"] as const) {
@@ -614,11 +614,16 @@ for (const scheme of ["light", "dark"] as const) {
 
 test("each package manager has its own command, and the choice is remembered", async ({ page }) => {
   await page.goto("?platform=linux");
-  const command = page.locator(".install-command pre");
+  const command = page.locator(".install-set > .install-command pre");
   await expect(command).toContainText("uv add brightway25 bw_graph_tools bw_timex -c https://");
   await page.getByRole("button", { name: "conda", exact: true }).click();
   await expect(command).toContainText("conda env update -n brightway-tested -f https://");
-  await expect(page.locator(".install-note")).toHaveText("From the conda-forge check on Python 3.12.");
+  await expect(page.locator(".install-note").filter({ hasText: /^From the/ })).toHaveText(
+    "From the conda-forge check on Python 3.12.",
+  );
+  const status = page.getByRole("list", { name: "Check results on Linux" });
+  await expect(status).toContainText("conda-forge · Python 3.12 Passed");
+  await expect(status).not.toContainText("Upstream test suites");
   // That check's caveats come with its command, such as the packages conda-forge lacks.
   const conda = (await guidanceFixture()).checks.find((c) => c.id.startsWith("conda-forge-"));
   await expect(page.locator(".install-set .caveats li")).toHaveText(conda?.caveats ?? []);
@@ -646,4 +651,52 @@ test("a benchmark's tab title uses its readable name", async ({ page }) => {
   await chart(page, SCORES);
   const name = await page.locator(".view > header h2").textContent();
   await expect.poll(async () => (await page.title()).startsWith(`${name} · `)).toBe(true);
+});
+
+test("phone checks show only the selected platform and keep check selection working", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("?platform=linux");
+  const checks = page.getByRole("list", { name: "Linux checks" });
+  await expect(checks).toBeVisible();
+  await expect(page.getByRole("table", { name: "Select a check to install its set above." })).not.toBeVisible();
+  await checks.getByRole("link", { name: "Linux · Pre-releases Python 3.14 Passed" }).click();
+  await expect(page.locator(".install-set > .install-command pre")).toContainText("pre-3.14");
+  await page.getByRole("button", { name: "Windows", exact: true }).click();
+  await expect(page.getByRole("list", { name: "Linux checks" })).toHaveCount(0);
+  await expect(page.getByRole("list", { name: "Windows checks" })).toBeVisible();
+});
+
+test("phone parameter details are optional while controls and the plot stay visible", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chart(page, SCORES);
+  await expect(page.getByLabel("demands", { exact: true })).toBeVisible();
+  await expect(page.locator(".field-note:visible")).toHaveCount(0);
+  const plot = await page.locator(".chart svg").boundingBox();
+  expect(plot ? plot.y + plot.height / 2 : Infinity).toBeLessThan(844);
+  await page.getByText("Parameter details", { exact: true }).click();
+  await expect(page.locator(".parameter-details")).toContainText("26,533");
+  await expect(page.locator(".parameter-details .field-note").first()).toBeVisible();
+  await page.getByLabel("variant", { exact: true }).selectOption("adjoint");
+  await expect(page.locator(".parameter-details")).toContainText("FastScoresOnlyMultiLCA");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.getByText("Parameter details", { exact: true })).not.toBeVisible();
+  await expect(page.locator(".controls .field-note").first()).toBeVisible();
+});
+
+test("new uv projects get a complete copyable setup for the selected Python and set", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("?platform=linux");
+  await page.getByText("Starting a new project?", { exact: true }).click();
+  const start = page.locator(".new-project");
+  await expect(start.locator("pre")).toContainText(
+    "uv init --no-package --python 3.12 brightway-project\ncd brightway-project\nuv add",
+  );
+  await start.getByRole("button", { name: "Copy project setup" }).click();
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  expect(copied).toBe(await start.locator("pre").textContent());
+  await page.getByRole("link", { name: "Linux · Python 3.14, Pre-releases: Passed" }).click();
+  await expect(start.locator("pre")).toContainText("uv init --no-package --python 3.14");
+  await expect(start.locator("pre")).toContainText("pre-3.14-ubuntu-latest/");
+  await page.getByRole("button", { name: "conda", exact: true }).click();
+  await expect(start).toHaveCount(0);
 });

@@ -115,11 +115,11 @@ Monospace belongs to original identifiers and environment specifications. Measur
 
 Breakpoints and sizes live in [ui/src/styles.css](ui/src/styles.css); this section gives the intent.
 
-The compact masthead links Setup and Benchmarks and holds the benchmark search. Setup places the install column beside the evidence column: platform, install command, check results and the check grid on the left; solver comparison, findings and the latest changes on the right, divided by a hairline. As the screen narrows, the masthead becomes its own scrolling row that keeps the current page in view, and the two columns stack.
+The compact masthead links Setup and Benchmarks and holds the benchmark search. Setup places the install column beside the evidence column: platform, check results, install command and the check grid on the left; solver comparison, findings and the latest changes on the right, divided by a hairline. As the screen narrows, the masthead becomes its own scrolling row that keeps the current page in view, and the two columns stack.
 
 Each page's main content fits a 1440 by 900 laptop screen: the install command and its result line on Setup, the findings on Benchmarks, the whole chart on a benchmark. A browser test checks it.
 
-Only Benchmarks has a catalogue rail, sticky on wide screens and a disclosure on narrow ones. Filters sit directly above the evidence they control, and each parameter's explanation sits under its control.
+Only Benchmarks has a catalogue rail, sticky on wide screens and a disclosure on narrow ones. Filters sit directly above the evidence they control. Parameter explanations stay under their controls on desktop and use a disclosure on phones.
 
 On phones, release-change tables reflow into labelled rows. Full measurement tables keep horizontal scrolling in their own focusable region. Charts reduce tick density without dropping keyboard access to any release.
 
@@ -137,9 +137,9 @@ Primary downloads use accent fill with page-coloured text and the primary-downlo
 
 Search fields and selects use the page ground and control stroke. Links thicken their underline on hover. Buttons and catalogue entries use the selection wash on hover; row hover uses a faint selection wash. Native-control and catalogue colour transitions last 150ms only when reduced motion is not requested. All interactive controls retain visible keyboard focus.
 
-Release changes put regressions first, one row per case; improvements group by benchmark with their cases folded. Chart legend entries are buttons that bring one environment forward. A history with two releases shows points without a line, and with three or fewer each environment sits a little apart so equal values stay visible. Commits that are not releases draw faint, and the explorer counts them under its changes. The setup names the other checks on its platform, failures first, before its files; the install command has a copy button. Text is never smaller than 12px.
+Release changes put regressions first, one row per case; improvements group by benchmark with their cases folded. Chart legend entries are buttons that bring one environment forward. A history with two releases shows points without a line, and with three or fewer each environment sits a little apart so equal values stay visible. Commits that are not releases draw faint, and the explorer counts them under its changes. Setup puts the command's source check, matching upstream-suite result and coverage caveats before Copy. Phones list checks for the selected platform; desktop keeps the comparison grid with its platform column pinned and a conditional scroll hint. Text is never smaller than 12px.
 
-The explorer says what the benchmark measures under its title, and what each parameter and its chosen value mean under the controls.
+The explorer says what the benchmark measures under its title. Desktop explains each parameter under its control; phones keep the controls visible and put explanations under “Parameter details”. New uv projects have an optional copyable setup sequence, and Copy latest has a 44px target.
 
 Benchmark labels use a readable fallback, with original identifiers in detail views and link titles. Ambiguous labels include their identifiers; search accepts either form. Filter counts update together and selections live in the URL. Empty filters and unknown links explain how to recover. Platform controls select a published setup directly. Saved files carry their passing date; smoke calculations and upstream test suites keep separate coverage labels. External project and method links sit in the footer.
 

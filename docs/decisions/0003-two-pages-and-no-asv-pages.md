@@ -23,7 +23,7 @@ The masthead has two pages and a search box. **Setup** puts install first: a pla
 per package manager (uv, pip, conda, pixi), the check results, then every check as a grid whose
 cells select the set above. Beside it sit the solver comparison, curated findings and the latest
 changes. **Benchmarks** opens on the findings and the release changes, each with a small history
-line, and a catalogue rail; a benchmark's view explains each parameter under its control and links
+line, and a catalogue rail; a benchmark's view explains each parameter under its control on desktop and in a disclosure on phones, and links
 values, solvers and its source.
 
 - Install commands name a dated folder that never changes; a second link copies the undated one,

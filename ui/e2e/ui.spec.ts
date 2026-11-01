@@ -495,7 +495,7 @@ test("platform setups keep their pins, install command and URL together", async 
   const check = data.checks.find((c) => c.id === windows?.defaultCheck);
   const uv = check?.lastPassed?.installs.find((i) => i.manager === "uv");
   if (!windows || !check?.lastPassed || !uv) throw new Error("fixture lacks a Windows setup");
-  await page.getByRole("button", { name: windows.label, exact: true }).click();
+  await page.getByRole("combobox", { name: "Operating system" }).selectOption("windows");
   await expect(page).toHaveURL(/platform=windows/);
   await expect(page.locator(".install-set > .install-command pre")).toHaveText(uv.command);
   await expect(page.getByRole("link", { name: "requirements.txt", exact: true })).toHaveAttribute(
@@ -503,9 +503,9 @@ test("platform setups keep their pins, install command and URL together", async 
     check.lastPassed.files.find((f) => f.label === "requirements.txt")?.url ?? "",
   );
   await page.reload();
-  await expect(page.getByRole("button", { name: windows.label, exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("combobox", { name: "Operating system" })).toHaveValue("windows");
   await page.goBack();
-  await expect(page.getByRole("button", { name: "Linux", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("combobox", { name: "Operating system" })).toHaveValue("linux");
 });
 
 test("a check chosen in the grid shows its set and survives shared URLs and back", async ({ page }) => {
@@ -519,7 +519,7 @@ test("a check chosen in the grid shows its set and survives shared URLs and back
   const link = page.url();
   await page.reload();
   await expect(page.locator(".install-set > .install-command pre")).toContainText("pre-3.14-ubuntu-latest");
-  await page.getByRole("button", { name: "macOS", exact: true }).click();
+  await page.getByRole("combobox", { name: "Operating system" }).selectOption("macos");
   await expect(page.locator(".install-set > .install-command pre")).toContainText("macos-latest");
   await page.goBack();
   await expect(page).toHaveURL(link);
@@ -616,24 +616,22 @@ test("each package manager has its own command, and the choice is remembered", a
   await page.goto("?platform=linux");
   const command = page.locator(".install-set > .install-command pre");
   await expect(command).toContainText("uv add brightway25 bw_graph_tools bw_timex -c https://");
-  await page.getByRole("button", { name: "conda", exact: true }).click();
+  await page.getByRole("combobox", { name: "Package manager" }).selectOption("conda");
   await expect(command).toContainText("conda env update -n brightway-tested -f https://");
-  await expect(page.locator(".install-note").filter({ hasText: /^From the/ })).toHaveText(
-    "From the conda-forge check on Python 3.12.",
-  );
+  await expect(page).toHaveURL(/check=conda-forge-/);
   const status = page.getByRole("list", { name: "Check results on Linux" });
   await expect(status).toContainText("conda-forge · Python 3.12 Passed");
   await expect(status).not.toContainText("Upstream test suites");
   // That check's caveats come with its command, such as the packages conda-forge lacks.
   const conda = (await guidanceFixture()).checks.find((c) => c.id.startsWith("conda-forge-"));
   await expect(page.locator(".install-set .caveats li")).toHaveText(conda?.caveats ?? []);
-  await expect(page.locator(".environment-files a").first()).toHaveText("environment.yml");
-  await page.getByRole("button", { name: "pixi", exact: true }).click();
+  await expect(page.locator(".install-meta a").first()).toHaveText("environment.yml");
+  await page.getByRole("combobox", { name: "Package manager" }).selectOption("pixi");
   await expect(command).toContainText("pixi install --frozen");
   await page.reload();
-  await expect(page.getByRole("button", { name: "pixi", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("button", { name: "Windows", exact: true }).click();
-  await expect(page.getByText("No pixi set has passed on Windows.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "Package manager" })).toHaveValue("pixi");
+  await page.getByRole("combobox", { name: "Operating system" }).selectOption("windows");
+  await expect(page.getByText("No pixi set has passed on Windows on Python 3.12.", { exact: false })).toBeVisible();
 });
 
 test("the phone masthead scrolls the current page into view", async ({ page }) => {
@@ -658,10 +656,12 @@ test("phone checks show only the selected platform and keep check selection work
   await page.goto("?platform=linux");
   const checks = page.getByRole("list", { name: "Linux checks" });
   await expect(checks).toBeVisible();
-  await expect(page.getByRole("table", { name: "Select a check to install its set above." })).not.toBeVisible();
+  await expect(
+    page.getByRole("table", { name: "Compatibility checks by platform and Python version" }),
+  ).not.toBeVisible();
   await checks.getByRole("link", { name: "Linux · Pre-releases Python 3.14 Passed" }).click();
   await expect(page.locator(".install-set > .install-command pre")).toContainText("pre-3.14");
-  await page.getByRole("button", { name: "Windows", exact: true }).click();
+  await page.getByRole("combobox", { name: "Operating system" }).selectOption("windows");
   await expect(page.getByRole("list", { name: "Linux checks" })).toHaveCount(0);
   await expect(page.getByRole("list", { name: "Windows checks" })).toBeVisible();
 });
@@ -697,7 +697,7 @@ test("new uv projects get a complete copyable setup for the selected Python and 
   await page.getByRole("link", { name: "Linux · Python 3.14, Pre-releases: Passed" }).click();
   await expect(start.locator("pre")).toContainText("uv init --no-package --python 3.14");
   await expect(start.locator("pre")).toContainText("pre-3.14-ubuntu-latest/");
-  await page.getByRole("button", { name: "conda", exact: true }).click();
+  await page.getByRole("combobox", { name: "Package manager" }).selectOption("conda");
   await expect(start).toHaveCount(0);
 });
 

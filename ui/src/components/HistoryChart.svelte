@@ -34,7 +34,11 @@ $effect(() => {
   const media = matchMedia("(prefers-color-scheme: dark)");
   const bump = () => theme++;
   media.addEventListener("change", bump);
-  return () => media.removeEventListener("change", bump);
+  document.addEventListener("bwbench:theme", bump);
+  return () => {
+    media.removeEventListener("change", bump);
+    document.removeEventListener("bwbench:theme", bump);
+  };
 });
 
 const points = $derived(lines.flatMap((l) => l.points.map((p) => ({ ...p, short: l.short }))));

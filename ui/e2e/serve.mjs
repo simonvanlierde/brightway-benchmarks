@@ -15,7 +15,8 @@ const TYPES = {
 };
 
 createServer((req, res) => {
-  const path = normalize(decodeURIComponent(new URL(req.url ?? "/", "http://x").pathname));
+  const requested = normalize(decodeURIComponent(new URL(req.url ?? "/", "http://x").pathname));
+  const path = requested.startsWith("/ui/") ? requested.slice(3) : requested;
   const file = path.startsWith("/data/")
     ? join(root, "test/fixtures/real", path.slice("/data/".length))
     : join(root, "dist", path.endsWith("/") ? `${path}index.html` : path);

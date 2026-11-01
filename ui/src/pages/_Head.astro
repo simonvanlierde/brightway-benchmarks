@@ -1,0 +1,78 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+}
+const { title, description, canonical } = Astro.props;
+const image = "https://simonvanlierde.com/brightway-benchmarks/ui/og.png";
+const imageAlt = "Brightway benchmarks: tested installation sets and a comparison of measured solver times.";
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href={canonical} />
+<link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+<link rel="icon" type="image/x-icon" sizes="32x32" href={`${import.meta.env.BASE_URL}favicon.ico`} />
+<link rel="apple-touch-icon" sizes="180x180" href={`${import.meta.env.BASE_URL}apple-touch-icon.png`} />
+<link rel="sitemap" type="application/xml" href="https://simonvanlierde.com/brightway-benchmarks/sitemap.xml" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="brightway-benchmarks" />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={image} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:alt" content={imageAlt} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content={image} />
+<meta name="twitter:image:alt" content={imageAlt} />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<script is:inline>
+  (() => {
+    const root = document.documentElement;
+    const media = matchMedia("(prefers-color-scheme: dark)");
+    let preference;
+    try {
+      const saved = localStorage.getItem("bwbench.theme");
+      if (saved === "light" || saved === "dark") preference = saved;
+    } catch {}
+    const buttons = () => {
+      const label = `Switch to ${root.dataset.theme === "dark" ? "light" : "dark"} theme`;
+      for (const button of document.querySelectorAll("[data-theme-toggle]")) {
+        button.setAttribute("aria-label", label);
+        button.setAttribute("title", label);
+      }
+    };
+    const apply = () => {
+      const theme = preference ?? (media.matches ? "dark" : "light");
+      root.dataset.theme = theme;
+      root.style.colorScheme = theme;
+      buttons();
+      document.dispatchEvent(new CustomEvent("bwbench:theme"));
+    };
+    apply();
+    media.addEventListener("change", () => { if (!preference) apply(); });
+    document.addEventListener("click", (event) => {
+      if (!(event.target instanceof Element) || !event.target.closest("[data-theme-toggle]")) return;
+      preference = root.dataset.theme === "dark" ? "light" : "dark";
+      try { localStorage.setItem("bwbench.theme", preference); } catch {}
+      apply();
+    });
+    // The viewer's button arrives after hydration; About's is ordinary HTML.
+    const observer = new MutationObserver(() => {
+      if (document.querySelector("[data-theme-toggle]")) {
+        buttons();
+        observer.disconnect();
+      }
+    });
+    observer.observe(root, { childList: true, subtree: true });
+  })();
+</script>

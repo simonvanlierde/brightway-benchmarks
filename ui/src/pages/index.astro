@@ -1,34 +1,46 @@
 ---
+import { execFileSync } from "node:child_process";
 import App from "../components/App.svelte";
 import "../styles.css";
+import Head from "./_Head.astro";
 
 const base = import.meta.env.PUBLIC_DATA_URL ?? "data/";
-const assetBase = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
+const git = (...args: string[]) => {
+  try {
+    return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    return "";
+  }
+};
+const sha = git("rev-parse", "--short=7", "HEAD");
+const tag = git("describe", "--tags", "--exact-match", "HEAD");
+const branch = process.env.GITHUB_REF_NAME ?? git("branch", "--show-current");
+const released = /^v\d+\.\d+\.\d+$/.test(tag);
+const build = {
+  label: released ? tag : sha ? `${branch === "main" ? "main" : "dev"} · ${sha}` : "development",
+  url: released ? `${repository}/releases/tag/${tag}` : sha ? `${repository}/commit/${sha}` : repository,
+};
+const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
+const aboutHref = `${home}about/`;
 ---
 
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="light dark" />
-    <title>Benchmarks</title>
-    <meta
-      name="description"
-      content="Tested platform setups and continuous benchmark evidence for the Brightway LCA stack."
+    <Head
+      title="Brightway benchmarks: tested setups and release histories"
+      description="Choose a tested Brightway installation and explore performance across package releases, with calculation checks and measurement noise beside the results."
+      canonical="https://simonvanlierde.com/brightway-benchmarks/"
     />
-    <link rel="icon" type="image/svg+xml" href={`${assetBase}favicon.svg`} />
-    <link rel="icon" href={`${assetBase}favicon.ico`} />
-    <link rel="apple-touch-icon" href={`${assetBase}apple-touch-icon.png`} />
-    <meta property="og:title" content="Brightway Benchmarks" />
-    <meta
-      property="og:description"
-      content="Tested platform setups and continuous benchmark evidence for the Brightway LCA stack."
-    />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content={`${assetBase}og.png`} />
-    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
-    <App client:only="svelte" base={base} />
+    <App client:only="svelte" base={base} build={build} about={aboutHref} />
+    <noscript>
+      <main class="view">
+        <h1>Brightway benchmarks</h1>
+        <p>Tested installation sets and performance histories for the Brightway life cycle assessment stack.</p>
+        <p>Enable JavaScript to select setups and explore charts, or read <a href={aboutHref}>about the benchmarks</a> and the <a href={`${repository}/blob/main/docs/method.md`}>measurement method</a>.</p>
+      </main>
+    </noscript>
   </body>
 </html>

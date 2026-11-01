@@ -231,7 +231,7 @@ src=$FAKE/$repo-${url##*/}
 # Runs as the env's python from inside the package's folder: logs what it saw, and fails the
 # suite of the package named in $FAKE/fail.
 PYTHON = """#!/bin/sh
-[ "$1" != -c ] || exec python3 "$@"
+case "$1" in -c | -) exec python3 "$@" ;; esac
 here=$(basename "$PWD")
 echo "$here $* files=$(ls | tr '\\n' ' ')ini=$(tr '\\n' ';' <pytest.ini)" >>"$LOG"
 [ "$here" = "$(cat "$FAKE/fail" 2>/dev/null)" ] || exit 0
@@ -249,7 +249,13 @@ testpaths = ["tests/*.py", "tests/sub/*.py"]
 
 
 def suites(
-    tmp_path: Path, tags: list[str], deselect: str = "", fail: str = "", requirements: str = ""
+    tmp_path: Path,
+    tags: list[str],
+    deselect: str = "",
+    fail: str = "",
+    requirements: str = "",
+    *,
+    no_gnu_tar: bool = False,
 ) -> tuple[int, Path]:
     """Run compat-suites.sh on REQUIREMENTS, with GitHub serving TAGS (REPO-TAG) and FAIL's suite failing."""
     fake = tmp_path / "fake"
@@ -258,6 +264,9 @@ def suites(
     for name, body in (("curl", CURL), ("python", PYTHON)):
         (fake / name).write_text(body)
         (fake / name).chmod(0o755)
+    if no_gnu_tar:
+        (fake / "tar").write_text('#!/bin/sh\necho "tar: unrecognized option --wildcards" >&2\nexit 64\n')
+        (fake / "tar").chmod(0o755)
     for repo_tag in tags:
         src = tmp_path / "src" / f"{repo_tag}" / "tests"
         src.mkdir(parents=True)
@@ -343,3 +352,11 @@ def test_suites_report_a_package_missing_from_the_set(tmp_path: Path):
     rc, out = suites(tmp_path, ["brightway2-data-4.8"], requirements=reqs)
     assert rc == 1
     assert (out / "suites.txt").read_text().splitlines()[-1] == "bw-timex not in the set"
+
+
+def test_suites_extract_without_gnu_tar(tmp_path: Path):
+    tags = ["brightway2-data-4.8", "brightway2-calc-3.1.0", "brightway2-io-0.9.17", "bw_processing-1.6"]
+    tags += ["matrix_utils-0.9", "bw_graph_tools-0.10", "bw_timex-v1.4.1"]
+    rc, out = suites(tmp_path, tags, no_gnu_tar=True)
+    assert rc == 0
+    assert (out / "suites.txt").read_text().count(" passed\n") == 7

@@ -9,7 +9,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Favicon and Open Graph preview cards featuring an adaptive Brightway Delaunay leaf emblem that switches with light and dark themes ([viewer](README.md#what-it-shows)).
+- Adaptive Brightway leaf icons and social preview cards with descriptive image metadata ([viewer](README.md#what-it-shows)).
+- A sun/moon toggle remembers the chosen theme.
+- An About page explains the project and privacy, with search and sharing metadata. Check freshness sits beside All checks, and GitHub and build identity sit in the footer ([viewer](README.md#what-it-shows)).
 - Two pages, Setup and Benchmarks, with a benchmark search in the masthead ([viewer](README.md#what-it-shows)).
 - Setup gives an install command for uv, pip, conda or pixi, pinned to a dated set that does not change, with a link that copies the newest one.
 - Setup lists every check by platform and Python version in a grid; select one to install its set.
@@ -46,6 +48,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Selecting a compatibility check keeps its install set and URL aligned, and desktop operating-system, Python and package-manager selects share a row. Check explanations use the table’s labels ([viewer](README.md#what-it-shows)).
 - Setup shows test results and coverage before Copy, and offers optional instructions for a new uv project ([viewer](README.md#what-it-shows)).
 - Phones show checks for the selected platform and collapse longer parameter explanations. Desktop check grids indicate hidden columns ([viewer](README.md#what-it-shows)).
 - Benchmark search keeps keyboard focus while typing and shows matches on phones ([viewer](README.md#what-it-shows)).

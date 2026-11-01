@@ -360,7 +360,7 @@ const ogHtml = `<!DOCTYPE html>
       <div class="brand-subtitle">Evidence Workspace</div>
     </div>
     <div class="badges">
-      <span class="badge-passing">Passing</span>
+      <span class="badge-passing">Compatibility</span>
       <span class="platforms">Linux · macOS · Windows</span>
     </div>
   </div>
@@ -378,16 +378,16 @@ const ogHtml = `<!DOCTYPE html>
           <div class="card-meta">uv · pip · conda · pixi</div>
         </div>
         <div class="cli-box">
-          <span class="cli-prompt">$</span>uv add "bw2data&gt;=4.8" "bw2calc&gt;=3.1.0"
+          Choose a dated Brightway installation set
         </div>
         <ul class="check-list">
           <li class="check-item">
-            <span class="check-item-name">Smoke calculations · Python 3.12</span>
-            <span class="check-item-status">Passing</span>
+            <span class="check-item-name">Smoke calculations</span>
+            <span class="check-item-status">View results</span>
           </li>
           <li class="check-item">
             <span class="check-item-name">Upstream package suites</span>
-            <span class="check-item-status">187 passed</span>
+            <span class="check-item-status">View results</span>
           </li>
           <li class="check-item">
             <span class="check-item-name">Tested sparse solvers</span>
@@ -395,7 +395,7 @@ const ogHtml = `<!DOCTYPE html>
           </li>
         </ul>
       </div>
-      <div class="card-footer-note">Dated install sets · Never invented recommendations</div>
+      <div class="card-footer-note">Dated install sets · Source-linked results</div>
     </div>
 
     <div class="card">
@@ -408,7 +408,7 @@ const ogHtml = `<!DOCTYPE html>
           <div class="bar-row">
             <div class="bar-info">
               <span class="bar-name">UMFPACK (OpenBLAS)</span>
-              <span class="bar-val">2.63 s · 10.5× faster</span>
+              <span class="bar-val">2.63 s</span>
             </div>
             <div class="bar-track">
               <div class="bar-fill-fast"></div>
@@ -440,7 +440,7 @@ const ogHtml = `<!DOCTYPE html>
 
   <div class="footer">
     <div>Independent test suites · Seeded synthetic matrices · DOI 10.5281/zenodo.23727602</div>
-    <div class="footer-url">simonvanlierde.github.io/brightway-benchmarks</div>
+    <div class="footer-url">simonvanlierde.com/brightway-benchmarks</div>
   </div>
 </div>
 </body>

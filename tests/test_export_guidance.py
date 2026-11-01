@@ -266,6 +266,7 @@ def test_solver_comparison_refuses_a_report_outside_the_data_directory(module: M
 def test_labels_cover_every_compat_column(module: ModuleType):
     compat_site = importlib.import_module("compat_site")
     assert set(module.LABELS) == set(compat_site.COLUMNS)
+    assert set(module.DESCRIPTIONS) == set(compat_site.COLUMNS)
 
 
 @given(
@@ -303,3 +304,23 @@ def test_committed_ui_fixture_is_what_the_exporter_writes(module: ModuleType, tm
     shutil.copytree(fixtures / "real", data)
     module.export(fixtures / "compat/status.json", data)
     assert (data / "guidance.json").read_text() == (fixtures / "real/guidance.json").read_text()
+
+
+@pytest.mark.parametrize(
+    ("column", "meaning"),
+    [
+        ("latest", "latest stable releases"),
+        ("floors", "lowest allowed versions"),
+        ("pre", "pre-release packages"),
+        ("conda-forge", "from conda-forge"),
+        ("suites", "upstream package test suites"),
+    ],
+)
+def test_check_description_explains_its_actual_column(module: ModuleType, tmp_path: Path, column: str, meaning: str):
+    out = module.export(snapshot(tmp_path, [cell(column)]), tmp_path / "data", "https://example.test/")
+    check = out["checks"][0]
+    assert meaning in check["description"]
+    assert check["description"] != check["coverage"]
+    validator().validate(out)
+    del check["description"]
+    validator().validate(out)  # Existing guidance remains valid without the optional explanation.

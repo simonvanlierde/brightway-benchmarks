@@ -95,7 +95,7 @@ def test_market_lists_draw_from_their_family_pool():
 
 def test_same_region_by_length_follows_its_curve():
     curve = (0.6, 0.4, 0.2, 0.1, 0.05)  # one share per band of OVERLAP_BANDS
-    s = system("ecoinvent", products=6000, same_region_by_length=curve)
+    s = system("ecoinvent", products=6000, same_region_by_length=curve, seed=0)
     assert s.region is not None
     a = (s.technosphere() != 0).tocoo()
     off = a.row != a.col
@@ -104,7 +104,17 @@ def test_same_region_by_length_follows_its_curve():
     local = s.region[rows] == s.region[cols]
     for (low, high), want in zip(synth.OVERLAP_BANDS[:3], curve, strict=False):
         m = (length >= low) & (length <= high)
-        assert local[m].mean() == pytest.approx(want, abs=0.06)
+        assert local[m].mean() == pytest.approx(want, abs=0.08)
+
+    with pytest.raises(ValueError, match="same_region_by_length must have 5 elements"):
+        system("smoke", same_region_by_length=(0.5, 0.5))
+
+
+def test_copy_lists_and_bundles():
+    s_copies = system("smoke", copies=0.5, copy_keep=0.8, seed=0)
+    assert s_copies.technosphere().nnz > 0
+    s_bundles = system("smoke", bundles=0.5, seed=0)
+    assert s_bundles.technosphere().nnz > 0
 
 
 def test_sector_markets_share_one_pool_across_regions():

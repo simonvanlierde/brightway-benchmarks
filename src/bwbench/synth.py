@@ -413,6 +413,28 @@ def _draw(
     return order[pick], hi > lo
 
 
+def _apply_template(
+    rng: np.random.Generator,
+    rows: NDArray,
+    cols: NDArray,
+    template: NDArray,
+    p: Profile,
+) -> tuple[NDArray, NDArray]:
+    """Substitute variants' inputs with a share of their template's inputs."""
+    variant = template != np.arange(p.products)
+    if not np.any(variant):
+        return rows, cols
+    borrowed = sparse.csc_matrix((np.ones(rows.size, dtype=bool), (rows, cols)), shape=(p.products, p.products))[
+        :, template
+    ].tocoo()
+    take = ~variant[borrowed.col] | (rng.random(borrowed.nnz) < p.copy_keep)
+    own = variant[cols] & (rng.random(cols.size) >= p.copy_keep)
+    return (
+        np.concatenate([borrowed.row[take].astype(np.int64), rows[own]]),
+        np.concatenate([borrowed.col[take].astype(np.int64), cols[own]]),
+    )
+
+
 def _copy_lists(
     rng: np.random.Generator, rows: NDArray, cols: NDArray, p: Profile, share: float
 ) -> tuple[NDArray, NDArray]:
@@ -435,14 +457,7 @@ def _copy_lists(
             j += int(sizes[j])
         else:
             j += 1
-    variant = template != np.arange(n)
-    borrowed = sparse.csc_matrix((np.ones(rows.size), (rows, cols)), shape=(n, n))[:, template].tocoo()
-    take = ~variant[borrowed.col] | (rng.random(borrowed.nnz) < p.copy_keep)
-    own = variant[cols] & (rng.random(cols.size) >= p.copy_keep)
-    return (
-        np.concatenate([borrowed.row[take].astype(np.int64), rows[own]]),
-        np.concatenate([borrowed.col[take].astype(np.int64), cols[own]]),
-    )
+    return _apply_template(rng, rows, cols, template, p)
 
 
 def _copy_long_lists(
@@ -479,17 +494,7 @@ def _copy_long_lists(
                     template[cluster[1:]] = t
                 i += sz
 
-    variant = template != np.arange(n)
-    if not np.any(variant):
-        return rows, cols
-
-    borrowed = sparse.csc_matrix((np.ones(rows.size), (rows, cols)), shape=(n, n))[:, template].tocoo()
-    take = ~variant[borrowed.col] | (rng.random(borrowed.nnz) < p.copy_keep)
-    own = variant[cols] & (rng.random(cols.size) >= p.copy_keep)
-    return (
-        np.concatenate([borrowed.row[take].astype(np.int64), rows[own]]),
-        np.concatenate([borrowed.col[take].astype(np.int64), cols[own]]),
-    )
+    return _apply_template(rng, rows, cols, template, p)
 
 
 def _market_lists(rng: np.random.Generator, rows: NDArray, cols: NDArray, family: NDArray, p: Profile) -> NDArray:
@@ -545,6 +550,9 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:  # noq
     pool = rng.random(cols.size)
     region = p.same_region
     if p.same_region_by_length:  # short lists buy locally, long ones across regions, as in ecoinvent
+        if len(p.same_region_by_length) != len(OVERLAP_BANDS):
+            msg = f"same_region_by_length must have {len(OVERLAP_BANDS)} elements, got {len(p.same_region_by_length)}"
+            raise ValueError(msg)
         band = np.searchsorted([low for low, _ in OVERLAP_BANDS[1:]], k[cols], side="right")
         region = np.asarray(p.same_region_by_length)[band]
     pool = np.where(pool < region, 1, np.where(pool < region + p.same_sector, 2, 0))

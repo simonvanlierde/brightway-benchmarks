@@ -20,6 +20,7 @@ on:
       - "scripts/release_changes.py"
       - "scripts/change_points.py"
       - "benchmarks/descriptions.toml"
+      - "benchmarks/findings.toml"
       - ".github/workflows/site.yml"
   workflow_dispatch:
 

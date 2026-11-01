@@ -930,7 +930,7 @@ details.data {
   font-size: clamp(1.7rem, 2.7vw, 2.4rem);
   font-weight: 650;
   letter-spacing: -0.035em;
-  max-width: 24ch;
+  max-width: 32ch;
 }
 .view > header p {
   margin: 4px 0 0;

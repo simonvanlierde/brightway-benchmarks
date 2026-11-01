@@ -9,7 +9,7 @@
  * Optional setup, compatibility and measured comparison evidence for a benchmark project.
  */
 export interface Guidance {
-  format_version: 1;
+  format_version: 2;
   title: string;
   intro: string;
   snapshot: {
@@ -39,13 +39,28 @@ export interface Guidance {
         version: string;
       }[];
       /**
-       * Primary download first.
+       * The date of the set the URLs name; a later passing check of the same set keeps it. Present when files and installs also name the address that follows the newest set (their latest).
+       */
+      pinned?: string;
+      /**
+       * The files of the set, the package managers' own first.
        */
       files: {
         label: string;
         url: string;
+        latest?: string;
       }[];
-      install?: string;
+      /**
+       * One command per package manager that installs this set, reading its file from the URL.
+       */
+      installs: {
+        manager: "uv" | "pip" | "conda" | "pixi";
+        command: string;
+        /**
+         * The same command at the address that follows the newest passing set.
+         */
+        latest?: string;
+      }[];
     };
   }[];
   solverComparison?: {

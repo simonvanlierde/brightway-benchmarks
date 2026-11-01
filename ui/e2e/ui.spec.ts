@@ -2,12 +2,14 @@ import { readFile } from "node:fs/promises";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import type { Guidance } from "../src/lib/contract";
-import { latestChanges } from "../src/lib/history";
+import { latestChanges, writeView } from "../src/lib/history";
 
 // Screenshots go to SHOTS when it is set, so a reviewer can look at them; CI keeps them as an artifact.
 const shots = process.env.SHOTS ?? "test-results/shots";
 const IMPORT = "?bench=bw2calc-bench-import-timeraw-import-bw2calc-c078f5d2c0be";
 const SCORES = "?bench=bw2calc-bench-lca-multiscores-time-scores-4f172f3e24a0&p=ecoinvent&p=3&p=MultiLCA";
+const MONTE_CARLO =
+  "?bench=bw2calc-bench-lca-montecarlo-time-iterations-00a0cd27d056&p=ecoinvent&p=10&p=JacobiGMRESLCA";
 
 async function chart(page: Page, url: string) {
   await page.goto(url);
@@ -223,7 +225,8 @@ test("overview filters scope their counts and survive a shared URL", async ({ pa
 
 test("release changes list regressions before grouped improvements", async ({ page }) => {
   await page.goto("?page=changes");
-  await expect(page.getByRole("heading", { level: 3 })).toHaveText(["Regressions", "Improvements"]);
+  const changes = page.getByRole("region", { name: "What moved in the latest releases" });
+  await expect(changes.getByRole("heading", { level: 3 })).toHaveText(["Regressions", "Improvements"]);
   const better = Number((await page.getByRole("button", { name: /^Better/ }).textContent())?.match(/\d+/)?.[0]);
   const cases = await page.locator(".gains-table summary").allTextContents();
   expect(cases.reduce((sum, text) => sum + Number.parseInt(text, 10), 0)).toBe(better);
@@ -248,24 +251,33 @@ test("a legend button brings one environment forward and keeps focus", async ({ 
   await expect(page.locator(".legend-host button").first()).toHaveAttribute("aria-pressed", "false");
 });
 
-test("the explorer opens on the newest regression", async ({ page }) => {
+test("Benchmarks opens on the findings, and each finding opens its chart", async ({ page }) => {
   const index = JSON.parse(await readFile(new URL("../test/fixtures/real/index.json", import.meta.url), "utf8"));
-  const worst = latestChanges(index).find((r) => r.way === "worse");
   await page.goto("?page=explorer");
-  await expect(page.getByRole("main").locator("code").first()).toHaveText(worst?.bench.name ?? "");
+  const findings = page.getByRole("region", { name: "What the benchmarks show" });
+  await expect(findings.getByRole("heading", { level: 3 })).toHaveText(
+    index.findings.map((f: { title: string }) => f.title),
+  );
+  await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+  await findings
+    .getByRole("link", { name: /JacobiGMRESLCA/ })
+    .first()
+    .click();
+  await expect(page.getByLabel("cls", { exact: true })).toHaveValue("JacobiGMRESLCA");
   await expect(page.locator(".chart svg")).toBeVisible();
 });
 
-test("the explorer explains the benchmark and the chosen parameter values", async ({ page }) => {
-  await page.goto("?page=explorer");
+test("the explorer explains the benchmark and links the chosen values", async ({ page }) => {
+  await chart(page, MONTE_CARLO);
   await expect(page.locator(".bench-about")).not.toBeEmpty();
-  const notes = page.locator(".param-notes");
   const cls = page.getByLabel("cls", { exact: true });
-  if ((await cls.count()) === 0) test.skip(true, "the newest regression has no cls choice");
-  await cls.selectOption("JacobiGMRESLCA");
-  await expect(notes).toContainText("JacobiGMRESLCA: Solves by GMRES");
+  const note = page.locator(".field").filter({ has: cls }).locator(".field-note");
+  await expect(note).toContainText("JacobiGMRESLCA: Solves by GMRES");
+  await expect(note.getByRole("link", { name: "JacobiGMRESLCA" })).toHaveAttribute("href", /docs\.brightway\.dev/);
   await cls.selectOption("LCA");
-  await expect(notes).toContainText("LCA: Solves directly");
+  await expect(note).toContainText("LCA: Solves directly");
+  await expect(page.locator(".benchmark-id a")).toHaveAttribute("href", /\/blob\/main\/benchmarks\/.+\.py$/);
+  await expect(page.locator(".env-links a").first()).toHaveAttribute("href", /^https:/);
 });
 
 test("clearing a shared package filter stays on release changes", async ({ page }) => {
@@ -276,7 +288,7 @@ test("clearing a shared package filter stays on release changes", async ({ page 
   await expect(page.getByRole("status")).toHaveText("3 of 3 changes shown");
   await page.getByLabel("Package", { exact: true }).selectOption({ label: "All packages" });
   await expect(heading).toBeVisible();
-  await expect(page).toHaveURL(/page=changes/);
+  await expect(page).toHaveURL(/page=explorer/);
   await page.reload();
   await expect(heading).toBeVisible();
 });
@@ -298,28 +310,25 @@ test("a link to another page moves keyboard focus to that page", async ({ page }
   await expect(page.locator("#main")).toBeFocused();
 });
 
-test("catalogue search accepts readable names and original identifiers", async ({ page }) => {
+test("the masthead search filters the catalogue and opens the first match", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("?page=explorer");
+  await page.goto("./");
   const search = page.getByRole("searchbox", { name: "Find a benchmark" });
   await search.fill("Multi Scores");
+  await expect(page).toHaveURL(/page=explorer/);
   await expect(page.getByRole("navigation", { name: "Benchmarks" }).locator("li a")).toHaveCount(2);
   await search.fill("timeraw_import_bw2calc");
   await expect(page.getByRole("navigation", { name: "Benchmarks" }).locator("li a")).toHaveCount(2);
   await search.fill("missing-case");
   await expect(page.getByText("No benchmarks match")).toBeVisible();
-  await search.fill("");
-  await page
-    .getByRole("navigation", { name: "Benchmarks" })
-    .getByRole("link", { name: "Import bw2calc" })
-    .first()
-    .click();
+  await search.fill("timeraw_import_bw2calc");
+  await search.press("Enter");
   await expect(page.locator(".benchmark-id")).toContainText("bench_import.timeraw_import_bw2calc");
 });
 
 test("an unknown benchmark link names the problem", async ({ page }) => {
   await page.goto("?bench=missing-case");
-  await expect(page.getByRole("status")).toContainText("This benchmark is not in the current data");
+  await expect(page.getByText("This benchmark is not in the current data")).toHaveRole("status");
 });
 
 test("a change opens the same machine's history", async ({ page }) => {
@@ -343,18 +352,44 @@ test("a change opens the same machine's history", async ({ page }) => {
   await expect(page.locator(".chart svg")).toBeVisible();
 });
 
-test("home separates tested setups, compatibility and benchmark evidence", async ({ page }) => {
+test("the masthead has a Setup and a Benchmarks page", async ({ page }) => {
   await page.goto("./");
   const main = page.getByRole("navigation", { name: "Main", exact: true });
-  await expect(main.getByRole("link", { name: "Home", exact: true })).toBeVisible();
-  await expect(main.getByRole("link", { name: "Compatibility", exact: true })).toBeVisible();
-  await expect(main.getByRole("link", { name: "Release changes", exact: true })).toBeVisible();
-  await expect(main.getByRole("link", { name: "Benchmark explorer", exact: true })).toBeVisible();
+  await expect(main.getByRole("link")).toHaveText(["Setup", "Benchmarks"]);
+  await expect(main.getByRole("link", { name: "Setup", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("navigation", { name: "Benchmarks", exact: true })).toHaveCount(0);
-  await main.getByRole("link", { name: "Compatibility", exact: true }).click();
-  await expect(page).toHaveURL(/page=compatibility/);
+  await main.getByRole("link", { name: "Benchmarks", exact: true }).click();
+  await expect(page).toHaveURL(/page=explorer/);
+  await expect(page).toHaveTitle(/^Benchmarks ·/);
   await page.goBack();
-  await expect(main.getByRole("link", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(main.getByRole("link", { name: "Setup", exact: true })).toHaveAttribute("aria-current", "page");
+});
+
+test("old links open the page that took their place", async ({ page }) => {
+  await page.goto("?page=explorer&group=bw2calc&bench=bench_lca.MultiScores.time_scores");
+  await expect(page.locator(".benchmark-id")).toContainText("bench_lca.MultiScores.time_scores");
+  await expect(page.locator(".bench-meta")).toContainText("bw2calc ·");
+  await page.goto("?page=changes");
+  await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+  await page.goto("?page=compatibility");
+  await expect(page).toHaveTitle(/^Setup ·/);
+  await expect(page.locator("#all-checks")).toBeInViewport();
+});
+
+test("each page's main content fits a 1440 by 900 laptop screen", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const fits = async (selector: string) => {
+    const box = await page.locator(selector).first().boundingBox();
+    expect(box && box.y + box.height, selector).toBeLessThanOrEqual(900);
+  };
+  await page.goto("?platform=linux");
+  await page.locator(".install-command").waitFor();
+  await fits(".result-line");
+  await page.goto("?page=explorer");
+  await page.locator(".findings").waitFor();
+  await fits(".findings");
+  await chart(page, SCORES);
+  await fits(".chart svg");
 });
 
 test.describe("guidance looks", () => {
@@ -368,17 +403,9 @@ test.describe("guidance looks", () => {
       await page.setViewportSize({ width, height });
       await page.emulateMedia({ colorScheme: scheme });
       await page.goto("?page=home&platform=linux");
-      await page.getByRole("link", { name: "Download requirements.txt", exact: true }).waitFor();
+      await page.getByRole("link", { name: "requirements.txt", exact: true }).waitFor();
       await page.screenshot({ path: `${shots}/home-${name}-viewport.png` });
       await page.screenshot({ path: `${shots}/home-${name}.png`, fullPage: true });
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      await page
-        .getByRole("navigation", { name: "Main", exact: true })
-        .getByRole("link", { name: "Compatibility", exact: true })
-        .click();
-      await page.locator(".compat-table tbody tr").first().waitFor();
-      await page.screenshot({ path: `${shots}/compatibility-${name}-viewport.png` });
-      await page.screenshot({ path: `${shots}/compatibility-${name}.png`, fullPage: true });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     });
   }
@@ -387,18 +414,21 @@ test.describe("guidance looks", () => {
 const guidanceFixture = async (): Promise<Guidance> =>
   JSON.parse(await readFile(new URL("../test/fixtures/real/guidance.json", import.meta.url), "utf8"));
 
-test("a failing check on the platform sits next to its setup, before the files", async ({ page }) => {
+test("a failing check on the platform sits under the install command", async ({ page }) => {
   await page.goto("?platform=linux");
-  const setup = page.getByRole("region", { name: "Your starting point" });
-  const others = setup.locator(".other-checks");
-  await expect(others.locator("li").first()).toContainText("Upstream test suites · Python 3.12");
-  await expect(others.locator("li").first()).toContainText("Failed");
-  const before = await others.evaluate(
+  const results = page.getByRole("list", { name: "Check results on Linux" });
+  await expect(results.getByRole("listitem")).toHaveText([
+    "Latest releases · Python 3.12 Passed",
+    "Upstream test suites · Python 3.12 Failed",
+  ]);
+  const after = await results.evaluate(
     (el) =>
-      !!(el.compareDocumentPosition(document.querySelector(".saved-set") as Node) & Node.DOCUMENT_POSITION_FOLLOWING),
+      !!(
+        el.compareDocumentPosition(document.querySelector(".install-command") as Node) &
+        Node.DOCUMENT_POSITION_PRECEDING
+      ),
   );
-  expect(before).toBe(true);
-  await expect(page.getByText("Verified")).toHaveCount(0);
+  expect(after).toBe(true);
 });
 
 test("the install command copies", async ({ page, context, browserName }) => {
@@ -406,13 +436,20 @@ test("the install command copies", async ({ page, context, browserName }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("?platform=windows");
   await page.locator(".install-command").getByRole("button", { name: "Copy" }).click();
-  await expect(page.locator(".install-command [role=status]")).toHaveText("Copied");
+  await expect(page.locator(".install-meta [role=status]")).toHaveText("Copied command");
   const text = await page.evaluate(() => navigator.clipboard.readText());
   await expect(page.locator(".install-command pre")).toHaveText(text);
+  await page.getByRole("button", { name: "Copy latest" }).click();
+  const latest = await page.evaluate(() => navigator.clipboard.readText());
+  expect(latest).toContain("/compat/latest-3.12-windows-latest/requirements.txt");
+  expect(latest).not.toContain("2026-");
 });
 
 test("environments on a two-release chart sit apart", async ({ page }) => {
-  await page.goto("?page=explorer");
+  const index = JSON.parse(await readFile(new URL("../test/fixtures/real/index.json", import.meta.url), "utf8"));
+  const worst = latestChanges(index).find((r) => r.way === "worse");
+  if (!worst) throw new Error("fixture has no regression");
+  await page.goto(writeView({ bench: worst.bench.id, params: worst.params }));
   const dots = page.locator('.chart [data-mark="dot"]');
   await expect(dots.first()).toBeAttached();
   const at = await dots.evaluateAll((gs) => gs.map((g) => g.getAttribute("transform") ?? ""));
@@ -430,11 +467,12 @@ test("platform setups keep their pins, install command and URL together", async 
   await page.goto("?page=home&platform=linux");
   const windows = data.platforms.find((p) => p.id === "windows");
   const check = data.checks.find((c) => c.id === windows?.defaultCheck);
-  if (!windows || !check?.lastPassed?.install) throw new Error("fixture lacks a Windows setup");
+  const uv = check?.lastPassed?.installs.find((i) => i.manager === "uv");
+  if (!windows || !check?.lastPassed || !uv) throw new Error("fixture lacks a Windows setup");
   await page.getByRole("button", { name: windows.label, exact: true }).click();
   await expect(page).toHaveURL(/platform=windows/);
-  await expect(page.locator(".install-command pre")).toHaveText(check.lastPassed.install);
-  await expect(page.getByRole("link", { name: "Download requirements.txt", exact: true })).toHaveAttribute(
+  await expect(page.locator(".install-command pre")).toHaveText(uv.command);
+  await expect(page.getByRole("link", { name: "requirements.txt", exact: true })).toHaveAttribute(
     "href",
     check.lastPassed.files.find((f) => f.label === "requirements.txt")?.url ?? "",
   );
@@ -444,31 +482,22 @@ test("platform setups keep their pins, install command and URL together", async 
   await expect(page.getByRole("button", { name: "Linux", exact: true })).toHaveAttribute("aria-pressed", "true");
 });
 
-test("compatibility selection and filters survive shared URLs and back", async ({ page }) => {
-  await page.goto("?page=compatibility");
-  await page.getByLabel("Platform", { exact: true }).selectOption("linux");
-  await page.getByLabel("Python", { exact: true }).selectOption("3.12");
-  const suites = page.locator(".compat-table tbody tr").filter({ hasText: "Upstream test suites" });
-  await suites.getByRole("link").first().click();
-  await expect(page).toHaveURL(/check=suites-/);
-  await expect(page.getByRole("complementary", { name: "Selected check" })).toContainText(
-    "Upstream test suites · Failed",
-  );
+test("a check chosen in the grid shows its set and survives shared URLs and back", async ({ page }) => {
+  await page.goto("?platform=linux");
+  const cell = page.getByRole("link", { name: "Linux · Python 3.14, Pre-releases: Passed" });
+  await cell.click();
+  await expect(page).toHaveURL(/check=pre-3\.14-/);
+  await expect(page.locator("#install-heading")).toBeFocused();
+  await expect(page.locator(".install-command pre")).toContainText("pre-3.14-ubuntu-latest");
+  await expect(cell).toHaveAttribute("aria-current", "true");
   const link = page.url();
   await page.reload();
-  await expect(page.getByLabel("Platform", { exact: true })).toHaveValue("linux");
-  await expect(page.getByLabel("Python", { exact: true })).toHaveValue("3.12");
-  await expect(page.getByRole("complementary", { name: "Selected check" })).toContainText(
-    "Upstream test suites · Failed",
-  );
-  await page
-    .getByRole("navigation", { name: "Main", exact: true })
-    .getByRole("link", { name: "Home", exact: true })
-    .click();
-  await expect(page).toHaveTitle(/^Home ·/);
+  await expect(page.locator(".install-command pre")).toContainText("pre-3.14-ubuntu-latest");
+  await page.getByRole("button", { name: "macOS", exact: true }).click();
+  await expect(page.locator(".install-command pre")).toContainText("macos-latest");
   await page.goBack();
   await expect(page).toHaveURL(link);
-  await expect(page).toHaveTitle(/^Compatibility ·/);
+  await expect(page).toHaveTitle(/^Setup ·/);
 });
 
 test("a failed current check keeps its older passing files clearly dated", async ({ page }) => {
@@ -479,10 +508,13 @@ test("a failed current check keeps its older passing files clearly dated", async
   current.lastPassed.date = "2026-10-30";
   await page.route("**/data/guidance.json", (route) => route.fulfill({ json: data }));
   await page.goto("?page=home&platform=linux");
-  await expect(page.locator(".check-outcome")).toHaveText("Smoke calculations · Failed");
-  await expect(page.getByText("The current check did not pass.")).toBeVisible();
-  await expect(page.locator(".saved-header")).toContainText("Oct 30, 2026");
-  await expect(page.getByRole("link", { name: "Download requirements.txt", exact: true })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Check results on Linux" }).getByRole("listitem").first()).toHaveText(
+    "Latest releases · Python 3.12 Failed",
+  );
+  await expect(page.locator(".saved-warning")).toHaveText(
+    "The latest Latest releases check did not pass; this is the set that passed on Oct 30, 2026.",
+  );
+  await expect(page.getByRole("link", { name: "requirements.txt", exact: true })).toBeVisible();
 });
 
 for (const [label, status, json] of [
@@ -494,13 +526,13 @@ for (const [label, status, json] of [
     await page.route("**/data/guidance.json", (route) => route.fulfill({ status, json }));
     await page.goto("./");
     await expect(page.getByRole("heading", { name: "Explore the available evidence", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Download requirements.txt", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "requirements.txt", exact: true })).toHaveCount(0);
     if (status !== 404) await expect(page.getByRole("status")).toContainText("Setup guidance could not be loaded");
     await page
       .getByRole("navigation", { name: "Main", exact: true })
-      .getByRole("link", { name: "Benchmark explorer", exact: true })
+      .getByRole("link", { name: "Benchmarks", exact: true })
       .click();
-    await expect(page.locator(".chart svg")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
   });
 }
 
@@ -529,39 +561,22 @@ test("home includes both change directions and solver links retain the measured 
   await expect(page.locator(".chart svg")).toBeVisible();
 });
 
-test("legacy compatibility anchors open the compatibility tab", async ({ page }) => {
-  await page.goto("./#works-together");
-  await expect(
-    page
-      .getByRole("navigation", { name: "Main", exact: true })
-      .getByRole("link", { name: "Compatibility", exact: true }),
-  ).toHaveAttribute("aria-current", "page");
-  await expect(page).toHaveTitle(/^Compatibility ·/);
-});
-
-test("phone check selection reveals and focuses the saved environment", async ({ page }) => {
+test("on a phone, a check chosen in the grid brings its install command into view", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("?page=compatibility&platform=linux&python=3.12");
-  await page
-    .locator(".compat-table tbody tr")
-    .filter({ hasText: "Upstream test suites" })
-    .getByRole("link")
-    .first()
-    .click();
-  await expect(page.locator("#selected-check")).toBeFocused();
-  const box = await page.locator("#selected-check").boundingBox();
-  expect(box?.y ?? -1).toBeGreaterThanOrEqual(0);
-  expect(box?.y ?? 1000).toBeLessThan(844);
+  await page.goto("?platform=linux");
+  await page.getByRole("link", { name: "Linux · Python 3.13, Latest releases: Passed" }).click();
+  await expect(page.locator("#install-heading")).toBeFocused();
+  await expect(page.locator(".install-command")).toBeInViewport();
 });
 
 for (const scheme of ["light", "dark"] as const) {
   for (const width of [1440, 390]) {
-    for (const route of ["home", "compatibility"]) {
+    for (const route of ["home"]) {
       test(`guidance axe: ${route}, ${scheme}, ${width}px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
         await page.emulateMedia({ colorScheme: scheme });
         await page.goto(`?page=${route}&platform=linux`);
-        await page.getByRole("link", { name: "Download requirements.txt", exact: true }).waitFor();
+        await page.getByRole("link", { name: "requirements.txt", exact: true }).waitFor();
         const result = await new AxeBuilder({ page })
           .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa", "best-practice"])
           .analyze();
@@ -571,20 +586,27 @@ for (const scheme of ["light", "dark"] as const) {
   }
 }
 
-test("a conda environment offers its manifest and lock before other files", async ({ page }) => {
-  await page.goto("?page=compatibility");
-  await page.locator(".compat-table tbody tr").filter({ hasText: "conda-forge" }).getByRole("link").first().click();
-  const detail = page.getByRole("complementary", { name: "Selected check" });
-  await expect(detail.locator(".primary-action")).toHaveText("Download pixi.toml");
-  await expect(detail.getByRole("link", { name: "pixi.lock", exact: true })).toBeVisible();
-  await expect(detail.locator(".install-command pre")).toContainText("pixi");
+test("each package manager has its own command, and the choice is remembered", async ({ page }) => {
+  await page.goto("?platform=linux");
+  const command = page.locator(".install-command pre");
+  await expect(command).toContainText("uv add brightway25 bw_graph_tools bw_timex -c https://");
+  await page.getByRole("button", { name: "conda", exact: true }).click();
+  await expect(command).toContainText("conda env update -n brightway -f https://");
+  await expect(page.locator(".install-note")).toHaveText("From the conda-forge check on Python 3.12.");
+  await expect(page.locator(".environment-files a").first()).toHaveText("environment.yml");
+  await page.getByRole("button", { name: "pixi", exact: true }).click();
+  await expect(command).toContainText("pixi install --frozen");
+  await page.reload();
+  await expect(page.getByRole("button", { name: "pixi", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Windows", exact: true }).click();
+  await expect(page.getByText("No pixi set has passed on Windows.", { exact: false })).toBeVisible();
 });
 
 test("the phone masthead scrolls the current page into view", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("?page=explorer");
   const nav = page.getByRole("navigation", { name: "Main", exact: true });
-  const current = nav.getByRole("link", { name: "Benchmark explorer" });
+  const current = nav.getByRole("link", { name: "Benchmarks" });
   await expect(current).toHaveAttribute("aria-current", "page");
   const [box, link] = [await nav.boundingBox(), await current.boundingBox()];
   if (!box || !link) throw new Error("no masthead");
@@ -592,7 +614,7 @@ test("the phone masthead scrolls the current page into view", async ({ page }) =
 });
 
 test("a benchmark's tab title uses its readable name", async ({ page }) => {
-  await page.goto("?page=explorer");
+  await chart(page, SCORES);
   const name = await page.locator(".view > header h2").textContent();
   await expect.poll(async () => (await page.title()).startsWith(`${name} · `)).toBe(true);
 });

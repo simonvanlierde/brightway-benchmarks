@@ -3,7 +3,7 @@ import { ContractError, type Guidance, loadGuidance } from "../src/lib/contract"
 
 const BASE = "https://data.test/viewer/";
 const data = (): Guidance => ({
-  format_version: 1,
+  format_version: 2,
   title: "A tested setup",
   intro: "Evidence for choosing a setup.",
   snapshot: { date: "2026-10-31", run: "https://example.test/runs/7" },
@@ -24,7 +24,7 @@ const data = (): Guidance => ({
         run: "https://example.test/runs/6",
         packages: [{ name: "example-package", version: "1.0" }],
         files: [{ label: "requirements.txt", url: "https://example.test/requirements.txt" }],
-        install: "example command",
+        installs: [{ manager: "uv", command: "example command" }],
       },
     },
   ],
@@ -56,7 +56,7 @@ describe("loadGuidance", () => {
   });
 
   it("rejects unsupported versions and broken references", async () => {
-    await expect(loadGuidance(BASE, serve({ ...data(), format_version: 2 }))).rejects.toThrow(/format_version/);
+    await expect(loadGuidance(BASE, serve({ ...data(), format_version: 1 }))).rejects.toThrow(/format_version/);
     const bad = data();
     if (bad.platforms[0]) bad.platforms[0].defaultCheck = "missing";
     await expect(loadGuidance(BASE, serve(bad))).rejects.toThrow(/defaultCheck/);

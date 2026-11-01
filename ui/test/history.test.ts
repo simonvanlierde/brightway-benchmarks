@@ -6,6 +6,7 @@ import {
   breakable,
   changesFor,
   displayNames,
+  findBench,
   format,
   latestChanges,
   lines,
@@ -14,6 +15,7 @@ import {
   pickParams,
   pText,
   readView,
+  seriesOf,
   shortNames,
   sig,
   ticksFor,
@@ -228,11 +230,49 @@ describe("primary navigation state", () => {
 describe("page routing", () => {
   it("keeps legacy histories, overview filters and the compatibility anchor", () => {
     expect(pageOf({ params: [], bench: "known-bench" })).toBe("explorer");
-    expect(pageOf({ params: [], direction: "worse" })).toBe("changes");
+    expect(pageOf({ params: [], direction: "worse" })).toBe("explorer");
     expect(pageOf({ params: [], page: "home" })).toBe("home");
     expect(pageOf({ params: [], page: "unknown" })).toBe("home");
-    expect(pageOf(readView("", "#works-together"))).toBe("compatibility");
-    expect(pageOf(readView("?page=changes", "#works-together"))).toBe("changes");
-    expect(pageOf(readView("", "#latest-release"))).toBe("changes");
+    // Compatibility is part of Setup now, and release changes open the Benchmarks overview.
+    expect(pageOf(readView("", "#works-together"))).toBe("home");
+    expect(readView("", "#works-together").page).toBe("compatibility");
+    expect(pageOf(readView("?page=changes", "#works-together"))).toBe("explorer");
+    expect(pageOf(readView("", "#latest-release"))).toBe("explorer");
+  });
+
+  it("finds a benchmark by id, or by name in a named group as the old asv links give it", () => {
+    const index = {
+      groups: [
+        { id: "a-1", name: "a" },
+        { id: "b-1", name: "b" },
+      ],
+      benchmarks: [
+        { id: "a-x", group: "a-1", name: "x" },
+        { id: "b-x", group: "b-1", name: "x" },
+      ],
+    } as unknown as BenchmarkIndex;
+    expect(findBench(index, { params: [], bench: "b-x" })?.id).toBe("b-x");
+    expect(findBench(index, { params: [], bench: "x", group: "b" })?.id).toBe("b-x");
+    expect(findBench(index, { params: [], bench: "x" })?.id).toBe("a-x");
+    expect(findBench(index, { params: [], bench: "y", group: "b" })).toBeUndefined();
+  });
+
+  it("reads one case's series in commit order", () => {
+    const index = {
+      commits: [
+        { id: "c1", group: "g", date: "2026-01-01T00:00:00Z", release: "1.0" },
+        { id: "c2", group: "g", date: "2026-02-01T00:00:00Z" },
+        { id: "c3", group: "g", date: "2026-03-01T00:00:00Z", release: "1.1" },
+      ],
+    } as unknown as BenchmarkIndex;
+    const reports = new Map([
+      ["c3", { k: { latency: { value: 3 } } }],
+      ["c1", { k: { latency: { value: 1 } } }],
+      ["c2", { other: { latency: { value: 9 } } }],
+    ]);
+    expect(seriesOf(index, reports, "k", "latency")).toEqual([
+      { commit: "c1", value: 1, released: true },
+      { commit: "c3", value: 3, released: true },
+    ]);
   });
 });

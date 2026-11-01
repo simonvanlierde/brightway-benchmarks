@@ -12,6 +12,8 @@ export type Report = BenchmarkIndex["reports"][number];
 export type Change = NonNullable<BenchmarkIndex["changes"]>[number];
 
 export const FORMAT_VERSION = 1;
+/** guidance.json's own format: 2 gave each passing set one install command per package manager. */
+export const GUIDANCE_VERSION = 2;
 export const REPORT_FORMATS: readonly string[] = ["bmf/v0"];
 
 // NOTE: formats go unchecked here, to keep ajv-formats out of the page. The exporter's tests
@@ -136,8 +138,8 @@ export async function loadGuidance(base: string | URL, fetcher: typeof fetch = f
   const data = await getJson(url, fetcher, true);
   if (data === undefined) return undefined;
   const version = (data as { format_version?: unknown } | null)?.format_version;
-  if (version !== FORMAT_VERSION) {
-    throw new ContractError(`${url}: format_version ${version}, this UI reads ${FORMAT_VERSION}`, "version");
+  if (version !== GUIDANCE_VERSION) {
+    throw new ContractError(`${url}: format_version ${version}, this UI reads ${GUIDANCE_VERSION}`, "version");
   }
   const guidance = valid(checkGuidance, data, url);
   const platforms = new Set(guidance.platforms.map((p) => p.id));

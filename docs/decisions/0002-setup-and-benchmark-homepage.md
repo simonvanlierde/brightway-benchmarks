@@ -1,6 +1,6 @@
 # 0002. A tested setup and benchmark evidence on the homepage
 
-- Status: accepted
+- Status: accepted; amended by 0003
 - Date: 2026-11-01
 - Amends: 0001, audience priority and the site landing page
 

@@ -17,9 +17,9 @@ import {
   breakable,
   changesFor,
   commitName,
+  findBench,
   format,
   type Line,
-  latestChanges,
   lines as linesOf,
   noiseText,
   pageOf,
@@ -32,7 +32,7 @@ import {
   verdict,
   writeView,
 } from "../lib/history";
-import Compatibility from "./Compatibility.svelte";
+import Findings from "./Findings.svelte";
 import ReleaseChanges from "./ReleaseChanges.svelte";
 import SetupHome from "./SetupHome.svelte";
 
@@ -55,10 +55,8 @@ let missing = $state(0); // reports that did not load; the chart draws the rest
 const cache = new Map<string, Promise<BenchmarkReport>>();
 // The rail is a disclosure on a phone and always open beside the view on a wide screen.
 const PAGES = [
-  ["home", "Home"],
-  ["compatibility", "Compatibility"],
-  ["changes", "Release changes"],
-  ["explorer", "Benchmark explorer"],
+  ["home", "Setup"],
+  ["explorer", "Benchmarks"],
 ] as const;
 const WIDE = "(min-width: 60rem)";
 let wide = $state(matchMedia(WIDE).matches);
@@ -125,32 +123,49 @@ function follow(e: MouseEvent, next: View) {
 }
 
 const page = $derived(pageOf(view));
-// The explorer without a benchmark opens on the newest regression, the case a maintainer came for.
-const opening = $derived(
-  page === "explorer" && !view.bench && index ? latestChanges(index).find((r) => r.way === "worse") : undefined,
-);
-const bench = $derived(
-  view.bench
-    ? index?.benchmarks.find((b) => b.id === view.bench)
-    : page === "explorer"
-      ? (opening?.bench ?? index?.benchmarks[0])
-      : undefined,
-);
+// Without a benchmark, Benchmarks opens on its overview: the findings and the latest release changes.
+const bench = $derived(index && findBench(index, view));
 const group = $derived(bench && index?.groups.find((g) => g.id === bench.group));
-const params = $derived(bench ? pickParams(bench, opening ? opening.params : view.params) : []);
-const measureId = $derived(
-  bench && (bench.measures.find((m) => m === (view.measure ?? opening?.change.measure)) ?? bench.measures[0]),
-);
+const params = $derived(bench ? pickParams(bench, view.params) : []);
+const measureId = $derived(bench && (bench.measures.find((m) => m === view.measure) ?? bench.measures[0]));
 const measure = $derived(index?.measures.find((m) => m.id === measureId));
 const machines = $derived(
   index && bench
     ? index.machines.filter((m) => index?.reports.some((r) => r.group === bench.group && r.machine === m.id))
     : [],
 );
-const machine = $derived(machines.find((m) => m.id === (view.machine ?? opening?.change.machine)) ?? machines[0]);
+const machine = $derived(machines.find((m) => m.id === view.machine) ?? machines[0]);
 const wanted = $derived<Report[]>(
   index && bench && machine ? index.reports.filter((r) => r.group === bench.group && r.machine === machine.id) : [],
 );
+function fetched(r: Report): Promise<BenchmarkReport> {
+  let p = cache.get(r.path);
+  if (!p) {
+    p = loadReport(base, r);
+    cache.set(r.path, p);
+    p.catch(() => cache.delete(r.path));
+  }
+  return p;
+}
+
+// The overview draws each change's history: every report of a group with a change (28 KB gzipped in all).
+let overview = $state(new Map<string, BenchmarkReport>());
+const requested = new Set<string>();
+$effect(() => {
+  if (!index || page !== "explorer" || bench) return;
+  const cases = new Map(index.cases.map((c) => [c.id, c.benchmark]));
+  const moved = new Set((index.changes ?? []).map((c) => cases.get(c.case)));
+  const groups = new Set(index.benchmarks.filter((b) => moved.has(b.id)).map((b) => b.group));
+  for (const r of index.reports.filter((x) => groups.has(x.group) && !requested.has(x.path))) {
+    requested.add(r.path);
+    fetched(r).then(
+      (data) => {
+        overview = new Map(overview).set(r.path, data);
+      },
+      () => {}, // a missing report leaves its rows without a line
+    );
+  }
+});
 
 $effect(() => {
   const list = wanted;
@@ -159,17 +174,7 @@ $effect(() => {
   reports = undefined;
   reportError = undefined;
   missing = 0;
-  Promise.allSettled(
-    list.map((r) => {
-      let p = cache.get(r.path);
-      if (!p) {
-        p = loadReport(base, r);
-        cache.set(r.path, p);
-        p.catch(() => cache.delete(r.path));
-      }
-      return p.then((data) => [r.commit, data] as const);
-    }),
-  ).then((settled) => {
+  Promise.allSettled(list.map((r) => fetched(r).then((data) => [r.commit, data] as const))).then((settled) => {
     if (!current) return;
     const pairs = settled.flatMap((s) => (s.status === "fulfilled" ? [s.value] : []));
     const failed = settled.flatMap((s) => (s.status === "rejected" ? [String(s.reason)] : []));
@@ -186,6 +191,16 @@ const shown = $derived<Line[]>(
   index && bench && measureId && reports ? linesOf(index, bench, params, measureId, reports) : [],
 );
 const changes = $derived(index && measureId && machine ? changesFor(index, shown, measureId, machine.id) : []);
+// Each linked solver once: "UMFPACK" and "UMFPACK, MKL" share a page.
+const solverLinks = $derived.by(() => {
+  const envs = new Map(index?.environments.map((e) => [e.id, e]));
+  const out = new Map<string, string>();
+  for (const l of shown) {
+    const env = envs.get(l.env);
+    if (env?.url && !out.has(env.url)) out.set(env.url, (env.label ?? env.name).split(/,| on | · /)[0] ?? env.name);
+  }
+  return [...out].map(([url, label]) => ({ url, label }));
+});
 // Commits on the chart that are not releases: release changes skip them.
 const unreleased = $derived(
   new Set(shown.flatMap((l) => l.points.filter((p) => !p.released).map((p) => p.commit))).size,
@@ -215,6 +230,16 @@ const HINTS: Record<ContractError["kind"], string> = {
 const unit = $derived(measure?.unit ?? "");
 let tableOpen = $state(false);
 let search = $state("");
+// The masthead's search shows its matches in the catalogue; Enter opens the first.
+function searchFor(text: string) {
+  search = text;
+  if (page !== "explorer" || bench) go({ page: "explorer", params: [] });
+}
+function openFirst(e: SubmitEvent) {
+  e.preventDefault();
+  const first = matching[0];
+  if (first) go({ bench: first.id, params: [] });
+}
 const matching = $derived(
   index?.benchmarks.filter((b) => `${b.name} ${benchmarkLabel(b.name)}`.toLowerCase().includes(search.toLowerCase())) ??
     [],
@@ -239,7 +264,7 @@ function setParam(i: number, value: string) {
   if (!bench) return;
   const labels = paramLabels(bench, params);
   labels[i] = value;
-  go({ ...view, bench: bench.id, params: labels }); // the bench, so the opening case stops choosing
+  go({ ...view, bench: bench.id, params: labels });
 }
 
 // On a phone the masthead scrolls sideways; keep the current page's link in view (32px clears the fade).
@@ -255,7 +280,7 @@ $effect(() => {
   const name = index?.project.name ?? "Benchmarks";
   document.title = bench
     ? `${labelOf(bench)} · ${name}`
-    : `${{ home: "Home", compatibility: "Compatibility", changes: "Release changes", explorer: "Benchmark explorer" }[page]} · ${name}`;
+    : `${{ home: "Setup", explorer: "Benchmarks" }[page]} · ${name}`;
 });
 </script>
 
@@ -268,7 +293,10 @@ $effect(() => {
         <a href={writeView({page:id,params:[]})} aria-current={page === id ? "page" : undefined} onclick={(e) => follow(e, {page:id,params:[]})}>{text}</a>
       {/each}
     </nav>
-
+    <form class="masthead-search" role="search" onsubmit={openFirst}>
+      <label class="sr" for="benchmark-search">Find a benchmark</label>
+      <input id="benchmark-search" type="search" value={search} oninput={(e) => searchFor(e.currentTarget.value)} placeholder="Find a benchmark…" />
+    </form>
   </div>
 </header>
 
@@ -294,10 +322,6 @@ $effect(() => {
         <a class="home" href={writeView({page:"explorer",params:[]})} aria-current={bench ? undefined : "page"} onclick={(e) => follow(e, { page:"explorer", params: [] })}
           >All benchmarks</a
         >
-        <div class="search-field">
-          <label for="benchmark-search">Find a benchmark</label>
-          <input id="benchmark-search" type="search" bind:value={search} placeholder="Search benchmarks…" />
-        </div>
         {#if matching.length === 0}<p class="rail-empty">No benchmarks match “{search}”.</p>{/if}
         {#each index.groups.filter((g) => matching.some((b) => b.group === g.id)) as g (g.id)}
           <h2 id="rail-{g.id}">{g.name}</h2>
@@ -321,50 +345,49 @@ $effect(() => {
     {/if}
 
     <main class="view" id="main" tabindex="-1">
-      {#if guidanceError && (page === "home" || page === "compatibility")}<p class="empty" role="status">Setup guidance could not be loaded. Benchmark histories remain available. {guidanceError}</p>{/if}
+      {#if guidanceError && page === "home"}<p class="empty" role="status">Setup guidance could not be loaded. Benchmark histories remain available. {guidanceError}</p>{/if}
       {#if page === "home"}
         <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} />
-      {:else if page === "compatibility"}
-        <Compatibility {guidance} ready={guidanceReady} {view} {go} {follow} />
-      {:else if !bench && page === "changes"}
-        <ReleaseChanges {index} {view} {go} {follow} />
       {:else if !bench}
         {#if view.bench}<p class="empty" role="status">This benchmark is not in the current data. Choose one from the catalogue.</p>{/if}
-        <header><h2>Explore benchmark histories</h2><p>Choose a benchmark from the catalogue to compare releases, environments and measurements.</p></header>
+        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Choose a finding, a change or a benchmark from the catalogue for its history.</p></header>
+        <Findings {index} {follow} wide />
+        <ReleaseChanges {index} {view} {go} {follow} loaded={overview} />
 
       {:else}
-        <header>
+        <header class="bench-header">
           <h2>{labelOf(bench)}</h2>
           {#if bench.description}<p class="bench-about">{bench.description}</p>{/if}
-          <p class="benchmark-id"><code>{#each breakable(bench.name) as part, k (k)}{part}<wbr />{/each}</code></p>
-          <p>
+          <p class="bench-meta">
             {#if group?.url}<a href={group.url}>{group.name}</a>{:else}{group?.name}{/if}
             · {measure?.name ?? measureId}{measure?.statistic ? `, ${measure.statistic}` : ""}{measure?.better
               ? `, ${measure.better} is better`
               : ""}
+            · <code class="benchmark-id">{#if bench.url}<a href={bench.url} title="Its source: how it is measured">{#each breakable(bench.name) as part, k (k)}{part}<wbr />{/each}</a>{:else}{#each breakable(bench.name) as part, k (k)}{part}<wbr />{/each}{/if}</code>
           </p>
         </header>
 
         <div class="controls">
           {#each bench.params as axis, i (axis.name)}
             {@const labels = axisLabels(bench)[i] ?? []}
-            {#if labels.length === 1}
-              <div class="field">
+            {@const value = paramLabels(bench, params)[i] ?? ""}
+            {@const at = labels.indexOf(value)}
+            {@const note = axis.notes?.[at]}
+            {@const link = axis.links?.[at]}
+            <div class="field">
+              {#if labels.length === 1}
                 <span class="label">{axis.name}</span>
-                <span class="fixed">{labels[0]}</span>
-              </div>
-            {:else}
-              <div class="field">
+                <span class="fixed">{#if link}<a href={link}>{value}</a>{:else}{value}{/if}</span>
+              {:else}
                 <label for="axis-{i}">{axis.name}</label>
-                <select
-                  id="axis-{i}"
-                  value={paramLabels(bench, params)[i]}
-                  onchange={(e) => setParam(i, e.currentTarget.value)}
-                >
+                <select id="axis-{i}" value={value} onchange={(e) => setParam(i, e.currentTarget.value)}>
                   {#each labels as l (l)}<option>{l}</option>{/each}
                 </select>
-              </div>
-            {/if}
+              {/if}
+              {#if axis.description || note}
+                <p class="field-note">{axis.description}{#if note}{" "}{#if link && labels.length > 1}<a href={link}>{value}</a>{:else}<strong>{value}</strong>{/if}: {note}{/if}</p>
+              {/if}
+            </div>
           {/each}
           {#if bench.measures.length > 1}
             <div class="field">
@@ -383,18 +406,6 @@ $effect(() => {
             </div>
           {/if}
         </div>
-        {#if bench.params.some((a) => a.description || a.notes)}
-          <dl class="param-notes">
-            {#each bench.params as axis, i (axis.name)}
-              {@const value = paramLabels(bench, params)[i] ?? ""}
-              {@const note = axis.notes?.[(axisLabels(bench)[i] ?? []).indexOf(value)]}
-              {#if axis.description || note}
-                <dt>{axis.name}</dt>
-                <dd>{axis.description}{#if note}{" "}<strong>{value}:</strong> {note}{/if}</dd>
-              {/if}
-            {/each}
-          </dl>
-        {/if}
 
         {#if reportError}
           <div class="empty" role="alert"><p>The results for this benchmark did not load: {reportError}</p></div>
@@ -423,6 +434,7 @@ $effect(() => {
               {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment and one even step per commit,
               not by date{measure?.bounds ? `; the band is ${measure.bounds}` : ""}. A ring marks a change beyond its noise (red worse,
               teal better); a dashed line marks a level shift across the whole series.
+              {#if solverLinks.length}<span class="env-links">About the environments: {#each solverLinks as l, k (l.url)}{#if k}{" · "}{/if}<a href={l.url}>{l.label}</a>{/each}.</span>{/if}
             </figcaption>
           </figure>
 

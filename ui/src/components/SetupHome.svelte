@@ -1,8 +1,10 @@
 <script lang="ts">
+import { tick } from "svelte";
 import type { BenchmarkIndex, Guidance } from "../lib/contract";
-import { checkKind, dateLabel, statusLabel, statusTone } from "../lib/guidance";
+import { checkKind, dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/guidance";
 import { benchmarkLabel, format, latestChanges, noiseText, percent, type View, writeView } from "../lib/history";
-import CheckDetail from "./CheckDetail.svelte";
+import Findings from "./Findings.svelte";
+import InstallSet from "./InstallSet.svelte";
 
 let {
   guidance,
@@ -19,23 +21,51 @@ let {
   go: (view: View) => void;
   follow: (event: MouseEvent, view: View) => void;
 } = $props();
-const platform = $derived(guidance?.platforms.find((p) => p.id === view.platform) ?? guidance?.platforms[0]);
-const check = $derived(
-  guidance?.checks.find((c) => c.id === platform?.defaultCheck && c.platform === platform?.id && c.lastPassed),
+const chosen = $derived(guidance?.checks.find((c) => c.id === view.check));
+const platform = $derived(
+  guidance?.platforms.find((p) => p.id === (chosen?.platform ?? view.platform)) ?? guidance?.platforms[0],
 );
-const related = $derived(guidance?.checks.filter((c) => c.platform === platform?.id) ?? []);
+const mine = $derived(guidance?.checks.filter((c) => c.platform === platform?.id) ?? []);
+const selected = $derived(
+  chosen ?? mine.find((c) => c.id === platform?.defaultCheck) ?? mine.find((c) => c.lastPassed),
+);
+// The selected check, then the platform's failures: they qualify the set above them.
+const results = $derived(
+  selected ? [selected, ...mine.filter((c) => c !== selected && statusTone(c.status) === "worse")] : [],
+);
+const at = (c: GuidanceCheck): View => ({ page: "home", platform: c.platform, check: c.id, params: [] });
+// A check chosen in the grid below shows its set above: take keyboard focus (and the screen) there.
+function pick(e: MouseEvent, c: GuidanceCheck) {
+  follow(e, at(c));
+  if (e.defaultPrevented) tick().then(() => document.getElementById("install-heading")?.focus());
+}
+
+// All checks as a grid: a row per platform and Python, a column per kind of check.
+const columns = $derived([...new Set(guidance?.checks.map((c) => c.label) ?? [])]);
+const rows = $derived.by(() => {
+  const out = new Map<string, { label: string; cells: Map<string, GuidanceCheck> }>();
+  for (const p of guidance?.platforms ?? []) {
+    for (const c of guidance?.checks.filter((x) => x.platform === p.id) ?? []) {
+      const key = `${p.id} ${c.python}`;
+      const row = out.get(key) ?? { label: `${p.label} · Python ${c.python}`, cells: new Map() };
+      row.cells.set(c.label, c);
+      out.set(key, row);
+    }
+  }
+  return [...out.values()].sort((a, b) => a.label.localeCompare(b.label, "en", { numeric: true }));
+});
+
 const changes = $derived(latestChanges(index));
 const moves = $derived(
   [changes.find((c) => c.way === "worse"), changes.find((c) => c.way === "better")].filter((c) => c !== undefined),
 );
-// Failures first: they qualify the passing setup above them.
-const additional = $derived(
-  related
-    .filter((c) => c.kind === "suites" || c.status !== "success")
-    .sort((a, b) => Number(a.status === "success") - Number(b.status === "success")),
-);
 const comparison = $derived(guidance?.solverComparison);
 const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ?? [])));
+
+// Links to the old compatibility view land on the grid.
+$effect(() => {
+  if (guidance && view.page === "compatibility") document.getElementById("all-checks")?.scrollIntoView();
+});
 </script>
 
 <header class="home-intro">
@@ -44,42 +74,76 @@ const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ??
 </header>
 
 <div class="home-columns">
-  <div class="home-evidence">
+  <div class="setup-column">
     {#if guidance && platform}
-      <section class="setup-panel" aria-labelledby="setup-heading">
-        <div class="setup-heading"><h2 id="setup-heading">Your starting point</h2><span>{platform.label}{#if check}{` · Python ${check.python}`}{/if}</span></div>
-        <div class="platform-tabs" role="group" aria-label="Choose a platform">{#each guidance.platforms as p(p.id)}<button type="button" aria-pressed={platform.id===p.id} onclick={()=>go({...view,page:"home",platform:p.id})}>{p.label}</button>{/each}</div>
-        {#snippet others()}
-          <div class="other-checks">
-            <strong>Other checks on {platform?.label}</strong>
-            {#if additional.length}
-              <ul>{#each additional.slice(0,4) as cell(cell.id)}<li><a href={writeView({page:"compatibility",platform:cell.platform,check:cell.id,params:[]})} onclick={(e)=>follow(e,{page:"compatibility",platform:cell.platform,check:cell.id,params:[]})}>{cell.label} · Python {cell.python}</a> <span class={statusTone(cell.status)}>{#if cell.label !== checkKind(cell.kind)}{checkKind(cell.kind)} · {/if}{statusLabel(cell.status)}</span></li>{/each}</ul>
-            {:else}<p>No full upstream test-suite result is published for {platform?.label}.</p>{/if}
-            <a href={writeView({page:"compatibility",platform:platform?.id,params:[]})} onclick={(e)=>follow(e,{page:"compatibility",platform:platform?.id,params:[]})}>Inspect compatibility</a>
-          </div>
-        {/snippet}
-        {#if check}<CheckDetail {check} related={others}/>{:else}<p class="no-saved">No passing setup files are published for {platform.label}. Inspect compatibility for check coverage.</p>{/if}
-        {#if !check}{@render others()}{/if}
+      <div class="platform-tabs" role="group" aria-label="Choose a platform">{#each guidance.platforms as p (p.id)}<button type="button" aria-pressed={platform.id === p.id} onclick={() => go({ ...view, page: "home", platform: p.id, check: undefined })}>{p.label}</button>{/each}</div>
+      {#if selected}
+        <InstallSet {selected} checks={mine} platform={platform.label} />
+        <ul class="result-line" aria-label="Check results on {platform.label}">
+          {#each results as c (c.id)}
+            <li><a href={c.run} title="Open the check's run">{c.label} · Python {c.python}</a> <span class={statusTone(c.status)}>{statusLabel(c.status)}</span></li>
+          {/each}
+        </ul>
+        {#if selected.caveats.length}<ul class="caveats">{#each selected.caveats as caveat (caveat)}<li>{caveat}</li>{/each}</ul>{/if}
+      {:else}
+        <p class="no-saved">No passing set is published for {platform.label}. The checks below show what was tried.</p>
+      {/if}
+
+      <section class="all-checks" id="all-checks" aria-labelledby="all-checks-heading">
+        <h2 id="all-checks-heading">All checks</h2>
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex: the table scrolls inside a keyboard-focusable region -->
+        <div class="scroll" role="region" aria-label="Check grid" tabindex="0">
+          <table class="check-grid">
+            <caption>Select a check to install its set above.</caption>
+            <thead><tr><th scope="col">Platform</th>{#each columns as col (col)}<th scope="col">{col}</th>{/each}</tr></thead>
+            <tbody>
+              {#each rows as row (row.label)}
+                <tr>
+                  <th scope="row">{row.label}</th>
+                  {#each columns as col (col)}
+                    {@const c = row.cells.get(col)}
+                    <td>
+                      {#if c}<a href={writeView(at(c))} onclick={(e) => pick(e, c)} aria-current={c.id === selected?.id ? "true" : undefined} class={statusTone(c.status)} aria-label="{row.label}, {col}: {statusLabel(c.status)}">{statusLabel(c.status)}</a>
+                      {:else}<span class="quiet" aria-label="not checked">–</span>{/if}
+                    </td>
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+        <dl class="check-kinds">
+          {#each ["smoke", "suites", "diagnostic"] as const as kind (kind)}
+            <dt>{checkKind(kind)}</dt>
+            <dd>{{ smoke: "Install the latest releases and run each benchmark case once on a small database.", suites: "Run each package's own tests against that install.", diagnostic: "The same calculations on dependency floors, pre-releases or conda-forge, to see what breaks first." }[kind]}</dd>
+          {/each}
+        </dl>
       </section>
     {:else if !ready}<p class="empty" aria-live="polite">Loading tested setups…</p>
-    {:else}<section class="setup-panel"><h2>Explore the available evidence</h2><p class="coverage-text">Setup guidance is unavailable. Benchmark histories and release changes remain available.</p><a href={writeView({page:"explorer",params:[]})} onclick={(e)=>follow(e,{page:"explorer",params:[]})}>Open the benchmark explorer</a></section>{/if}
+    {:else}<section><h2>Explore the available evidence</h2><p class="coverage-text">Setup guidance is unavailable. Benchmark histories and release changes remain available.</p><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Open the benchmarks</a></section>{/if}
+  </div>
 
+  <div class="evidence-column">
     {#if comparison}
       <section class="solver-evidence" aria-labelledby="solver-heading"><h2 id="solver-heading">{comparison.title}</h2><p>{comparison.context}</p>
         {#if platform && comparison.platform && comparison.platform !== platform.id}<p class="measurement-note">No {platform.label} machine was timed, so these values may not hold there.</p>{/if}
-        <table><caption>Recorded measurements; follow a solver to inspect its benchmark.</caption><thead><tr><th scope="col">Solver</th><th scope="col" class="solver-bar-column">Relative time</th><th scope="col" class="num">Measured value</th></tr></thead><tbody>{#each comparison.rows as row(row.label)}<tr><th scope="row"><a href={row.href}>{row.label}</a></th><td class="solver-bar-column"><div class="solver-track" aria-hidden="true"><span style:width={`${largest > 0 ? row.value/largest*100 : 0}%`}></span></div></td><td class="num">{format(row.value,row.unit)}</td></tr>{/each}</tbody></table>
+        <table><caption>Recorded measurements; follow a solver to inspect its benchmark.</caption><thead><tr><th scope="col">Solver</th><th scope="col" class="solver-bar-column">Relative time</th><th scope="col" class="num">Measured value</th></tr></thead><tbody>{#each comparison.rows as row (row.label)}<tr><th scope="row"><a href={row.href}>{row.label}</a></th><td class="solver-bar-column"><div class="solver-track" aria-hidden="true"><span style:width={`${largest > 0 ? (row.value / largest) * 100 : 0}%`}></span></div></td><td class="num">{format(row.value, row.unit)}</td></tr>{/each}</tbody></table>
         {#if comparison.note}<p class="measurement-note">{comparison.note}</p>{/if}
       </section>
+    {:else if guidance}
+      <p class="measurement-note solver-pending">The solver comparison is being measured again. <a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Compare solvers in the benchmarks</a>.</p>
     {/if}
-  </div>
-  <section class="release-brief" aria-labelledby="release-brief-heading">
-    <h2 id="release-brief-heading">What changed?</h2><p>Changes beyond measured noise in each package's latest release.</p>
-    {#each moves as row(row.change.case+row.change.machine+row.way)}
-      {@const next={bench:row.bench.id,params:row.params,measure:row.change.measure,machine:row.change.machine}}
-      <article class="brief-change"><div><h3><a href={writeView(next)} onclick={(e)=>follow(e,next)}>{benchmarkLabel(row.bench.name)}</a></h3><strong class={row.way}>{percent(row.change.ratio)} {row.way}</strong></div><p>{row.env} · beyond {noiseText(row.change)} noise</p><p class="brief-context">{row.group.name} · {row.from} → {row.to}{#if index.machines.length>1} · {index.machines.find(m=>m.id===row.change.machine)?.name}{/if}</p></article>
-    {/each}
-    {#if moves.length===0}<p class="coverage-text">No release changes beyond measured noise were published.</p>{/if}
-    <a class="section-link" href={writeView({page:"changes",params:[]})} onclick={(e)=>follow(e,{page:"changes",params:[]})}>Open all release changes</a>
 
-  </section>
+    <Findings {index} {follow} />
+
+    <section class="release-brief" aria-labelledby="release-brief-heading">
+      <h2 id="release-brief-heading">What changed?</h2><p>Changes beyond measured noise in each package's latest release.</p>
+      {#each moves as row (row.change.case + row.change.machine + row.way)}
+        {@const next = { bench: row.bench.id, params: row.params, measure: row.change.measure, machine: row.change.machine }}
+        <article class="brief-change"><div><h3><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchmarkLabel(row.bench.name)}</a></h3><strong class={row.way}>{percent(row.change.ratio)} {row.way}</strong></div><p>{row.env} · beyond {noiseText(row.change)} noise</p><p class="brief-context">{row.group.name} · {row.from} → {row.to}{#if index.machines.length > 1} · {index.machines.find((m) => m.id === row.change.machine)?.name}{/if}</p></article>
+      {/each}
+      {#if moves.length === 0}<p class="coverage-text">No release changes beyond measured noise were published.</p>{/if}
+      <a class="section-link" href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Open all release changes</a>
+    </section>
+  </div>
 </div>

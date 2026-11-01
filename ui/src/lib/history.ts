@@ -325,10 +325,34 @@ export function benchmarkLabel(name: string): string {
   return method.startsWith("peakmem_") ? `${text} · Peak memory` : text;
 }
 
-/** Existing benchmark links keep opening histories; older overview filters keep opening release changes. */
-export function pageOf(view: View): "home" | "compatibility" | "changes" | "explorer" {
-  if (view.bench) return "explorer";
-  if (view.page === "compatibility" || view.page === "changes" || view.page === "explorer") return view.page;
-  if (!view.page && (view.group || view.direction)) return "changes";
+/**
+ * The two pages: Setup ("home") and Benchmarks ("explorer"). Older links keep working: the
+ * compatibility view is part of Setup, and release changes open the Benchmarks overview.
+ */
+export function pageOf(view: View): "home" | "explorer" {
+  if (view.bench || view.page === "explorer" || view.page === "changes") return "explorer";
+  if (!view.page && (view.group || view.direction)) return "explorer";
   return "home";
+}
+
+/** The benchmark VIEW names: by id, or by name within the group view.group names (old asv links). */
+export function findBench(index: BenchmarkIndex, view: View): Benchmark | undefined {
+  if (!view.bench) return undefined;
+  const byId = index.benchmarks.find((b) => b.id === view.bench);
+  if (byId) return byId;
+  const group = index.groups.find((g) => g.name === view.group || g.id === view.group);
+  return index.benchmarks.find((b) => b.name === view.bench && (!group || b.group === group.id));
+}
+
+/** One case's values in MEASURE along REPORTS (commit -> report), in the index's commit order. */
+export function seriesOf(
+  index: BenchmarkIndex,
+  reports: Map<string, BenchmarkReport>,
+  caseId: string,
+  measure: string,
+) {
+  return index.commits.flatMap((c) => {
+    const value = reports.get(c.id)?.[caseId]?.[measure]?.value;
+    return value === undefined ? [] : [{ commit: c.id, value, released: c.release !== undefined }];
+  });
 }

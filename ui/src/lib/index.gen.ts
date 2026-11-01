@@ -71,6 +71,10 @@ export interface BenchmarkIndex {
      * A short name to show, such as the solver it runs; without it, show a short form of the name.
      */
     label?: string;
+    /**
+     * Where to read about what the label names.
+     */
+    url?: string;
   }[];
   /**
    * One timed function and the parameter axes it runs over.
@@ -83,6 +87,10 @@ export interface BenchmarkIndex {
      * What it measures, for readers.
      */
     description?: string;
+    /**
+     * Its source, how it measures.
+     */
+    url?: string;
     /**
      * The measure ids its metrics use.
      *
@@ -107,6 +115,10 @@ export interface BenchmarkIndex {
        * What each value means, in the order of values; empty where there is none.
        */
       notes?: string[];
+      /**
+       * Where to read about each value, in the order of values; empty where there is none.
+       */
+      links?: string[];
     }[];
   }[];
   /**
@@ -180,6 +192,25 @@ export interface BenchmarkIndex {
      * change-point only: the significance test's p-value.
      */
     pvalue?: number;
+  }[];
+  /**
+   * What the histories show, in the order to show them, each with the view that shows it.
+   */
+  findings?: {
+    title: string;
+    /**
+     * One or two sentences with the numbers.
+     */
+    text: string;
+    benchmark: Id;
+    /**
+     * The value to show, as a label, for each axis of the benchmark that the view fixes; in axis order, empty to keep the default.
+     */
+    params: string[];
+    /**
+     * The full account.
+     */
+    url?: string;
   }[];
 }
 export interface Link {

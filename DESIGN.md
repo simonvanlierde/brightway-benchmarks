@@ -107,7 +107,7 @@ Ink, secondary ink and muted text establish hierarchy; line, axis, control and g
 
 Use the system sans stack for headings, controls and tables. Page titles and the larger Home title share a restrained weight and tight tracking; both use the title tokens above.
 
-Below the titles, text uses six roles on a 15px root: meta 0.8rem (captions, column headers, labels, notes), data 0.875rem (tables, buttons, navigation, catalogue), control 0.9375rem (selects and fixed parameter values), body 1rem (ledes, changes, benchmark names), subhead 1.35rem (sections inside a view and the selected-check pane) and section 1.5rem (Home's columns). Weight separates roles of the same size; parameter names are muted so their values lead.
+Below the titles, text uses six roles on a 15px root: meta 0.8rem (captions, column headers, labels, notes), data 0.875rem (tables, buttons, navigation, catalogue), control 0.9375rem (selects and fixed parameter values), body 1rem (ledes, changes, benchmark names), subhead 1.35rem (sections inside a view and the selected-check pane) and section 1.25rem (Setup's and Benchmarks' sections). Weight separates roles of the same size; parameter names are muted so their values lead.
 
 Monospace belongs to original identifiers and environment specifications. Measurements use tabular numerals and right-aligned numeric columns. Solver timing values are prominent. Keep explanatory prose within about 68 characters per line where space allows.
 
@@ -115,9 +115,11 @@ Monospace belongs to original identifiers and environment specifications. Measur
 
 Breakpoints and sizes live in [ui/src/styles.css](ui/src/styles.css); this section gives the intent.
 
-The compact masthead links Home, Compatibility, Release changes and Benchmark explorer. Home places setup and solver evidence side by side, with a full-width maintainer summary below; setup and solver sections begin on matching rules, and timing columns align within the solver table. As the screen narrows, Compatibility detail moves below its table, the masthead becomes its own scrolling row that keeps the current page in view, and then setup, solver evidence and summary stack into one column.
+The compact masthead links Setup and Benchmarks and holds the benchmark search. Setup places the install column beside the evidence column: platform, install command, check results and the check grid on the left; solver comparison, findings and the latest changes on the right, divided by a hairline. As the screen narrows, the masthead becomes its own scrolling row that keeps the current page in view, and the two columns stack.
 
-Compatibility pairs its filterable check table with a selected-detail pane on wide screens. Only Benchmark explorer has a catalogue rail, sticky on wide screens and a disclosure on narrow ones. Filters sit directly above the evidence they control.
+Each page's main content fits a 1440 by 900 laptop screen: the install command and its result line on Setup, the findings on Benchmarks, the whole chart on a benchmark. A browser test checks it.
+
+Only Benchmarks has a catalogue rail, sticky on wide screens and a disclosure on narrow ones. Filters sit directly above the evidence they control, and each parameter's explanation sits under its control.
 
 On phones, release-change tables reflow into labelled rows. Full measurement tables keep horizontal scrolling in their own focusable region. Charts reduce tick density without dropping keyboard access to any release.
 

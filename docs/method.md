@@ -37,7 +37,12 @@ The profile is harder on a direct solver than real ecoinvent: SuperLU's factors 
 as many entries as the matrix, against 175 for ecoinvent. So SuperLU times overstate real
 ecoinvent ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)). With a
 licence of your own, [`scripts/solver_factorize.py`](../scripts/solver_factorize.py) times each
-direct solver on the real matrix, and with `--cudss` NVIDIA's cuDSS on a GPU.
+direct solver on the real matrix, and with `--cudss` NVIDIA's cuDSS on a GPU. That option
+refactorizes unchanged values. `--cudss-updates` instead applies three deterministic row-scaled
+value updates at fixed sparsity, checking every solution against SuperLU and its backward
+error. It separates construction/initial transfer, analysis, update/transfer, factorization and
+solve/return transfer. Value generation and CPU checks are outside those phase times; neither
+option measures a complete Monte Carlo draw.
 
 `just bw2io-import synthetic smoke,ecoinvent` times bw2io's ecoSpold2 import without a licence:
 it writes a profile's system as ecoSpold2 files with bw2io's own `biosphere3` flows, so every

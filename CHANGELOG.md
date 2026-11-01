@@ -7,11 +7,6 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Fixed
-
-- Archived setup sets keep their latest passing date and run after the artifacts expire
-  ([compat archive](docs/running.md#the-compat-archive)).
-
 ### Removed
 
 - The asv-generated history pages. Old links to them redirect to the benchmark explorer
@@ -113,6 +108,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Archived setup sets keep their latest passing date and run after the artifacts expire
+  ([compat archive](docs/running.md#the-compat-archive)).
 - `pylock.toml` refused Python patch releases older than the CI runner's, such as Ubuntu
   24.04's 3.12.3. It now asks for Python 3.12 or newer
   ([running](docs/running.md#compat)).

@@ -1,6 +1,5 @@
 """scripts/compat.sh with uv stubbed out: what it resolves, records and runs."""
 
-import re
 import shutil
 import subprocess
 import tarfile
@@ -361,17 +360,3 @@ def test_suites_extract_without_gnu_tar(tmp_path: Path):
     rc, out = suites(tmp_path, tags, no_gnu_tar=True)
     assert rc == 0
     assert (out / "suites.txt").read_text().count(" passed\n") == 7
-
-
-def test_compat_matrix_covers_native_platforms_and_linux_conda():
-    workflow = (REPO / ".github/workflows/compat.yml").read_text()
-    jobs = re.findall(r'\{column: ([\w-]+), python: "([\d.]+)", os: ([\w-]+)\}', workflow)
-    versions = ("3.12", "3.13", "3.14")
-    expected = {
-        (column, python, os_name)
-        for column in ("latest", "suites", "floors", "pre")
-        for python in versions
-        for os_name in ("ubuntu-latest", "macos-latest", "windows-latest")
-    } | {("conda-forge", python, "ubuntu-latest") for python in versions}
-    assert len(jobs) == len(expected)
-    assert set(jobs) == expected

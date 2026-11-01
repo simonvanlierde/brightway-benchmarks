@@ -28,46 +28,12 @@ jobs:
       matrix:
         # The benchmark harness needs Python 3.12 or later. All native PyPI checks run on
         # each platform; conda-forge uses the Linux-only container and manifest.
-        include:
-          - {column: latest, python: "3.12", os: ubuntu-latest}
-          - {column: latest, python: "3.13", os: ubuntu-latest}
-          - {column: latest, python: "3.14", os: ubuntu-latest}
-          - {column: latest, python: "3.12", os: macos-latest}
-          - {column: latest, python: "3.13", os: macos-latest}
-          - {column: latest, python: "3.14", os: macos-latest}
-          - {column: latest, python: "3.12", os: windows-latest}
-          - {column: latest, python: "3.13", os: windows-latest}
-          - {column: latest, python: "3.14", os: windows-latest}
-          - {column: suites, python: "3.12", os: ubuntu-latest}
-          - {column: suites, python: "3.13", os: ubuntu-latest}
-          - {column: suites, python: "3.14", os: ubuntu-latest}
-          - {column: suites, python: "3.12", os: macos-latest}
-          - {column: suites, python: "3.13", os: macos-latest}
-          - {column: suites, python: "3.14", os: macos-latest}
-          - {column: suites, python: "3.12", os: windows-latest}
-          - {column: suites, python: "3.13", os: windows-latest}
-          - {column: suites, python: "3.14", os: windows-latest}
-          - {column: floors, python: "3.12", os: ubuntu-latest}
-          - {column: floors, python: "3.13", os: ubuntu-latest}
-          - {column: floors, python: "3.14", os: ubuntu-latest}
-          - {column: floors, python: "3.12", os: macos-latest}
-          - {column: floors, python: "3.13", os: macos-latest}
-          - {column: floors, python: "3.14", os: macos-latest}
-          - {column: floors, python: "3.12", os: windows-latest}
-          - {column: floors, python: "3.13", os: windows-latest}
-          - {column: floors, python: "3.14", os: windows-latest}
-          - {column: pre, python: "3.12", os: ubuntu-latest}
-          - {column: pre, python: "3.13", os: ubuntu-latest}
-          - {column: pre, python: "3.14", os: ubuntu-latest}
-          - {column: pre, python: "3.12", os: macos-latest}
-          - {column: pre, python: "3.13", os: macos-latest}
-          - {column: pre, python: "3.14", os: macos-latest}
-          - {column: pre, python: "3.12", os: windows-latest}
-          - {column: pre, python: "3.13", os: windows-latest}
-          - {column: pre, python: "3.14", os: windows-latest}
-          - {column: conda-forge, python: "3.12", os: ubuntu-latest}
-          - {column: conda-forge, python: "3.13", os: ubuntu-latest}
-          - {column: conda-forge, python: "3.14", os: ubuntu-latest}
+        column: [latest, suites, floors, pre, conda-forge]
+        python: ["3.12", "3.13", "3.14"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        exclude:
+          - {column: conda-forge, os: macos-latest}
+          - {column: conda-forge, os: windows-latest}
     defaults:
       run:
         shell: bash # Windows too, where compat.sh runs under Git Bash
@@ -120,7 +86,7 @@ jobs:
           GREEN: compat-green-${{ matrix.column }}-${{ matrix.python }}-${{ matrix.os }}
         run: |
           mkdir -p "$OUT"
-          python3 scripts/compat_draft.py "$OUT" "$RUNNER_TEMP/prev-requirements.txt"
+          uv run --no-project --python "$PYTHON" scripts/compat_draft.py "$OUT" "$RUNNER_TEMP/prev-requirements.txt"
           cat "$OUT/issue-draft.md" >>"$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

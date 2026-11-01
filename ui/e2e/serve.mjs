@@ -4,7 +4,15 @@ import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
 
 const root = new URL("..", import.meta.url).pathname;
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json" };
+const TYPES = {
+  ".html": "text/html",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".ico": "image/x-icon",
+};
 
 createServer((req, res) => {
   const path = normalize(decodeURIComponent(new URL(req.url ?? "/", "http://x").pathname));

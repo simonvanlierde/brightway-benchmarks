@@ -26,6 +26,10 @@ export interface Guidance {
     platform: string;
     python: string;
     label: string;
+    /**
+     * What the labelled check installs and tests.
+     */
+    description?: string;
     kind: "smoke" | "suites" | "diagnostic";
     status: string;
     coverage: string;

@@ -1,7 +1,7 @@
 <script lang="ts">
 import { tick } from "svelte";
 import type { BenchmarkIndex, Guidance } from "../lib/contract";
-import { checkKind, dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/guidance";
+import { dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/guidance";
 import { benchmarkLabel, format, latestChanges, noiseText, percent, type View, writeView } from "../lib/history";
 import Findings from "./Findings.svelte";
 import InstallSet from "./InstallSet.svelte";
@@ -32,7 +32,10 @@ const selected = $derived(
 const at = (c: GuidanceCheck): View => ({ page: "home", platform: c.platform, check: c.id, params: [] });
 function choose(platform: string) {
   const { check: _, ...rest } = view; // a new platform starts on its default check
+  // The select moves in or out of InstallSet when the platform has no passing set: keep its focus.
+  const focused = document.activeElement?.id === "setup-platform";
   go({ ...rest, page: "home", platform });
+  if (focused) tick().then(() => document.getElementById("setup-platform")?.focus());
 }
 // A check chosen in the grid below shows its set above: take keyboard focus (and the screen) there.
 function pick(e: MouseEvent, c: GuidanceCheck) {
@@ -41,7 +44,7 @@ function pick(e: MouseEvent, c: GuidanceCheck) {
 }
 
 // All checks as a grid: a row per platform and Python, a column per kind of check.
-const columns = $derived([...new Set(guidance?.checks.map((c) => c.label) ?? [])]);
+const columns = $derived([...new Map(guidance?.checks.map((c) => [c.label, c]) ?? []).values()]);
 const rows = $derived.by(() => {
   const out = new Map<string, { label: string; cells: Map<string, GuidanceCheck> }>();
   for (const p of guidance?.platforms ?? []) {
@@ -85,22 +88,32 @@ $effect(() => {
 
 <header class="home-intro">
   <div><h2>{guidance?.title ?? index.project.name}</h2><p>{guidance?.intro ?? index.project.description ?? "Explore benchmark measurements and release changes."}</p></div>
-  {#if guidance}<p class="snapshot">Latest published checks<br/><a href={guidance.snapshot.run}>{dateLabel(guidance.snapshot.date)}</a></p>{/if}
+
+  <p class="brightway-about"><a href="https://docs.brightway.dev/en/latest/">Brightway</a> is an open-source Python framework for life cycle assessment (LCA).</p>
 </header>
 
 <div class="home-columns">
   <div class="setup-column">
     {#if guidance && platform}
-      <div class="platform-tabs" role="group" aria-label="Choose a platform">{#each guidance.platforms as p (p.id)}<button type="button" aria-pressed={platform.id === p.id} onclick={() => choose(p.id)}>{p.label}</button>{/each}</div>
+      {#snippet platformChoice()}
+        <label class="control-label" for="setup-platform">Operating system</label>
+        <select id="setup-platform" value={platform.id} onchange={(e) => choose(e.currentTarget.value)}>
+          {#each guidance.platforms as p (p.id)}<option value={p.id}>{p.label}</option>{/each}
+        </select>
+      {/snippet}
       {#if selected}
-        <InstallSet {selected} checks={mine} platform={platform.label} />
+        <InstallSet {selected} checks={mine} platform={platform.label} {platformChoice} explicitCheck={!!chosen} onSelectCheck={(c) => go({ page: "home", platform: c.platform, check: c.id, params: [] })} />
       {:else}
+        {@render platformChoice()}
         <p class="no-saved">No passing set is published for {platform.label}. The checks below show what was tried.</p>
       {/if}
 
       <section class="all-checks" id="all-checks" aria-labelledby="all-checks-heading">
-        <h2 id="all-checks-heading"><span class="desktop-checks">All checks</span><span class="phone-checks">{platform.label} checks</span></h2>
-        <p class="check-scroll-hint desktop-checks" hidden={!overflowing}>Scroll to see all check types.</p>
+        <div class="checks-heading">
+          <h2 id="all-checks-heading"><span class="desktop-checks">All checks</span><span class="phone-checks">{platform.label} checks</span></h2>
+          <small class="checks-date"><a href={guidance.snapshot.run}>Checked {dateLabel(guidance.snapshot.date)}</a></small>
+        </div>
+        <div class="desktop-checks"><p class="check-help" id="check-instructions"><span>Select a check to view its install set above.</span><span hidden={!overflowing}>Scroll to see all check types.</span></p></div>
         <ul class="platform-checks phone-checks" aria-label="{platform.label} checks">
           {#each mine as c (c.id)}
             <li><a href={writeView(at(c))} onclick={(e) => pick(e, c)} aria-current={c.id === selected?.id ? "true" : undefined}><span><span class="sr">{platform.label} · </span>{c.label}{" "}<small>Python {c.python}</small></span>{" "}<strong class={statusTone(c.status)}>{statusLabel(c.status)}</strong></a></li>
@@ -108,17 +121,17 @@ $effect(() => {
         </ul>
         <!-- svelte-ignore a11y_no_noninteractive_tabindex: the table scrolls inside a keyboard-focusable region -->
         <div class="scroll desktop-checks" role="region" aria-label="Check grid" tabindex="0" bind:this={grid}>
-          <table class="check-grid">
-            <caption>Select a check to install its set above.</caption>
-            <thead><tr><th scope="col">Platform</th>{#each columns as col (col)}<th scope="col">{col}</th>{/each}</tr></thead>
+          <table class="check-grid" aria-describedby="check-instructions">
+            <caption class="sr">Compatibility checks by platform and Python version</caption>
+            <thead><tr><th scope="col">Platform</th>{#each columns as col (col.label)}<th scope="col">{col.label}</th>{/each}</tr></thead>
             <tbody>
               {#each rows as row (row.label)}
                 <tr>
                   <th scope="row">{row.label}</th>
-                  {#each columns as col (col)}
-                    {@const c = row.cells.get(col)}
+                  {#each columns as col (col.label)}
+                    {@const c = row.cells.get(col.label)}
                     <td>
-                      {#if c}<a href={writeView(at(c))} onclick={(e) => pick(e, c)} aria-current={c.id === selected?.id ? "true" : undefined} class={statusTone(c.status)} aria-label="{row.label}, {col}: {statusLabel(c.status)}">{statusLabel(c.status)}</a>
+                      {#if c}<a href={writeView(at(c))} onclick={(e) => pick(e, c)} aria-current={c.id === selected?.id ? "true" : undefined} class={statusTone(c.status)} aria-label="{row.label}, {col.label}: {statusLabel(c.status)}">{statusLabel(c.status)}</a>
                       {:else}<span class="quiet" aria-label="not checked">–</span>{/if}
                     </td>
                   {/each}
@@ -128,9 +141,9 @@ $effect(() => {
           </table>
         </div>
         <dl class="check-kinds">
-          {#each ["smoke", "suites", "diagnostic"] as const as kind (kind)}
-            <dt>{checkKind(kind)}</dt>
-            <dd>{{ smoke: "Install the latest releases and run each benchmark case once on a small database.", suites: "Run each package's own tests against that install.", diagnostic: "The same calculations on dependency floors, pre-releases or conda-forge, to see what breaks first." }[kind]}</dd>
+          {#each columns as col (col.label)}
+            <dt>{col.label}</dt>
+            <dd>{col.description ?? col.coverage}</dd>
           {/each}
         </dl>
       </section>

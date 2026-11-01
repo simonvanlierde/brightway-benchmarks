@@ -42,6 +42,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0 # release labels use the exact tag when present
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -78,6 +79,8 @@ jobs:
           mkdir -p site/ui
           cp -r ui/dist/. site/ui/
           cp ui/dist/index.html site/index.html
+          cp -r ui/dist/about site/about
+          cp ui/dist/sitemap.xml site/sitemap.xml
           uvx --from rust-just==1.58.0 just ui-data site/ui/data
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

@@ -83,7 +83,7 @@ fresh environment and runs every case once at the `smoke` size, untimed.
 - `conda-forge`: the same set from conda-forge with pixi, without the bw_graph_tools and
   bw_timex cases. Linux only.
 - `suites`: like `latest`, but runs the test suites of bw2data, bw2calc, bw2io, bw_processing,
-  matrix_utils, bw_graph_tools and bw_timex, from each package's GitHub tag. Linux only.
+  matrix_utils, bw_graph_tools and bw_timex, from each package's GitHub tag.
 
 bw_timex pulls in PyPardiso on Linux x86_64, so there bw2calc solves with PyPardiso.
 
@@ -96,11 +96,16 @@ lives in a separate pixi `test` environment), `pixi.toml` and `pixi.lock`. `suit
 
 ### The nightly runs
 
-The `compat` workflow runs `latest` on Linux with Python 3.12, 3.13 and 3.14, and on macOS and
-Windows with 3.12. `pre` runs on Linux with 3.14, the other columns with 3.12. Only `latest`
-turns the run red, so check the other jobs yourself. On macOS and
-Windows the job runs on the runner, not the box. On macOS the PyPardiso and UMFPACK cases skip,
-since neither installs from PyPI there.
+The `compat` workflow runs 39 jobs each night: `latest`, `suites`, `floors` and `pre`
+on Linux, macOS and Windows with Python 3.12, 3.13 and 3.14, plus `conda-forge` on Linux
+with all three Python versions. Conda checks on macOS and Windows are unsupported because
+they use a Linux container and manifest. Only `latest` turns the run red; other failures remain
+visible in the published results. On macOS and Windows the checks run directly on the runner.
+On macOS the PyPardiso and UMFPACK cases skip because neither installs from PyPI there.
+
+Expanding the matrix does not create results until those jobs run. After merging a coverage
+change, dispatch `compat` on `main` and wait for its archive job, then dispatch `site` to publish
+the new snapshot. A run dispatched on a feature branch validates jobs but does not update the archive.
 
 ### Report newly failing jobs
 

@@ -99,7 +99,7 @@ Square geometry and aligned measurement columns give the viewer a precise readin
 
 ## Colors
 
-The primary blue accent anchors links, active navigation, selected platform buttons and solver bars. The pale blue selection wash marks chosen filters, catalogue entries and compatibility rows. Page, rail and panels share one ground (`page`) in each theme, so content reads as a continuous workspace.
+The primary blue accent anchors links, active navigation, selected controls and solver bars. The pale blue selection wash marks chosen filters, catalogue entries and compatibility rows. Page, rail and panels share one ground (`page`) in each theme, so content reads as a continuous workspace.
 
 Ink, secondary ink and muted text establish hierarchy; line, axis, control and grid colours separate content and support charts. Red and teal label worse and better results, while shift stays neutral. The eight series colours identify environments independently of navigation and status. Dark mode preserves these roles with a dark navy ground and lighter text and series colours.
 
@@ -115,7 +115,7 @@ Monospace belongs to original identifiers and environment specifications. Measur
 
 Breakpoints and sizes live in [ui/src/styles.css](ui/src/styles.css); this section gives the intent.
 
-The compact masthead links Setup and Benchmarks and holds the benchmark search. Setup places the install column beside the evidence column: platform, check results, install command and the check grid on the left; solver comparison, findings and the latest changes on the right, divided by a hairline. As the screen narrows, the masthead becomes its own scrolling row that keeps the current page in view, and the two columns stack.
+The compact masthead links Setup and Benchmarks and holds benchmark search and a sun/moon theme toggle. GitHub and build identity sit in the footer; check freshness sits beside All checks. Setup places the install column beside the evidence column: operating-system, Python and package-manager selects, check results, install command and the check grid on the left; solver comparison, findings and the latest changes on the right, divided by a hairline. As the screen narrows, the masthead becomes its own scrolling row that keeps the current page in view, and the two columns stack.
 
 Each page's main content fits a 1440 by 900 laptop screen: the install command and its result line on Setup, the findings on Benchmarks, the whole chart on a benchmark. A browser test checks it.
 
@@ -133,7 +133,7 @@ All corners are square, including controls, charts, selections and detail frames
 
 ## Components
 
-Primary downloads use accent fill with page-coloured text and the primary-download padding. Data ordering chooses the primary file; other installation files remain links. Pressed platform buttons use solid accent fill with page-coloured text. Chosen direction filters and catalogue entries use the selection wash; active masthead navigation uses an accent underline.
+Primary downloads use accent fill with page-coloured text and the primary-download padding. Data ordering chooses the primary file; other installation files remain links. Chosen direction filters and catalogue entries use the selection wash; active masthead navigation uses an accent underline.
 
 Search fields and selects use the page ground and control stroke. Links thicken their underline on hover. Buttons and catalogue entries use the selection wash on hover; row hover uses a faint selection wash. Native-control and catalogue colour transitions last 150ms only when reduced motion is not requested. All interactive controls retain visible keyboard focus.
 
@@ -141,7 +141,7 @@ Release changes put regressions first, one row per case; improvements group by b
 
 The explorer says what the benchmark measures under its title. Desktop explains each parameter under its control; phones keep the controls visible and put explanations under “Parameter details”. New uv projects have an optional copyable setup sequence, and Copy latest has a 44px target.
 
-Benchmark labels use a readable fallback, with original identifiers in detail views and link titles. Ambiguous labels include their identifiers; search accepts either form. Filter counts update together and selections live in the URL. Empty filters and unknown links explain how to recover. Platform controls select a published setup directly. Saved files carry their passing date; smoke calculations and upstream test suites keep separate coverage labels. External project and method links sit in the footer.
+Benchmark labels use a readable fallback, with original identifiers in detail views and link titles. Ambiguous labels include their identifiers; search accepts either form. Filter counts update together and selections live in the URL. Empty filters and unknown links explain how to recover. Labelled native selects choose operating system, Python and package manager. Changing manager preserves Python. The command’s date and file links share a compact row; project instructions and package versions expand on demand. The theme follows the system until a visitor chooses light or dark, and that choice is remembered. Saved files carry their passing date; smoke calculations and upstream test suites keep separate coverage labels. External project and method links sit in the footer.
 
 ## Do's and Don'ts
 

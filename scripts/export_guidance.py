@@ -29,6 +29,22 @@ LABELS = {
     "suites": "Upstream test suites",
 }
 
+DESCRIPTIONS = {
+    "latest": "Install the latest stable releases from PyPI and run each benchmark case once on a small database.",
+    "floors": (
+        "Keep Brightway at its latest releases, use the lowest allowed versions of its direct dependencies, "
+        "and run the small-database calculations."
+    ),
+    "pre": "Allow pre-release packages from PyPI and run each benchmark case once on a small database.",
+    "conda-forge": (
+        "Install the available Brightway packages from conda-forge and run the small-database calculations."
+    ),
+    "suites": (
+        "Run upstream package test suites against the latest installed releases; "
+        "this is broader than the small-database calculation checks."
+    ),
+}
+
 
 def web_url(value: str) -> str:
     """A public link must name an HTTP(S) host, never an executable URL."""
@@ -203,6 +219,7 @@ def export(status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE) ->
             "platform": platform,
             "python": cell["python"],
             "label": LABELS.get(column, column),
+            **({"description": DESCRIPTIONS[column]} if column in DESCRIPTIONS else {}),
             "kind": "suites" if column == "suites" else "smoke" if column == "latest" else "diagnostic",
             "status": cell["today"] or "unknown",
             "coverage": "Package test suites" if column == "suites" else "Small-database calculation checks",

@@ -14,6 +14,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Nightly compatibility checks now cover all three Python versions on Linux, macOS and Windows, including dependency floors and pre-releases; conda checks remain Linux-only ([coverage](docs/running.md#the-nightly-runs)).
 - Install sets that never change: each set that differs from the last is kept in a dated folder
   on the `compat` branch, and stays after GitHub deletes the run's artifacts
   ([running](docs/running.md#the-compat-archive)).
@@ -108,6 +109,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Selecting a compatibility check keeps its install set and URL aligned. Check explanations use the table’s labels ([viewer](ui/README.md#what-it-shows)).
 - Archived setup sets keep their latest passing date and run after the artifacts expire
   ([compat archive](docs/running.md#the-compat-archive)).
 - `pylock.toml` refused Python patch releases older than the CI runner's, such as Ubuntu

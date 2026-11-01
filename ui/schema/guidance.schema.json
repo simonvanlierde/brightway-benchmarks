@@ -80,6 +80,11 @@
             "type": "string",
             "minLength": 1
           },
+          "description": {
+            "description": "What the labelled check installs and tests.",
+            "type": "string",
+            "minLength": 1
+          },
           "kind": {
             "enum": ["smoke", "suites", "diagnostic"]
           },

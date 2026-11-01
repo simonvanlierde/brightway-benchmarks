@@ -410,7 +410,7 @@ test("each page's main content fits a 1440 by 900 laptop screen", async ({ page 
   };
   await page.goto("?platform=linux");
   await page.locator(".install-set > .install-command").waitFor();
-  await fits(".result-line");
+  await fits(".install-set > .install-command");
   await page.goto("?page=explorer");
   await page.locator(".findings").waitFor();
   await fits(".findings");

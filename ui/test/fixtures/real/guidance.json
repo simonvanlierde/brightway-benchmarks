@@ -426,8 +426,9 @@
     }
   ],
   "solverComparison": {
-    "title": "Solver alternatives, with measured evidence",
+    "title": "Solver alternatives, measured on one Linux machine",
     "context": "First LCA score \u00b7 bw2calc 3.1.0 \u00b7 synthetic ecoinvent-sized database \u00b7 pinned-x86-1",
+    "platform": "linux",
     "note": "These fixed benchmark environments differ from the compatibility snapshot. Timings do not predict every workflow or machine.",
     "rows": [
       {

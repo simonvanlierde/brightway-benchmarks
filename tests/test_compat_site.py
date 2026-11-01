@@ -1,5 +1,6 @@
 """scripts/compat_site.py with `gh` stubbed out: which set it keeps for each compat job."""
 
+import importlib
 import io
 import json
 import os
@@ -7,6 +8,8 @@ import subprocess
 import sys
 import zipfile
 from pathlib import Path
+
+import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 SCRIPT = REPO / "scripts" / "compat_site.py"
@@ -199,3 +202,10 @@ def test_refuses_to_write_through_a_symlink_the_box_planted(tmp_path: Path):
     )
     assert "refusing" in out["stderr"]
     assert not any(outside.iterdir())
+
+
+def test_versions_match_names_as_uv_writes_them(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.syspath_prepend(str(SCRIPT.parent))
+    versions = importlib.import_module("compat_site").versions
+    reqs = "bw-graph-tools==0.6.1\n    # via brightway25\nbw_timex==1.2.0\nBW2Calc==3.1.0\nnumpy==2.5.4\n"
+    assert versions(reqs) == {"bw2calc": "3.1.0", "bw_graph_tools": "0.6.1", "bw_timex": "1.2.0", "numpy": "2.5.4"}

@@ -19,6 +19,8 @@ PLATFORMS = {
     "macos-latest": ("macos", "macOS"),
     "windows-latest": ("windows", "Windows"),
 }
+# The benchmark machines are Linux x86-64 boxes (docs/running.md); results do not record an OS.
+MEASURED_ON = "linux"
 LABELS = {
     "latest": "Latest releases",
     "floors": "Dependency floors",
@@ -123,8 +125,9 @@ def solver_comparison(data_dir: Path) -> dict | None:
         if len(rows) == 3:
             machine_name = next((m["name"] for m in index["machines"] if m["id"] == machine), machine)
             return {
-                "title": "Solver alternatives, with measured evidence",
+                "title": "Solver alternatives, measured on one Linux machine",
                 "context": f"First LCA score · bw2calc {release} · synthetic ecoinvent-sized database · {machine_name}",
+                "platform": MEASURED_ON,
                 "note": (
                     "These fixed benchmark environments differ from the compatibility snapshot. "
                     "Timings do not predict every workflow or machine."

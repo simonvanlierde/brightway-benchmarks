@@ -26,8 +26,13 @@ GREEN = "compat-green-"
 # The files a set may hold: pylock.toml from PyPI, pixi.toml and pixi.lock from conda-forge.
 FILES = ("requirements.txt", "pylock.toml", "pixi.toml", "pixi.lock")
 COLUMNS = ("latest", "floors", "pre", "conda-forge", "suites")
-# The versions the table shows, as uv's requirements.txt names them.
-SHOWN = ("brightway25", "bw2calc", "bw2data", "bw2io", "numpy")
+# The versions the site shows: the packages the install line names, and what they rest on.
+SHOWN = ("brightway25", "bw2calc", "bw2data", "bw2io", "bw_graph_tools", "bw_timex", "numpy")
+
+
+def norm(name: str) -> str:
+    """NAME as PEP 503 compares it: uv writes bw-graph-tools where pip users type bw_graph_tools."""
+    return re.sub(r"[-_.]+", "-", name).lower()
 
 
 def gh(*args: str) -> bytes:
@@ -37,8 +42,9 @@ def gh(*args: str) -> bytes:
 
 def versions(requirements: str) -> dict[str, str]:
     """The SHOWN packages' versions in a requirements.txt."""
-    pins = dict(line.split("==", 1) for line in requirements.splitlines() if "==" in line)
-    return {name: pins[name].split()[0] for name in SHOWN if name in pins}
+    pairs = (line.split("==", 1) for line in requirements.splitlines() if "==" in line)
+    pins = {norm(name): pin for name, pin in pairs}
+    return {name: pins[norm(name)].split()[0] for name in SHOWN if norm(name) in pins}
 
 
 def own(site: Path, path: Path) -> Path:

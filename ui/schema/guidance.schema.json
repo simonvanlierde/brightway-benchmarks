@@ -178,6 +178,11 @@
           "type": "string",
           "minLength": 1
         },
+        "platform": {
+          "description": "The platform id the timings were measured on; other platforms show a caveat.",
+          "type": "string",
+          "minLength": 1
+        },
         "note": {
           "type": "string",
           "minLength": 1

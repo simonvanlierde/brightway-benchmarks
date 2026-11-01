@@ -51,6 +51,10 @@ export interface Guidance {
   solverComparison?: {
     title: string;
     context: string;
+    /**
+     * The platform id the timings were measured on; other platforms show a caveat.
+     */
+    platform?: string;
     note?: string;
     /**
      * @minItems 1

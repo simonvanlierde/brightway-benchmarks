@@ -7,8 +7,11 @@ Usage: export_guidance.py COMPAT_STATUS UI_DATA_DIR [--public-base SITE_URL].
 import argparse
 import json
 import math
+import sys
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlencode, urljoin, urlsplit
+
+from compat_site import FILES
 
 PUBLIC_BASE = "https://simonvanlierde.com/brightway-benchmarks/"
 PLATFORMS = {
@@ -23,7 +26,6 @@ LABELS = {
     "conda-forge": "conda-forge",
     "suites": "Upstream test suites",
 }
-FILES = {"requirements.txt", "pylock.toml", "pixi.toml", "pixi.lock"}
 
 
 def web_url(value: str) -> str:
@@ -40,9 +42,9 @@ def _passing_set(green: dict, column: str, public_base: str) -> dict:
     if directory.is_absolute() or ".." in directory.parts or directory.parts[:1] != ("compat",):
         msg = "Compatibility files must stay under compat/"
         raise ValueError(msg)
-    files = [name for name in green["files"] if name in FILES]
+    files = [name for name in FILES if name in green["files"]]
     if column == "conda-forge":
-        files.sort(key=("pixi.toml", "pixi.lock", "requirements.txt", "pylock.toml").index)
+        files.sort(key=lambda name: not name.startswith("pixi"))  # stable: pixi.toml, pixi.lock, then the rest
     out = {
         "date": green["date"],
         "run": web_url(green["run"]),
@@ -140,6 +142,7 @@ def export(status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE) ->
         msg = "Refusing to replace a guidance.json symlink"
         raise ValueError(msg)
     if not status_path.is_file():
+        print(f"{status_path} not found (run `just site` first): no setup guidance", file=sys.stderr)
         target.unlink(missing_ok=True)
         return None
     status = json.loads(status_path.read_text())

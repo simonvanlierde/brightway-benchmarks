@@ -5,7 +5,7 @@ A static site that shows benchmark results. It reads two kinds of JSON file, whi
 
 - `index.json`: the benchmarks, their parameters, environments, machines, commits, releases and
   reports ([index.schema.json](schema/index.schema.json)).
-- optional `guidance.json`: tested setups, compatibility coverage and curated comparisons ([guidance.schema.json](schema/guidance.schema.json));
+- optional `guidance.json`: tested setups, compatibility coverage and curated comparisons ([guidance.schema.json](schema/guidance.schema.json)).
 - one report per commit and machine, in [Bencher Metric Format](https://bencher.dev/docs/reference/bencher-metric-format/)
   v0 ([report.schema.json](schema/report.schema.json)).
 
@@ -43,7 +43,8 @@ page, `data/` by default. Set it at build time:
 PUBLIC_DATA_URL=https://example.org/bench-data/ pnpm build
 ```
 
-The data folder must hold `index.json`, with each report at the `path` the index gives.
+The data folder must hold `index.json`, with each report at the `path` the index gives, and may
+hold `guidance.json`.
 
 ## What it shows
 

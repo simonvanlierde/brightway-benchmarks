@@ -59,6 +59,7 @@ def test_failed_latest_keeps_last_passing_set_and_its_date(module: ModuleType, t
     )
     assert "brightway25 bw_graph_tools bw_timex -c requirements.txt" in check["lastPassed"]["install"]
     assert out["platforms"][0]["defaultCheck"] == check["id"]
+    assert json.loads((tmp_path / "data" / "guidance.json").read_text()) == out
     validator().validate(out)
 
 
@@ -87,13 +88,16 @@ def test_missing_files_do_not_offer_an_install_or_default(module: ModuleType, tm
     assert "defaultCheck" not in out["platforms"][0]
 
 
-def test_missing_status_removes_only_a_regular_stale_guidance_file(module: ModuleType, tmp_path: Path):
+def test_missing_status_removes_only_a_regular_stale_guidance_file(
+    module: ModuleType, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+):
     data = tmp_path / "data"
     data.mkdir()
     out = data / "guidance.json"
     out.write_text("stale")
     assert module.export(tmp_path / "missing", data, "https://example.test/") is None
     assert not out.exists()
+    assert "no setup guidance" in capsys.readouterr().err
     target = tmp_path / "target"
     target.write_text("keep")
     out.symlink_to(target)
@@ -161,6 +165,81 @@ def test_solver_comparison_uses_values_from_one_machine_and_matching_release(mod
     assert "3.1.0" in result["context"]
     (data / "conda.json").unlink()
     assert module.solver_comparison(data) is None
+
+
+def solver_data(tmp_path: Path) -> Path:
+    """One machine with all three solvers measured on bw2calc 3.1.0 and on 2.5.0."""
+    data = tmp_path / "data"
+    data.mkdir()
+    index = {
+        "groups": [{"id": "calc", "name": "bw2calc"}, {"id": "conda", "name": "bw2calc-conda"}],
+        "machines": [{"id": "machine", "name": "Pinned test machine"}],
+        "environments": [
+            {"id": "p", "group": "calc", "label": "PyPardiso"},
+            {"id": "s", "group": "calc", "label": "SuperLU"},
+            {"id": "u", "group": "conda", "label": "UMFPACK", "name": "rattler-py3.12-scikit-umfpack"},
+            {"id": "m", "group": "conda", "label": "UMFPACK", "name": "rattler-py3.12-mkl"},
+        ],
+        "benchmarks": [
+            {"id": "b", "group": "calc", "name": "bench_lca.SingleScore.time_first_score"},
+            {"id": "c", "group": "conda", "name": "bench_lca.SingleScore.time_first_score"},
+        ],
+        "cases": [
+            {"id": "p", "benchmark": "b", "environment": "p", "params": ["'ecoinvent'", "'LCA'"]},
+            {"id": "s", "benchmark": "b", "environment": "s", "params": ["'ecoinvent'", "'LCA'"]},
+            {"id": "u", "benchmark": "c", "environment": "u", "params": ["'ecoinvent'", "'LCA'"]},
+            {"id": "m", "benchmark": "c", "environment": "m", "params": ["'ecoinvent'", "'LCA'"]},
+        ],
+        "commits": [
+            {"id": "old", "group": "calc", "date": "2026-10-01", "release": "2.5.0"},
+            {"id": "old", "group": "conda", "date": "2026-10-01", "release": "2.5.0"},
+            {"id": "new", "group": "calc", "date": "2026-10-18", "release": "3.1.0"},
+            {"id": "new", "group": "conda", "date": "2026-10-18", "release": "3.1.0"},
+        ],
+        "reports": [
+            {"path": f"{group}-{commit}.json", "group": group, "machine": "machine", "commit": commit}
+            for group in ("calc", "conda")
+            for commit in ("old", "new")
+        ],
+    }
+    (data / "index.json").write_text(json.dumps(index))
+    for commit, scale in (("old", 2), ("new", 1)):
+        calc = {"p": {"latency": {"value": 10e9 * scale}}, "s": {"latency": {"value": 27e9 * scale}}}
+        conda = {"u": {"latency": {"value": 2e9 * scale}}, "m": {"latency": {"value": 1e9}}}
+        (data / f"calc-{commit}.json").write_text(json.dumps(calc))
+        (data / f"conda-{commit}.json").write_text(json.dumps(conda))
+    return data
+
+
+def test_solver_comparison_takes_the_latest_release_and_never_falls_back(module: ModuleType, tmp_path: Path):
+    data = solver_data(tmp_path)
+    result = module.solver_comparison(data)
+    # The MKL build of UMFPACK is not the conda-forge row, and 2.5.0's slower values stay out.
+    assert {r["label"]: r["value"] for r in result["rows"]} == {
+        "UMFPACK · conda-forge": 2e9,
+        "PyPardiso": 10e9,
+        "SuperLU": 27e9,
+    }
+    assert "3.1.0" in result["context"]
+    # With one solver missing from the latest release, an older complete set is not shown instead.
+    (data / "conda-new.json").write_text(json.dumps({"u": {"latency": {"value": float("nan")}}}))
+    assert module.solver_comparison(data) is None
+    (data / "conda-new.json").write_text(json.dumps({"u": {"latency": {"value": 0}}}))
+    assert module.solver_comparison(data) is None
+
+
+def test_solver_comparison_refuses_a_report_outside_the_data_directory(module: ModuleType, tmp_path: Path):
+    data = solver_data(tmp_path)
+    index = json.loads((data / "index.json").read_text())
+    index["reports"][1]["path"] = "../calc-new.json"  # a latest-release report: older ones are not read
+    (data / "index.json").write_text(json.dumps(index))
+    with pytest.raises(ValueError, match="inside the data directory"):
+        module.solver_comparison(data)
+
+
+def test_labels_cover_every_compat_column(module: ModuleType):
+    compat_site = importlib.import_module("compat_site")
+    assert set(module.LABELS) == set(compat_site.COLUMNS)
 
 
 @given(

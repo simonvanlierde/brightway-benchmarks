@@ -552,3 +552,9 @@ test("the phone masthead scrolls the current page into view", async ({ page }) =
   if (!box || !link) throw new Error("no masthead");
   expect(link.x + link.width).toBeLessThanOrEqual(box.x + box.width);
 });
+
+test("a benchmark's tab title uses its readable name", async ({ page }) => {
+  await page.goto("?page=explorer");
+  const name = await page.locator(".view > header h2").textContent();
+  await expect.poll(async () => (await page.title()).startsWith(`${name} · `)).toBe(true);
+});

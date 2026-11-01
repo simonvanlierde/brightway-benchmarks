@@ -352,6 +352,7 @@ code,
   color: var(--ink-2);
 }
 .overview-toolbar {
+  max-width: 64rem;
   display: flex;
   flex-wrap: wrap;
   gap: 16px;

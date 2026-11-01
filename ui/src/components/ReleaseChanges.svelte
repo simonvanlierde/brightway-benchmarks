@@ -83,7 +83,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
                       <span class="quiet">beyond {noiseText(row.change)} noise</span>
                     </td>
                     <td class="wrap" data-label="Environment">{row.env}{#if index.machines.length > 1}<br /><span class="quiet">{index.machines.find((m) => m.id === row.change.machine)?.name ?? row.change.machine}</span>{/if}</td>
-                    <td class="nowrap" data-label="Releases">{row.from} <span class="quiet">→</span> {row.to}</td>
+                    <td class="nowrap" data-label="Releases">{row.from} → {row.to}</td>
                   </tr>
                 {/each}
               </tbody>
@@ -130,7 +130,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
                           </ul>
                         </details>
                       </td>
-                      <td class="nowrap" data-label="Releases">{top.from} <span class="quiet">→</span> {top.to}</td>
+                      <td class="nowrap" data-label="Releases">{top.from} → {top.to}</td>
                     </tr>
                   {/if}
                 {/each}

@@ -250,7 +250,7 @@ $effect(() => {
 $effect(() => {
   const name = index?.project.name ?? "Benchmarks";
   document.title = bench
-    ? `${bench.name} · ${name}`
+    ? `${labelOf(bench)} · ${name}`
     : `${{ home: "Home", compatibility: "Compatibility", changes: "Release changes", explorer: "Benchmark explorer" }[page]} · ${name}`;
 });
 </script>

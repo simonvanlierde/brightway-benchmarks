@@ -51,7 +51,7 @@ dependencies:
   - jsonschema=4.26.0=pyhcf101f3_1
   - jsonschema-specifications=2025.9.1=pyhcf101f3_0
   - kiwisolver=1.5.1=py312h9be0db6_3
-  - lcms2=2.19.1=h9073bf1_3
+  - lcms2=2.20=h9073bf1_0
   - ld_impl_linux-64=2.46.1=default_hbd61a6d_103
   - lerc=4.3.0=he78707d_0
   - libblas=3.11.0=11_h4a7cf45_openblas

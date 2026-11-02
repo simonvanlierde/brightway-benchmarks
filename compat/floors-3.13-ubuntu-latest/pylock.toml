@@ -207,9 +207,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/c1/8b/5fe2cc11fee4898
 
 [[packages]]
 name = "fastjsonschema"
-version = "2.22.2"
-sdist = { url = "https://files.pythonhosted.org/packages/33/a4/9473c7c3b87009d9c1d74034e4a0f6a35ff0d42dd0f9866d0c3ec4e9217b/fastjsonschema-2.22.2.tar.gz", upload-time = 2026-08-15T19:47:08Z, size = 385171, hashes = { sha256 = "72064e12356a7d6ef02165be2946b9abadbdf238536e07eb587e3dbaa33099cf" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/49/82/2755c7c982086f00d4dab85bc120ec35045a9fc2191893a6ce79afe94443/fastjsonschema-2.22.2-py3-none-any.whl", upload-time = 2026-08-15T19:47:04Z, size = 27413, hashes = { sha256 = "0fb3915616adac85ccfdd737d26be1089845d2019819505b42d39888458f74d4" } }]
+version = "2.22.3"
+sdist = { url = "https://files.pythonhosted.org/packages/1c/80/cc3c531dd70c8ffa1045aecf33c97c5581cc8fd0e824b3ecb2c1881550c1/fastjsonschema-2.22.3.tar.gz", upload-time = 2026-11-01T21:11:34Z, size = 388854, hashes = { sha256 = "8330c91b027dcf941efcb7b1f0998515ff95d177ea15bbabdfe8671965620901" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/d7/0d/6caab33488dc9d26440c24221fa610c7c8b83c30715ab45d31f0e004308e/fastjsonschema-2.22.3-py3-none-any.whl", upload-time = 2026-11-01T21:11:29Z, size = 28442, hashes = { sha256 = "f670b443830b75aca3f00b75949efa20f4b2a80302ec7a21505c28dd54cffd43" } }]
 
 [[packages]]
 name = "flexcache"
@@ -316,9 +316,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f
 
 [[packages]]
 name = "jsonpointer"
-version = "3.6"
-sdist = { url = "https://files.pythonhosted.org/packages/54/04/e35b34f4e441473e62d82d6ed9a8f748d93d895f4c05d4e645aa0fde51d7/jsonpointer-3.6.tar.gz", upload-time = 2026-10-26T20:59:26Z, size = 14352, hashes = { sha256 = "82e839a3ba3a9e2b54394fda8b3d276c2459d80408d06ef9a6fbc369d7544ffc" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/6e/34/cee746fb30473bfaa92f19267fcc102a1118eaec83e7e2b5652a91ead01c/jsonpointer-3.6-py3-none-any.whl", upload-time = 2026-10-26T20:59:24Z, size = 9333, hashes = { sha256 = "a45c858f8a9e171f6b3790ed9446c9382782f6c4cb4589176813c5a553f4cfcd" } }]
+version = "3.7"
+sdist = { url = "https://files.pythonhosted.org/packages/20/4a/d1590490a19f794b352e6da86fbc65d245f486facaacf91054bca35d465f/jsonpointer-3.7.tar.gz", upload-time = 2026-11-01T21:08:42Z, size = 15197, hashes = { sha256 = "58734c45431c9a268df029a39bce8d57e8aebe32f1d58d28a17c9aa246e10929" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/17/91/ffedd6ed8952a65dd4497a0c95b4d87f42f5ce3334f01e344027099bc0be/jsonpointer-3.7-py3-none-any.whl", upload-time = 2026-11-01T21:08:41Z, size = 9363, hashes = { sha256 = "41005d228d8a6ec517b727d2821b7fa16e6bfc7c695ca3339f8331cccaba3887" } }]
 
 [[packages]]
 name = "jsonschema"

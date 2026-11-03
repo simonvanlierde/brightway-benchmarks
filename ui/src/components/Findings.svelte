@@ -19,7 +19,7 @@ const shown = $derived((index.findings ?? []).filter((f) => index.benchmarks.som
         {@const next = { bench: f.benchmark, params: f.params, page: "explorer" }}
         <li>
           <h3><a href={writeView(next)} onclick={(e) => follow(e, next)}>{f.title}</a></h3>
-          <p>{f.text}{#if f.url}{" "}<a class="quiet-link" href={f.url}>Full account</a>{/if}</p>
+          <p>{f.text}{#if f.url}{" "}<a class="quiet-link" href={f.url}>Full account</a>{/if}{#if f.profile}{" "}<a class="quiet-link" href={f.profile}>Profile</a>{/if}</p>
         </li>
       {/each}
     </ul>

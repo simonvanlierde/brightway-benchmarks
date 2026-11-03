@@ -271,7 +271,13 @@
             "type": "array",
             "items": { "type": "string" }
           },
-          "url": { "description": "The full account.", "type": "string", "format": "uri", "pattern": "^https?://" }
+          "url": { "description": "The full account.", "type": "string", "format": "uri", "pattern": "^https?://" },
+          "profile": {
+            "description": "A profile of the case that explains the finding.",
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https?://"
+          }
         }
       }
     }

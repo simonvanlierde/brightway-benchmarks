@@ -219,6 +219,10 @@ export interface BenchmarkIndex {
      * The full account.
      */
     url?: string;
+    /**
+     * A profile of the case that explains the finding.
+     */
+    profile?: string;
   }[];
 }
 export interface Link {

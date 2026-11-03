@@ -474,6 +474,35 @@ def test_a_finding_opens_its_history_or_stops_the_export(
             run(export_ui, results, monkeypatch)
 
 
+def test_a_finding_links_its_profile_or_stops_the_export(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    files = {"m/11111111-a": result("11" * 20, "a" + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))}
+    results = layout(tmp_path, files)
+    profiles = tmp_path / "profiles"
+    profiles.mkdir()
+    (profiles / "p.html").write_text("<html>")
+    found = tmp_path / "findings.toml"
+    monkeypatch.setattr(export_ui, "FINDINGS", found)
+    monkeypatch.setattr(export_ui, "PROFILES", profiles)
+    entry = 'title = "T"\ntext = "X."\ngroup = "s"\nbenchmark = "%s"\nparams = {}\ndoc = "d"\nprofile = "%s"\n'
+    for value, url in [
+        ("profiles/p.html", "https://simonvanlierde.com/brightway-benchmarks/profiles/p.html"),
+        ("p.html", "https://simonvanlierde.com/brightway-benchmarks/profiles/p.html"),
+        ("https://example.org/q.html", "https://example.org/q.html"),
+    ]:
+        found.write_text("[[findings]]\n" + entry % (TIME, value))
+        shutil.rmtree(tmp_path / "out", ignore_errors=True)
+        index, _ = run(export_ui, results, monkeypatch)
+        schema("index").validate(index)
+        assert index["findings"][0]["profile"] == url
+    for value in ["profiles/missing.html", "profiles/p.json", "../p.html", "http://example.org/p.html"]:
+        found.write_text("[[findings]]\n" + entry % (TIME, value))
+        shutil.rmtree(tmp_path / "out", ignore_errors=True)
+        with pytest.raises(SystemExit, match=r"nor an \.html file"):
+            run(export_ui, results, monkeypatch)
+
+
 def test_every_finding_opens_a_history_in_the_published_data(export_ui: ModuleType):
     index = json.loads((ROOT / "ui" / "test" / "fixtures" / "real" / "index.json").read_text())
     assert len(export_ui.findings(index)) == len(export_ui.tomllib.loads(export_ui.FINDINGS.read_text())["findings"])

@@ -34,6 +34,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import quote
 
+from export_guidance import PUBLIC_BASE
 from output_path import output_path
 from release_changes import NOISE_FLOOR, SHA, STACK, current_stack, noise_threshold, pick, releases
 
@@ -67,6 +68,7 @@ REPORT_FORMAT = "bmf/v0"
 CHANGE_POINTS = Path(__file__).with_name("change_points.py")
 DESCRIPTIONS = Path(__file__).resolve().parents[1] / "benchmarks" / "descriptions.toml"
 FINDINGS = DESCRIPTIONS.with_name("findings.toml")
+PROFILES = DESCRIPTIONS.parents[1] / "profiles"  # `just site` publishes this folder at PUBLIC_BASE/profiles/
 
 
 def slug(name: str) -> str:
@@ -333,6 +335,17 @@ def link(groups: list[dict], catalog: "Catalog", sources: dict[str, str], links:
             bench["codspeed"] = url
 
 
+def profile_url(path: Path, value: str) -> str:
+    """A finding's `profile` as a URL: an https URL as given, else a file of PROFILES that must exist."""
+    if value.startswith("https://"):
+        return value
+    name = value.removeprefix("profiles/")
+    if "/" in name or not name.endswith(".html") or not (PROFILES / name).is_file():
+        msg = f"{path.name}: profile {value} is neither an https URL nor an .html file in profiles/"
+        raise SystemExit(msg)
+    return f"{PUBLIC_BASE}profiles/{quote(name)}"
+
+
 def findings(index: dict) -> list[dict]:
     """FINDINGS' entries, each naming its benchmark's id and a label per axis.
 
@@ -371,6 +384,7 @@ def findings(index: dict) -> list[dict]:
                 "params": params,
                 "url": f"{REPO}/blob/main/docs/findings.md#{f['doc']}",
             }
+            | ({"profile": profile_url(path, f["profile"])} if "profile" in f else {})
         )
     return out
 

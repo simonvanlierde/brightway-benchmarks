@@ -35,7 +35,7 @@
   platformAutomerge: false,
   // A weekly relock is the only way a fix reaches a dependency that only the lockfile
   // names. A relock has no release date, so the week's wait above would hold it back for
-  // good: uv's exclude-newer and pnpm's minimumReleaseAge keep the week instead. It runs
+  // good: uv's exclude-newer (a week) and pnpm's minimumReleaseAge (two weeks) keep the wait instead. It runs
   // all Monday, because the hosted app often misses Renovate's 'before 4am' window.
   lockFileMaintenance: {
     enabled: true,
@@ -68,6 +68,9 @@
       matchUpdateTypes: ['minor', 'patch'],
       groupName: 'dev tooling',
     },
+    // ui/pnpm-workspace.yaml makes pnpm resolve only releases two weeks old, transitive
+    // ones included, so an npm bump after one week fails to relock.
+    { matchManagers: ['npm'], minimumReleaseAge: '14 days' },
     {
       matchManagers: ['pep621', 'npm', 'cargo', 'gomod'],
       matchUpdateTypes: ['major'],

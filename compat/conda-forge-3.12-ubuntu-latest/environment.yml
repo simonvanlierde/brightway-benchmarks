@@ -24,7 +24,7 @@ dependencies:
   - bzip2=1.0.8=hda65f42_10
   - ca-certificates=2026.10.23=hbd8a1cb_0
   - cachebox=5.2.3=py312h868fb18_1
-  - certifi=2026.10.23=pyhd8ed1ab_0
+  - certifi=2026.10.23=pyhd8ed1ab_2
   - cffi=2.1.1=py312h703531f_3
   - charset-normalizer=3.5.2=h1114479_0
   - contourpy=1.4.0=py312h9be0db6_1
@@ -110,8 +110,8 @@ dependencies:
   - peewee=4.5.3=py312hb958af3_0
   - pillow=13.0.0=py312h38079b3_0
   - pint=0.26.2=pyhc364b38_0
-  - pip=26.2.2=pyh8b19718_0
-  - platformdirs=4.14.2=pyh5ded981_0
+  - pip=26.2.2=pyh8b19718_2
+  - platformdirs=4.14.3=pyh5ded981_0
   - psutil=7.2.2=py312h1b36aeb_3
   - pthread-stubs=0.4=h7cc23a3_1004
   - py7zr=1.1.4=pyhd8ed1ab_0

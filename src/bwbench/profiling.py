@@ -48,7 +48,15 @@ def typed(bench: Bench, params: dict[str, str]) -> dict[str, object]:
     if set(params) != set(bench.params):
         msg = f"{bench.name} takes {', '.join(bench.params) or 'no parameters'}; got {', '.join(params) or 'none'}"
         raise SystemExit(msg)
-    return {k: type(bench.params[k][0])(v) for k, v in params.items()}
+    out: dict[str, object] = {}
+    for k, v in params.items():
+        kind = type(bench.params[k][0])
+        try:
+            out[k] = kind(v)
+        except ValueError:
+            msg = f"{k}={v}: {bench.name} takes {kind.__name__} values there"
+            raise SystemExit(msg) from None
+    return out
 
 
 def find_case(subject: str, case: str) -> Bench:

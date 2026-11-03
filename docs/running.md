@@ -23,8 +23,10 @@ just profile bw2calc first_score release=3.0.0 with=scikit-umfpack size=ecoinven
 `just profile SUBJECT CASE [release=X] [with=PACKAGE...] [NAME=VALUE...]` times nothing: it
 explains a finding. It installs the release (the latest when left out) with each `with=` package,
 such as the solver the finding is about, sets the case up as asv does and profiles the one timed
-call. The HTML report and the speedscope JSON go to `.asv/profiles/`, named by subject, case,
-parameters, installed release and `with=` packages.
+call. CASE is the `@bench` function's name (`first_score` for `SingleScore.time_first_score`),
+and every parameter of its `@bench({...})` in `benchmarks/bench_SUBJECT/` must be given. The
+HTML report and the speedscope JSON go to `.asv/profiles/`, named by subject, case, parameters,
+installed release and `with=` packages.
 To show a profile with a finding, copy the `.html` to `profiles/` and name it in the finding's
 `profile` field in [`benchmarks/findings.toml`](../benchmarks/findings.toml). `just site`
 publishes `profiles/` beside the viewer. Profiles stay out of `results/`, which holds data only.

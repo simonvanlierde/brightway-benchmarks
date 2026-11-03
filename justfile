@@ -185,7 +185,7 @@ codspeed subject *packages:
 
 # Profile one case under pyinstrument, as `just profile bw2calc first_score release=3.0.0
 # with=scikit-umfpack size=ecoinvent cls=IterativeLCA`: release= and with= pick the environment
-# (the latest release, SuperLU, when left out), NAME=VALUE the parameters. HTML and speedscope
+# (the latest release, and bw2calc's SuperLU, when left out), NAME=VALUE the parameters. HTML and speedscope
 # JSON go to .asv/profiles/.
 profile subject case *args:
     scripts/box.sh scripts/profile.sh {{ subject }} {{ case }} {{ args }}

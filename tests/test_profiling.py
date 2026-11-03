@@ -52,3 +52,25 @@ def test_a_profile_writes_html_and_speedscope(tmp_path: Path):
 def test_wrong_parameters_stop_the_profile():
     with pytest.raises(SystemExit, match="takes size, cls; got size"):
         profiling.typed(square, {"size": "smoke"})
+
+
+def test_a_value_of_the_wrong_type_stops_the_profile():
+    with pytest.raises(SystemExit, match="groups=abc: lookup takes int values"):
+        profiling.typed(lookup, {"groups": "abc"})
+
+
+torn_down: list[str] = []
+
+
+@bench({"size": ["smoke"]}, rtol=1e-9)
+def wrong(size: str):
+    yield (lambda: 1.0), 2.0
+    torn_down.append(size)
+
+
+def test_a_wrong_answer_writes_no_profile_and_still_tears_down(tmp_path: Path):
+    torn_down.clear()
+    with pytest.raises(Exception, match="wrong"):
+        profiling.profile(wrong, {"size": "smoke"}, "toy", tmp_path)
+    assert torn_down == ["smoke"]
+    assert list(tmp_path.iterdir()) == []

@@ -34,6 +34,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import quote
 
+from export_guidance import PUBLIC_BASE
 from output_path import output_path
 from release_changes import NOISE_FLOOR, SHA, STACK, current_stack, noise_threshold, pick, releases
 
@@ -66,8 +67,7 @@ REPORT_FORMAT = "bmf/v0"
 CHANGE_POINTS = Path(__file__).with_name("change_points.py")
 DESCRIPTIONS = Path(__file__).resolve().parents[1] / "benchmarks" / "descriptions.toml"
 FINDINGS = DESCRIPTIONS.with_name("findings.toml")
-PROFILES = DESCRIPTIONS.parents[1] / "profiles"  # `just site` publishes this folder at SITE/profiles/
-SITE = "https://simonvanlierde.com/brightway-benchmarks"
+PROFILES = DESCRIPTIONS.parents[1] / "profiles"  # `just site` publishes this folder at PUBLIC_BASE/profiles/
 
 
 def slug(name: str) -> str:
@@ -286,7 +286,7 @@ def profile_url(path: Path, value: str) -> str:
     if "/" in name or not name.endswith(".html") or not (PROFILES / name).is_file():
         msg = f"{path.name}: profile {value} is neither an https URL nor an .html file in profiles/"
         raise SystemExit(msg)
-    return f"{SITE}/profiles/{quote(name)}"
+    return f"{PUBLIC_BASE}profiles/{quote(name)}"
 
 
 def findings(index: dict) -> list[dict]:

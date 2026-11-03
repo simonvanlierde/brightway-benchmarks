@@ -20,9 +20,9 @@ jobs:
       # Filled dots required out of five. A new repo has three: raise this as you earn the rest.
       FAIR_MIN: 3
     steps:
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          version: "0.13.1"
+          version: "0.13.6"
       # howfairis exits 1 below five checks, so the score is read from its output.
       - run: |-
           uvx howfairis@0.14.2 https://github.com/simonvanlierde/brightway-benchmarks | tee out.txt || true

@@ -64,7 +64,7 @@ off = "Refinement turned off (UMFPACK_IRSTEP=0)."
 # own. The viewer links the term itself. A benchmark links its source file, which
 # scripts/export_ui.py finds from asv's benchmark_dir, so it needs no entry here.
 # A subject has docs (its name in the viewer links there), source, changelog and issues (the open
-# issues and pull requests this project filed; the list is in issue 85 of this repository).
+# issues and pull requests the author of these benchmarks opened; issue 85 of this repository lists them).
 [links.groups.bw2calc]
 docs      = "https://docs.brightway.dev/en/latest/content/api/bw2calc/index.html"
 source    = "https://github.com/brightway-lca/brightway2-calc"

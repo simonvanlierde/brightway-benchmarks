@@ -404,6 +404,7 @@ def test_links_follow_the_shown_values_and_the_solver(
     )
     monkeypatch.setattr(export_ui, "DESCRIPTIONS", about)
     monkeypatch.setattr(export_ui, "FINDINGS", tmp_path / "none.toml")
+    monkeypatch.setattr(export_ui, "codspeed_tests", lambda *_: {"bench_lca": {"first_score"}})
     (tmp_path / "none.toml").write_text("findings = []\n")
     index, _ = run(export_ui, results, monkeypatch)
     schema("index").validate(index)
@@ -414,6 +415,9 @@ def test_links_follow_the_shown_values_and_the_solver(
     bench = next(b for b in index["benchmarks"] if b["name"] == TIME)
     assert bench["params"][1]["links"] == ["", "https://example.org/iterative"]
     assert bench["url"].endswith("/blob/main/benchmarks/bench_bw2calc/bench_lca.py")
+    assert bench["codspeed"].startswith(
+        f"{export_ui.CODSPEED}/benchmarks/benchmarks/codspeed/test_s.py::test_first_score"
+    )
     assert index["groups"][0]["url"] == "https://example.org/s"
     assert index["groups"][0]["links"] == [
         {"name": "Source", "url": "https://example.org/src"},

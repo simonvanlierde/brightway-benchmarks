@@ -386,7 +386,7 @@ $effect(() => {
           </p>
           {#if group?.links?.length || bench.codspeed}
             <p class="bench-meta">
-              {#each group?.links ?? [] as l, k (l.url)}{#if k}{" · "}{/if}<a href={l.url}>{l.name}</a>{/each}{#if bench.codspeed}{#if group?.links?.length}{" · "}{/if}<a href={bench.codspeed}>Instruction counts on CodSpeed (current release, smoke size)</a>{/if}
+              {#each group?.links ?? [] as l, k (l.name)}{#if k}{" · "}{/if}<a href={l.url}>{l.name}</a>{/each}{#if bench.codspeed}{#if group?.links?.length}{" · "}{/if}<a href={bench.codspeed} title="Instruction counts for the current release at smoke size">CodSpeed</a>{/if}
             </p>
           {/if}
         </header>

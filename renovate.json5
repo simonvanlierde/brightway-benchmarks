@@ -3,7 +3,7 @@
 // also groups npm security updates and never merges a PR itself.
 //
 // Minor and patch updates of the packages CI installs, and the weekly relock, merge
-// themselves once the week's wait is over and every check on the branch has passed.
+// themselves once the wait below is over and every check on the branch has passed.
 // Renovate does the merge. In a public repo the `main` ruleset asks for an approval,
 // which Renovate's app may skip, and `main-checks` holds the required checks, which it
 // may not. Majors, copier template releases, and the actions and hooks group stay for
@@ -11,7 +11,8 @@
 // merge, so CI cannot test them first.
 //
 // `minimumReleaseAge` holds a version update back until the release has been public for
-// a week, long enough for a compromised release to be caught and yanked. Security
+// a week (npm two weeks, majors 30 days), long enough for a compromised release to be
+// caught and yanked. Security
 // updates ignore it and the schedule. They need Dependabot alerts on in the repo settings,
 // and cover only the dependencies a manifest names.
 //
@@ -34,9 +35,10 @@
   // would then wait for an approval.
   platformAutomerge: false,
   // A weekly relock is the only way a fix reaches a dependency that only the lockfile
-  // names. A relock has no release date, so the week's wait above would hold it back for
-  // good: uv's exclude-newer (a week) and pnpm's minimumReleaseAge (two weeks) keep the wait instead. It runs
-  // all Monday, because the hosted app often misses Renovate's 'before 4am' window.
+  // names. A relock has no release date, so the wait above would hold it back for good:
+  // uv's exclude-newer (a week) and pnpm's minimumReleaseAge (two weeks) keep the wait
+  // instead. It runs all Monday, because the hosted app often misses Renovate's 'before
+  // 4am' window.
   lockFileMaintenance: {
     enabled: true,
     schedule: ['on monday'],
@@ -69,8 +71,13 @@
       groupName: 'dev tooling',
     },
     // ui/pnpm-workspace.yaml makes pnpm resolve only releases two weeks old, transitive
-    // ones included, so an npm bump after one week fails to relock.
-    { matchManagers: ['npm'], minimumReleaseAge: '14 days' },
+    // ones included, so an npm bump after one week fails to relock. Keep the two in step.
+    // Not for the relock: a rule without update types would also give it this wait.
+    {
+      matchManagers: ['npm'],
+      matchUpdateTypes: ['minor', 'patch', 'pin', 'digest'],
+      minimumReleaseAge: '14 days',
+    },
     {
       matchManagers: ['pep621', 'npm', 'cargo', 'gomod'],
       matchUpdateTypes: ['major'],

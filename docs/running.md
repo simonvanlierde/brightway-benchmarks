@@ -170,7 +170,7 @@ keep your own packages in another environment. The conda and pixi commands use t
 | `BWBENCH_WRITE_SIZES` | `smoke` | Sizes for bw2data's write |
 | `BWBENCH_TIMEX_SIZES` | `smoke` | Sizes for bw_timex |
 | `BWBENCH_ITERATIONS` | `10` | Monte Carlo draws per case |
-| `BWBENCH_GROUPS` | `100,1000` | Resource groups |
+| `BWBENCH_GROUPS` | `100,1000`; `100,1000,10000` when `BWBENCH_SIZES` holds anything but `smoke` alone | Resource groups (bw_processing, matrix_utils) |
 | `BWBENCH_ENTRIES` | `10000,100000` | bw_processing entries |
 | `BWBENCH_STEPS` | `5,20` | bw_timex time steps |
 | `BWBENCH_SOLVERS` | `superlu,pypardiso,umfpack` (no `pypardiso` off x86_64) | Solver environments |

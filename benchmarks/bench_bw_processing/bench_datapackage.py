@@ -10,12 +10,12 @@ cheaper conversion through the same public iterator method.
 import bw_processing as bwp
 import numpy as np
 
-from bwbench import knob
+from bwbench import group_counts, knob
 from bwbench.asv import classes
 from bwbench.bench import UNCHECKED, BenchSetup, bench
 from bwbench.synth import many_groups
 
-GROUPS = {"groups": knob("groups", "100,1000", int)}
+GROUPS = {"groups": group_counts()}
 ENTRIES = {"entries": knob("entries", "10000,100000", int)}
 
 

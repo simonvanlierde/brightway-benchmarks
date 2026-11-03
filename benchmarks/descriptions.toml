@@ -63,10 +63,49 @@ off = "Refinement turned off (UMFPACK_IRSTEP=0)."
 # Where a reader looks a term up: docs.brightway.dev where it has a page, otherwise the project's
 # own. The viewer links the term itself. A benchmark links its source file, which
 # scripts/export_ui.py finds from asv's benchmark_dir, so it needs no entry here.
-[links.groups]
-bw2calc         = "https://docs.brightway.dev/en/latest/content/api/bw2calc/index.html"
-"bw2calc-conda" = "https://docs.brightway.dev/en/latest/content/api/bw2calc/index.html"
-bw2data         = "https://docs.brightway.dev/en/latest/content/api/bw2data/index.html"
+# A subject has docs (its name in the viewer links there), source, changelog and issues (the open
+# issues and pull requests the author of these benchmarks opened; issue 85 of this repository lists them).
+[links.groups.bw2calc]
+docs      = "https://docs.brightway.dev/en/latest/content/api/bw2calc/index.html"
+source    = "https://github.com/brightway-lca/brightway2-calc"
+changelog = "https://github.com/brightway-lca/brightway2-calc/blob/main/CHANGES.md"
+issues    = "https://github.com/brightway-lca/brightway2-calc/issues?q=is%3Aopen+author%3Asimonvanlierde"
+
+[links.groups."bw2calc-conda"]
+docs      = "https://docs.brightway.dev/en/latest/content/api/bw2calc/index.html"
+source    = "https://github.com/brightway-lca/brightway2-calc"
+changelog = "https://github.com/brightway-lca/brightway2-calc/blob/main/CHANGES.md"
+issues    = "https://github.com/brightway-lca/brightway2-calc/issues?q=is%3Aopen+author%3Asimonvanlierde"
+
+[links.groups.bw2data]
+docs      = "https://docs.brightway.dev/en/latest/content/api/bw2data/index.html"
+source    = "https://github.com/brightway-lca/brightway2-data"
+changelog = "https://github.com/brightway-lca/brightway2-data/blob/main/CHANGES.md"
+issues    = "https://github.com/brightway-lca/brightway2-data/issues?q=is%3Aopen+author%3Asimonvanlierde"
+
+[links.groups.bw_graph_tools]
+docs      = "https://docs.brightway.dev/projects/graphtools/en/latest/"
+source    = "https://github.com/brightway-lca/bw_graph_tools"
+changelog = "https://github.com/brightway-lca/bw_graph_tools/blob/main/CHANGES.md"
+issues    = "https://github.com/brightway-lca/bw_graph_tools/issues?q=is%3Aopen+author%3Asimonvanlierde"
+
+[links.groups.bw_processing]
+docs      = "https://docs.brightway.dev/projects/bw-processing/en/latest/"
+source    = "https://github.com/brightway-lca/bw_processing"
+changelog = "https://github.com/brightway-lca/bw_processing/blob/main/CHANGES.md"
+issues    = "https://github.com/brightway-lca/bw_processing/issues?q=is%3Aopen+author%3Asimonvanlierde"
+
+[links.groups.bw_timex]
+docs      = "https://docs.brightway.dev/projects/bw-timex/en/latest/"
+source    = "https://github.com/brightway-lca/bw_timex"
+changelog = "https://github.com/brightway-lca/bw_timex/blob/main/CHANGES.md"
+issues    = "https://github.com/brightway-lca/bw_timex/issues?q=is%3Aopen+author%3Asimonvanlierde"
+
+[links.groups.matrix_utils]
+docs      = "https://matrixutils.readthedocs.io/en/latest/"
+source    = "https://github.com/brightway-lca/matrix_utils"
+changelog = "https://github.com/brightway-lca/matrix_utils/blob/main/CHANGELOG.md"
+issues    = "https://github.com/brightway-lca/matrix_utils/issues?q=is%3Aopen+author%3Asimonvanlierde"
 
 # By the solver an environment's label starts with ("UMFPACK, MKL" and "UMFPACK on Aᵀ" are UMFPACK).
 [links.solvers]
@@ -90,3 +129,11 @@ JacobiGMRESLCA = "https://docs.brightway.dev/en/latest/content/api/bw2calc/jacob
 MultiLCA = "https://docs.brightway.dev/en/latest/content/api/bw2calc/multi_lca/index.html#bw2calc.multi_lca.MultiLCA"
 forward  = "https://docs.brightway.dev/en/latest/content/api/bw2calc/fast_scores/index.html#bw2calc.fast_scores.FastScoresOnlyMultiLCA"
 adjoint  = "https://docs.brightway.dev/en/latest/content/api/bw2calc/fast_scores/index.html#bw2calc.fast_scores.FastScoresOnlyMultiLCA"
+
+# The parameter values CodSpeed runs, where they differ from the first value asv lists (the
+# codspeed workflow sets BWBENCH_SIZES=smoke). The viewer links each benchmark's case with them.
+# `skip` lists benchmarks CodSpeed never runs: the refinement case needs bw2calc to solve with
+# UMFPACK, and the codspeed job installs PyPardiso, which bw2calc picks first.
+[codspeed]
+params = { size = "smoke" }
+skip = ["bench_lca.NewDemandRefinement.time_redo_lci_refinement"]

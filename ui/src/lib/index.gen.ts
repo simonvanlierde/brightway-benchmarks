@@ -29,6 +29,10 @@ export interface BenchmarkIndex {
     id: Id;
     name: string;
     url?: string;
+    /**
+     * More pages about what the group names, such as its source or changelog.
+     */
+    links?: Link[];
   }[];
   /**
    * The id is the measure's key in reports.
@@ -91,6 +95,10 @@ export interface BenchmarkIndex {
      * Its source, how it measures.
      */
     url?: string;
+    /**
+     * Its first case on CodSpeed, where the same benchmark runs under instruction counting.
+     */
+    codspeed?: string;
     /**
      * The measure ids its metrics use.
      *

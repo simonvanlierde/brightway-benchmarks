@@ -39,6 +39,7 @@ from output_path import output_path
 from release_changes import NOISE_FLOOR, SHA, STACK, current_stack, noise_threshold, pick, releases
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
+CODSPEED = "https://app.codspeed.io/simonvanlierde/brightway-benchmarks"
 PROJECT = {
     "name": "brightway-benchmarks",
     "description": "Continuous benchmarks for the Brightway LCA stack on seeded synthetic matrices",
@@ -259,23 +260,79 @@ def describe(benchmarks: list[dict], about: dict) -> None:
                 axis["links"] = links
 
 
-def link(groups: list[dict], catalog: "Catalog", sources: dict[str, str], links: dict) -> None:
+GROUP_LINKS = [
+    ("source", "Source"),
+    ("changelog", "Changelog"),
+    ("issues", "Issues and pull requests from these benchmarks"),
+]
+
+
+def codspeed_tests(subject: str, root: Path) -> dict[str, set[str]]:
+    """The modules benchmarks/codspeed/test_SUBJECT.py re-exports, each with its function names.
+
+    Read from the source, not imported: the benchmarks' packages are only in the box.
+    """
+    entry = root / "benchmarks" / "codspeed" / f"test_{subject}.py"
+    if not entry.is_file():
+        return {}
+    found = {}
+    for node in ast.parse(entry.read_text()).body:
+        if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("bench_"):
+            module = root / "benchmarks" / f"{node.module.replace('.', '/')}.py"
+            if module.is_file():
+                found[node.module.rsplit(".", 1)[-1]] = {
+                    f.name for f in ast.walk(ast.parse(module.read_text())) if isinstance(f, ast.FunctionDef)
+                }
+    return found
+
+
+def codspeed_url(bench: dict, subject: str, tests: dict[str, set[str]], codspeed: dict) -> str | None:
+    """CodSpeed's page for one case of a benchmark, named as bwbench.pytest names the test.
+
+    asv's time_X and peakmem_X come from the setup function X, which pytest runs as test_X[values
+    joined by -], the last axis first. A track_ method has no test, nor does a benchmark in
+    CODSPEED's ``skip``. CodSpeed runs one size, so CODSPEED's ``params`` gives an axis its value
+    there; an axis not in it takes its first value.
+    """
+    module, *_, method = bench["name"].split(".")
+    kind, _, func = method.partition("_")
+    if kind not in ("time", "peakmem") or func not in tests.get(module, set()):
+        return None
+    if bench["name"] in codspeed.get("skip", []):
+        return None
+    pinned = codspeed.get("params", {})
+    ids = "-".join(pinned.get(a["name"]) or str(a.get("labels", a["values"])[0]) for a in reversed(bench["params"]))
+    case = f"test_{func}[{ids}]" if ids else f"test_{func}"
+    return f"{CODSPEED}/benchmarks/benchmarks/codspeed/test_{subject}.py::{quote(case)}?runnerMode=Simulation"
+
+
+def link(groups: list[dict], catalog: "Catalog", sources: dict[str, str], links: dict, codspeed: dict) -> None:
     """Add LINKS' pages (descriptions.toml) to groups and environments, and each benchmark's source.
 
     An environment links the solver its label starts with: "UMFPACK, MKL" links UMFPACK.
     """
     for g in groups:
-        if url := links.get("groups", {}).get(g["name"]):
-            g["url"] = url
+        page = links.get("groups", {}).get(g["name"], {})
+        if page.get("docs"):
+            g["url"] = page["docs"]
+        if shown := [{"name": n, "url": page[k]} for k, n in GROUP_LINKS if page.get(k)]:
+            g["links"] = shown
     for env in catalog.envs.values():
         if url := links.get("solvers", {}).get(re.split(r",| on | · ", env.get("label", ""))[0]):
             env["url"] = url
     root = Path(__file__).resolve().parents[1]
+    names = {g["id"]: g["name"] for g in groups}
+    tests: dict[str, dict[str, set[str]]] = {}
     for bench in catalog.benchmarks.values():
         folder = sources.get(bench["group"])
         source = f"{folder}/{bench['name'].split('.')[0]}.py"
         if folder and (root / source).is_file():
             bench["url"] = f"{REPO}/blob/main/{source}"
+        subject = names[bench["group"]]
+        if subject not in tests:
+            tests[subject] = codspeed_tests(subject, root)
+        if url := codspeed_url(bench, subject, tests[subject], codspeed):
+            bench["codspeed"] = url
 
 
 def profile_url(path: Path, value: str) -> str:
@@ -456,7 +513,7 @@ def export(results: Path, out: Path) -> dict:
     released = {c["id"] for c in commits if "release" in c}
     about = tomllib.loads(DESCRIPTIONS.read_text())
     describe(list(catalog.benchmarks.values()), about)
-    link(groups, catalog, sources, about.get("links", {}))
+    link(groups, catalog, sources, about.get("links", {}), about.get("codspeed", {}))
     index = {
         "format_version": 1,
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),

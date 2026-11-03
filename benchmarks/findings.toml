@@ -2,6 +2,8 @@
 # holds the full account; `doc` names its section. scripts/export_ui.py copies these into
 # index.json and fails when a benchmark, group or parameter value no longer exists.
 # `params` names a value (as the viewer shows it) for each parameter the view should fix.
+# `profile` (optional) links a profile of the case: an https URL, or the name of an .html file in
+# profiles/, which `just site` publishes (`just profile` writes it to .asv/profiles/).
 
 [[findings]]
 title = "The solver sets the time for one score"

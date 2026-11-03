@@ -17,7 +17,15 @@ just ui-serve                    # build the UI and serve it on 127.0.0.1:4400, 
 just results-commit              # keep results/ on the local results branch, for publishing
 just solver-lci klu ecoinvent    # bw2calc 3.1.0's own lci() with one solver, KLU here
 just codspeed bw2calc pypardiso  # one suite under CodSpeed's CPU simulation (instruction counts)
+just profile bw2calc first_score ecoinvent 3.0.0 cls=IterativeLCA  # one case under pyinstrument
 ```
+
+`just profile SUBJECT CASE SIZE [RELEASE] [NAME=VALUE...]` times nothing: it explains a finding.
+It sets the case up as asv does and profiles the one timed call. The HTML report and the
+speedscope JSON go to `.asv/profiles/`, named by subject, case, parameters and installed release.
+To show a profile with a finding, copy the `.html` to `profiles/` and name it in the finding's
+`profile` field in [`benchmarks/findings.toml`](../benchmarks/findings.toml). `just site`
+publishes `profiles/` beside the viewer. Profiles stay out of `results/`, which holds data only.
 
 Cases run on the 200-product `smoke` database unless `BWBENCH_SIZES` names others, as in
 `BWBENCH_SIZES=ecoinvent just bench bw2calc`. A full-size bw2calc run takes about 24 minutes,

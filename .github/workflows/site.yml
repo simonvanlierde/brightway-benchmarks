@@ -21,6 +21,7 @@ on:
       - "scripts/change_points.py"
       - "benchmarks/descriptions.toml"
       - "benchmarks/findings.toml"
+      - "profiles/**"
       - ".github/workflows/site.yml"
   workflow_dispatch:
 

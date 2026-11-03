@@ -417,7 +417,7 @@ def test_links_follow_the_shown_values_and_the_solver(
     assert index["groups"][0]["url"] == "https://example.org/s"
     assert index["groups"][0]["links"] == [
         {"name": "Source", "url": "https://example.org/src"},
-        {"name": "Open upstream issues and pull requests", "url": "https://example.org/issues"},
+        {"name": "Issues and pull requests from these benchmarks", "url": "https://example.org/issues"},
     ]
 
 
@@ -430,13 +430,15 @@ def test_codspeed_url_follows_the_pytest_test_id(export_ui: ModuleType):
         {"name": "cls", "values": ["'LCA'"], "labels": ["LCA"]},
     ]
     bench = {"name": "bench_lca.SingleScore.time_first_score", "params": axes}
-    assert export_ui.codspeed_url(bench, "bw2calc", tests, {"size": "smoke"}) == (
+    assert export_ui.codspeed_url(bench, "bw2calc", tests, {"params": {"size": "smoke"}}) == (
         "https://app.codspeed.io/simonvanlierde/brightway-benchmarks/benchmarks/benchmarks/codspeed/"
         "test_bw2calc.py::test_first_score%5BLCA-smoke%5D?runnerMode=Simulation"
     )
     # An asv track_ method and a benchmark outside the re-exported modules have no test.
     for name in ["bench_lca.SingleScore.track_relative_error", "bench_import.Other.time_first_score"]:
         assert export_ui.codspeed_url(bench | {"name": name}, "bw2calc", tests, {}) is None
+    # A case CodSpeed never runs, here one that needs a solver its job does not install.
+    assert export_ui.codspeed_url(bench, "bw2calc", tests, {"skip": [bench["name"]]}) is None
 
 
 def test_a_finding_opens_its_history_or_stops_the_export(

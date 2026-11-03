@@ -258,7 +258,11 @@ def describe(benchmarks: list[dict], about: dict) -> None:
                 axis["links"] = links
 
 
-GROUP_LINKS = [("source", "Source"), ("changelog", "Changelog"), ("issues", "Open upstream issues and pull requests")]
+GROUP_LINKS = [
+    ("source", "Source"),
+    ("changelog", "Changelog"),
+    ("issues", "Issues and pull requests from these benchmarks"),
+]
 
 
 def codspeed_tests(subject: str, root: Path) -> dict[str, set[str]]:
@@ -280,23 +284,27 @@ def codspeed_tests(subject: str, root: Path) -> dict[str, set[str]]:
     return found
 
 
-def codspeed_url(bench: dict, subject: str, tests: dict[str, set[str]], pinned: dict[str, str]) -> str | None:
+def codspeed_url(bench: dict, subject: str, tests: dict[str, set[str]], codspeed: dict) -> str | None:
     """CodSpeed's page for one case of a benchmark, named as bwbench.pytest names the test.
 
     asv's time_X and peakmem_X come from the setup function X, which pytest runs as test_X[values
-    joined by -], the last axis first. A track_ method has no test. CodSpeed runs one size, so
-    PINNED gives an axis its value there; an axis not in it takes its first value.
+    joined by -], the last axis first. A track_ method has no test, nor does a benchmark in
+    CODSPEED's ``skip``. CodSpeed runs one size, so CODSPEED's ``params`` gives an axis its value
+    there; an axis not in it takes its first value.
     """
     module, *_, method = bench["name"].split(".")
     kind, _, func = method.partition("_")
     if kind not in ("time", "peakmem") or func not in tests.get(module, set()):
         return None
+    if bench["name"] in codspeed.get("skip", []):
+        return None
+    pinned = codspeed.get("params", {})
     ids = "-".join(pinned.get(a["name"]) or str(a.get("labels", a["values"])[0]) for a in reversed(bench["params"]))
     case = f"test_{func}[{ids}]" if ids else f"test_{func}"
     return f"{CODSPEED}/benchmarks/benchmarks/codspeed/test_{subject}.py::{quote(case)}?runnerMode=Simulation"
 
 
-def link(groups: list[dict], catalog: "Catalog", sources: dict[str, str], links: dict, pinned: dict[str, str]) -> None:
+def link(groups: list[dict], catalog: "Catalog", sources: dict[str, str], links: dict, codspeed: dict) -> None:
     """Add LINKS' pages (descriptions.toml) to groups and environments, and each benchmark's source.
 
     An environment links the solver its label starts with: "UMFPACK, MKL" links UMFPACK.
@@ -321,7 +329,7 @@ def link(groups: list[dict], catalog: "Catalog", sources: dict[str, str], links:
         subject = names[bench["group"]]
         if subject not in tests:
             tests[subject] = codspeed_tests(subject, root)
-        if url := codspeed_url(bench, subject, tests[subject], pinned):
+        if url := codspeed_url(bench, subject, tests[subject], codspeed):
             bench["codspeed"] = url
 
 

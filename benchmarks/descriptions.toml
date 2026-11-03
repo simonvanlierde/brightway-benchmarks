@@ -132,5 +132,8 @@ adjoint  = "https://docs.brightway.dev/en/latest/content/api/bw2calc/fast_scores
 
 # The parameter values CodSpeed runs, where they differ from the first value asv lists (the
 # codspeed workflow sets BWBENCH_SIZES=smoke). The viewer links each benchmark's case with them.
+# `skip` lists benchmarks CodSpeed never runs: the refinement case needs bw2calc to solve with
+# UMFPACK, and the codspeed job installs PyPardiso, which bw2calc picks first.
 [codspeed]
-size = "smoke"
+params = { size = "smoke" }
+skip = ["bench_lca.NewDemandRefinement.time_redo_lci_refinement"]

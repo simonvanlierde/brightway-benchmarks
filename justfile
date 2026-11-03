@@ -104,6 +104,7 @@ site:
     #!/usr/bin/env bash
     set -euo pipefail
     mkdir -p site
+    [ ! -d profiles ] || cp -r profiles site/profiles
     if git fetch --quiet origin compat 2>/dev/null; then git archive FETCH_HEAD compat | tar -x -C site
     else echo "no compat branch yet, so the site has no setup guidance" >&2
     fi
@@ -181,6 +182,13 @@ seccomp-profile tag="seccomp/v0.2.4":
 # One suite under pytest-codspeed's CPU simulation; extra packages (a solver) come on top.
 codspeed subject *packages:
     BWBENCH_TARGET=codspeed BWBENCH_SIZES="${BWBENCH_SIZES:-smoke}" scripts/box.sh scripts/codspeed.sh {{ subject }} {{ packages }}
+
+# One case under pyinstrument (py-spy needs ptrace, which the box drops), set up as asv sets it up.
+# CASE is a @bench function's name (first_score); parameters besides size come as NAME=VALUE
+# (cls=IterativeLCA); RELEASE "" is the latest. HTML and speedscope JSON go to .asv/profiles/.
+# Profile one case, as `just profile bw2calc first_score smoke 3.1.0 cls=LCA`.
+profile subject case size release="" *params:
+    scripts/box.sh scripts/profile.sh {{ subject }} {{ case }} {{ size }} {{ quote(release) }} {{ params }}
 
 # Protect the default branch (no deletion, no force-push, linear history, PRs squash-merged after the always-on checks pass and one approval) and the v* tags. Turn on private vulnerability reporting. Safe to rerun.
 repo-settings:

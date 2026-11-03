@@ -23,6 +23,7 @@ Issues = "https://github.com/simonvanlierde/brightway-benchmarks/issues"
 dev = [
   "hypothesis>=6.169.1",
   "jsonschema>=4.26.0",
+  "pyinstrument==5.1.3",
   "pytest>=9.1.1",
   "pytest-cov>=7.1.0",
   "rfc3339-validator>=0.1.4",

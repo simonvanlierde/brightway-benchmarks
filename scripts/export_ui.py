@@ -32,6 +32,7 @@ import tomllib
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import quote
 
 from output_path import output_path
 from release_changes import NOISE_FLOOR, SHA, STACK, current_stack, noise_threshold, pick, releases
@@ -285,7 +286,7 @@ def profile_url(path: Path, value: str) -> str:
     if "/" in name or not name.endswith(".html") or not (PROFILES / name).is_file():
         msg = f"{path.name}: profile {value} is neither an https URL nor an .html file in profiles/"
         raise SystemExit(msg)
-    return f"{SITE}/profiles/{name}"
+    return f"{SITE}/profiles/{quote(name)}"
 
 
 def findings(index: dict) -> list[dict]:

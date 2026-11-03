@@ -104,7 +104,7 @@ site:
     #!/usr/bin/env bash
     set -euo pipefail
     mkdir -p site
-    [ ! -d profiles ] || cp -r profiles site/profiles
+    [ ! -d profiles ] || { mkdir -p site/profiles && cp -r profiles/. site/profiles/; }
     if git fetch --quiet origin compat 2>/dev/null; then git archive FETCH_HEAD compat | tar -x -C site
     else echo "no compat branch yet, so the site has no setup guidance" >&2
     fi
@@ -183,12 +183,12 @@ seccomp-profile tag="seccomp/v0.2.4":
 codspeed subject *packages:
     BWBENCH_TARGET=codspeed BWBENCH_SIZES="${BWBENCH_SIZES:-smoke}" scripts/box.sh scripts/codspeed.sh {{ subject }} {{ packages }}
 
-# One case under pyinstrument (py-spy needs ptrace, which the box drops), set up as asv sets it up.
-# CASE is a @bench function's name (first_score); parameters besides size come as NAME=VALUE
-# (cls=IterativeLCA); RELEASE "" is the latest. HTML and speedscope JSON go to .asv/profiles/.
-# Profile one case, as `just profile bw2calc first_score smoke 3.1.0 cls=LCA`.
-profile subject case size release="" *params:
-    scripts/box.sh scripts/profile.sh {{ subject }} {{ case }} {{ size }} {{ quote(release) }} {{ params }}
+# Profile one case under pyinstrument, as `just profile bw2calc first_score release=3.0.0
+# with=scikit-umfpack size=ecoinvent cls=IterativeLCA`: release= and with= pick the environment
+# (the latest release, SuperLU, when left out), NAME=VALUE the parameters. HTML and speedscope
+# JSON go to .asv/profiles/.
+profile subject case *args:
+    scripts/box.sh scripts/profile.sh {{ subject }} {{ case }} {{ args }}
 
 # Protect the default branch (no deletion, no force-push, linear history, PRs squash-merged after the always-on checks pass and one approval) and the v* tags. Turn on private vulnerability reporting. Safe to rerun.
 repo-settings:

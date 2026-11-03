@@ -1,4 +1,4 @@
-"""Profile one benchmark case with pyinstrument: ``python -m bwbench.profiling SUBJECT CASE SIZE [NAME=VALUE...]``.
+"""Profile one benchmark case with pyinstrument: ``python -m bwbench.profiling SUBJECT CASE [NAME=VALUE...]``.
 
 The case is a ``@bench`` function of ``benchmarks/bench_SUBJECT/``, set up through
 ``Bench.prepare`` and called through ``Prepared``, so the profile covers exactly the call asv
@@ -9,6 +9,7 @@ The HTML report and the speedscope JSON go to ``.asv/profiles/``, named by ``pro
 from __future__ import annotations
 
 import importlib
+import os
 import pkgutil
 import sys
 from importlib.metadata import version
@@ -19,9 +20,35 @@ from bwbench.bench import Bench, benches
 OUT = Path(".asv/profiles")
 
 
-def profile_name(subject: str, case: str, params: dict[str, str], release: str) -> str:
-    """The files' common name: subject, case, each parameter as ``name=value`` in order, and the release."""
-    return "-".join([subject, case, *(f"{k}={v}" for k, v in params.items()), release])
+def profile_name(subject: str, case: str, params: dict[str, str], release: str, packages: list[str]) -> str:
+    """The files' common name: subject, case, each parameter as ``name=value``, the release, then ``with=`` packages."""
+    return "-".join(
+        [subject, case, *(f"{k}={v}" for k, v in params.items()), release, *(f"with={p}" for p in packages)]
+    )
+
+
+def parse_params(args: list[str]) -> dict[str, str]:
+    """``NAME=VALUE`` arguments as a dict; anything else, or a name given twice, stops the profile."""
+    params: dict[str, str] = {}
+    for a in args:
+        name, eq, value = a.partition("=")
+        if not eq or not name or name in params:
+            msg = f"parameters are NAME=VALUE, each name once; got {a}"
+            raise SystemExit(msg)
+        params[name] = value
+    return params
+
+
+def typed(bench: Bench, params: dict[str, str]) -> dict[str, object]:
+    """PARAMS with each value cast to the type of the case's declared values (``demands=3`` is an int).
+
+    Values are not checked against the declared ones: those come from the knobs' smoke defaults, and a
+    profile usually wants a full size such as ``ecoinvent``.
+    """
+    if set(params) != set(bench.params):
+        msg = f"{bench.name} takes {', '.join(bench.params) or 'no parameters'}; got {', '.join(params) or 'none'}"
+        raise SystemExit(msg)
+    return {k: type(bench.params[k][0])(v) for k, v in params.items()}
 
 
 def find_case(subject: str, case: str) -> Bench:
@@ -40,14 +67,11 @@ def find_case(subject: str, case: str) -> Bench:
     return found[0]
 
 
-def profile(bench: Bench, params: dict[str, str], name: str, out: Path = OUT) -> list[Path]:
+def profile(bench: Bench, params: dict[str, object], name: str, out: Path = OUT) -> list[Path]:
     """Profile one timed call of ``bench`` at ``params``; write ``name`` + ``.html`` and ``.speedscope.json``."""
     from pyinstrument import Profiler  # noqa: PLC0415 - only the profile environment has it
     from pyinstrument.renderers import SpeedscopeRenderer  # noqa: PLC0415
 
-    if set(params) != set(bench.params):
-        msg = f"{bench.name} takes {', '.join(bench.params) or 'no parameters'}; got {', '.join(params) or 'none'}"
-        raise SystemExit(msg)
     prepared = bench.prepare(**params)
     profiler = Profiler()
     try:
@@ -67,15 +91,20 @@ def profile(bench: Bench, params: dict[str, str], name: str, out: Path = OUT) ->
 
 
 def main(argv: list[str]) -> None:
-    """Parse ``SUBJECT CASE SIZE [NAME=VALUE...]``, profile, and print the files."""
-    if len(argv) < 3:
-        msg = "usage: python -m bwbench.profiling SUBJECT CASE SIZE [NAME=VALUE...]"
+    """Parse ``SUBJECT CASE [NAME=VALUE...]``, profile, and print the files.
+
+    ``$BWBENCH_PROFILE_WITH`` names the packages installed on top (profile.sh's ``with=``), for the name.
+    """
+    if len(argv) < 2:
+        msg = "usage: python -m bwbench.profiling SUBJECT CASE [NAME=VALUE...]"
         raise SystemExit(msg)
-    subject, case, size, *extra = argv
-    params = {"size": size} | dict(e.split("=", 1) for e in extra)
+    subject, case, *extra = argv
+    params = parse_params(extra)
     sys.path.insert(0, "benchmarks")
-    name = profile_name(subject, case, params, version(subject))
-    for path in profile(find_case(subject, case), params, name):
+    bench = find_case(subject, case)
+    packages = os.environ.get("BWBENCH_PROFILE_WITH", "").split()
+    name = profile_name(subject, case, params, version(subject), packages)
+    for path in profile(bench, typed(bench, params), name):
         sys.stdout.write(f"{path}\n")
 
 

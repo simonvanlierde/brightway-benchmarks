@@ -399,7 +399,8 @@ def test_links_follow_the_shown_values_and_the_solver(
     about.write_text(
         '[links.solvers]\nPyPardiso = "https://example.org/pardiso"\n'
         '[links.values.cls]\nIterativeLCA = "https://example.org/iterative"\n'
-        '[links.groups]\ns = "https://example.org/s"\n'
+        '[links.groups.s]\ndocs = "https://example.org/s"\nsource = "https://example.org/src"\n'
+        'issues = "https://example.org/issues"\n'
     )
     monkeypatch.setattr(export_ui, "DESCRIPTIONS", about)
     monkeypatch.setattr(export_ui, "FINDINGS", tmp_path / "none.toml")
@@ -414,6 +415,28 @@ def test_links_follow_the_shown_values_and_the_solver(
     assert bench["params"][1]["links"] == ["", "https://example.org/iterative"]
     assert bench["url"].endswith("/blob/main/benchmarks/bench_bw2calc/bench_lca.py")
     assert index["groups"][0]["url"] == "https://example.org/s"
+    assert index["groups"][0]["links"] == [
+        {"name": "Source", "url": "https://example.org/src"},
+        {"name": "Open upstream issues and pull requests", "url": "https://example.org/issues"},
+    ]
+
+
+def test_codspeed_url_follows_the_pytest_test_id(export_ui: ModuleType):
+    tests = export_ui.codspeed_tests("bw2calc", ROOT)  # read from the real suite, as the export does
+    assert "first_score" in tests["bench_lca"]
+    assert export_ui.codspeed_tests("bw2calc-conda", ROOT) == {}
+    axes = [
+        {"name": "size", "values": ["'ecoinvent'"], "labels": ["ecoinvent"]},
+        {"name": "cls", "values": ["'LCA'"], "labels": ["LCA"]},
+    ]
+    bench = {"name": "bench_lca.SingleScore.time_first_score", "params": axes}
+    assert export_ui.codspeed_url(bench, "bw2calc", tests, {"size": "smoke"}) == (
+        "https://app.codspeed.io/simonvanlierde/brightway-benchmarks/benchmarks/benchmarks/codspeed/"
+        "test_bw2calc.py::test_first_score%5BLCA-smoke%5D?runnerMode=Simulation"
+    )
+    # An asv track_ method and a benchmark outside the re-exported modules have no test.
+    for name in ["bench_lca.SingleScore.track_relative_error", "bench_import.Other.time_first_score"]:
+        assert export_ui.codspeed_url(bench | {"name": name}, "bw2calc", tests, {}) is None
 
 
 def test_a_finding_opens_its_history_or_stops_the_export(

@@ -27,8 +27,8 @@ concurrency:
 
 jobs:
   solvers:
-    name: ${{ matrix.solver }} on macos-14
-    runs-on: macos-14
+    name: ${{ matrix.solver }} on macos-15
+    runs-on: macos-15
     timeout-minutes: 60
     strategy:
       fail-fast: false

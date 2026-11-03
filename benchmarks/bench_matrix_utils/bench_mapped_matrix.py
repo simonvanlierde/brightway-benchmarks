@@ -10,13 +10,13 @@ yet, so the config also benchmarks its head (7335e8a), as the branch ``pull/48/h
 
 import matrix_utils as mu
 
-from bwbench import knob
+from bwbench import group_counts
 from bwbench.asv import classes
 from bwbench.bench import UNCHECKED, BenchSetup, bench
 from bwbench.synth import many_groups
 
 
-@bench({"groups": knob("groups", "100,1000", int)}, asv="MappedMatrixBuild", timeout=600)
+@bench({"groups": group_counts()}, asv="MappedMatrixBuild", timeout=600)
 def mapped_matrix(groups: int) -> BenchSetup:
     dp = many_groups(groups)
     m = mu.MappedMatrix(packages=[dp], matrix="technosphere_matrix").matrix

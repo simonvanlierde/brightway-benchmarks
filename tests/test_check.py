@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from bwbench import DIRECT_RTOL, check, check_table, point_pypardiso_at_mkl
+from bwbench import DIRECT_RTOL, check, check_table, group_counts, point_pypardiso_at_mkl
 from bwbench.synth import system
 
 
@@ -67,3 +67,23 @@ def test_point_pypardiso_at_mkl(monkeypatch: pytest.MonkeyPatch, tmp_path: Path)
     monkeypatch.setattr(importlib.metadata, "files", missing)
     point_pypardiso_at_mkl()
     assert "PYPARDISO_MKL_RT" not in os.environ
+
+
+@pytest.mark.parametrize(
+    ("env", "expected"),
+    [
+        ({}, [100, 1000]),
+        ({"BWBENCH_SIZES": "smoke"}, [100, 1000]),
+        ({"BWBENCH_SIZES": "ecoinvent"}, [100, 1000, 10000]),
+        ({"BWBENCH_SIZES": "smoke,useeio"}, [100, 1000, 10000]),
+        ({"BWBENCH_SIZES": "ecoinvent", "BWBENCH_GROUPS": "16000"}, [16000]),
+    ],
+)
+def test_group_counts_add_10k_only_at_full_size(
+    monkeypatch: pytest.MonkeyPatch, env: dict[str, str], expected: list[int]
+):
+    monkeypatch.delenv("BWBENCH_SIZES", raising=False)
+    monkeypatch.delenv("BWBENCH_GROUPS", raising=False)
+    for k, v in env.items():
+        monkeypatch.setenv(k, v)
+    assert group_counts() == expected

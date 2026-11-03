@@ -104,6 +104,7 @@ site:
     #!/usr/bin/env bash
     set -euo pipefail
     mkdir -p site
+    [ ! -d profiles ] || { mkdir -p site/profiles && cp -r profiles/. site/profiles/; }
     if git fetch --quiet origin compat 2>/dev/null; then git archive FETCH_HEAD compat | tar -x -C site
     else echo "no compat branch yet, so the site has no setup guidance" >&2
     fi
@@ -181,6 +182,13 @@ seccomp-profile tag="seccomp/v0.2.4":
 # One suite under pytest-codspeed's CPU simulation; extra packages (a solver) come on top.
 codspeed subject *packages:
     BWBENCH_TARGET=codspeed BWBENCH_SIZES="${BWBENCH_SIZES:-smoke}" scripts/box.sh scripts/codspeed.sh {{ subject }} {{ packages }}
+
+# Profile one case under pyinstrument, as `just profile bw2calc first_score release=3.0.0
+# with=scikit-umfpack size=ecoinvent cls=IterativeLCA`: release= and with= pick the environment
+# (the latest release, and bw2calc's SuperLU, when left out), NAME=VALUE the parameters. HTML and speedscope
+# JSON go to .asv/profiles/.
+profile subject case *args:
+    scripts/box.sh scripts/profile.sh {{ subject }} {{ case }} {{ args }}
 
 # Protect the default branch (no deletion, no force-push, linear history, PRs squash-merged after the always-on checks pass and one approval) and the v* tags. Turn on private vulnerability reporting. Safe to rerun.
 repo-settings:

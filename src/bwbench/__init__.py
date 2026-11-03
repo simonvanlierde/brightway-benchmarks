@@ -79,6 +79,17 @@ def knob(name: str, default: str, cast: Callable[[str], Any] = str) -> list[Any]
     return [cast(v) for v in os.environ.get(f"BWBENCH_{name.upper()}", default).split(",")]
 
 
+def group_counts() -> list[int]:
+    """Resource-group counts for bw_processing and matrix_utils: ``$BWBENCH_GROUPS``, or a default.
+
+    A smoke run (``BWBENCH_SIZES`` unset or ``smoke``, as in CI and CodSpeed) stops at 1,000 groups.
+    A full-size run also times 10,000, where the releases that look up groups quadratically take tens
+    of seconds per call, too slow for CodSpeed's CPU simulation.
+    """
+    full = knob("sizes", "smoke") != ["smoke"]
+    return knob("groups", "100,1000,10000" if full else "100,1000", int)
+
+
 _SEEN: set[tuple[object, ...]] = set()
 
 

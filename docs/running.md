@@ -1,8 +1,8 @@
 # Running the benchmarks
 
-You need Docker and [just](https://just.systems); `just results-commit` also needs rsync and git
-2.42 or later. Brightway's code runs only in a throwaway container, the box
-([assurance case](assurance-case.md)). `just` lists every recipe.
+You need Docker and [just](https://just.systems); `just noise` and `just results-commit` also need
+[uv](https://docs.astral.sh/uv/), and `just results-commit` needs rsync and git 2.42 or later. Brightway's code runs only in a
+throwaway container, the box ([assurance case](assurance-case.md)). `just` lists every recipe.
 
 ## Benchmarks
 
@@ -170,6 +170,43 @@ that complete recorded environment. The conda command creates the `brightway-tes
 environment if it is missing and is safe to rerun; `--prune` removes anything else in it, so
 keep your own packages in another environment. The conda and pixi commands use the
 `conda-forge` row.
+
+## Contribute a run
+
+Timings from your own machine are welcome. Timings only compare within one machine, so
+yours go under a machine name of their own.
+
+1. Fork the repository and untick "Copy the main branch only", so the fork has a `results`
+   branch, then clone your fork. Without that branch, `just results-commit` starts a new one
+   that GitHub cannot merge into `results`.
+2. Pick a name that says what the machine is, such as `laptop-m3-docker`, and not its host
+   name. Keep it for later runs: a stopped run resumes only under the same name. On a Mac,
+   Docker Desktop runs the box as a Linux (arm64) container in a VM, so the timings are that
+   container's. The arm64 box build is untested.
+3. Set the name and the ecoinvent size, so the noise check and the run both use them:
+
+   ```sh
+   export BWBENCH_MACHINE=laptop-m3-docker
+   export BWBENCH_SIZES=ecoinvent BWBENCH_MC_SIZES=ecoinvent BWBENCH_WRITE_SIZES=ecoinvent
+   ```
+
+   Without the three size variables, the run falls back to the smoke size. Keep
+   `BWBENCH_THREADS`, `BWBENCH_ROUNDS`, `BWBENCH_CPUS` and `BWBENCH_MEM` at their defaults:
+   the result files do not record them.
+4. Measure your noise floor with `just noise bw2calc`. A laptop is noisier than a pinned
+   benchmark machine, so plug it in and use its performance power mode.
+5. Run the suite. Off x86_64, the PyPardiso column is skipped, as MKL has no wheels there.
+
+   ```sh
+   just bench bw2calc
+   ```
+
+6. `just results-commit` puts `results/` on your local `results` branch. Its commit is
+   unsigned, and this repository asks for a `Signed-off-by` line
+   ([CONTRIBUTING](../.github/CONTRIBUTING.md#sign-off-your-commits)), so run
+   `git commit --amend -s` on the `results` branch. Then `git push origin results` and open a
+   pull request from your fork's `results` into this repository's `results`. Say in it which
+   CPU, memory and OS the machine has, and paste the `just noise` spread.
 
 ## Environment variables
 

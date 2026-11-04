@@ -160,7 +160,7 @@ $effect(() => {
         {#if platform && comparison.platform && comparison.platform !== platform.id}<p class="measurement-note">No {platform.label} machine was timed, so these values may not hold there.</p>{/if}
         <table><caption>Recorded measurements; follow a solver to inspect its benchmark.</caption><thead><tr><th scope="col">Solver</th><th scope="col" class="solver-bar-column">Relative time</th><th scope="col" class="num">Measured value</th></tr></thead><tbody>{#each comparison.rows as row (row.label)}<tr><th scope="row"><a href={row.href}>{row.label}</a></th><td class="solver-bar-column"><div class="solver-track" aria-hidden="true"><span style:width={`${largest > 0 ? (row.value / largest) * 100 : 0}%`}></span></div></td><td class="num">{format(row.value, row.unit)}</td></tr>{/each}</tbody></table>
         {#if comparison.note}<p class="measurement-note">{comparison.note}</p>{/if}
-        {#if story}<p class="story-link">Why one install choice moves a score from 2.6 s to 28 s, and when PyPardiso wins instead: <a href={story}>the solver story</a>.</p>{/if}
+        {#if story}<p class="story-link">Why the same score takes 2.6 s on one install and 28 s on another, and when PyPardiso wins instead: <a href={story}>the solver story</a>.</p>{/if}
       </section>
     {:else if guidance}
       <p class="measurement-note solver-pending">The solver comparison is being measured again. <a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Compare solvers in the benchmarks</a>.</p>

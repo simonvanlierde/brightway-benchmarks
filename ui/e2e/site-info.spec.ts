@@ -31,7 +31,7 @@ test("the solver story is static, links the viewer at exact views and has its ow
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto("/stories/solver-choice/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("2.6 s or 28 s");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("ten times slower");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${SITE}stories/solver-choice/`);
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",

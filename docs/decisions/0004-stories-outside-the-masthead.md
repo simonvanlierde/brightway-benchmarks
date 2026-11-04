@@ -8,7 +8,7 @@
 
 0003 gave the site two pages, Setup and Benchmarks. Both are tools: they answer a question you
 bring. Some findings need a short account that a practitioner can read, share and check, such as
-why one install choice changes a calculation from 2.6 s to 28 s. That account does not fit a
+why the installed solver changes one score from 2.6 s to 28 s. That account does not fit a
 tool page, and a third masthead page would split the navigation 0003 simplified.
 
 ## Decision

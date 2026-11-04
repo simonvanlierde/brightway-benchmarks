@@ -21,7 +21,7 @@ const thirty = (variant: string) => link("bw2calc-conda", multi, "ecoinvent", "3
 <html lang="en">
   <head>
     <Head
-      title="The same LCA in 2.6 s or 28 s: Brightway benchmarks"
+      title="Your solver can make the same LCA ten times slower: Brightway benchmarks"
       description="One Brightway score on an ecoinvent-sized database takes 2.63 s, 10.0 s or 27.7 s, depending on which sparse solver you install."
       canonical="https://simonvanlierde.com/brightway-benchmarks/stories/solver-choice/"
       image="https://simonvanlierde.com/brightway-benchmarks/ui/story-solver-choice.png"
@@ -44,12 +44,12 @@ const thirty = (variant: string) => link("bw2calc-conda", multi, "ecoinvent", "3
       </div>
     </header>
     <main class="story" id="main" tabindex="-1">
-      <h1>The same LCA takes 2.6 s or 28 s, depending on one install choice</h1>
-      <p class="lede">Every Brightway score solves a large sparse linear system. What you install decides which solver does it, and the times differ by a factor of ten.</p>
-      <p>All times below are for an ecoinvent-sized synthetic database on one thread, measured on one pinned benchmark machine. Each chart links to its benchmark in the viewer, where you can see the history by release.</p>
+      <h1>Your solver can make the same LCA ten times slower</h1>
+      <p class="lede">Every Brightway score ends in one large sparse linear system. Which package solves it depends on what happens to be installed, not on anything in your code. On an ecoinvent-sized database, that is the difference between 2.6 s and 28 s.</p>
+      <p>The times come from one pinned benchmark machine, on one thread, with a synthetic database that has ecoinvent's size and shape. Each chart links to its benchmark's full history.</p>
 
       <h2>One score</h2>
-      <p>The first score with bw2calc's <code>LCA</code> class builds the matrices, factorizes, solves and characterizes.</p>
+      <p>bw2calc's <code>LCA</code> class builds the matrices, factorizes the technosphere, solves it and characterizes the result.</p>
       <StoryBars
         caption="Time to the first score"
         href={oneScore}
@@ -59,11 +59,11 @@ const thirty = (variant: string) => link("bw2calc-conda", multi, "ecoinvent", "3
           { label: "SuperLU, SciPy's default", seconds: 27.7, tone: "base" },
         ]}
       />
-      <p>SuperLU is what you get with nothing extra installed. bw2calc uses PyPardiso whenever it is installed, and bw_timex pulls it in on Linux x86_64. To get UMFPACK, install scikit-umfpack from conda-forge and leave PyPardiso out.</p>
-      <p>The BLAS library under UMFPACK matters too. A scikit-umfpack build on reference BLAS takes about 9 s for the same score (<a href={pipScore}>the reference-BLAS view</a>).</p>
+      <p>With nothing extra installed, you get SciPy's SuperLU, the slowest bar. Install PyPardiso and bw2calc uses it automatically; bw_timex installs it for you on Linux x86_64 and 64-bit Windows. bw2calc picks UMFPACK only when PyPardiso is absent, so to get the fastest bar, install scikit-umfpack from conda-forge and leave PyPardiso out.</p>
+      <p>The conda-forge part matters. The pip build of scikit-umfpack runs on reference BLAS and takes about 9 s, no faster than PyPardiso (<a href={pipScore}>the pip build's history</a>).</p>
 
-      <h2>30 products</h2>
-      <p><code>MultiLCA</code> scores 30 products against three impact methods in one calculation.</p>
+      <h2>Thirty products at once</h2>
+      <p><code>MultiLCA</code> scores 30 products against three impact methods in one call.</p>
       <StoryBars
         caption="MultiLCA, 30 products"
         href={thirty("MultiLCA")}
@@ -73,16 +73,15 @@ const thirty = (variant: string) => link("bw2calc-conda", multi, "ecoinvent", "3
           { label: "SuperLU, SciPy's default", seconds: 28.7, tone: "base" },
         ]}
       />
-      <p><code>MultiLCA</code> hands SciPy all 30 demands at once, and SciPy solves a multi-column system with SuperLU even when scikit-umfpack is installed, so both bars are SuperLU. PyPardiso is 2.7 times faster.</p>
-      <p><code>FastScoresOnlyMultiLCA</code> keeps only the scores and, in its default forward direction, solves one system per product. For the same 30 products it takes 3.56 s with UMFPACK and 10.5 s with PyPardiso (<a href={thirty("forward")}>the forward-direction view</a>). It cannot run on SuperLU: bw2calc needs PyPardiso or UMFPACK for it.</p>
+      <p>Here scikit-umfpack does nothing. <code>MultiLCA</code> hands SciPy all 30 demands as one matrix, and SciPy uses UMFPACK only for a single right-hand side. The first and last bars are both SuperLU, and PyPardiso is 2.7 times faster.</p>
+      <p>If you only need the scores, <code>FastScoresOnlyMultiLCA</code> solves one product at a time and UMFPACK is back in front: 3.56 s, against 10.5 s for PyPardiso (<a href={thirty("forward")}>the forward-direction history</a>). It does not run on SuperLU at all.</p>
 
       <h2>Monte Carlo</h2>
-      <p>Each Monte Carlo draw samples new matrix values, so the solver works again on every draw. Ten draws with <code>LCA</code> under PyPardiso take 99.3 s (<a href={link("bw2calc-conda", carlo, "ecoinvent", "10", "LCA")}>the Monte Carlo view</a>).</p>
-      <p>This page gives no time for 1,000 draws, and none for UMFPACK or SuperLU: the published runs do not include them.</p>
+      <p>Each draw samples new matrix values, so the solver starts over every time. Ten draws with <code>LCA</code> and PyPardiso take 99.3 s, about ten single scores (<a href={link("bw2calc-conda", carlo, "ecoinvent", "10", "LCA")}>the Monte Carlo history</a>). The published runs have no UMFPACK or SuperLU times for this, so the page does not guess them.</p>
 
-      <h2>What to do</h2>
-      <p>For one score, use UMFPACK from the conda-forge build. For many products, use PyPardiso, or <code>FastScoresOnlyMultiLCA</code> with UMFPACK.</p>
-      <p><a href={home}>Setup</a> lists install sets that passed their checks on each platform. <a href={`${repository}/blob/main/docs/faster.md`}>Make your Brightway faster</a> lists the other install choices and calls that change the time, each with its measured gain. The <a href={`${repository}/blob/main/docs/method.md`}>method</a> describes the database, the reference checks and the measurement noise.</p>
+      <h2>What to install</h2>
+      <p>For one score at a time: scikit-umfpack from conda-forge, without PyPardiso. For many products in one go: PyPardiso, or <code>FastScoresOnlyMultiLCA</code> with UMFPACK if you only need the scores.</p>
+      <p><a href={home}>Setup</a> has install sets that passed their checks on each platform. <a href={`${repository}/blob/main/docs/faster.md`}>Make your Brightway faster</a> lists other install choices and calls that change the time, each with its measured gain. The <a href={`${repository}/blob/main/docs/method.md`}>method</a> describes the database and how noisy the timings are.</p>
     </main>
   </body>
 </html>

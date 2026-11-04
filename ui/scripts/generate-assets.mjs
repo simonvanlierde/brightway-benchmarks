@@ -506,7 +506,7 @@ const storyHtml = `<!DOCTYPE html>
   .foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 18px; color: #aab9d8; }
 </style></head><body>
   <div class="kicker">Brightway benchmarks</div>
-  <h1>The same LCA takes 2.6 s or 28 s, depending on one install choice</h1>
+  <h1>Your solver can make the same LCA ten times slower</h1>
   ${storyBars}
   <div class="foot"><span>One score, ecoinvent-sized synthetic database, one thread</span><span class="mono">simonvanlierde.com/brightway-benchmarks</span></div>
 </body></html>`;

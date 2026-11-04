@@ -55,7 +55,7 @@
 
 # The name the viewer shows for a parameter.
 [labels.params]
-size       = "Database"
+size       = "Synthetic database"
 cls        = "Calculation class"
 demands    = "Functional units"
 variant    = "Scoring"
@@ -69,10 +69,6 @@ steps      = "Yearly steps"
 # The name the viewer shows for a group; its id and URLs keep the group's own name.
 [labels.groups]
 "bw2calc-conda" = "bw2calc (conda-forge)"
-
-# The name the viewer shows for a parameter value, by parameter. The viewer's links use it too.
-[labels.values.size]
-ecoinvent = "ecoinvent-sized (synthetic)"
 
 # One note per series under the chart, by the environment's solver label, for the solvers
 # bw2calc cannot pick: src/bwbench/solvers.py patches them in.

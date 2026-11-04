@@ -263,9 +263,6 @@ def describe(benchmarks: list[dict], about: dict) -> None:
             links = [known.get(shown, "") for shown in axis.get("labels", axis["values"])]
             if any(links):
                 axis["links"] = links
-            # Last, since notes and links are keyed by the label as the benchmarks name the value.
-            if renamed := labels.get("values", {}).get(axis["name"]):
-                axis["labels"] = [renamed.get(v, v) for v in axis.get("labels", axis["values"])]
 
 
 def describe_groups(groups: list[dict], about: dict) -> None:

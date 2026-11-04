@@ -311,3 +311,18 @@ describe("page routing", () => {
     ]);
   });
 });
+
+describe("links already posted", () => {
+  it("p=ecoinvent still selects the ecoinvent size", async () => {
+    const index = JSON.parse(
+      await readFile(new URL("fixtures/real/index.json", import.meta.url), "utf8"),
+    ) as BenchmarkIndex;
+    const bench = index.benchmarks.find((b) =>
+      b.params.some((a) => a.name === "size" && a.values.includes("'ecoinvent'") && a.values[0] !== "'ecoinvent'"),
+    );
+    if (!bench) throw new Error("the fixture has no benchmark where ecoinvent is not the first size");
+    const at = bench.params.findIndex((a) => a.name === "size");
+    const wanted = bench.params.map((a, i) => (i === at ? "ecoinvent" : ((a.labels ?? a.values)[0] ?? "")));
+    expect(pickParams(bench, wanted)[at]).toBe("'ecoinvent'");
+  });
+});

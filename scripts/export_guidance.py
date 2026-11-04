@@ -169,9 +169,7 @@ def solver_comparison(data_dir: Path) -> dict | None:
             if not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
                 continue
             query = urlencode({"bench": bench["id"], "measure": "latency", "machine": report["machine"]})
-            axes = bench.get("params", [])  # absent in a trimmed index
-            shown = [a["labels"][a["values"].index(v)] for a, v in zip(axes, case["params"], strict=False)]
-            query += "&" + urlencode([("p", s) for s in shown])  # the labels the viewer's URLs use
+            query += "&" + urlencode([("p", "ecoinvent"), ("p", "LCA")])
             rows[name] = {"label": name, "value": value, "unit": "ns", "href": f"?{query}"}
     for (machine, release), rows in sorted(selected.items()):
         if len(rows) == 3:

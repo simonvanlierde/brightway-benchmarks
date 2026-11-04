@@ -7,10 +7,9 @@ import { latestChanges, writeView } from "../src/lib/history";
 // Screenshots go to SHOTS when it is set, so a reviewer can look at them; CI keeps them as an artifact.
 const shots = process.env.SHOTS ?? "test-results/shots";
 const IMPORT = "?bench=bw2calc-bench-import-timeraw-import-bw2calc-c078f5d2c0be";
-const SCORES =
-  "?bench=bw2calc-bench-lca-multiscores-time-scores-4f172f3e24a0&p=ecoinvent-sized+(synthetic)&p=3&p=MultiLCA";
+const SCORES = "?bench=bw2calc-bench-lca-multiscores-time-scores-4f172f3e24a0&p=ecoinvent&p=3&p=MultiLCA";
 const MONTE_CARLO =
-  "?bench=bw2calc-bench-lca-montecarlo-time-iterations-00a0cd27d056&p=ecoinvent-sized+(synthetic)&p=10&p=JacobiGMRESLCA";
+  "?bench=bw2calc-bench-lca-montecarlo-time-iterations-00a0cd27d056&p=ecoinvent&p=10&p=JacobiGMRESLCA";
 
 async function chart(page: Page, url: string) {
   await page.goto(url);
@@ -169,8 +168,8 @@ test("a skip link leads to the results, and a one-value axis is plain text", asy
   await expect(page.getByRole("link", { name: "Skip to the results" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("#main")).toBeFocused();
-  await expect(page.getByLabel("Database", { exact: true })).toHaveCount(0);
-  await expect(page.locator(".fixed")).toHaveText("ecoinvent-sized (synthetic)");
+  await expect(page.getByLabel("Synthetic database", { exact: true })).toHaveCount(0);
+  await expect(page.locator(".fixed")).toHaveText("ecoinvent");
   await expect(page.locator(".fixed a")).toHaveCount(0);
   await expect(page.getByLabel("Scoring", { exact: true })).toBeVisible();
 });

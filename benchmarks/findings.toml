@@ -10,7 +10,7 @@ title = "The solver sets the time for one score"
 text = "On an ecoinvent-sized database, UMFPACK on OpenBLAS takes 2.63 s, PyPardiso 10.0 s and SciPy's SuperLU 27.7 s."
 group = "bw2calc-conda"
 benchmark = "bench_lca.SingleScore.time_first_score"
-params = { size = "ecoinvent-sized (synthetic)", cls = "LCA" }
+params = { size = "ecoinvent", cls = "LCA" }
 doc = "the-solver-sets-the-time-for-one-score"
 
 [[findings]]
@@ -18,7 +18,7 @@ title = "bw2calc 3.0.0 slowed IterativeLCA, and 3.1.0 fixed it"
 text = "One score took 45.0 s instead of 9.04 s with UMFPACK, and about 4 minutes instead of 27.7 s with SuperLU."
 group = "bw2calc"
 benchmark = "bench_lca.SingleScore.time_first_score"
-params = { size = "ecoinvent-sized (synthetic)", cls = "IterativeLCA" }
+params = { size = "ecoinvent", cls = "IterativeLCA" }
 doc = "bw2calc-300-slowed-iterativelca-without-pypardiso-and-310-fixed-it"
 profile = "bw2calc-300-iterativelca-umfpack.html"
 
@@ -27,7 +27,7 @@ title = "bw2calc 3.0.0 doubled JacobiGMRESLCA's Monte Carlo time"
 text = "Ten draws take 0.70 s instead of 0.324 s with every solver, and 3.1.0 has not fixed it."
 group = "bw2calc"
 benchmark = "bench_lca.MonteCarlo.time_iterations"
-params = { size = "ecoinvent-sized (synthetic)", cls = "JacobiGMRESLCA" }
+params = { size = "ecoinvent", cls = "JacobiGMRESLCA" }
 doc = "bw2calc-300-doubled-jacobigmreslcas-monte-carlo-time"
 
 [[findings]]

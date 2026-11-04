@@ -18,7 +18,7 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
       <p>The benchmark cases cover calculations, database writes, graph traversal and time-explicit LCA. Each calculation checks its result against an independent reference. The histories keep releases, environments and machines separate so the comparison stays inspectable.</p>
       <p>Most cases use seeded synthetic databases shaped like ecoinvent. USEEIO 1.1, a public-domain US EPA database, is also available. The <a href={`${repository}/blob/main/docs/method.md`}>method</a> describes the inputs, reference checks and measurement noise; the <a href={`${repository}/blob/main/docs/findings.md`}>findings</a> explain the measured changes and their limits.</p>
 
-      <p>One story reads the solver numbers in plain terms: <a href={`${home}stories/solver-choice/`}>your solver can make the same LCA ten times slower</a>.</p>
+      <p>One story reads the solver numbers in plain terms: <a href={`${home}stories/solver-choice/`}>your solver can make the same LCA five times slower</a>.</p>
 
       <h2>What a passing setup means</h2>
       <p>Smoke checks install a package set and run small-database calculations. Upstream-suite checks run the packages' own tests. Dependency floors, pre-releases and conda-forge are separate diagnostic checks. A pass in one check does not establish that every workflow, solver or platform works.</p>

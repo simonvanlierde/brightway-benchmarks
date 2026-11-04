@@ -370,7 +370,7 @@ $effect(() => {
         <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} {story} />
       {:else if !bench}
         {#if view.bench}<p class="empty" role="status">This benchmark is not in the current data. Choose one from the catalogue.</p>{/if}
-        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Choose a finding, a change or a benchmark from the catalogue for its history.</p><p class="lede"><a href={story}>Your solver can make the same LCA ten times slower</a>: the story behind the solver numbers.</p></header>
+        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Choose a finding, a change or a benchmark from the catalogue for its history.</p><p class="lede"><a href={story}>Your solver can make the same LCA five times slower</a>: the story behind the solver numbers.</p></header>
         <Findings {index} {follow} wide />
         <ReleaseChanges {index} {view} {go} {follow} loaded={overview} />
 

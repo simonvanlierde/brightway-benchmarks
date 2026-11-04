@@ -9,15 +9,16 @@ interface Props {
   rows: Row[];
   caption: string;
   href: string;
+  linkText?: string;
 }
-const { rows, caption, href } = Astro.props;
+const { rows, caption, href, linkText = "Open in the viewer" } = Astro.props;
 const longest = Math.max(...rows.map((row) => row.seconds));
 const time = (s: number) => `${s >= 10 ? s.toPrecision(3) : s.toFixed(2)} s`;
 ---
 
 <figure class="bars">
   <figcaption>{caption}</figcaption>
-  <a class="open" href={href}>Open in the viewer<span class="sr">: {caption}</span></a>
+  <a class="open" href={href}>{linkText}<span class="sr">: {caption}</span></a>
   <ul>
     {
       rows.map((row) => (

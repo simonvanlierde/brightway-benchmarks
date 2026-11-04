@@ -31,7 +31,7 @@ test("the solver story is static, links the viewer at exact views and has its ow
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto("/stories/solver-choice/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("ten times slower");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("five times slower");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${SITE}stories/solver-choice/`);
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
@@ -41,8 +41,8 @@ test("the solver story is static, links the viewer at exact views and has its ow
   const links = await page
     .locator('main a[href*="page=explorer"]')
     .evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
-  // Two chart links and three inline links.
-  expect(links).toHaveLength(5);
+  // Two chart links to the viewer and four inline links.
+  expect(links).toHaveLength(6);
   for (const href of links) {
     const q = new URL(href, SITE).searchParams;
     const group = index.groups.find((g: { name: string }) => g.name === q.get("group"));

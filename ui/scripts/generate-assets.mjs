@@ -475,11 +475,11 @@ await ogPage.setContent(ogHtml);
 const ogBuf = await ogPage.screenshot({ type: "png" });
 writeFileSync(join(publicDir, "og.png"), ogBuf);
 
-// 6. Render story-solver-choice.png (1200x630): the three one-score times of the solver story.
+// 6. Render story-solver-choice.png (1200x630): the solver story's three factorization times on real ecoinvent.
 const storyBars = [
-  ["UMFPACK, conda-forge on OpenBLAS", "2.63 s", 2.63, "#74cfc3"],
-  ["PyPardiso", "10.0 s", 10.0, "#91b4ff"],
-  ["SuperLU, SciPy's default", "27.7 s", 27.7, "#526d91"],
+  ["UMFPACK, conda-forge on OpenBLAS", "0.66 s", 0.66, "#74cfc3"],
+  ["PyPardiso", "1.48 s", 1.48, "#91b4ff"],
+  ["SuperLU, SciPy's default", "3.66 s", 3.66, "#526d91"],
 ]
   .map(
     ([
@@ -488,7 +488,7 @@ const storyBars = [
       seconds,
       color,
     ]) => `<div class="row"><div class="info"><span>${name}</span><span class="mono">${value}</span></div>
-    <div class="track"><div style="width:${(seconds / 27.7) * 100}%;background:${color}"></div></div></div>`,
+    <div class="track"><div style="width:${(seconds / 3.66) * 100}%;background:${color}"></div></div></div>`,
   )
   .join("");
 const storyHtml = `<!DOCTYPE html>
@@ -506,9 +506,9 @@ const storyHtml = `<!DOCTYPE html>
   .foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 18px; color: #aab9d8; }
 </style></head><body>
   <div class="kicker">Brightway benchmarks</div>
-  <h1>Your solver can make the same LCA ten times slower</h1>
+  <h1>Your solver can make the same LCA five times slower</h1>
   ${storyBars}
-  <div class="foot"><span>One score, ecoinvent-sized synthetic database, one thread</span><span class="mono">simonvanlierde.com/brightway-benchmarks</span></div>
+  <div class="foot"><span>Factorizing real ecoinvent 3.12 cut-off, one thread</span><span class="mono">simonvanlierde.com/brightway-benchmarks</span></div>
 </body></html>`;
 const storyPage = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
 await storyPage.emulateMedia({ colorScheme: "dark" });

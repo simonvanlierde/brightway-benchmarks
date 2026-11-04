@@ -615,6 +615,11 @@ details.data {
   color: var(--ink-2);
   font-size: 0.8rem;
 }
+.solver-evidence > p.story-link {
+  margin-top: 14px;
+  color: var(--ink);
+  font-size: 0.875rem;
+}
 .solver-evidence caption {
   font-size: 0.8rem;
   padding-bottom: 9px;

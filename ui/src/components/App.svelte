@@ -367,7 +367,7 @@ $effect(() => {
     <main class="view" id="main" tabindex="-1">
       {#if guidanceError && page === "home"}<p class="empty" role="status">Setup guidance could not be loaded. Benchmark histories remain available. {guidanceError}</p>{/if}
       {#if page === "home"}
-        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} />
+        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} {story} />
       {:else if !bench}
         {#if view.bench}<p class="empty" role="status">This benchmark is not in the current data. Choose one from the catalogue.</p>{/if}
         <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Choose a finding, a change or a benchmark from the catalogue for its history.</p><p class="lede"><a href={story}>The same LCA takes 2.6 s or 28 s depending on one install choice</a>: the story behind the solver numbers.</p></header>

@@ -14,8 +14,8 @@ tool page, and a third masthead page would split the navigation 0003 simplified.
 ## Decision
 
 A story is a static Astro page at `/stories/<slug>`, built like `about.astro` and held to the
-20 KB budget for static pages. Stories stay out of the masthead. The footer, About and one line
-on Benchmarks link to them.
+20 KB budget for static pages. Stories stay out of the masthead. The footer, About, one line
+on Benchmarks and a line beside the evidence a story explains on Setup link to them.
 
 - Each story has its own preview image and description.
 - Every chart or number on a story links to the exact viewer view, as a URL the viewer reads

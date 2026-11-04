@@ -12,4 +12,5 @@ fo = "fo"         # fsspec's file-object keyword, `fsspec.filesystem("zip", fo=.
 [files]
 extend-exclude = [
   "ui/test/fixtures/real/", # exported benchmark data: hashes and ids, not prose
+  "profiles/",              # pyinstrument pages: minified JavaScript, not prose
 ]

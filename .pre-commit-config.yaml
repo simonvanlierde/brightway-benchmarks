@@ -7,7 +7,8 @@
 # `prek install` sets up each of these: the commit message is checked as you commit.
 default_install_hook_types: [pre-commit, commit-msg]
 
-# data/ holds inputs: the whitespace, end-of-file and notebook hooks must not rewrite them.
+# data/ holds inputs and profiles/ generated pages: the whitespace and end-of-file hooks
+# (and nbstripout, for data/) must not rewrite them.
 # Excluded per hook, so the secret scan and the large-file check still cover data/.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -19,11 +20,11 @@ repos:
         # pnpm writes its own version into the lockfile as a second YAML document.
         exclude: (^|/)pnpm-lock\.yaml$
       - id: end-of-file-fixer
-        exclude: ^data/
+        exclude: ^(data|profiles)/
       - id: mixed-line-ending
-        exclude: ^data/
+        exclude: ^(data|profiles)/
       - id: trailing-whitespace
-        exclude: ^data/
+        exclude: ^(data|profiles)/
       # Not gated to python: .rumdl.toml ships to every stack.
       - id: check-toml
 

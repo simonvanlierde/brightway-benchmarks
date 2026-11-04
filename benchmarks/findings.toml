@@ -20,6 +20,7 @@ group = "bw2calc"
 benchmark = "bench_lca.SingleScore.time_first_score"
 params = { size = "ecoinvent", cls = "IterativeLCA" }
 doc = "bw2calc-300-slowed-iterativelca-without-pypardiso-and-310-fixed-it"
+profile = "bw2calc-300-iterativelca-umfpack.html"
 
 [[findings]]
 title = "bw2calc 3.0.0 doubled JacobiGMRESLCA's Monte Carlo time"

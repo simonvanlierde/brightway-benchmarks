@@ -200,7 +200,7 @@ def export(status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE) ->
     out = {
         "format_version": 2,
         "title": "A tested Brightway setup",
-        "intro": "Pick your platform below for a set that passed, and see what the alternatives cost.",
+        "intro": "Pick your platform below for a set that passed.",
         "snapshot": {"date": status["date"], "run": web_url(status["run"])},
         "platforms": [],
         "checks": [],

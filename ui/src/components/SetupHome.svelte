@@ -104,7 +104,7 @@ $effect(() => {
 
 <header class="home-intro">
   <h2>{guidance?.title ?? index.project.name}</h2>
-  <p><a href="https://docs.brightway.dev/en/latest/">Brightway</a> is the open-source Python framework for life cycle assessment (LCA). What you install alongside it decides whether it runs, and how fast: the same score can take ten times longer with a different solver. Every night this site installs Brightway on Linux, macOS and Windows and runs its tests, and it times every release on one fixed machine. {guidance?.intro ?? index.project.description ?? ""}</p>
+  <p>Which Brightway packages work together, and which combination runs your LCA fastest? <a href="https://docs.brightway.dev/en/latest/">Brightway</a> is a family of open-source Python packages for life cycle assessment (LCA), each released on its own. Every night this site tests the combinations on Linux, macOS and Windows, and it times every release. {guidance?.intro ?? index.project.description ?? ""}</p>
 </header>
 
 <div class="home-columns">

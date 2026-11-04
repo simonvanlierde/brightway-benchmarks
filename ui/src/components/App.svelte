@@ -299,6 +299,10 @@ $effect(() => {
   {axis.description}{#if note}{" "}{#if link && axis.values.length > 1}<a href={link}>{value}</a>{:else}<strong>{value}</strong>{/if}: {note}{/if}
 {/snippet}
 
+{#snippet technical(detail: string, hint?: string)}
+  <details class="technical"><summary>Technical details</summary><p class="mono">{detail}</p>{#if hint}<p>{hint}</p>{/if}</details>
+{/snippet}
+
 <a class="skip" href="#main">Skip to the results</a>
 <header class="top">
   <div class="top-inner">
@@ -323,14 +327,13 @@ $effect(() => {
   {#if error}
     <main class="view" id="main" tabindex="-1">
       <div class="empty" role="alert">
-        <p><strong>The benchmark data did not load.</strong></p>
-        <p class="mono">{error}</p>
-        <p>{HINTS[errorKind]}</p>
+        <p><strong>The results could not load.</strong> Reload the page, or try again later.</p>
+        {@render technical(error, HINTS[errorKind])}
       </div>
     </main>
   {:else if !index}
     <main class="view" id="main" tabindex="-1" aria-busy="true">
-      <p aria-live="polite">Loading the benchmarks…</p>
+      <p aria-live="polite">{page === "home" ? "Loading…" : "Loading the benchmarks…"}</p>
       <div class="skeleton"></div>
     </main>
   {:else}
@@ -364,7 +367,7 @@ $effect(() => {
     {/if}
 
     <main class="view" id="main" tabindex="-1">
-      {#if guidanceError && page === "home"}<p class="empty" role="status">Setup guidance could not be loaded. Benchmark histories remain available. {guidanceError}</p>{/if}
+      {#if guidanceError && page === "home"}<div class="empty" role="status"><p>Setup guidance could not be loaded. Benchmark histories remain available.</p>{@render technical(guidanceError)}</div>{/if}
       {#if page === "home"}
         <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} />
       {:else if !bench}
@@ -439,7 +442,7 @@ $effect(() => {
         {/if}
 
         {#if reportError}
-          <div class="empty" role="alert"><p>The results for this benchmark did not load: {reportError}</p></div>
+          <div class="empty" role="alert"><p>The results for this benchmark could not load. Reload the page, or try again later.</p>{@render technical(reportError)}</div>
         {:else if !reports}
           <div class="skeleton" aria-busy="true"><span class="sr">Loading the results…</span></div>
         {:else if shown.length === 0}

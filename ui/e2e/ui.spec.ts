@@ -120,6 +120,11 @@ test("the chart downloads as a standalone SVG", async ({ page }) => {
 test("a missing data folder says what went wrong", async ({ page }) => {
   await page.route("**/data/index.json", (route) => route.fulfill({ status: 404, body: "" }));
   await page.goto("?page=changes");
+  await expect(page.getByRole("alert")).toContainText(
+    "The results could not load. Reload the page, or try again later.",
+  );
+  await expect(page.getByText("HTTP 404")).toBeHidden();
+  await page.getByText("Technical details").click();
   await expect(page.getByRole("alert")).toContainText("HTTP 404");
   await expect(page.getByRole("alert")).toContainText("Check that index.json is in the data folder");
 });

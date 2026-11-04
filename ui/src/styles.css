@@ -331,6 +331,18 @@ code,
   border-style: solid;
   background: var(--page);
 }
+.technical {
+  margin-top: 10px;
+  font-size: 0.8rem;
+}
+.technical summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+.technical p {
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
 .skeleton {
   height: 320px;
   background: var(--page);

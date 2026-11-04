@@ -7,7 +7,9 @@
 ``--structure-only`` skips the SuperLU factorizations, which take most of a full run, and
 keeps the fill figures already in the output file (``FILL_KEYS``). ``measured`` and
 ``versions`` then date the structure, and ``fill_measured`` and ``fill_versions`` the kept
-fill figures; a full run writes only the first pair.
+fill figures; a full run writes only the first pair. ``fill_bounds`` is measured on every
+run, except its COLAMD keys, which need the factorizations: ``--structure-only`` keeps
+those from the output file too. pymetis, in the dev group, computes the METIS keys.
 
 Reads the linked ecospold2 datasets (one file per activity and reference product) and
 writes only what ``bwbench.synth.measure`` returns: counts and distributions, never a
@@ -38,7 +40,9 @@ CREDIT = (
     "Calculated from the ecoinvent 3.12 cut-off database (ecoinvent Association, https://ecoinvent.org). "
     "Aggregate statistics only: no dataset, name, amount or single-dataset figure."
 )
-FILL_KEYS = ("lu_fill", "factor_seconds", "lu_fill_no_pivoting", "off_diagonal_pivots")  # need factorizations
+# Stats fields only the factorizations give: --structure-only keeps them from OUT, and the
+# fill_bounds keys that start with COLAMD.
+FILL_KEYS = ("lu_fill", "factor_seconds", "lu_fill_no_pivoting", "off_diagonal_pivots")
 NS = "{http://www.EcoInvent.org/EcoSpold02}"
 REFERENCE_PRODUCT = "0"  # ecospold2 outputGroup of the reference product
 
@@ -72,6 +76,8 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
     timing figures already in ``out``, with the date and versions they were measured with.
     It refuses when ``out`` is missing or describes another matrix.
     """
+    import pymetis  # noqa: F401, PLC0415 - fill_bounds needs it: fail before the parse. Not at import: solver_factorize imports this module.
+
     old = None
     if structure_only:
         if not out.exists():
@@ -107,7 +113,10 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
 
     stats = asdict(
         measure(
-            a, locations=[r[2] for r in records], sectors=[r[3] for r in records], repeats=0 if structure_only else 3
+            a,
+            locations=[r[2] for r in records],
+            sectors=[r[3] for r in records],
+            repeats=0 if structure_only else 3,
         )
     )
     fill = {}
@@ -116,6 +125,8 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
             msg = f"{out} describes another matrix: run without --structure-only"
             raise SystemExit(msg)
         stats |= {k: old["stats"][k] for k in FILL_KEYS if old["stats"].get(k)}
+        kept = {k: v for k, v in (old["stats"].get("fill_bounds") or {}).items() if k.startswith("COLAMD")}
+        stats["fill_bounds"] = kept | stats["fill_bounds"]
         if old["stats"].get("lu_fill"):
             fill = {
                 "fill_measured": old.get("fill_measured", old["measured"]),
@@ -128,7 +139,7 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
         "datasets": n,
         "unlinked_inputs": unlinked,
         "self_inputs": self_inputs,
-        "versions": {"numpy": version("numpy"), "scipy": version("scipy")},
+        "versions": {"numpy": version("numpy"), "scipy": version("scipy"), "pymetis": version("pymetis")},
         "stats": stats,
         **fill,
     }

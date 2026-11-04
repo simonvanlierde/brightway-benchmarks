@@ -43,7 +43,7 @@ folder at `/out`, run:
 
 ```sh
 PYTHONPATH=src uv run --no-project --python 3.12 \
-  --with numpy==2.5.3 --with scipy==1.18.1 \
+  --with numpy==2.5.3 --with scipy==1.18.1 --with pymetis==2025.2.2 \
   python scripts/calibration_sweep.py --output /out/calibration-sweep.json
 ```
 

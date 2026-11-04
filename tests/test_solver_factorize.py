@@ -26,6 +26,18 @@ def script(monkeypatch: pytest.MonkeyPatch):
     return module
 
 
+def test_imports_without_pymetis(monkeypatch: pytest.MonkeyPatch):
+    # Its documented commands install no pymetis: measure_stats, which it imports, must not need it at import.
+    monkeypatch.setitem(sys.modules, "pymetis", None)
+    monkeypatch.delitem(sys.modules, "measure_stats", raising=False)
+    path = Path(__file__).resolve().parents[1] / "scripts" / "solver_factorize.py"
+    monkeypatch.syspath_prepend(str(path.parent))
+    spec = importlib.util.spec_from_file_location("solver_factorize", path)
+    assert spec is not None
+    assert spec.loader is not None
+    spec.loader.exec_module(importlib.util.module_from_spec(spec))
+
+
 class CpuSolver:
     instances: ClassVar[list] = []
     ignore_update = False

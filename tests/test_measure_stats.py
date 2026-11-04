@@ -208,3 +208,44 @@ def test_parser_is_importable_by_fresh_worker(tmp_path: Path, script: ModuleType
     with ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context(start_method)) as pool:
         record = pool.submit(script.read, folder / "datasets" / "A_pa.spold").result()
     assert record == (("A", "pa"), 1.0, "CH", "35", [(("B", "pb"), 0.5)])
+
+
+def test_structure_only_keeps_the_colamd_fill_bounds(tmp_path: Path, script: ModuleType):
+    folder = release(
+        tmp_path,
+        {"A_pa": dataset("A", "pa", 1.0, "CH", "", [("B", "pb", 0.5)]), "B_pb": dataset("B", "pb", 1.0, "CH", "", [])},
+    )
+    out = tmp_path / "stats.json"
+    script.main(folder, out)
+    result = json.loads(out.read_text())
+    bounds = result["stats"]["fill_bounds"]
+    assert bounds.keys() == {"COLAMD", "COLAMD (A^T)", "METIS", "separator"}
+    assert all(isinstance(v, int | float) for v in leaves(bounds))
+    assert result["versions"]["pymetis"]
+
+    # A structure-only run recomputes METIS and the separator, and keeps the COLAMD keys,
+    # which need the factorizations it skips.
+    metis = bounds["METIS"]
+    bounds["COLAMD"]["bound"] = 123.0
+    bounds["METIS"] = {"bound": 0.0}
+    bounds["MMD_AT_PLUS_A"] = {"bound": 1.0}  # a key fill_bounds no longer reports
+    out.write_text(json.dumps(result))
+    script.main(folder, out, structure_only=True)
+    again = json.loads(out.read_text())["stats"]["fill_bounds"]
+    assert again.keys() == {"COLAMD", "COLAMD (A^T)", "METIS", "separator"}
+    assert again["COLAMD"]["bound"] == 123.0
+    assert again["METIS"] == metis
+
+
+def test_structure_only_on_a_file_without_fill_bounds_adds_the_metis_keys(tmp_path: Path, script: ModuleType):
+    folder = release(
+        tmp_path,
+        {"A_pa": dataset("A", "pa", 1.0, "CH", "", [("B", "pb", 0.5)]), "B_pb": dataset("B", "pb", 1.0, "CH", "", [])},
+    )
+    out = tmp_path / "stats.json"
+    script.main(folder, out)
+    result = json.loads(out.read_text())
+    del result["stats"]["fill_bounds"]  # as the profile file written before fill_bounds existed
+    out.write_text(json.dumps(result))
+    script.main(folder, out, structure_only=True)
+    assert json.loads(out.read_text())["stats"]["fill_bounds"].keys() == {"METIS", "separator"}

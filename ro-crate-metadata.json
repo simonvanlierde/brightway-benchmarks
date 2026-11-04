@@ -16,7 +16,7 @@
       "@type": "Dataset",
       "name": "brightway-benchmarks results",
       "description": "asv timings of the Brightway stack on seeded synthetic LCA systems, with lock files.",
-      "datePublished": "2026-11-03",
+      "datePublished": "2026-11-04",
       "license": {
         "@id": "https://spdx.org/licenses/BSD-3-Clause"
       },
@@ -200,6 +200,12 @@
         },
         {
           "@id": "bw2calc/pinned-x86-1/bwbench-run-20261103T213308Z-7a299fc0e280.txt"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/bwbench-run-20261104T123641Z-merge-76b208103d7b.txt"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/bwbench-run-20261104T123641Z-merge-7a299fc0e280.txt"
         },
         {
           "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json"
@@ -467,6 +473,9 @@
         },
         {
           "@id": "bw_graph_tools/pinned-x86-1/bwbench-run-20261101T155808Z-76b208103d7b.txt"
+        },
+        {
+          "@id": "bw_graph_tools/pinned-x86-1/bwbench-run-20261104T123641Z-merge-76b208103d7b.txt"
         },
         {
           "@id": "bw_graph_tools/pinned-x86-1/e3a36daa-uv-py3.12-bw2calc2.5.0-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK2c9ff45a.json"
@@ -786,6 +795,9 @@
         },
         {
           "@id": "bw2calc/pinned-x86-1/bwbench-run-20261103T213308Z-7a299fc0e280.txt"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/bwbench-run-20261104T123641Z-merge-7a299fc0e280.txt"
         },
         {
           "@id": "bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK75149e5a.json"
@@ -1352,6 +1364,9 @@
           "@id": "bw2calc/pinned-x86-1/bwbench-run-20261101T111121Z-76b208103d7b.txt"
         },
         {
+          "@id": "bw2calc/pinned-x86-1/bwbench-run-20261104T123641Z-merge-76b208103d7b.txt"
+        },
+        {
           "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
@@ -1440,6 +1455,9 @@
         },
         {
           "@id": "bw_graph_tools/pinned-x86-1/bwbench-run-20261101T155808Z-76b208103d7b.txt"
+        },
+        {
+          "@id": "bw_graph_tools/pinned-x86-1/bwbench-run-20261104T123641Z-merge-76b208103d7b.txt"
         },
         {
           "@id": "bw_graph_tools/pinned-x86-1/e3a36daa-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACK2c9ff45a.json"
@@ -2078,6 +2096,16 @@
       "description": "which bwbench commit wrote which file, by sha256"
     },
     {
+      "@id": "bw2calc/pinned-x86-1/bwbench-run-20261104T123641Z-merge-76b208103d7b.txt",
+      "@type": "File",
+      "description": "which bwbench commit wrote which file, by sha256"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/bwbench-run-20261104T123641Z-merge-7a299fc0e280.txt",
+      "@type": "File",
+      "description": "which bwbench commit wrote which file, by sha256"
+    },
+    {
       "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json",
       "@type": "File",
       "description": "asv result"
@@ -2519,6 +2547,11 @@
     },
     {
       "@id": "bw_graph_tools/pinned-x86-1/bwbench-run-20261101T155808Z-76b208103d7b.txt",
+      "@type": "File",
+      "description": "which bwbench commit wrote which file, by sha256"
+    },
+    {
+      "@id": "bw_graph_tools/pinned-x86-1/bwbench-run-20261104T123641Z-merge-76b208103d7b.txt",
       "@type": "File",
       "description": "which bwbench commit wrote which file, by sha256"
     },

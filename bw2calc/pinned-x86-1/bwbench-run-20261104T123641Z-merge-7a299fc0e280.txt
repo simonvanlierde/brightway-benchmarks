@@ -1,0 +1,4 @@
+commit 7a299fc0e2808cfd01eec6f67eca1ec124bf14a9
+generator 3
+deef970830488448e5b3970d9fe4c153245f3e3b41d8d127034f2a8ce5703ec8  bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK75149e5a.json
+3b9bdfd5457e3b08ef84ffa8d8193ad719a50ad9723e60f8d53311b9818ea3ea  bw2calc/pinned-x86-1/fe780d2b-uv-py3.12-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACK75149e5a.json

@@ -1137,6 +1137,13 @@ so a chosen control needs a line of its own. */
   padding-left: 28px;
   border-left: 1px solid var(--line);
 }
+/* Side by side, each column's first heading starts at the same height: the column rule divides them. */
+@media (min-width: 55.0625rem) {
+  .evidence-column > :first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+}
 .view .install-set h2,
 .view .all-checks h2,
 .view .findings h2,

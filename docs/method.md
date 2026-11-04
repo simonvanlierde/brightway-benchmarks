@@ -40,7 +40,7 @@ wires them at random, while in ecoinvent the regional variants of one activity s
 inputs and each ISIC division buys from its own set of suppliers. So its factors fill more:
 SuperLU with COLAMD on Aᵀ, the factorization bw2calc 3.1 runs, holds 85 times as many entries
 as the matrix against 26 for ecoinvent (323 against 175 on A), and METIS on A + Aᵀ 110 against
-31. Direct-solver times overstate real ecoinvent by 5 to 8 times
+31. Direct-solver times overstate real ecoinvent by 6 to 11 times on Aᵀ
 ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
 `test_ecoinvent_profile_fills_like_its_target` holds the fill target as an expected failure
 until a profile meets it. With a

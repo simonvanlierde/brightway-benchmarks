@@ -1443,7 +1443,9 @@ table.check-grid td a[aria-current="true"] {
     margin: 0;
     padding: 0;
   }
+  /* One link per row: only the check's name is underlined, so the row does not read as two links. */
   .platform-checks a {
+    text-decoration: none;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1451,6 +1453,12 @@ table.check-grid td a[aria-current="true"] {
     padding: 10px 0;
     border-bottom: 1px solid var(--line);
     font-size: 0.875rem;
+  }
+  .platform-checks .check-name {
+    text-decoration: underline;
+  }
+  .platform-checks a:hover .check-name {
+    text-decoration-thickness: 2px;
   }
   .platform-checks small {
     display: block;

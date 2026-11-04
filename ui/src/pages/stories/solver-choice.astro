@@ -1,0 +1,116 @@
+---
+import StoryBars from "../../components/StoryBars.astro";
+import "../../styles.css";
+import { viewerHref } from "../../lib/story-links";
+import Head from "../_Head.astro";
+
+const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
+const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
+const single = "bench_lca.SingleScore.time_first_score";
+const multi = "bench_lca.MultiScores.time_scores";
+const carlo = "bench_lca.MonteCarlo.time_iterations";
+const link = (group: string, bench: string, ...params: string[]) => viewerHref(home, group, bench, params);
+
+// One score: benchmarks/findings.toml, "The solver sets the time for one score".
+const oneScore = link("bw2calc-conda", single, "ecoinvent", "LCA");
+const pipScore = link("bw2calc", single, "ecoinvent", "LCA");
+// 30 products: published results of the latest bw2calc-conda run, in the viewer's MultiScores view.
+const thirty = (variant: string) => link("bw2calc-conda", multi, "ecoinvent", "30", variant);
+---
+
+<html lang="en">
+  <head>
+    <Head
+      title="The same LCA in 2.6 s or 28 s: Brightway benchmarks"
+      description="One Brightway score on an ecoinvent-sized database takes 2.63 s, 10.0 s or 27.7 s, depending on which sparse solver you install."
+      canonical="https://simonvanlierde.com/brightway-benchmarks/stories/solver-choice/"
+      image="https://simonvanlierde.com/brightway-benchmarks/ui/story-solver-choice.png"
+      imageAlt="Three bars for one Brightway score on an ecoinvent-sized database: UMFPACK 2.63 seconds, PyPardiso 10.0 seconds, SuperLU 27.7 seconds."
+    />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to the content</a>
+    <header class="top">
+      <div class="top-inner">
+        <a class="story-brand" href={home}>brightway-benchmarks</a>
+        <nav class="primary-nav" aria-label="Main">
+          <a href={home}>Setup</a>
+          <a href={`${home}?page=explorer`}>Benchmarks</a>
+        </nav>
+        <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme">
+          <svg data-theme-icon="sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg>
+          <svg data-theme-icon="moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/></svg>
+        </button>
+      </div>
+    </header>
+    <main class="story" id="main" tabindex="-1">
+      <h1>The same LCA takes 2.6 s or 28 s, depending on one install choice</h1>
+      <p class="lede">Every Brightway score solves a large sparse linear system. What you install decides which solver does it, and the times differ by a factor of ten.</p>
+      <p>All times below are for an ecoinvent-sized synthetic database on one thread, measured on one pinned benchmark machine. Each row opens its benchmark in the viewer, where you can see the history by release.</p>
+
+      <h2>One score</h2>
+      <p>The first score with bw2calc's <code>LCA</code> class builds the matrices, factorizes, solves and characterizes.</p>
+      <StoryBars
+        caption="Time to the first score"
+        rows={[
+          { label: "UMFPACK, conda-forge build on OpenBLAS", seconds: 2.63, href: oneScore, tone: "fast" },
+          { label: "PyPardiso", seconds: 10.0, href: oneScore, tone: "mid" },
+          { label: "SuperLU, SciPy's default", seconds: 27.7, href: oneScore, tone: "base" },
+        ]}
+      />
+      <p>SuperLU is what you get with nothing extra installed. bw2calc uses PyPardiso whenever it is installed, and bw_timex pulls it in on Linux x86_64. To get UMFPACK, install scikit-umfpack from conda-forge and leave PyPardiso out.</p>
+      <p>The BLAS library under UMFPACK matters too. A scikit-umfpack build on reference BLAS takes about 9 s for the same score (<a href={pipScore}>see the view</a>).</p>
+
+      <h2>30 products</h2>
+      <p><code>MultiLCA</code> scores 30 products against three impact methods in one calculation.</p>
+      <StoryBars
+        caption="MultiLCA, 30 products"
+        rows={[
+          { label: "UMFPACK, conda-forge build on OpenBLAS", seconds: 28.7, href: thirty("MultiLCA"), tone: "fast" },
+          { label: "PyPardiso", seconds: 10.6, href: thirty("MultiLCA"), tone: "mid" },
+          { label: "SuperLU, SciPy's default", seconds: 28.7, href: thirty("MultiLCA"), tone: "base" },
+        ]}
+      />
+      <p>Here UMFPACK is no faster than SuperLU, and PyPardiso is 2.7 times faster than both. The best solver depends on the task.</p>
+      <p><code>FastScoresOnlyMultiLCA</code> solves one system per product and keeps only the scores. For the same 30 products it takes 3.56 s with UMFPACK and 10.5 s with PyPardiso (<a href={thirty("forward")}>see the view</a>). No SuperLU run of it is published.</p>
+
+      <h2>Monte Carlo</h2>
+      <p>Each Monte Carlo draw samples new matrix values, so the solver works again on every draw. Ten draws with <code>LCA</code> under PyPardiso take 99.3 s (<a href={link("bw2calc-conda", carlo, "ecoinvent", "10", "LCA")}>see the view</a>).</p>
+      <p>This page gives no time for 1,000 draws, and none for UMFPACK or SuperLU: the published runs do not include them.</p>
+
+      <h2>What to do</h2>
+      <p><a href={home}>Setup</a> lists install sets that passed their checks on each platform. <a href={`${repository}/blob/main/docs/faster.md`}>Make your Brightway faster</a> lists the other install choices and calls that change the time, each with its measured gain. The <a href={`${repository}/blob/main/docs/method.md`}>method</a> describes the database, the reference checks and the measurement noise.</p>
+    </main>
+  </body>
+</html>
+
+<style>
+  .top-inner > .theme-toggle {
+    margin-left: auto;
+  }
+  .story-brand {
+    color: var(--ink);
+    font-weight: 650;
+    text-decoration: none;
+  }
+  .story {
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: 40px 24px 64px;
+  }
+  .story h1 {
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    letter-spacing: -0.03em;
+  }
+  .story h2 {
+    font-size: 1.25rem;
+    margin: 32px 0 10px;
+  }
+  .story p {
+    margin: 12px 0;
+    max-width: 70ch;
+  }
+  .story .lede {
+    color: var(--ink-2);
+  }
+</style>

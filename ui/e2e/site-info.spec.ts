@@ -24,12 +24,37 @@ test("the static About page explains evidence and browser storage without JavaSc
   await context.close();
 });
 
+test("the solver story is static, links the viewer at exact views and has its own preview", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  await page.goto("/stories/solver-choice/");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("2.6 s or 28 s");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${SITE}stories/solver-choice/`);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    "content",
+    `${SITE}ui/story-solver-choice.png`,
+  );
+  const bars = page.locator("figure.bars a");
+  await expect(bars).toHaveCount(6);
+  const href = (await bars.first().getAttribute("href")) ?? "";
+  for (const part of [
+    "page=explorer",
+    "group=bw2calc-conda",
+    "bench=bench_lca.SingleScore.time_first_score",
+    "p=ecoinvent&p=LCA",
+  ]) {
+    expect(href).toContain(part);
+  }
+  await context.close();
+});
+
 test("the sitemap and icon are published without listing transient benchmark selections", async ({ request }) => {
   const sitemap = await request.get("/sitemap.xml");
   expect(sitemap.ok()).toBe(true);
   const xml = await sitemap.text();
   expect(xml).toContain(`<loc>${SITE}</loc>`);
   expect(xml).toContain(`<loc>${SITE}about/</loc>`);
+  expect(xml).toContain(`<loc>${SITE}stories/solver-choice/</loc>`);
   expect(xml).not.toContain("?bench=");
   const icon = await request.get("/favicon.svg");
   expect(icon.ok()).toBe(true);

@@ -43,7 +43,8 @@ let {
   base,
   build,
   about = "/about/",
-}: { base: string; build?: { label: string; url: string }; about?: string } = $props();
+  story = "/stories/solver-choice/",
+}: { base: string; build?: { label: string; url: string }; about?: string; story?: string } = $props();
 
 // Fetched with the first chart, so the start page does not load Plot.
 let chartModule: Promise<typeof import("./HistoryChart.svelte")> | undefined;
@@ -369,7 +370,7 @@ $effect(() => {
         <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} />
       {:else if !bench}
         {#if view.bench}<p class="empty" role="status">This benchmark is not in the current data. Choose one from the catalogue.</p>{/if}
-        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Choose a finding, a change or a benchmark from the catalogue for its history.</p></header>
+        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Choose a finding, a change or a benchmark from the catalogue for its history.</p><p class="lede"><a href={story}>The same LCA takes 2.6 s or 28 s depending on one install choice</a>: the story behind the solver numbers.</p></header>
         <Findings {index} {follow} wide />
         <ReleaseChanges {index} {view} {go} {follow} loaded={overview} />
 
@@ -567,6 +568,7 @@ $effect(() => {
   <nav aria-label="Project">
     {#each index?.project.links ?? [] as link (link.url)}<a href={link.url}>{link.name}</a>{/each}
     {#if index?.project.url}<a href={index.project.url}>GitHub</a>{/if}
+    <a href={story}>Solver story</a>
     <a href={about}>About &amp; privacy</a>
     {#if build}<a class="build-version" href={build.url} aria-label="Build {build.label}">{build.label}</a>{/if}
   </nav>

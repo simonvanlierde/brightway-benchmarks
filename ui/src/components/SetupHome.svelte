@@ -3,7 +3,7 @@ import { tick } from "svelte";
 import type { BenchmarkIndex, Guidance } from "../lib/contract";
 import { dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/guidance";
 import {
-  benchmarkLabel,
+  benchLabel,
   byBenchmark,
   format,
   latestChanges,
@@ -185,7 +185,7 @@ $effect(() => {
         {@const row = rows[0]}
         {#if row}
         {@const next = { bench: row.bench.id, params: row.params, measure: row.change.measure, machine: row.change.machine }}
-        <article class="brief-change"><div><h3><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchmarkLabel(row.bench.name)}</a></h3><strong class={row.way}>{percentRange(rows)} {row.way}</strong></div><p>{#if rows.length > 1}{rows.length} cases, each beyond its noise{:else}{row.env} · beyond {noiseText(row.change)} noise{/if}</p><p class="brief-context">{row.group.name} · {row.from} → {row.to}{#if index.machines.length > 1} · {index.machines.find((m) => m.id === row.change.machine)?.name}{/if}</p></article>
+        <article class="brief-change"><div><h3><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchLabel(index, row.bench)}</a></h3><strong class={row.way}>{percentRange(rows)} {row.way}</strong></div><p>{#if rows.length > 1}{rows.length} cases, each beyond its noise{:else}{row.env} · beyond {noiseText(row.change)} noise{/if}</p><p class="brief-context">{row.group.name} · {row.from} → {row.to}{#if index.machines.length > 1} · {index.machines.find((m) => m.id === row.change.machine)?.name}{/if}</p></article>
         {/if}
       {/each}
       {#if moves.length === 0}<p class="coverage-text">No release changes beyond measured noise were published.</p>{/if}

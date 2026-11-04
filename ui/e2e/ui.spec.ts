@@ -47,15 +47,15 @@ test.describe("looks", () => {
 
 test("the view lives in the URL, and back goes back", async ({ page }) => {
   await chart(page, SCORES);
-  await page.getByLabel("variant", { exact: true }).selectOption("adjoint");
+  await page.getByLabel("Scoring", { exact: true }).selectOption("adjoint");
   await expect(page).toHaveURL(/p=adjoint/);
   await page.reload();
-  await expect(page.getByLabel("variant", { exact: true })).toHaveValue("adjoint");
-  await expect(page.getByLabel("demands", { exact: true })).toHaveValue("3");
+  await expect(page.getByLabel("Scoring", { exact: true })).toHaveValue("adjoint");
+  await expect(page.getByLabel("Functional units", { exact: true })).toHaveValue("3");
   await page.getByRole("link", { name: "Import bw2calc" }).first().click();
   await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveText("Import bw2calc");
   await page.goBack();
-  await expect(page.getByLabel("variant", { exact: true })).toHaveValue("adjoint");
+  await expect(page.getByLabel("Scoring", { exact: true })).toHaveValue("adjoint");
 });
 
 test("the start page links each change to its chart", async ({ page }) => {
@@ -168,8 +168,10 @@ test("a skip link leads to the results, and a one-value axis is plain text", asy
   await expect(page.getByRole("link", { name: "Skip to the results" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("#main")).toBeFocused();
-  await expect(page.getByLabel("size", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Database", { exact: true })).toHaveCount(0);
   await expect(page.locator(".fixed")).toHaveText("ecoinvent");
+  await expect(page.locator(".fixed a")).toHaveCount(0);
+  await expect(page.getByLabel("Scoring", { exact: true })).toBeVisible();
 });
 
 for (const [scheme, width] of [
@@ -268,7 +270,7 @@ test("Benchmarks opens on the findings, and each finding opens its chart", async
     .getByRole("link", { name: /JacobiGMRESLCA/ })
     .first()
     .click();
-  await expect(page.getByLabel("cls", { exact: true })).toHaveValue("JacobiGMRESLCA");
+  await expect(page.getByLabel("Calculation class", { exact: true })).toHaveValue("JacobiGMRESLCA");
   await expect(page.locator(".chart svg")).toBeVisible();
 });
 
@@ -285,7 +287,7 @@ test("Setup leaves out the finding its solver chart already shows", async ({ pag
 test("the explorer explains the benchmark and links the chosen values", async ({ page }) => {
   await chart(page, MONTE_CARLO);
   await expect(page.locator(".bench-about")).not.toBeEmpty();
-  const cls = page.getByLabel("cls", { exact: true });
+  const cls = page.getByLabel("Calculation class", { exact: true });
   const note = page.locator(".field").filter({ has: cls }).locator(".field-note");
   await expect(note).toContainText("JacobiGMRESLCA: Solves by GMRES");
   await expect(note.getByRole("link", { name: "JacobiGMRESLCA" })).toHaveAttribute("href", /docs\.brightway\.dev/);
@@ -329,7 +331,7 @@ test("the masthead search filters the catalogue and opens the first match", asyn
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("./");
   const search = page.getByRole("searchbox", { name: "Find a benchmark" });
-  await search.fill("Multi Scores");
+  await search.fill("Multiple scores");
   await expect(page).toHaveURL(/page=explorer/);
   await expect(page.getByRole("navigation", { name: "Benchmarks" }).locator("li a")).toHaveCount(2);
   await search.fill("timeraw_import_bw2calc");
@@ -684,14 +686,14 @@ test("phone checks show only the selected platform and keep check selection work
 test("phone parameter details are optional while controls and the plot stay visible", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chart(page, SCORES);
-  await expect(page.getByLabel("demands", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Functional units", { exact: true })).toBeVisible();
   await expect(page.locator(".field-note:visible")).toHaveCount(0);
   const plot = await page.locator(".chart svg").boundingBox();
   expect(plot ? plot.y + plot.height / 2 : Infinity).toBeLessThan(844);
   await page.getByText("Parameter details", { exact: true }).click();
   await expect(page.locator(".parameter-details")).toContainText("26,533");
   await expect(page.locator(".parameter-details .field-note").first()).toBeVisible();
-  await page.getByLabel("variant", { exact: true }).selectOption("adjoint");
+  await page.getByLabel("Scoring", { exact: true }).selectOption("adjoint");
   await expect(page.locator(".parameter-details")).toContainText("FastScoresOnlyMultiLCA");
   await page.setViewportSize({ width: 1440, height: 900 });
   await expect(page.getByText("Parameter details", { exact: true })).not.toBeVisible();

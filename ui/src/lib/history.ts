@@ -323,14 +323,26 @@ export function benchmarkLabel(name: string): string {
   const words = (text: string) => text.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replaceAll("_", " ");
   const action = words(method.replace(/^(timeraw|time|peakmem|track)_/, ""));
   const context = words(owner);
-  const label =
-    context && action.split(" ").every((w) => context.toLowerCase().includes(w.toLowerCase()))
+  const own = context.toLowerCase().split(" ");
+  const repeated = action.split(" ").filter((w) => own.includes(w.toLowerCase())).length;
+  // "Multi Scores", not "Multi Scores · scores"; "First score", not "Single Score · first score".
+  const label = !context
+    ? action
+    : repeated === action.split(" ").length
       ? context
-      : context
-        ? `${context} · ${action}`
-        : action;
+      : repeated
+        ? action
+        : `${context} · ${action}`;
   const text = label.charAt(0).toUpperCase() + label.slice(1);
   return method.startsWith("peakmem_") ? `${text} · Peak memory` : text;
+}
+
+/** What to call BENCH: the data's label, else a readable form of its name; with the name too when another in its group reads the same. */
+export function benchLabel(index: BenchmarkIndex, bench: Benchmark): string {
+  const text = (b: Benchmark) => b.label ?? benchmarkLabel(b.name);
+  const own = text(bench);
+  const clash = index.benchmarks.some((b) => b !== bench && b.group === bench.group && text(b) === own);
+  return clash ? `${own} (${bench.name})` : own;
 }
 
 /**

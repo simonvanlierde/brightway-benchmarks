@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { BenchmarkIndex, BenchmarkReport } from "../src/lib/contract";
 import type { LatestChange } from "../src/lib/history";
 import {
+  benchLabel,
   benchmarkLabel,
   breakable,
   changesFor,
@@ -219,6 +220,29 @@ describe("readable benchmark names", () => {
     expect(benchmarkLabel("bench_import.timeraw_import_bw2calc")).toBe("Import bw2calc");
     expect(benchmarkLabel("bench_write.DatabaseWrite.peakmem_write")).toBe("Database Write · Peak memory");
     expect(benchmarkLabel("plain")).toBe("Plain");
+    // A word the class name already has is not said twice.
+    expect(benchmarkLabel("bench_lca.SingleScore.time_first_score")).toBe("First score");
+    expect(benchmarkLabel("bench_lca.NewDemand.time_redo_lci")).toBe("New Demand · redo lci");
+  });
+
+  it("prefers the data's label, and adds the name when two in a group read the same", () => {
+    const bench = (name: string, label?: string) =>
+      ({
+        id: name,
+        group: "g",
+        name,
+        measures: ["t"],
+        params: [],
+        ...(label ? { label } : {}),
+      }) as BenchmarkIndex["benchmarks"][number];
+    const a = bench("m.A.time_x", "Same");
+    const b = bench("m.B.time_y", "Same");
+    const c = bench("m.C.time_z", "Own");
+    const d = bench("m.D.time_w");
+    const index = { benchmarks: [a, b, c, d] } as BenchmarkIndex;
+    expect(benchLabel(index, a)).toBe("Same (m.A.time_x)");
+    expect(benchLabel(index, c)).toBe("Own");
+    expect(benchLabel(index, d)).toBe("D · w");
   });
 });
 

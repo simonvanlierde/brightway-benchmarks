@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { BenchmarkIndex, BenchmarkReport } from "../lib/contract";
 import {
-  benchmarkLabel,
+  benchLabel,
   byBenchmark,
   type LatestChange,
   latestChanges,
@@ -49,12 +49,7 @@ const flagged = $derived(filtered.filter((r) => r.way !== "better"));
 const gains = $derived(byBenchmark(filtered.filter((r) => r.way === "better")));
 const gainCases = $derived(gains.reduce((n, g) => n + g.rows.length, 0));
 const narrowed = $derived(packageId !== "" || direction !== "all");
-function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
-  const label = benchmarkLabel(b.name);
-  return index.benchmarks.filter((other) => other.group === b.group && benchmarkLabel(other.name) === label).length > 1
-    ? `${label} (${b.name})`
-    : label;
-}
+const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b);
 </script>
 <section class="release-changes" aria-labelledby="changes-heading">
         <header class="changes-header">

@@ -373,11 +373,18 @@ def test_descriptions_follow_the_shown_values(export_ui: ModuleType):
             {"name": "unknown", "values": ["1"]},
         ],
     }
-    about = {"benchmarks": {"b": "Bee."}, "params": {"cls": "The class."}, "values": {"cls": {"LCA": "Direct."}}}
+    about = {
+        "benchmarks": {"b": "Bee."},
+        "params": {"cls": "The class."},
+        "values": {"cls": {"LCA": "Direct."}},
+        "labels": {"benchmarks": {"b": "B"}, "params": {"cls": "Class"}},
+    }
     export_ui.describe([bench], about)
     assert bench["description"] == "Bee."
+    assert bench["label"] == "B"
     assert bench["params"][0] == {
         "name": "cls",
+        "label": "Class",
         "values": ["'LCA'", "'Other'"],
         "labels": ["LCA", "Other"],
         "description": "The class.",
@@ -512,6 +519,15 @@ def test_every_benchmark_and_parameter_the_ui_shows_is_described():
     index = json.loads((ROOT / "ui" / "test" / "fixtures" / "real" / "index.json").read_text())
     assert [b["name"] for b in index["benchmarks"] if not b.get("description")] == []
     assert {a["name"] for b in index["benchmarks"] for a in b["params"] if not a.get("description")} == set()
+    assert [b["name"] for b in index["benchmarks"] if not b.get("label")] == []
+    assert {a["name"] for b in index["benchmarks"] for a in b["params"] if not a.get("label")} == set()
+    assert [g["name"] for g in index["groups"] if not g.get("description")] == []
+
+
+def test_groups_take_their_line_from_the_descriptions(export_ui: ModuleType):
+    groups = [{"id": "a", "name": "a"}, {"id": "b", "name": "b"}]
+    export_ui.describe_groups(groups, {"groups": {"a": "Pip wheels."}})
+    assert groups == [{"id": "a", "name": "a", "description": "Pip wheels."}, {"id": "b", "name": "b"}]
 
 
 def test_a_name_without_letters_still_makes_an_id(export_ui: ModuleType):

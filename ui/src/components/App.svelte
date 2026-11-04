@@ -13,7 +13,7 @@ import {
 } from "../lib/contract";
 import {
   axisLabels,
-  benchmarkLabel,
+  benchLabel,
   breakable,
   changesFor,
   commitName,
@@ -213,7 +213,7 @@ const unreleased = $derived(
   new Set(shown.flatMap((l) => l.points.filter((p) => !p.released).map((p) => p.commit))).size,
 );
 const paramText = $derived(
-  bench ? bench.params.map((a, i) => `${a.name} ${paramLabels(bench, params)[i]}`).join(", ") : "",
+  bench ? bench.params.map((a, i) => `${a.label ?? a.name} ${paramLabels(bench, params)[i]}`).join(", ") : "",
 );
 const commits = $derived(index && bench ? index.commits.filter((c) => c.group === bench.group) : []);
 const label = (id: string) => commitName(index?.commits.find((x) => x.id === id) ?? { id });
@@ -248,16 +248,9 @@ function openFirst(e: SubmitEvent) {
   if (first) go({ bench: first.id, params: [] });
 }
 const matching = $derived(
-  index?.benchmarks.filter((b) => `${b.name} ${benchmarkLabel(b.name)}`.toLowerCase().includes(search.toLowerCase())) ??
-    [],
+  index?.benchmarks.filter((b) => `${b.name} ${labelOf(b)}`.toLowerCase().includes(search.toLowerCase())) ?? [],
 );
-function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
-  const text = benchmarkLabel(b.name);
-  const collisions = index?.benchmarks.filter(
-    (other) => other.group === b.group && benchmarkLabel(other.name) === text,
-  );
-  return collisions && collisions.length > 1 ? `${text} (${b.name})` : text;
-}
+const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => (index ? benchLabel(index, b) : b.name);
 const tableRows = $derived.by(() => {
   const byCommit = shown.map((l) => new Map(l.points.map((p) => [p.commit, p])));
   return commits.map((c) => ({ c, cells: byCommit.map((m) => m.get(c.id)) })).filter((r) => r.cells.some((x) => x));
@@ -296,7 +289,7 @@ $effect(() => {
   {@const at = (axis.labels ?? axis.values).indexOf(value)}
   {@const note = axis.notes?.[at]}
   {@const link = axis.links?.[at]}
-  {axis.description}{#if note}{" "}{#if link && axis.values.length > 1}<a href={link}>{value}</a>{:else}<strong>{value}</strong>{/if}: {note}{/if}
+  {axis.description}{#if note}{" "}{#if link}<a href={link}>{value}</a>{:else}<strong>{value}</strong>{/if}: {note}{/if}
 {/snippet}
 
 {#snippet technical(detail: string, hint?: string)}
@@ -400,13 +393,12 @@ $effect(() => {
             {@const value = paramLabels(bench, params)[i] ?? ""}
             {@const at = labels.indexOf(value)}
             {@const note = axis.notes?.[at]}
-            {@const link = axis.links?.[at]}
             <div class="field">
               {#if labels.length === 1}
-                <span class="label">{axis.name}</span>
-                <span class="fixed">{#if link}<a href={link}>{value}</a>{:else}{value}{/if}</span>
+                <span class="label">{axis.label ?? axis.name}</span>
+                <span class="fixed">{value}</span>
               {:else}
-                <label for="axis-{i}">{axis.name}</label>
+                <label for="axis-{i}">{axis.label ?? axis.name}</label>
                 <select id="axis-{i}" value={value} onchange={(e) => setParam(i, e.currentTarget.value)}>
                   {#each labels as l (l)}<option>{l}</option>{/each}
                 </select>
@@ -437,7 +429,7 @@ $effect(() => {
         {#if bench.params.some((axis) => axis.description || axis.notes?.some(Boolean))}
           <details class="parameter-details">
             <summary>Parameter details</summary>
-            <dl>{#each bench.params as axis, i (axis.name)}<dt>{axis.name}</dt><dd class="field-note">{@render parameterNote(axis, i)}</dd>{/each}</dl>
+            <dl>{#each bench.params as axis, i (axis.name)}<dt>{axis.label ?? axis.name}</dt><dd class="field-note">{@render parameterNote(axis, i)}</dd>{/each}</dl>
           </details>
         {/if}
 

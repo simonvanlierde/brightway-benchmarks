@@ -27,6 +27,55 @@
 "bench_timex.TimelineLCI.track_static_score_error"         = "How far bw_timex's static score is from a plain bw2calc LCA of the same system."
 "bench_mapped_matrix.MappedMatrixBuild.time_mapped_matrix" = "Building a technosphere matrix from a datapackage with matrix_utils' MappedMatrix."
 
+# The short name the viewer shows for a benchmark; the original name stays in its detail view.
+[labels.benchmarks]
+"bench_import.timeraw_import_bw2calc"                      = "Import bw2calc"
+"bench_import.timeraw_import_bw2data"                      = "Import bw2data"
+"bench_lca.SingleScore.time_first_score"                   = "First score"
+"bench_lca.SingleScore.peakmem_first_score"                = "First score · Peak memory"
+"bench_lca.SingleScore.track_relative_error"               = "First score · Error"
+"bench_lca.NewDemand.time_redo_lci"                        = "Second demand"
+"bench_lca.NewDemand.track_relative_error"                 = "Second demand · Error"
+"bench_lca.NewDemandRefinement.time_redo_lci_refinement"   = "Second demand with refinement"
+"bench_lca.NewDemandRefinement.track_refinement_steps"     = "Second demand with refinement · Steps"
+"bench_lca.NewDemandRefinement.track_relative_error"       = "Second demand with refinement · Error"
+"bench_lca.MultiScores.time_scores"                        = "Multiple scores"
+"bench_lca.MonteCarlo.time_iterations"                     = "Monte Carlo draws"
+"bench_write.DatabaseWrite.time_write"                     = "Database write"
+"bench_write.DatabaseWrite.peakmem_write"                  = "Database write · Peak memory"
+"bench_write.DatabaseWrite.track_score_error"              = "Database write · Error"
+"bench_traversal.Traversal.time_traverse"                  = "Graph traversal"
+"bench_traversal.Traversal.track_calculation_count"        = "Graph traversal · Calculations"
+"bench_datapackage.EntriesPath.time_add_entries"           = "Add entries"
+"bench_datapackage.EntriesPath.time_vars_iterator"         = "Add entries from an iterator"
+"bench_datapackage.Groups.time_groups"                     = "List resource groups"
+"bench_timex.TimelineLCI.time_lci"                         = "Time-explicit LCI"
+"bench_timex.TimelineLCI.track_static_score_error"         = "Time-explicit LCI · Static score error"
+"bench_mapped_matrix.MappedMatrixBuild.time_mapped_matrix" = "Build a mapped matrix"
+
+# The name the viewer shows for a parameter.
+[labels.params]
+size       = "Database"
+cls        = "Calculation class"
+demands    = "Functional units"
+variant    = "Scoring"
+iterations = "Draws"
+refinement = "Iterative refinement"
+max_calc   = "Calculation limit"
+entries    = "Matrix entries"
+groups     = "Resource groups"
+steps      = "Yearly steps"
+
+# One line under a subject's name in the catalogue: what it times, or what sets it apart.
+[groups]
+bw2calc         = "NumPy, SciPy and the solvers from PyPI wheels."
+"bw2calc-conda" = "NumPy, SciPy and the solvers from conda-forge, on OpenBLAS or MKL."
+bw2data         = "Writing a database into a project."
+bw_graph_tools  = "Supply chain graph traversal."
+bw_processing   = "Adding entries to datapackages and listing their resources."
+bw_timex        = "Time-explicit inventories over two background databases."
+matrix_utils    = "Building matrices from datapackages."
+
 # A parameter's meaning, the same in every benchmark that has it.
 [params]
 size       = "The synthetic system the case runs on."

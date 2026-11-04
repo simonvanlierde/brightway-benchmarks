@@ -42,6 +42,10 @@
         "properties": {
           "id": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
+          "description": {
+            "description": "One line on what sets the group apart, such as how its packages are installed.",
+            "type": "string"
+          },
           "url": { "type": "string", "format": "uri", "pattern": "^https?://" },
           "links": {
             "description": "More pages about what the group names, such as its source or changelog.",
@@ -115,6 +119,10 @@
           "id": { "$ref": "#/$defs/id" },
           "group": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
+          "label": {
+            "description": "A short name to show; without it, show a readable form of the name.",
+            "type": "string"
+          },
           "description": { "description": "What it measures, for readers.", "type": "string" },
           "url": {
             "description": "Its source, how it measures.",
@@ -141,6 +149,10 @@
               "required": ["name", "values"],
               "properties": {
                 "name": { "type": "string" },
+                "label": {
+                  "description": "The parameter's name to show; without it, show the name.",
+                  "type": "string"
+                },
                 "description": { "description": "What the parameter means.", "type": "string" },
                 "values": {
                   "description": "As cases give them, in display order.",

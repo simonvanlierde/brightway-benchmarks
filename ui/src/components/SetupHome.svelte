@@ -2,7 +2,16 @@
 import { tick } from "svelte";
 import type { BenchmarkIndex, Guidance } from "../lib/contract";
 import { dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/guidance";
-import { benchmarkLabel, format, latestChanges, noiseText, percent, type View, writeView } from "../lib/history";
+import {
+  benchmarkLabel,
+  format,
+  latestChanges,
+  noiseText,
+  percent,
+  readView,
+  type View,
+  writeView,
+} from "../lib/history";
 import Findings from "./Findings.svelte";
 import InstallSet from "./InstallSet.svelte";
 
@@ -78,6 +87,8 @@ const moves = $derived(
   [changes.find((c) => c.way === "worse"), changes.find((c) => c.way === "better")].filter((c) => c !== undefined),
 );
 const comparison = $derived(guidance?.solverComparison);
+// The findings below leave out the comparison above: one fact, one set of numbers on the page.
+const compared = $derived(comparison?.rows.map((r) => readView(new URL(r.href, "https://x/").search)) ?? []);
 const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ?? [])));
 
 // Links to the old compatibility view land on the grid.
@@ -161,7 +172,7 @@ $effect(() => {
       <p class="measurement-note solver-pending">The solver comparison is being measured again. <a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Compare solvers in the benchmarks</a>.</p>
     {/if}
 
-    <Findings {index} {follow} />
+    <Findings {index} {follow} shownElsewhere={compared} />
 
     <section class="release-brief" aria-labelledby="release-brief-heading">
       <h2 id="release-brief-heading">What changed?</h2><p>Changes beyond measured noise in each package's latest release.</p>

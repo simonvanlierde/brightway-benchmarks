@@ -267,6 +267,16 @@ test("Benchmarks opens on the findings, and each finding opens its chart", async
   await expect(page.locator(".chart svg")).toBeVisible();
 });
 
+test("Setup leaves out the finding its solver chart already shows", async ({ page }) => {
+  await page.goto("./");
+  const findings = page.getByRole("region", { name: "What the benchmarks show" });
+  await expect(findings.getByRole("heading", { level: 3 }).first()).toBeVisible();
+  await expect(findings.getByRole("heading", { name: "The solver sets the time for one score" })).toHaveCount(0);
+  await expect(
+    findings.getByRole("link", { name: "Write-up on bw2calc 3.0.0 slowed IterativeLCA, and 3.1.0 fixed it" }),
+  ).toBeVisible();
+});
+
 test("the explorer explains the benchmark and links the chosen values", async ({ page }) => {
   await chart(page, MONTE_CARLO);
   await expect(page.locator(".bench-about")).not.toBeEmpty();

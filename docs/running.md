@@ -42,7 +42,8 @@ The `codspeed` workflow runs `benchmarks/codspeed` on each pull request and push
 [`benchmarks/descriptions.toml`](../benchmarks/descriptions.toml); it warns about a benchmark
 that has no entry there, so add one with each new benchmark.
 `just results-commit` refuses results that name this host or a name in
-`BWBENCH_PRIVATE_NAMES`.
+`BWBENCH_PRIVATE_NAMES`. Result files do not record `BWBENCH_THREADS`, `BWBENCH_ROUNDS`,
+`BWBENCH_CPUS` or `BWBENCH_MEM`, so don't commit runs made with values other than the defaults.
 
 ### Experimental solvers
 

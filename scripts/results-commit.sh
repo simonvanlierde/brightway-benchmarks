@@ -5,8 +5,10 @@
 # ahead), else from origin/results, else starts empty, so results from several machines or
 # clones end up in one history. Files are added and updated, never deleted: another
 # machine's folders stay. A result file keeps the cells an earlier run timed and this one
-# did not, such as another size (scripts/merge_results.py). Only asv's JSON, the lock files,
-# pip freezes and the bwbench-run records are copied, and no symlinks. The RO-Crate is
+# did not, such as another size (scripts/merge_results.py). Result files do not record
+# BWBENCH_THREADS, BWBENCH_ROUNDS, BWBENCH_CPUS or BWBENCH_MEM: don't commit runs made with
+# values other than the defaults. Only asv's JSON, the lock files, pip freezes and the
+# bwbench-run records are copied, and no symlinks. The RO-Crate is
 # written again over the merged branch.
 # It refuses results that name this host, because they become public once pushed: asv.sh's
 # default (box-<slot>) never does, but a BWBENCH_MACHINE set by hand or results from before

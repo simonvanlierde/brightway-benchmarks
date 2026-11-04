@@ -1,5 +1,6 @@
 """scripts/results-commit.sh in throwaway git repos, with a fixed host name."""
 
+import hashlib
 import json
 import os
 import shutil
@@ -156,3 +157,56 @@ def test_files_it_does_not_publish_are_not_checked(repo: Path, env: dict[str, st
     write(repo, "bw2calc/m/run.log", f"ran on {HOST}")
     assert commit_results(repo, env).returncode == 0
     assert files_on_branch(repo, env) == ["bw2calc/m/a.json"]
+
+
+def asv_result(times: dict[str, float], version: str = "1") -> str:
+    """One benchmark over `size` and `cls`, with one class, as asv writes it."""
+    row = [list(times.values()), [[f"'{s}'" for s in times], ["'LCA'"]], version]
+    return json.dumps(
+        {"result_columns": ["result", "params", "version"], "results": {"bench_lca.Score.time_score": row}}
+    )
+
+
+def test_a_run_at_one_size_keeps_the_other_sizes(repo: Path, env: dict[str, str]):
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.0, "ecoinvent": 9.0}))
+    assert commit_results(repo, env).returncode == 0
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.5}))
+    assert commit_results(repo, env).returncode == 0
+    row = json.loads(git(repo, env, "show", "refs/heads/results:bw2calc/m/abc-env.json"))["results"][
+        "bench_lca.Score.time_score"
+    ]
+    assert row == [[1.5, 9.0], [["'smoke'", "'ecoinvent'"], ["'LCA'"]], "1"]
+
+
+def test_the_same_run_twice_is_nothing_new(repo: Path, env: dict[str, str]):
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.0, "ecoinvent": 9.0}))
+    assert commit_results(repo, env).returncode == 0
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.5}))
+    assert commit_results(repo, env).returncode == 0
+    run = commit_results(repo, env)
+    assert run.returncode == 0, run.stderr
+    assert "nothing new" in run.stdout
+    assert git(repo, env, "rev-list", "--count", "refs/heads/results").strip() == "2"
+
+
+def record(repo: Path, commit: str, text: str) -> None:
+    """asv.sh's run record for one result file."""
+    sha = hashlib.sha256(text.encode()).hexdigest()
+    write(
+        repo,
+        f"bw2calc/m/bwbench-run-20260101T00000{commit[0]}Z-{commit}.txt",
+        f"commit {commit}\ngenerator 3\n{sha}  .asv/results/bw2calc/m/abc-env.json\n",
+    )
+
+
+def test_a_merged_file_is_credited_to_the_run_that_wrote_it(repo: Path, env: dict[str, str]):
+    full, partial = asv_result({"smoke": 1.0, "ecoinvent": 9.0}), asv_result({"smoke": 1.5})
+    write(repo, "bw2calc/m/abc-env.json", full)
+    record(repo, "1aaa", full)
+    assert commit_results(repo, env).returncode == 0
+    write(repo, "bw2calc/m/abc-env.json", partial)
+    record(repo, "2bbb", partial)
+    assert commit_results(repo, env).returncode == 0
+    crate = json.loads(git(repo, env, "show", "refs/heads/results:ro-crate-metadata.json"))
+    (run,) = [e for e in crate["@graph"] if {"@id": "bw2calc/m/abc-env.json"} in e.get("result", [])]
+    assert run["@id"] == "#run-2bbb"

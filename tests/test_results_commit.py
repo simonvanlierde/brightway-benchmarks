@@ -175,7 +175,7 @@ def test_a_run_at_one_size_keeps_the_other_sizes(repo: Path, env: dict[str, str]
     row = json.loads(git(repo, env, "show", "refs/heads/results:bw2calc/m/abc-env.json"))["results"][
         "bench_lca.Score.time_score"
     ]
-    assert row[:2] == [[1.5, 9.0], [["'smoke'", "'ecoinvent'"], ["'LCA'"]]]
+    assert row == [[1.5, 9.0], [["'smoke'", "'ecoinvent'"], ["'LCA'"]], "1"]
 
 
 def test_the_same_run_twice_is_nothing_new(repo: Path, env: dict[str, str]):

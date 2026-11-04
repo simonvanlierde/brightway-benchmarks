@@ -199,6 +199,11 @@ const shown = $derived<Line[]>(
 );
 const changes = $derived(index && measureId && machine ? changesFor(index, shown, measureId, machine.id) : []);
 // Each linked solver once: "UMFPACK" and "UMFPACK, MKL" share a page.
+// What a shown environment runs, where the data explains it (an experimental solver, say).
+const envNotes = $derived.by(() => {
+  const envs = new Map(index?.environments.map((e) => [e.id, e]));
+  return [...new Set(shown.map((l) => envs.get(l.env)?.description).filter((d): d is string => Boolean(d)))];
+});
 const solverLinks = $derived.by(() => {
   const envs = new Map(index?.environments.map((e) => [e.id, e]));
   const out = new Map<string, string>();
@@ -339,7 +344,7 @@ $effect(() => {
         >
         {#if matching.length === 0}<p class="rail-empty">No benchmarks match “{search}”.</p>{/if}
         {#each index.groups.filter((g) => matching.some((b) => b.group === g.id)) as g (g.id)}
-          <h2 id="rail-{g.id}">{g.name}</h2>
+          <h2 id="rail-{g.id}">{g.label ?? g.name}</h2>
           {#if g.description}<p class="rail-about">{g.description}</p>{/if}
           <ul aria-labelledby="rail-{g.id}">
             {#each matching.filter((b) => b.group === g.id) as b (b.id)}
@@ -375,7 +380,7 @@ $effect(() => {
           <h2>{labelOf(bench)}</h2>
           {#if bench.description}<p class="bench-about">{bench.description}</p>{/if}
           <p class="bench-meta">
-            {#if group?.url}<a href={group.url}>{group.name}</a>{:else}{group?.name}{/if}
+            {#if group?.url}<a href={group.url}>{group.label ?? group.name}</a>{:else}{group?.label ?? group?.name}{/if}
             · {measure?.name ?? measureId}{measure?.statistic ? `, ${measure.statistic}` : ""}{measure?.better
               ? `, ${measure.better} is better`
               : ""}
@@ -462,6 +467,7 @@ $effect(() => {
               not by date{measure?.bounds ? `; the band is ${measure.bounds}` : ""}. A ring marks a change beyond its noise (red worse,
               teal better); a dashed line marks a level shift across the whole series.
               {#if solverLinks.length}<span class="env-links">About the environments: {#each solverLinks as l, k (l.url)}{#if k}{" · "}{/if}<a href={l.url}>{l.label}</a>{/each}.</span>{/if}
+              {#each envNotes as note (note)}<span class="env-note">{note}</span>{/each}
             </figcaption>
           </figure>
 

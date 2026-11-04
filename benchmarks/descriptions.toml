@@ -10,7 +10,7 @@
 "bench_lca.SingleScore.track_relative_error"               = "How far the first score is from a float64 reference, so a fast but wrong result shows."
 "bench_lca.NewDemand.time_redo_lci"                        = "A second demand on a system already solved once: the solve alone, reusing the first factorization where the class can."
 "bench_lca.NewDemand.track_relative_error"                 = "How far the second demand's score is from the reference."
-"bench_lca.NewDemandRefinement.time_redo_lci_refinement"   = "The second-demand solve with UMFPACK's iterative refinement on or off."
+"bench_lca.NewDemandRefinement.time_redo_lci_refinement"   = "The second-demand solve with UMFPACK's iterative refinement on or off. Refinement is a correction step UMFPACK runs after each solve to tighten the answer; it does not change the score."
 "bench_lca.NewDemandRefinement.track_refinement_steps"     = "How many refinement steps UMFPACK took for the solve."
 "bench_lca.NewDemandRefinement.track_relative_error"       = "How far the score is from the reference, with refinement on or off."
 "bench_lca.MultiScores.time_scores"                        = "Several demands against three impact methods in one calculation."
@@ -39,7 +39,7 @@
 "bench_lca.NewDemandRefinement.time_redo_lci_refinement"   = "Second demand with refinement"
 "bench_lca.NewDemandRefinement.track_refinement_steps"     = "Second demand with refinement · Steps"
 "bench_lca.NewDemandRefinement.track_relative_error"       = "Second demand with refinement · Error"
-"bench_lca.MultiScores.time_scores"                        = "Multiple scores"
+"bench_lca.MultiScores.time_scores"                        = "MultiLCA"
 "bench_lca.MonteCarlo.time_iterations"                     = "Monte Carlo draws"
 "bench_write.DatabaseWrite.time_write"                     = "Database write"
 "bench_write.DatabaseWrite.peakmem_write"                  = "Database write · Peak memory"
@@ -65,6 +65,20 @@ max_calc   = "Calculation limit"
 entries    = "Matrix entries"
 groups     = "Resource groups"
 steps      = "Yearly steps"
+
+# The name the viewer shows for a group; its id and URLs keep the group's own name.
+[labels.groups]
+"bw2calc-conda" = "bw2calc (conda-forge)"
+
+# The name the viewer shows for a parameter value, by parameter. The viewer's links use it too.
+[labels.values.size]
+ecoinvent = "ecoinvent-sized (synthetic)"
+
+# One note per series under the chart, by the environment's solver label, for the solvers
+# bw2calc cannot pick: src/bwbench/solvers.py patches them in.
+[notes.environments]
+KLU = "KLU: pyklu's sparse solver, which splits the matrix into blocks before factorizing A. bw2calc has no KLU path, so the benchmarks patch it in as the solver (x86_64 only)."
+"UMFPACK on Aᵀ" = "UMFPACK on Aᵀ: scikit-umfpack factorizing Aᵀ instead of A, which leaves less fill-in on LCA matrices. bw2calc 3.1.0 does this itself; for the other releases the benchmarks patch it in."
 
 # One line under a subject's name in the catalogue: what it times, or what sets it apart.
 [groups]

@@ -229,7 +229,7 @@ def test_the_export_follows_the_schema(export_ui: ModuleType, tmp_path: Path, mo
     }
     # The axes hold the values that ran: IterativeLCA failed in every commit.
     assert [(a["name"], a["values"], a["labels"]) for a in index["benchmarks"][0]["params"]] == [
-        ("size", ["'ecoinvent'"], ["ecoinvent"]),
+        ("size", ["'ecoinvent'"], ["ecoinvent-sized (synthetic)"]),
         ("cls", ["'LCA'"], ["LCA"]),
     ]
 
@@ -349,7 +349,7 @@ def test_axes_follow_benchmarks_json_and_show_plain_values(
     (time,) = [b for b in index["benchmarks"] if b["name"] == TIME]
     shown = ("name", "values", "labels")
     assert [{k: a[k] for k in shown} for a in time["params"]] == [
-        {"name": "size", "values": ["'ecoinvent'"], "labels": ["ecoinvent"]},
+        {"name": "size", "values": ["'ecoinvent'"], "labels": ["ecoinvent-sized (synthetic)"]},
         # Listed values first, in benchmarks.json's order; then the rest as they came. Text that
         # is not a Python literal is shown as it is.
         {
@@ -377,7 +377,7 @@ def test_descriptions_follow_the_shown_values(export_ui: ModuleType):
         "benchmarks": {"b": "Bee."},
         "params": {"cls": "The class."},
         "values": {"cls": {"LCA": "Direct."}},
-        "labels": {"benchmarks": {"b": "B"}, "params": {"cls": "Class"}},
+        "labels": {"benchmarks": {"b": "B"}, "params": {"cls": "Class"}, "values": {"cls": {"Other": "Else"}}},
     }
     export_ui.describe([bench], about)
     assert bench["description"] == "Bee."
@@ -386,7 +386,7 @@ def test_descriptions_follow_the_shown_values(export_ui: ModuleType):
         "name": "cls",
         "label": "Class",
         "values": ["'LCA'", "'Other'"],
-        "labels": ["LCA", "Other"],
+        "labels": ["LCA", "Else"],
         "description": "The class.",
         "notes": ["Direct.", ""],
     }
@@ -437,7 +437,7 @@ def test_codspeed_url_follows_the_pytest_test_id(export_ui: ModuleType):
     assert "first_score" in tests["bench_lca"]
     assert export_ui.codspeed_tests("bw2calc-conda", ROOT) == {}
     axes = [
-        {"name": "size", "values": ["'ecoinvent'"], "labels": ["ecoinvent"]},
+        {"name": "size", "values": ["'ecoinvent'"], "labels": ["ecoinvent-sized (synthetic)"]},
         {"name": "cls", "values": ["'LCA'"], "labels": ["LCA"]},
     ]
     bench = {"name": "bench_lca.SingleScore.time_first_score", "params": axes}
@@ -524,10 +524,19 @@ def test_every_benchmark_and_parameter_the_ui_shows_is_described():
     assert [g["name"] for g in index["groups"] if not g.get("description")] == []
 
 
-def test_groups_take_their_line_from_the_descriptions(export_ui: ModuleType):
+def test_groups_take_their_label_and_line_from_the_descriptions(export_ui: ModuleType):
     groups = [{"id": "a", "name": "a"}, {"id": "b", "name": "b"}]
-    export_ui.describe_groups(groups, {"groups": {"a": "Pip wheels."}})
-    assert groups == [{"id": "a", "name": "a", "description": "Pip wheels."}, {"id": "b", "name": "b"}]
+    export_ui.describe_groups(groups, {"groups": {"a": "Pip wheels."}, "labels": {"groups": {"a": "A (pip)"}}})
+    assert groups == [
+        {"id": "a", "name": "a", "label": "A (pip)", "description": "Pip wheels."},
+        {"id": "b", "name": "b"},
+    ]
+
+
+def test_environments_take_the_note_of_their_label(export_ui: ModuleType):
+    envs = [{"id": "a", "label": "KLU"}, {"id": "b", "label": "UMFPACK"}, {"id": "c"}]
+    export_ui.describe_environments(envs, {"notes": {"environments": {"KLU": "Patched in."}}})
+    assert [e.get("description") for e in envs] == ["Patched in.", None, None]
 
 
 def test_a_name_without_letters_still_makes_an_id(export_ui: ModuleType):

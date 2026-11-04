@@ -42,6 +42,10 @@
         "properties": {
           "id": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
+          "label": {
+            "description": "A name to show; without it, show the name.",
+            "type": "string"
+          },
           "description": {
             "description": "One line on what sets the group apart, such as how its packages are installed.",
             "type": "string"
@@ -98,6 +102,10 @@
           "name": { "type": "string" },
           "label": {
             "description": "A short name to show, such as the solver it runs; without it, show a short form of the name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "A line on what the environment runs, shown under the chart when it is on it.",
             "type": "string"
           },
           "url": {

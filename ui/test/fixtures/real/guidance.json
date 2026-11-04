@@ -561,19 +561,19 @@
         "label": "UMFPACK \u00b7 conda-forge",
         "value": 2618418468.9991527,
         "unit": "ns",
-        "href": "?bench=bw2calc-conda-bench-lca-singlescore-time-first-scor-7266cbe9fcd4&measure=latency&machine=pinned-x86-1-2504b6871767&p=ecoinvent&p=LCA"
+        "href": "?bench=bw2calc-conda-bench-lca-singlescore-time-first-scor-7266cbe9fcd4&measure=latency&machine=pinned-x86-1-2504b6871767&p=ecoinvent-sized+%28synthetic%29&p=LCA"
       },
       {
         "label": "PyPardiso",
         "value": 10095737354.509766,
         "unit": "ns",
-        "href": "?bench=bw2calc-bench-lca-singlescore-time-first-score-0523b3edee8d&measure=latency&machine=pinned-x86-1-2504b6871767&p=ecoinvent&p=LCA"
+        "href": "?bench=bw2calc-bench-lca-singlescore-time-first-score-0523b3edee8d&measure=latency&machine=pinned-x86-1-2504b6871767&p=ecoinvent-sized+%28synthetic%29&p=LCA"
       },
       {
         "label": "SuperLU",
         "value": 27755975419.509922,
         "unit": "ns",
-        "href": "?bench=bw2calc-bench-lca-singlescore-time-first-score-0523b3edee8d&measure=latency&machine=pinned-x86-1-2504b6871767&p=ecoinvent&p=LCA"
+        "href": "?bench=bw2calc-bench-lca-singlescore-time-first-score-0523b3edee8d&measure=latency&machine=pinned-x86-1-2504b6871767&p=ecoinvent-sized+%28synthetic%29&p=LCA"
       }
     ]
   }

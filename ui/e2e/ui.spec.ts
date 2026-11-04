@@ -7,9 +7,10 @@ import { latestChanges, writeView } from "../src/lib/history";
 // Screenshots go to SHOTS when it is set, so a reviewer can look at them; CI keeps them as an artifact.
 const shots = process.env.SHOTS ?? "test-results/shots";
 const IMPORT = "?bench=bw2calc-bench-import-timeraw-import-bw2calc-c078f5d2c0be";
-const SCORES = "?bench=bw2calc-bench-lca-multiscores-time-scores-4f172f3e24a0&p=ecoinvent&p=3&p=MultiLCA";
+const SCORES =
+  "?bench=bw2calc-bench-lca-multiscores-time-scores-4f172f3e24a0&p=ecoinvent-sized+(synthetic)&p=3&p=MultiLCA";
 const MONTE_CARLO =
-  "?bench=bw2calc-bench-lca-montecarlo-time-iterations-00a0cd27d056&p=ecoinvent&p=10&p=JacobiGMRESLCA";
+  "?bench=bw2calc-bench-lca-montecarlo-time-iterations-00a0cd27d056&p=ecoinvent-sized+(synthetic)&p=10&p=JacobiGMRESLCA";
 
 async function chart(page: Page, url: string) {
   await page.goto(url);
@@ -169,7 +170,7 @@ test("a skip link leads to the results, and a one-value axis is plain text", asy
   await page.keyboard.press("Enter");
   await expect(page.locator("#main")).toBeFocused();
   await expect(page.getByLabel("Database", { exact: true })).toHaveCount(0);
-  await expect(page.locator(".fixed")).toHaveText("ecoinvent");
+  await expect(page.locator(".fixed")).toHaveText("ecoinvent-sized (synthetic)");
   await expect(page.locator(".fixed a")).toHaveCount(0);
   await expect(page.getByLabel("Scoring", { exact: true })).toBeVisible();
 });
@@ -331,7 +332,7 @@ test("the masthead search filters the catalogue and opens the first match", asyn
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("./");
   const search = page.getByRole("searchbox", { name: "Find a benchmark" });
-  await search.fill("Multiple scores");
+  await search.fill("MultiLCA");
   await expect(page).toHaveURL(/page=explorer/);
   await expect(page.getByRole("navigation", { name: "Benchmarks" }).locator("li a")).toHaveCount(2);
   await search.fill("timeraw_import_bw2calc");

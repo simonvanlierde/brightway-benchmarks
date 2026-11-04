@@ -29,6 +29,10 @@ export interface BenchmarkIndex {
     id: Id;
     name: string;
     /**
+     * A name to show; without it, show the name.
+     */
+    label?: string;
+    /**
      * One line on what sets the group apart, such as how its packages are installed.
      */
     description?: string;
@@ -79,6 +83,10 @@ export interface BenchmarkIndex {
      * A short name to show, such as the solver it runs; without it, show a short form of the name.
      */
     label?: string;
+    /**
+     * A line on what the environment runs, shown under the chart when it is on it.
+     */
+    description?: string;
     /**
      * Where to read about what the label names.
      */

@@ -263,13 +263,25 @@ def describe(benchmarks: list[dict], about: dict) -> None:
             links = [known.get(shown, "") for shown in axis.get("labels", axis["values"])]
             if any(links):
                 axis["links"] = links
+            # Last, since notes and links are keyed by the label as the benchmarks name the value.
+            if renamed := labels.get("values", {}).get(axis["name"]):
+                axis["labels"] = [renamed.get(v, v) for v in axis.get("labels", axis["values"])]
 
 
 def describe_groups(groups: list[dict], about: dict) -> None:
-    """Add ABOUT's one line (descriptions.toml) to each group that has one."""
+    """Add ABOUT's label and one line (descriptions.toml) to each group that has them."""
     for g in groups:
+        if text := about.get("labels", {}).get("groups", {}).get(g["name"]):
+            g["label"] = text
         if text := about.get("groups", {}).get(g["name"]):
             g["description"] = text
+
+
+def describe_environments(envs: list[dict], about: dict) -> None:
+    """Add ABOUT's note (descriptions.toml) to each environment whose label has one."""
+    for env in envs:
+        if text := about.get("notes", {}).get("environments", {}).get(env.get("label", "")):
+            env["description"] = text
 
 
 GROUP_LINKS = [
@@ -526,6 +538,7 @@ def export(results: Path, out: Path) -> dict:
     about = tomllib.loads(DESCRIPTIONS.read_text())
     describe(list(catalog.benchmarks.values()), about)
     describe_groups(groups, about)
+    describe_environments(list(catalog.envs.values()), about)
     link(groups, catalog, sources, about.get("links", {}), about.get("codspeed", {}))
     index = {
         "format_version": 1,

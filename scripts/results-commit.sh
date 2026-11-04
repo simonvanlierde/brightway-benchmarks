@@ -4,8 +4,10 @@
 # The branch grows from the local branch (fast-forwarded to origin/results when that is
 # ahead), else from origin/results, else starts empty, so results from several machines or
 # clones end up in one history. Files are added and updated, never deleted: another
-# machine's folders stay. Only asv's JSON, the lock files, pip freezes and the bwbench-run
-# records are copied, and no symlinks. The RO-Crate is written again over the merged branch.
+# machine's folders stay. A result file keeps the cells an earlier run timed and this one
+# did not, such as another size (scripts/merge_results.py). Only asv's JSON, the lock files,
+# pip freezes and the bwbench-run records are copied, and no symlinks. The RO-Crate is
+# written again over the merged branch.
 # It refuses results that name this host, because they become public once pushed: asv.sh's
 # default (box-<slot>) never does, but a BWBENCH_MACHINE set by hand or results from before
 # that default can. Other names to refuse (an ssh alias, say) go in BWBENCH_PRIVATE_NAMES,
@@ -72,6 +74,7 @@ if git -C "$tree" diff --cached --quiet; then
     exit 0
 fi
 here=$(cd "$(dirname "$0")" && pwd)
+uv run --quiet --frozen --project "$here/.." python "$here/merge_results.py" "$tree"
 uv run --quiet --frozen --project "$here/.." python "$here/run_crate.py" "$tree"
 git -C "$tree" add -A
 git -C "$tree" diff --cached --stat | tail -1

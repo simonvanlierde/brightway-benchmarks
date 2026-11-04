@@ -156,3 +156,22 @@ def test_files_it_does_not_publish_are_not_checked(repo: Path, env: dict[str, st
     write(repo, "bw2calc/m/run.log", f"ran on {HOST}")
     assert commit_results(repo, env).returncode == 0
     assert files_on_branch(repo, env) == ["bw2calc/m/a.json"]
+
+
+def asv_result(times: dict[str, float], version: str = "1") -> str:
+    """One benchmark over `size` and `cls`, with one class, as asv writes it."""
+    row = [list(times.values()), [[f"'{s}'" for s in times], ["'LCA'"]], version]
+    return json.dumps(
+        {"result_columns": ["result", "params", "version"], "results": {"bench_lca.Score.time_score": row}}
+    )
+
+
+def test_a_run_at_one_size_keeps_the_other_sizes(repo: Path, env: dict[str, str]):
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.0, "ecoinvent": 9.0}))
+    assert commit_results(repo, env).returncode == 0
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.5}))
+    assert commit_results(repo, env).returncode == 0
+    row = json.loads(git(repo, env, "show", "refs/heads/results:bw2calc/m/abc-env.json"))["results"][
+        "bench_lca.Score.time_score"
+    ]
+    assert row[:2] == [[1.5, 9.0], [["'smoke'", "'ecoinvent'"], ["'LCA'"]]]

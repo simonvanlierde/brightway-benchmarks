@@ -13,7 +13,7 @@ import {
 } from "../lib/contract";
 import {
   axisLabels,
-  benchmarkLabel,
+  benchLabel,
   breakable,
   changesFor,
   commitName,
@@ -199,6 +199,11 @@ const shown = $derived<Line[]>(
 );
 const changes = $derived(index && measureId && machine ? changesFor(index, shown, measureId, machine.id) : []);
 // Each linked solver once: "UMFPACK" and "UMFPACK, MKL" share a page.
+// What a shown environment runs, where the data explains it (an experimental solver, say).
+const envNotes = $derived.by(() => {
+  const envs = new Map(index?.environments.map((e) => [e.id, e]));
+  return [...new Set(shown.map((l) => envs.get(l.env)?.description).filter((d): d is string => Boolean(d)))];
+});
 const solverLinks = $derived.by(() => {
   const envs = new Map(index?.environments.map((e) => [e.id, e]));
   const out = new Map<string, string>();
@@ -213,7 +218,7 @@ const unreleased = $derived(
   new Set(shown.flatMap((l) => l.points.filter((p) => !p.released).map((p) => p.commit))).size,
 );
 const paramText = $derived(
-  bench ? bench.params.map((a, i) => `${a.name} ${paramLabels(bench, params)[i]}`).join(", ") : "",
+  bench ? bench.params.map((a, i) => `${a.label ?? a.name} ${paramLabels(bench, params)[i]}`).join(", ") : "",
 );
 const commits = $derived(index && bench ? index.commits.filter((c) => c.group === bench.group) : []);
 const label = (id: string) => commitName(index?.commits.find((x) => x.id === id) ?? { id });
@@ -248,16 +253,9 @@ function openFirst(e: SubmitEvent) {
   if (first) go({ bench: first.id, params: [] });
 }
 const matching = $derived(
-  index?.benchmarks.filter((b) => `${b.name} ${benchmarkLabel(b.name)}`.toLowerCase().includes(search.toLowerCase())) ??
-    [],
+  index?.benchmarks.filter((b) => `${b.name} ${labelOf(b)}`.toLowerCase().includes(search.toLowerCase())) ?? [],
 );
-function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
-  const text = benchmarkLabel(b.name);
-  const collisions = index?.benchmarks.filter(
-    (other) => other.group === b.group && benchmarkLabel(other.name) === text,
-  );
-  return collisions && collisions.length > 1 ? `${text} (${b.name})` : text;
-}
+const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => (index ? benchLabel(index, b) : b.name);
 const tableRows = $derived.by(() => {
   const byCommit = shown.map((l) => new Map(l.points.map((p) => [p.commit, p])));
   return commits.map((c) => ({ c, cells: byCommit.map((m) => m.get(c.id)) })).filter((r) => r.cells.some((x) => x));
@@ -296,7 +294,11 @@ $effect(() => {
   {@const at = (axis.labels ?? axis.values).indexOf(value)}
   {@const note = axis.notes?.[at]}
   {@const link = axis.links?.[at]}
-  {axis.description}{#if note}{" "}{#if link && axis.values.length > 1}<a href={link}>{value}</a>{:else}<strong>{value}</strong>{/if}: {note}{/if}
+  {axis.description}{#if note}{" "}{#if link}<a href={link}>{value}</a>{:else}<strong>{value}</strong>{/if}: {note}{/if}
+{/snippet}
+
+{#snippet technical(detail: string, hint?: string)}
+  <details class="technical"><summary>Technical details</summary><p class="mono">{detail}</p>{#if hint}<p>{hint}</p>{/if}</details>
 {/snippet}
 
 <a class="skip" href="#main">Skip to the results</a>
@@ -323,14 +325,13 @@ $effect(() => {
   {#if error}
     <main class="view" id="main" tabindex="-1">
       <div class="empty" role="alert">
-        <p><strong>The benchmark data did not load.</strong></p>
-        <p class="mono">{error}</p>
-        <p>{HINTS[errorKind]}</p>
+        <p><strong>The results could not load.</strong> Reload the page, or try again later.</p>
+        {@render technical(error, HINTS[errorKind])}
       </div>
     </main>
   {:else if !index}
     <main class="view" id="main" tabindex="-1" aria-busy="true">
-      <p aria-live="polite">Loading the benchmarks…</p>
+      <p aria-live="polite">{page === "home" ? "Loading…" : "Loading the benchmarks…"}</p>
       <div class="skeleton"></div>
     </main>
   {:else}
@@ -343,7 +344,8 @@ $effect(() => {
         >
         {#if matching.length === 0}<p class="rail-empty">No benchmarks match “{search}”.</p>{/if}
         {#each index.groups.filter((g) => matching.some((b) => b.group === g.id)) as g (g.id)}
-          <h2 id="rail-{g.id}">{g.name}</h2>
+          <h2 id="rail-{g.id}">{g.label ?? g.name}</h2>
+          {#if g.description}<p class="rail-about">{g.description}</p>{/if}
           <ul aria-labelledby="rail-{g.id}">
             {#each matching.filter((b) => b.group === g.id) as b (b.id)}
               {@const next = { bench: b.id, params: [] }}
@@ -364,7 +366,7 @@ $effect(() => {
     {/if}
 
     <main class="view" id="main" tabindex="-1">
-      {#if guidanceError && page === "home"}<p class="empty" role="status">Setup guidance could not be loaded. Benchmark histories remain available. {guidanceError}</p>{/if}
+      {#if guidanceError && page === "home"}<div class="empty" role="status"><p>Setup guidance could not be loaded. Benchmark histories remain available.</p>{@render technical(guidanceError)}</div>{/if}
       {#if page === "home"}
         <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} />
       {:else if !bench}
@@ -378,7 +380,7 @@ $effect(() => {
           <h2>{labelOf(bench)}</h2>
           {#if bench.description}<p class="bench-about">{bench.description}</p>{/if}
           <p class="bench-meta">
-            {#if group?.url}<a href={group.url}>{group.name}</a>{:else}{group?.name}{/if}
+            {#if group?.url}<a href={group.url}>{group.label ?? group.name}</a>{:else}{group?.label ?? group?.name}{/if}
             · {measure?.name ?? measureId}{measure?.statistic ? `, ${measure.statistic}` : ""}{measure?.better
               ? `, ${measure.better} is better`
               : ""}
@@ -397,13 +399,12 @@ $effect(() => {
             {@const value = paramLabels(bench, params)[i] ?? ""}
             {@const at = labels.indexOf(value)}
             {@const note = axis.notes?.[at]}
-            {@const link = axis.links?.[at]}
             <div class="field">
               {#if labels.length === 1}
-                <span class="label">{axis.name}</span>
-                <span class="fixed">{#if link}<a href={link}>{value}</a>{:else}{value}{/if}</span>
+                <span class="label">{axis.label ?? axis.name}</span>
+                <span class="fixed">{value}</span>
               {:else}
-                <label for="axis-{i}">{axis.name}</label>
+                <label for="axis-{i}">{axis.label ?? axis.name}</label>
                 <select id="axis-{i}" value={value} onchange={(e) => setParam(i, e.currentTarget.value)}>
                   {#each labels as l (l)}<option>{l}</option>{/each}
                 </select>
@@ -434,12 +435,12 @@ $effect(() => {
         {#if bench.params.some((axis) => axis.description || axis.notes?.some(Boolean))}
           <details class="parameter-details">
             <summary>Parameter details</summary>
-            <dl>{#each bench.params as axis, i (axis.name)}<dt>{axis.name}</dt><dd class="field-note">{@render parameterNote(axis, i)}</dd>{/each}</dl>
+            <dl>{#each bench.params as axis, i (axis.name)}<dt>{axis.label ?? axis.name}</dt><dd class="field-note">{@render parameterNote(axis, i)}</dd>{/each}</dl>
           </details>
         {/if}
 
         {#if reportError}
-          <div class="empty" role="alert"><p>The results for this benchmark did not load: {reportError}</p></div>
+          <div class="empty" role="alert"><p>The results for this benchmark could not load. Reload the page, or try again later.</p>{@render technical(reportError)}</div>
         {:else if !reports}
           <div class="skeleton" aria-busy="true"><span class="sr">Loading the results…</span></div>
         {:else if shown.length === 0}
@@ -466,6 +467,7 @@ $effect(() => {
               not by date{measure?.bounds ? `; the band is ${measure.bounds}` : ""}. A ring marks a change beyond its noise (red worse,
               teal better); a dashed line marks a level shift across the whole series.
               {#if solverLinks.length}<span class="env-links">About the environments: {#each solverLinks as l, k (l.url)}{#if k}{" · "}{/if}<a href={l.url}>{l.label}</a>{/each}.</span>{/if}
+              {#each envNotes as note (note)}<span class="env-note">{note}</span>{/each}
             </figcaption>
           </figure>
 

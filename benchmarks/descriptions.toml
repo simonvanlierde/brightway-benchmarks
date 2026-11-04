@@ -10,7 +10,7 @@
 "bench_lca.SingleScore.track_relative_error"               = "How far the first score is from a float64 reference, so a fast but wrong result shows."
 "bench_lca.NewDemand.time_redo_lci"                        = "A second demand on a system already solved once: the solve alone, reusing the first factorization where the class can."
 "bench_lca.NewDemand.track_relative_error"                 = "How far the second demand's score is from the reference."
-"bench_lca.NewDemandRefinement.time_redo_lci_refinement"   = "The second-demand solve with UMFPACK's iterative refinement on or off."
+"bench_lca.NewDemandRefinement.time_redo_lci_refinement"   = "The second-demand solve with UMFPACK's iterative refinement on or off. Refinement is a correction step UMFPACK runs after each solve to tighten the answer; it does not change the score."
 "bench_lca.NewDemandRefinement.track_refinement_steps"     = "How many refinement steps UMFPACK took for the solve."
 "bench_lca.NewDemandRefinement.track_relative_error"       = "How far the score is from the reference, with refinement on or off."
 "bench_lca.MultiScores.time_scores"                        = "Several demands against three impact methods in one calculation."
@@ -26,6 +26,65 @@
 "bench_timex.TimelineLCI.time_lci"                         = "The time-explicit inventory of a bw_timex timeline over two background databases (2020 and 2030)."
 "bench_timex.TimelineLCI.track_static_score_error"         = "How far bw_timex's static score is from a plain bw2calc LCA of the same system."
 "bench_mapped_matrix.MappedMatrixBuild.time_mapped_matrix" = "Building a technosphere matrix from a datapackage with matrix_utils' MappedMatrix."
+
+# The short name the viewer shows for a benchmark; the original name stays in its detail view.
+[labels.benchmarks]
+"bench_import.timeraw_import_bw2calc"                      = "Import bw2calc"
+"bench_import.timeraw_import_bw2data"                      = "Import bw2data"
+"bench_lca.SingleScore.time_first_score"                   = "First score"
+"bench_lca.SingleScore.peakmem_first_score"                = "First score · Peak memory"
+"bench_lca.SingleScore.track_relative_error"               = "First score · Error"
+"bench_lca.NewDemand.time_redo_lci"                        = "Second demand"
+"bench_lca.NewDemand.track_relative_error"                 = "Second demand · Error"
+"bench_lca.NewDemandRefinement.time_redo_lci_refinement"   = "Second demand with refinement"
+"bench_lca.NewDemandRefinement.track_refinement_steps"     = "Second demand with refinement · Steps"
+"bench_lca.NewDemandRefinement.track_relative_error"       = "Second demand with refinement · Error"
+"bench_lca.MultiScores.time_scores"                        = "MultiLCA"
+"bench_lca.MonteCarlo.time_iterations"                     = "Monte Carlo draws"
+"bench_write.DatabaseWrite.time_write"                     = "Database write"
+"bench_write.DatabaseWrite.peakmem_write"                  = "Database write · Peak memory"
+"bench_write.DatabaseWrite.track_score_error"              = "Database write · Error"
+"bench_traversal.Traversal.time_traverse"                  = "Graph traversal"
+"bench_traversal.Traversal.track_calculation_count"        = "Graph traversal · Calculations"
+"bench_datapackage.EntriesPath.time_add_entries"           = "Add entries"
+"bench_datapackage.EntriesPath.time_vars_iterator"         = "Add entries from an iterator"
+"bench_datapackage.Groups.time_groups"                     = "List resource groups"
+"bench_timex.TimelineLCI.time_lci"                         = "Time-explicit LCI"
+"bench_timex.TimelineLCI.track_static_score_error"         = "Time-explicit LCI · Static score error"
+"bench_mapped_matrix.MappedMatrixBuild.time_mapped_matrix" = "Build a mapped matrix"
+
+# The name the viewer shows for a parameter.
+[labels.params]
+size       = "Synthetic database"
+cls        = "Calculation class"
+demands    = "Functional units"
+variant    = "Scoring"
+iterations = "Draws"
+refinement = "Iterative refinement"
+max_calc   = "Calculation limit"
+entries    = "Matrix entries"
+groups     = "Resource groups"
+steps      = "Yearly steps"
+
+# The name the viewer shows for a group; its id and URLs keep the group's own name.
+[labels.groups]
+"bw2calc-conda" = "bw2calc (conda-forge)"
+
+# One note per series under the chart, by the environment's solver label, for the solvers
+# bw2calc cannot pick: src/bwbench/solvers.py patches them in.
+[notes.environments]
+KLU = "KLU: pyklu's sparse solver, which splits the matrix into blocks before factorizing A. bw2calc has no KLU path, so the benchmarks patch it in as the solver (x86_64 only)."
+"UMFPACK on Aᵀ" = "UMFPACK on Aᵀ: scikit-umfpack factorizing Aᵀ instead of A, which leaves less fill-in on LCA matrices. bw2calc 3.1.0 does this itself; for the other releases the benchmarks patch it in."
+
+# One line under a subject's name in the catalogue: what it times, or what sets it apart.
+[groups]
+bw2calc         = "NumPy, SciPy and the solvers from PyPI wheels."
+"bw2calc-conda" = "NumPy, SciPy and the solvers from conda-forge, on OpenBLAS or MKL."
+bw2data         = "Writing a database into a project."
+bw_graph_tools  = "Supply chain graph traversal."
+bw_processing   = "Adding entries to datapackages and listing their resources."
+bw_timex        = "Time-explicit inventories over two background databases."
+matrix_utils    = "Building matrices from datapackages."
 
 # A parameter's meaning, the same in every benchmark that has it.
 [params]

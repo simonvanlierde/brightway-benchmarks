@@ -1,12 +1,13 @@
 <script lang="ts">
 import type { BenchmarkIndex, BenchmarkReport } from "../lib/contract";
 import {
-  benchmarkLabel,
+  benchLabel,
   byBenchmark,
   type LatestChange,
   latestChanges,
   noiseText,
   percent,
+  percentRange,
   seriesOf,
   type View,
   writeView,
@@ -48,16 +49,11 @@ const flagged = $derived(filtered.filter((r) => r.way !== "better"));
 const gains = $derived(byBenchmark(filtered.filter((r) => r.way === "better")));
 const gainCases = $derived(gains.reduce((n, g) => n + g.rows.length, 0));
 const narrowed = $derived(packageId !== "" || direction !== "all");
-function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
-  const label = benchmarkLabel(b.name);
-  return index.benchmarks.filter((other) => other.group === b.group && benchmarkLabel(other.name) === label).length > 1
-    ? `${label} (${b.name})`
-    : label;
-}
+const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b);
 </script>
 <section class="release-changes" aria-labelledby="changes-heading">
         <header class="changes-header">
-          <h2 id="changes-heading">What moved in the latest releases</h2>
+          <h2 id="changes-heading">What changed in the latest releases</h2>
           <p class="lede">
             The latest release of each package, compared with the one before it. Only changes beyond measurement noise appear here.
           </p>
@@ -68,7 +64,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
             <button class:chosen={direction === "worse"} aria-pressed={direction === "worse"} onclick={() => go({ ...view, page: "explorer", direction: "worse" })}>Worse <span class="worse">{worse}</span></button>
             <button class:chosen={direction === "better"} aria-pressed={direction === "better"} onclick={() => go({ ...view, page: "explorer", direction: "better" })}>Better <span class="better">{better}</span></button>
           </div>
-          <div class="package-filter"><label class="sr" for="package-filter">Package</label><select id="package-filter" value={packageId} onchange={(e) => go({ ...view, page: "explorer", group: e.currentTarget.value })}><option value="">All packages</option>{#each index.groups as g (g.id)}<option value={g.id}>{g.name}</option>{/each}</select></div>
+          <div class="package-filter"><label class="sr" for="package-filter">Package</label><select id="package-filter" value={packageId} onchange={(e) => go({ ...view, page: "explorer", group: e.currentTarget.value })}><option value="">All packages</option>{#each index.groups as g (g.id)}<option value={g.id}>{g.label ?? g.name}</option>{/each}</select></div>
         </div>
         <p class="sr" role="status">{filtered.length} of {packageChanges.length} changes shown</p>
         {#if narrowed}<button type="button" class="clear-filters" onclick={() => go({ ...view, page: "explorer", group: "", direction: "all" })}>Clear filters</button>{/if}
@@ -101,7 +97,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
                   {@const next = { bench: row.bench.id, params: row.params, measure: row.change.measure, machine: row.change.machine }}
                   <tr>
                     <th scope="row" class="wrap">
-                      <span class="package-name">{row.group.name}</span><br />
+                      <span class="package-name">{row.group.label ?? row.group.name}</span><br />
                       <a href={writeView(next)} onclick={(e) => follow(e, next)}
                          title={row.bench.name}>{labelOf(row.bench)}</a
                       >
@@ -145,11 +141,11 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
                     {@const next = { bench: top.bench.id, params: top.params, measure: top.change.measure, machine: top.change.machine }}
                     <tr>
                       <th scope="row" class="wrap">
-                        <span class="package-name">{g.group.name}</span><br />
+                        <span class="package-name">{g.group.label ?? g.group.name}</span><br />
                         <a href={writeView(next)} onclick={(e) => follow(e, next)} title={g.bench.name}>{labelOf(g.bench)}</a>
                       </th>
                       <td class="num" data-label="Change">
-                        <span class="delta better">{g.rows.length > 1 ? `${percent(low.change.ratio)} to ${percent(top.change.ratio)}` : percent(top.change.ratio)} better</span>
+                        <span class="delta better">{percentRange(g.rows)} better</span>
                       </td>
                       <td data-label="History"><Sparkline points={history(top)} mark={top.change.commit} /></td>
                       <td class="wrap" data-label="Cases">

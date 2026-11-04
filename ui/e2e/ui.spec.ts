@@ -37,7 +37,7 @@ test.describe("looks", () => {
       // Nothing wider than the screen: the tables scroll inside their own box.
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.goto("?page=changes");
-      await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "What changed in the latest releases" })).toBeVisible();
       await page.screenshot({ path: `${shots}/start-${name}.png`, fullPage: true });
       await page.screenshot({ path: `${shots}/start-${name}-viewport.png` });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -47,15 +47,15 @@ test.describe("looks", () => {
 
 test("the view lives in the URL, and back goes back", async ({ page }) => {
   await chart(page, SCORES);
-  await page.getByLabel("variant", { exact: true }).selectOption("adjoint");
+  await page.getByLabel("Scoring", { exact: true }).selectOption("adjoint");
   await expect(page).toHaveURL(/p=adjoint/);
   await page.reload();
-  await expect(page.getByLabel("variant", { exact: true })).toHaveValue("adjoint");
-  await expect(page.getByLabel("demands", { exact: true })).toHaveValue("3");
+  await expect(page.getByLabel("Scoring", { exact: true })).toHaveValue("adjoint");
+  await expect(page.getByLabel("Functional units", { exact: true })).toHaveValue("3");
   await page.getByRole("link", { name: "Import bw2calc" }).first().click();
   await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveText("Import bw2calc");
   await page.goBack();
-  await expect(page.getByLabel("variant", { exact: true })).toHaveValue("adjoint");
+  await expect(page.getByLabel("Scoring", { exact: true })).toHaveValue("adjoint");
 });
 
 test("the start page links each change to its chart", async ({ page }) => {
@@ -120,6 +120,11 @@ test("the chart downloads as a standalone SVG", async ({ page }) => {
 test("a missing data folder says what went wrong", async ({ page }) => {
   await page.route("**/data/index.json", (route) => route.fulfill({ status: 404, body: "" }));
   await page.goto("?page=changes");
+  await expect(page.getByRole("alert")).toContainText(
+    "The results could not load. Reload the page, or try again later.",
+  );
+  await expect(page.getByText("HTTP 404")).toBeHidden();
+  await page.getByText("Technical details").click();
   await expect(page.getByRole("alert")).toContainText("HTTP 404");
   await expect(page.getByRole("alert")).toContainText("Check that index.json is in the data folder");
 });
@@ -163,8 +168,10 @@ test("a skip link leads to the results, and a one-value axis is plain text", asy
   await expect(page.getByRole("link", { name: "Skip to the results" })).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(page.locator("#main")).toBeFocused();
-  await expect(page.getByLabel("size", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Synthetic database", { exact: true })).toHaveCount(0);
   await expect(page.locator(".fixed")).toHaveText("ecoinvent");
+  await expect(page.locator(".fixed a")).toHaveCount(0);
+  await expect(page.getByLabel("Scoring", { exact: true })).toBeVisible();
 });
 
 for (const [scheme, width] of [
@@ -225,7 +232,7 @@ test("overview filters scope their counts and survive a shared URL", async ({ pa
 
 test("release changes list regressions before grouped improvements", async ({ page }) => {
   await page.goto("?page=changes");
-  const changes = page.getByRole("region", { name: "What moved in the latest releases" });
+  const changes = page.getByRole("region", { name: "What changed in the latest releases" });
   await expect(changes.getByRole("heading", { level: 3 })).toHaveText(["Regressions", "Improvements"]);
   const better = Number((await page.getByRole("button", { name: /^Better/ }).textContent())?.match(/\d+/)?.[0]);
   const cases = await page.locator(".gains-table summary").allTextContents();
@@ -258,19 +265,29 @@ test("Benchmarks opens on the findings, and each finding opens its chart", async
   await expect(findings.getByRole("heading", { level: 3 })).toHaveText(
     index.findings.map((f: { title: string }) => f.title),
   );
-  await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What changed in the latest releases" })).toBeVisible();
   await findings
     .getByRole("link", { name: /JacobiGMRESLCA/ })
     .first()
     .click();
-  await expect(page.getByLabel("cls", { exact: true })).toHaveValue("JacobiGMRESLCA");
+  await expect(page.getByLabel("Calculation class", { exact: true })).toHaveValue("JacobiGMRESLCA");
   await expect(page.locator(".chart svg")).toBeVisible();
+});
+
+test("Setup leaves out the finding its solver chart already shows", async ({ page }) => {
+  await page.goto("./");
+  const findings = page.getByRole("region", { name: "What the benchmarks show" });
+  await expect(findings.getByRole("heading", { level: 3 }).first()).toBeVisible();
+  await expect(findings.getByRole("heading", { name: "The solver sets the time for one score" })).toHaveCount(0);
+  await expect(
+    findings.getByRole("link", { name: "Write-up on bw2calc 3.0.0 slowed IterativeLCA, and 3.1.0 fixed it" }),
+  ).toBeVisible();
 });
 
 test("the explorer explains the benchmark and links the chosen values", async ({ page }) => {
   await chart(page, MONTE_CARLO);
   await expect(page.locator(".bench-about")).not.toBeEmpty();
-  const cls = page.getByLabel("cls", { exact: true });
+  const cls = page.getByLabel("Calculation class", { exact: true });
   const note = page.locator(".field").filter({ has: cls }).locator(".field-note");
   await expect(note).toContainText("JacobiGMRESLCA: Solves by GMRES");
   await expect(note.getByRole("link", { name: "JacobiGMRESLCA" })).toHaveAttribute("href", /docs\.brightway\.dev/);
@@ -283,7 +300,7 @@ test("the explorer explains the benchmark and links the chosen values", async ({
 test("clearing a shared package filter stays on release changes", async ({ page }) => {
   // A link from before the page parameter: the filters alone chose the changes page.
   await page.goto("?group=bw-processing-dfb1fd2e3103");
-  const heading = page.getByRole("heading", { name: "What moved in the latest releases" });
+  const heading = page.getByRole("heading", { name: "What changed in the latest releases" });
   await expect(heading).toBeVisible();
   await expect(page.getByRole("status")).toHaveText("3 of 3 changes shown");
   await page.getByLabel("Package", { exact: true }).selectOption({ label: "All packages" });
@@ -306,7 +323,7 @@ test("a link to another page moves keyboard focus to that page", async ({ page }
   await page.goto("./");
   await page.getByRole("link", { name: "Open all release changes" }).focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What changed in the latest releases" })).toBeVisible();
   await expect(page.locator("#main")).toBeFocused();
 });
 
@@ -314,7 +331,7 @@ test("the masthead search filters the catalogue and opens the first match", asyn
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("./");
   const search = page.getByRole("searchbox", { name: "Find a benchmark" });
-  await search.fill("Multi Scores");
+  await search.fill("MultiLCA");
   await expect(page).toHaveURL(/page=explorer/);
   await expect(page.getByRole("navigation", { name: "Benchmarks" }).locator("li a")).toHaveCount(2);
   await search.fill("timeraw_import_bw2calc");
@@ -396,7 +413,7 @@ test("old links open the page that took their place", async ({ page }) => {
   await expect(page.locator(".benchmark-id")).toContainText("bench_lca.MultiScores.time_scores");
   await expect(page.locator(".bench-meta")).toContainText("bw2calc ·");
   await page.goto("?page=changes");
-  await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What changed in the latest releases" })).toBeVisible();
   await page.goto("?page=compatibility");
   await expect(page).toHaveTitle(/^Setup ·/);
   await expect(page.locator("#all-checks")).toBeInViewport();
@@ -558,7 +575,7 @@ for (const [label, status, json] of [
       .getByRole("navigation", { name: "Main", exact: true })
       .getByRole("link", { name: "Benchmarks", exact: true })
       .click();
-    await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "What changed in the latest releases" })).toBeVisible();
   });
 }
 
@@ -669,14 +686,14 @@ test("phone checks show only the selected platform and keep check selection work
 test("phone parameter details are optional while controls and the plot stay visible", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chart(page, SCORES);
-  await expect(page.getByLabel("demands", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Functional units", { exact: true })).toBeVisible();
   await expect(page.locator(".field-note:visible")).toHaveCount(0);
   const plot = await page.locator(".chart svg").boundingBox();
   expect(plot ? plot.y + plot.height / 2 : Infinity).toBeLessThan(844);
   await page.getByText("Parameter details", { exact: true }).click();
   await expect(page.locator(".parameter-details")).toContainText("26,533");
   await expect(page.locator(".parameter-details .field-note").first()).toBeVisible();
-  await page.getByLabel("variant", { exact: true }).selectOption("adjoint");
+  await page.getByLabel("Scoring", { exact: true }).selectOption("adjoint");
   await expect(page.locator(".parameter-details")).toContainText("FastScoresOnlyMultiLCA");
   await page.setViewportSize({ width: 1440, height: 900 });
   await expect(page.getByText("Parameter details", { exact: true })).not.toBeVisible();

@@ -42,6 +42,14 @@
         "properties": {
           "id": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
+          "label": {
+            "description": "A name to show; without it, show the name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "One line on what sets the group apart, such as how its packages are installed.",
+            "type": "string"
+          },
           "url": { "type": "string", "format": "uri", "pattern": "^https?://" },
           "links": {
             "description": "More pages about what the group names, such as its source or changelog.",
@@ -96,6 +104,10 @@
             "description": "A short name to show, such as the solver it runs; without it, show a short form of the name.",
             "type": "string"
           },
+          "description": {
+            "description": "A line on what the environment runs, shown under the chart when it is on it.",
+            "type": "string"
+          },
           "url": {
             "description": "Where to read about what the label names.",
             "type": "string",
@@ -115,6 +127,10 @@
           "id": { "$ref": "#/$defs/id" },
           "group": { "$ref": "#/$defs/id" },
           "name": { "type": "string" },
+          "label": {
+            "description": "A short name to show; without it, show a readable form of the name.",
+            "type": "string"
+          },
           "description": { "description": "What it measures, for readers.", "type": "string" },
           "url": {
             "description": "Its source, how it measures.",
@@ -141,6 +157,10 @@
               "required": ["name", "values"],
               "properties": {
                 "name": { "type": "string" },
+                "label": {
+                  "description": "The parameter's name to show; without it, show the name.",
+                  "type": "string"
+                },
                 "description": { "description": "What the parameter means.", "type": "string" },
                 "values": {
                   "description": "As cases give them, in display order.",

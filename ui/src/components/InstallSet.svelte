@@ -128,6 +128,8 @@ async function copy(text: string, what: string) {
         <li><a href={c.run} title="Open the check's run">{c.kind === "smoke" ? "Smoke calculations · " : ""}{c.label} · Python {c.python}</a> <span class={statusTone(c.status)}>{statusLabel(c.status)}</span></li>
       {/each}
     </ul>
+    {@const suites = qualifications.find((c) => c.kind === "suites" && c !== source && c.status !== "success")}
+    {#if suites}<p class="install-note">{suites.label} run each package's own tests on the latest releases, which covers more than the calculation checks. The command below is the set that last passed the {source.label} check.</p>{/if}
     {#if !qualifications.some((c) => c.kind === "suites")}<p class="install-note">No upstream test-suite result is published for this install check.</p>{/if}
     {#if source.status !== "success"}<p class="saved-warning">The latest run of {source.label} did not pass; this is the set that passed on {dateLabel(saved.date)}.</p>{/if}
     {#if source.caveats.length}<ul class="caveats">{#each source.caveats as caveat (caveat)}<li>{caveat}</li>{/each}</ul>{/if}

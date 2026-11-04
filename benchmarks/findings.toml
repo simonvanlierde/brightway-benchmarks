@@ -8,7 +8,7 @@
 [[findings]]
 title = "The solver sets the time for one score"
 text = "On an ecoinvent-sized database, UMFPACK on OpenBLAS takes 2.63 s, PyPardiso 10.0 s and SciPy's SuperLU 27.7 s."
-group = "bw2calc"
+group = "bw2calc-conda"
 benchmark = "bench_lca.SingleScore.time_first_score"
 params = { size = "ecoinvent", cls = "LCA" }
 doc = "the-solver-sets-the-time-for-one-score"

@@ -1,7 +1,7 @@
 {
   "format_version": 2,
   "title": "A tested Brightway setup",
-  "intro": "A tested starting point for your platform, with the measurements behind the alternatives.",
+  "intro": "Pick your platform below for a set that passed.",
   "snapshot": {
     "date": "2026-10-31",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41190687845"

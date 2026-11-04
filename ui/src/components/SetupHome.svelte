@@ -2,10 +2,19 @@
 import { tick } from "svelte";
 import type { BenchmarkIndex, Guidance } from "../lib/contract";
 import { dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/guidance";
-import { benchmarkLabel, format, latestChanges, noiseText, percent, type View, writeView } from "../lib/history";
+import {
+  benchLabel,
+  byBenchmark,
+  format,
+  latestChanges,
+  noiseText,
+  percentRange,
+  readView,
+  type View,
+  writeView,
+} from "../lib/history";
 import Findings from "./Findings.svelte";
 import InstallSet from "./InstallSet.svelte";
-import LogoMark from "./LogoMark.svelte";
 
 let {
   guidance,
@@ -75,10 +84,16 @@ $effect(() => {
 });
 
 const changes = $derived(latestChanges(index));
+// The largest regression, one case, and the benchmark with the largest gain, all its cases: as Benchmarks lists them.
 const moves = $derived(
-  [changes.find((c) => c.way === "worse"), changes.find((c) => c.way === "better")].filter((c) => c !== undefined),
+  [
+    changes.filter((c) => c.way === "worse").slice(0, 1),
+    byBenchmark(changes.filter((c) => c.way === "better"))[0]?.rows ?? [],
+  ].filter((rows) => rows.length > 0),
 );
 const comparison = $derived(guidance?.solverComparison);
+// The findings below leave out the comparison above: one fact, one set of numbers on the page.
+const compared = $derived(comparison?.rows.map((r) => readView(new URL(r.href, "https://x/").search)) ?? []);
 const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ?? [])));
 
 // Links to the old compatibility view land on the grid.
@@ -88,9 +103,8 @@ $effect(() => {
 </script>
 
 <header class="home-intro">
-  <div><div class="home-brand-lockup"><span class="home-emblem"><LogoMark size={36} /></span><h2>{guidance?.title ?? index.project.name}</h2></div><p>{guidance?.intro ?? index.project.description ?? "Explore benchmark measurements and release changes."}</p></div>
-
-  <p class="brightway-about"><a href="https://docs.brightway.dev/en/latest/">Brightway</a> is an open-source Python framework for life cycle assessment (LCA).</p>
+  <h2>{guidance?.title ?? index.project.name}</h2>
+  <p>Which Brightway packages work together, and which combination runs your LCA fastest? <a href="https://docs.brightway.dev/en/latest/">Brightway</a> is a family of open-source Python packages for life cycle assessment (LCA), each released on its own. Every night this site installs the latest releases on Linux, macOS and Windows and checks that they work together. It times every release on one Linux machine. {guidance?.intro ?? index.project.description ?? ""}</p>
 </header>
 
 <div class="home-columns">
@@ -117,7 +131,7 @@ $effect(() => {
         <div class="desktop-checks"><p class="check-help" id="check-instructions"><span>Select a check to view its install set above.</span><span hidden={!overflowing}>Scroll to see all check types.</span></p></div>
         <ul class="platform-checks phone-checks" aria-label="{platform.label} checks">
           {#each mine as c (c.id)}
-            <li><a href={writeView(at(c))} onclick={(e) => pick(e, c)} aria-current={c.id === selected?.id ? "true" : undefined}><span><span class="sr">{platform.label} · </span>{c.label}{" "}<small>Python {c.python}</small></span>{" "}<strong class={statusTone(c.status)}>{statusLabel(c.status)}</strong></a></li>
+            <li><a href={writeView(at(c))} onclick={(e) => pick(e, c)} aria-current={c.id === selected?.id ? "true" : undefined}><span><span class="sr">{platform.label} · </span><span class="check-name">{c.label}</span>{" "}<small>Python {c.python}</small></span>{" "}<strong class={statusTone(c.status)}>{statusLabel(c.status)}</strong></a></li>
           {/each}
         </ul>
         <!-- svelte-ignore a11y_no_noninteractive_tabindex: the table scrolls inside a keyboard-focusable region -->
@@ -163,13 +177,16 @@ $effect(() => {
       <p class="measurement-note solver-pending">The solver comparison is being measured again. <a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Compare solvers in the benchmarks</a>.</p>
     {/if}
 
-    <Findings {index} {follow} />
+    <Findings {index} {follow} shownElsewhere={compared} />
 
     <section class="release-brief" aria-labelledby="release-brief-heading">
-      <h2 id="release-brief-heading">What changed?</h2><p>Changes beyond measured noise in each package's latest release.</p>
-      {#each moves as row (row.change.case + row.change.machine + row.way)}
+      <h2 id="release-brief-heading">What changed in the latest releases</h2><p>Changes beyond measured noise in each package's latest release.</p>
+      {#each moves as rows, i (i)}
+        {@const row = rows[0]}
+        {#if row}
         {@const next = { bench: row.bench.id, params: row.params, measure: row.change.measure, machine: row.change.machine }}
-        <article class="brief-change"><div><h3><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchmarkLabel(row.bench.name)}</a></h3><strong class={row.way}>{percent(row.change.ratio)} {row.way}</strong></div><p>{row.env} · beyond {noiseText(row.change)} noise</p><p class="brief-context">{row.group.name} · {row.from} → {row.to}{#if index.machines.length > 1} · {index.machines.find((m) => m.id === row.change.machine)?.name}{/if}</p></article>
+        <article class="brief-change"><div><h3><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchLabel(index, row.bench)}</a></h3><strong class={row.way}>{percentRange(rows)} {row.way}</strong></div><p>{#if rows.length > 1}{rows.length} cases, each beyond its noise{:else}{row.env} · beyond {noiseText(row.change)} noise{/if}</p><p class="brief-context">{row.group.label ?? row.group.name} · {row.from} → {row.to}{#if index.machines.length > 1} · {index.machines.find((m) => m.id === row.change.machine)?.name}{/if}</p></article>
+        {/if}
       {/each}
       {#if moves.length === 0}<p class="coverage-text">No release changes beyond measured noise were published.</p>{/if}
       <a class="section-link" href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Open all release changes</a>

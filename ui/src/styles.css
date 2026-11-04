@@ -331,6 +331,18 @@ code,
   border-style: solid;
   background: var(--page);
 }
+.technical {
+  margin-top: 10px;
+  font-size: 0.8rem;
+}
+.technical summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+.technical p {
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
 .skeleton {
   height: 320px;
   background: var(--page);
@@ -525,6 +537,15 @@ a:hover {
   margin: 24px 0 7px;
   color: var(--ink);
   font-weight: 700;
+}
+.rail h2:has(+ .rail-about) {
+  margin-bottom: 2px;
+}
+.rail-about {
+  margin: 0 0 7px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 .rail ul {
   list-style: none;
@@ -948,6 +969,10 @@ details.data[open] summary {
   }
   .controls {
     gap: 12px;
+    margin: 18px 0 16px;
+  }
+  .fixed {
+    line-height: 1.3;
   }
   .actions,
   figcaption {
@@ -1015,6 +1040,13 @@ details.data[open] summary {
   }
   .responsive-table th {
     grid-column: 1 / -1;
+  }
+  /* A change's history sits right beside its value, not across the row. */
+  .latest-table tr {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 4px 16px;
+    padding: 12px 0;
   }
 
   .platform-tabs button {
@@ -1136,6 +1168,13 @@ so a chosen control needs a line of its own. */
   gap: 28px;
   padding-left: 28px;
   border-left: 1px solid var(--line);
+}
+/* Side by side, each column's first heading starts at the same height: the column rule divides them. */
+@media (min-width: 55.0625rem) {
+  .evidence-column > :first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
 }
 .view .install-set h2,
 .view .all-checks h2,
@@ -1324,7 +1363,8 @@ table.check-grid td a[aria-current="true"] {
   color: var(--ink-2);
   margin: 5px 0 0;
 }
-.env-links {
+.env-links,
+.env-note {
   display: block;
   margin-top: 4px;
 }
@@ -1436,7 +1476,9 @@ table.check-grid td a[aria-current="true"] {
     margin: 0;
     padding: 0;
   }
+  /* One link per row: only the check's name is underlined, so the row does not read as two links. */
   .platform-checks a {
+    text-decoration: none;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1444,6 +1486,12 @@ table.check-grid td a[aria-current="true"] {
     padding: 10px 0;
     border-bottom: 1px solid var(--line);
     font-size: 0.875rem;
+  }
+  .platform-checks .check-name {
+    text-decoration: underline;
+  }
+  .platform-checks a:hover .check-name {
+    text-decoration-thickness: 2px;
   }
   .platform-checks small {
     display: block;
@@ -1479,11 +1527,6 @@ table.check-grid td a[aria-current="true"] {
 }
 :root[data-theme="dark"] [data-theme-icon="moon"] {
   display: none;
-}
-.view .brightway-about {
-  color: var(--ink-2);
-  font-size: 0.875rem;
-  margin-top: 6px;
 }
 .setup-controls {
   display: grid;
@@ -1583,20 +1626,5 @@ table.check-grid td a[aria-current="true"] {
   .setup-controls {
     grid-template-columns: 1fr;
     gap: 8px;
-  }
-}
-
-.home-brand-lockup {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.home-emblem {
-  display: flex;
-  flex: none;
-}
-@media (max-width: 39rem) {
-  .home-emblem {
-    display: none;
   }
 }

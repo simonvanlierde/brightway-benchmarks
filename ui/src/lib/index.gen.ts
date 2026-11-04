@@ -28,6 +28,14 @@ export interface BenchmarkIndex {
   groups: {
     id: Id;
     name: string;
+    /**
+     * A name to show; without it, show the name.
+     */
+    label?: string;
+    /**
+     * One line on what sets the group apart, such as how its packages are installed.
+     */
+    description?: string;
     url?: string;
     /**
      * More pages about what the group names, such as its source or changelog.
@@ -76,6 +84,10 @@ export interface BenchmarkIndex {
      */
     label?: string;
     /**
+     * A line on what the environment runs, shown under the chart when it is on it.
+     */
+    description?: string;
+    /**
      * Where to read about what the label names.
      */
     url?: string;
@@ -87,6 +99,10 @@ export interface BenchmarkIndex {
     id: Id;
     group: Id;
     name: string;
+    /**
+     * A short name to show; without it, show a readable form of the name.
+     */
+    label?: string;
     /**
      * What it measures, for readers.
      */
@@ -107,6 +123,10 @@ export interface BenchmarkIndex {
     measures: [Id, ...Id[]];
     params: {
       name: string;
+      /**
+       * The parameter's name to show; without it, show the name.
+       */
+      label?: string;
       /**
        * What the parameter means.
        */

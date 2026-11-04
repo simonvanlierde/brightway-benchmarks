@@ -287,6 +287,14 @@ export function byBenchmark(rows: LatestChange[]): ChangeGroup[] {
   return [...out.values()];
 }
 
+/** One benchmark's changes as Setup and Benchmarks both show them: "−80%", or "−79% to −80%" over ROWS, largest last. */
+export function percentRange(rows: LatestChange[]): string {
+  const top = rows[0];
+  const low = rows[rows.length - 1];
+  if (!top || !low) return "";
+  return rows.length > 1 ? `${percent(low.change.ratio)} to ${percent(top.change.ratio)}` : percent(top.change.ratio);
+}
+
 /** TEXT cut after each "." and "_", so a long dotted or snake_case name can break there (<wbr>). */
 export function breakable(text: string): string[] {
   return text.split(/(?<=[._])/);
@@ -315,14 +323,26 @@ export function benchmarkLabel(name: string): string {
   const words = (text: string) => text.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replaceAll("_", " ");
   const action = words(method.replace(/^(timeraw|time|peakmem|track)_/, ""));
   const context = words(owner);
-  const label =
-    context && action.split(" ").every((w) => context.toLowerCase().includes(w.toLowerCase()))
+  const own = context.toLowerCase().split(" ");
+  const repeated = action.split(" ").filter((w) => own.includes(w.toLowerCase())).length;
+  // "Multi Scores", not "Multi Scores · scores"; "First score", not "Single Score · first score".
+  const label = !context
+    ? action
+    : repeated === action.split(" ").length
       ? context
-      : context
-        ? `${context} · ${action}`
-        : action;
+      : repeated
+        ? action
+        : `${context} · ${action}`;
   const text = label.charAt(0).toUpperCase() + label.slice(1);
   return method.startsWith("peakmem_") ? `${text} · Peak memory` : text;
+}
+
+/** What to call BENCH: the data's label, else a readable form of its name; with the name too when another in its group reads the same. */
+export function benchLabel(index: BenchmarkIndex, bench: Benchmark): string {
+  const text = (b: Benchmark) => b.label ?? benchmarkLabel(b.name);
+  const own = text(bench);
+  const clash = index.benchmarks.some((b) => b !== bench && b.group === bench.group && text(b) === own);
+  return clash ? `${own} (${bench.name})` : own;
 }
 
 /**

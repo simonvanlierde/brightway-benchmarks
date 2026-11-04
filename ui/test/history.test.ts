@@ -1,7 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import type { BenchmarkIndex, BenchmarkReport } from "../src/lib/contract";
+import type { LatestChange } from "../src/lib/history";
 import {
+  benchLabel,
   benchmarkLabel,
   breakable,
   changesFor,
@@ -12,6 +14,7 @@ import {
   lines,
   pageOf,
   percent,
+  percentRange,
   pickParams,
   pText,
   readView,
@@ -178,6 +181,13 @@ describe("numbers", () => {
     expect(percent(1.014)).toBe("+1.4%");
   });
 
+  it("shows one benchmark's changes as a range from the smallest to the largest", () => {
+    const rows = [0.2, 0.21].map((ratio) => ({ change: { ratio } }) as LatestChange);
+    expect(percentRange(rows)).toBe("−79% to −80%");
+    expect(percentRange(rows.slice(0, 1))).toBe("−80%");
+    expect(percentRange([])).toBe("");
+  });
+
   it("formats values to three significant figures in their own scale", () => {
     expect(format(1.234e9, "ns")).toBe("1.23 s");
     expect(format(45_600, "ns")).toBe("45.6 µs");
@@ -210,6 +220,29 @@ describe("readable benchmark names", () => {
     expect(benchmarkLabel("bench_import.timeraw_import_bw2calc")).toBe("Import bw2calc");
     expect(benchmarkLabel("bench_write.DatabaseWrite.peakmem_write")).toBe("Database Write · Peak memory");
     expect(benchmarkLabel("plain")).toBe("Plain");
+    // A word the class name already has is not said twice.
+    expect(benchmarkLabel("bench_lca.SingleScore.time_first_score")).toBe("First score");
+    expect(benchmarkLabel("bench_lca.NewDemand.time_redo_lci")).toBe("New Demand · redo lci");
+  });
+
+  it("prefers the data's label, and adds the name when two in a group read the same", () => {
+    const bench = (name: string, label?: string) =>
+      ({
+        id: name,
+        group: "g",
+        name,
+        measures: ["t"],
+        params: [],
+        ...(label ? { label } : {}),
+      }) as BenchmarkIndex["benchmarks"][number];
+    const a = bench("m.A.time_x", "Same");
+    const b = bench("m.B.time_y", "Same");
+    const c = bench("m.C.time_z", "Own");
+    const d = bench("m.D.time_w");
+    const index = { benchmarks: [a, b, c, d] } as BenchmarkIndex;
+    expect(benchLabel(index, a)).toBe("Same (m.A.time_x)");
+    expect(benchLabel(index, c)).toBe("Own");
+    expect(benchLabel(index, d)).toBe("D · w");
   });
 });
 
@@ -276,5 +309,20 @@ describe("page routing", () => {
       { commit: "c1", value: 1, released: true },
       { commit: "c3", value: 3, released: true },
     ]);
+  });
+});
+
+describe("links already posted", () => {
+  it("p=ecoinvent still selects the ecoinvent size", async () => {
+    const index = JSON.parse(
+      await readFile(new URL("fixtures/real/index.json", import.meta.url), "utf8"),
+    ) as BenchmarkIndex;
+    const bench = index.benchmarks.find((b) =>
+      b.params.some((a) => a.name === "size" && a.values.includes("'ecoinvent'") && a.values[0] !== "'ecoinvent'"),
+    );
+    if (!bench) throw new Error("the fixture has no benchmark where ecoinvent is not the first size");
+    const at = bench.params.findIndex((a) => a.name === "size");
+    const wanted = bench.params.map((a, i) => (i === at ? "ecoinvent" : ((a.labels ?? a.values)[0] ?? "")));
+    expect(pickParams(bench, wanted)[at]).toBe("'ecoinvent'");
   });
 });

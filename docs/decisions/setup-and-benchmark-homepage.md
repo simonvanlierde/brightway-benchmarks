@@ -1,8 +1,8 @@
-# 0002. A tested setup and benchmark evidence on the homepage
+# A tested setup and benchmark evidence on the homepage
 
-- Status: accepted; amended by 0003
+- Status: accepted; amended by [two-pages-and-no-asv-pages.md](two-pages-and-no-asv-pages.md)
 - Date: 2026-11-01
-- Amends: 0001, audience priority and the site landing page
+- Amends: [own-benchmark-ui.md](own-benchmark-ui.md), audience priority and the site landing page
 
 ## Context
 
@@ -30,7 +30,7 @@ selected check's current result, coverage, last passing set and installation fil
   source environment remains inspectable through the benchmark link.
 - The viewer becomes the site landing page and keeps its existing `ui/` address. All asv
   subject pages stay at their current paths. The former landing page remains at `asv.html`.
-  The two-week parity condition in 0001 still applies before removing the asv pages.
+  The two-week parity condition in own-benchmark-ui.md still applies before removing the asv pages.
 
 On wide screens, tested setup and solver evidence sit side by side; regressions and
 improvements follow below. [DESIGN.md](../../DESIGN.md) describes the look.

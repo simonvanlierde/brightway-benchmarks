@@ -22,7 +22,7 @@ Keep experimental commits visible without treating them as releases. Keep machin
 
 ## Evidence on Hand
 
-`ui/test/fixtures/real/` contains published benchmark results for browser tests. `docs/decisions/0001-own-benchmark-ui.md` records the static viewer and open data contract. `docs/decisions/0002-setup-and-benchmark-homepage.md` and `0003-two-pages-and-no-asv-pages.md` record the Setup and Benchmarks pages. `benchmarks/findings.toml` holds the curated findings. Scientific claims come from this evidence, never illustrative values.
+`ui/test/fixtures/real/` contains published benchmark results for browser tests. `docs/decisions/own-benchmark-ui.md` records the static viewer and open data contract. `docs/decisions/setup-and-benchmark-homepage.md` and `two-pages-and-no-asv-pages.md` record the Setup and Benchmarks pages. `benchmarks/findings.toml` holds the curated findings. Scientific claims come from this evidence, never illustrative values.
 
 ## Product Principles
 

@@ -1,6 +1,6 @@
-# 0001. Our own benchmark UI, on an open data contract
+# Our own benchmark UI, on an open data contract
 
-- Status: accepted; audience priority and landing page amended by [0002](0002-setup-and-benchmark-homepage.md) and 0003
+- Status: accepted; audience priority and landing page amended by [setup-and-benchmark-homepage.md](setup-and-benchmark-homepage.md) and [two-pages-and-no-asv-pages.md](two-pages-and-no-asv-pages.md)
 - Date: 2026-10-30
 
 ## Context

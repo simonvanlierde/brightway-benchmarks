@@ -14,7 +14,7 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
   while lowering fill before enabling those controls.
 - **Our own results UI,** replacing asv's pages: what changed in each release against the
   measured noise, each benchmark's history, and comparisons across solvers and environments
-  ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).
+  ([decision on our own benchmark UI](docs/decisions/own-benchmark-ui.md)).
 - **The synthetic inputs as a dataset** on Zenodo, one version per generator version, so the
   matrices and ecoSpold2 files can be used without running the generator.
 - **More solver columns for bw2calc:** NVIDIA cuDSS behind a GPU opt-in, kept out of the default

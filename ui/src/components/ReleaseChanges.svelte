@@ -7,6 +7,7 @@ import {
   latestChanges,
   noiseText,
   percent,
+  percentRange,
   seriesOf,
   type View,
   writeView,
@@ -57,7 +58,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
 </script>
 <section class="release-changes" aria-labelledby="changes-heading">
         <header class="changes-header">
-          <h2 id="changes-heading">What moved in the latest releases</h2>
+          <h2 id="changes-heading">What changed in the latest releases</h2>
           <p class="lede">
             The latest release of each package, compared with the one before it. Only changes beyond measurement noise appear here.
           </p>
@@ -149,7 +150,7 @@ function labelOf(b: BenchmarkIndex["benchmarks"][number]): string {
                         <a href={writeView(next)} onclick={(e) => follow(e, next)} title={g.bench.name}>{labelOf(g.bench)}</a>
                       </th>
                       <td class="num" data-label="Change">
-                        <span class="delta better">{g.rows.length > 1 ? `${percent(low.change.ratio)} to ${percent(top.change.ratio)}` : percent(top.change.ratio)} better</span>
+                        <span class="delta better">{percentRange(g.rows)} better</span>
                       </td>
                       <td data-label="History"><Sparkline points={history(top)} mark={top.change.commit} /></td>
                       <td class="wrap" data-label="Cases">

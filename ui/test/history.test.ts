@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import type { BenchmarkIndex, BenchmarkReport } from "../src/lib/contract";
+import type { LatestChange } from "../src/lib/history";
 import {
   benchmarkLabel,
   breakable,
@@ -12,6 +13,7 @@ import {
   lines,
   pageOf,
   percent,
+  percentRange,
   pickParams,
   pText,
   readView,
@@ -176,6 +178,13 @@ describe("numbers", () => {
     expect(percent(1.123)).toBe("+12%");
     expect(percent(0.916)).toBe("−8%");
     expect(percent(1.014)).toBe("+1.4%");
+  });
+
+  it("shows one benchmark's changes as a range from the smallest to the largest", () => {
+    const rows = [0.2, 0.21].map((ratio) => ({ change: { ratio } }) as LatestChange);
+    expect(percentRange(rows)).toBe("−79% to −80%");
+    expect(percentRange(rows.slice(0, 1))).toBe("−80%");
+    expect(percentRange([])).toBe("");
   });
 
   it("formats values to three significant figures in their own scale", () => {

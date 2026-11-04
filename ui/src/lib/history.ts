@@ -287,6 +287,14 @@ export function byBenchmark(rows: LatestChange[]): ChangeGroup[] {
   return [...out.values()];
 }
 
+/** One benchmark's changes as Setup and Benchmarks both show them: "−80%", or "−79% to −80%" over ROWS, largest last. */
+export function percentRange(rows: LatestChange[]): string {
+  const top = rows[0];
+  const low = rows[rows.length - 1];
+  if (!top || !low) return "";
+  return rows.length > 1 ? `${percent(low.change.ratio)} to ${percent(top.change.ratio)}` : percent(top.change.ratio);
+}
+
 /** TEXT cut after each "." and "_", so a long dotted or snake_case name can break there (<wbr>). */
 export function breakable(text: string): string[] {
   return text.split(/(?<=[._])/);

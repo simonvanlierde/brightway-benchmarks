@@ -4,10 +4,11 @@ import type { BenchmarkIndex, Guidance } from "../lib/contract";
 import { dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/guidance";
 import {
   benchmarkLabel,
+  byBenchmark,
   format,
   latestChanges,
   noiseText,
-  percent,
+  percentRange,
   readView,
   type View,
   writeView,
@@ -83,8 +84,12 @@ $effect(() => {
 });
 
 const changes = $derived(latestChanges(index));
+// The largest regression, one case, and the benchmark with the largest gain, all its cases: as Benchmarks lists them.
 const moves = $derived(
-  [changes.find((c) => c.way === "worse"), changes.find((c) => c.way === "better")].filter((c) => c !== undefined),
+  [
+    changes.filter((c) => c.way === "worse").slice(0, 1),
+    byBenchmark(changes.filter((c) => c.way === "better"))[0]?.rows ?? [],
+  ].filter((rows) => rows.length > 0),
 );
 const comparison = $derived(guidance?.solverComparison);
 // The findings below leave out the comparison above: one fact, one set of numbers on the page.
@@ -175,10 +180,13 @@ $effect(() => {
     <Findings {index} {follow} shownElsewhere={compared} />
 
     <section class="release-brief" aria-labelledby="release-brief-heading">
-      <h2 id="release-brief-heading">What changed?</h2><p>Changes beyond measured noise in each package's latest release.</p>
-      {#each moves as row (row.change.case + row.change.machine + row.way)}
+      <h2 id="release-brief-heading">What changed in the latest releases</h2><p>Changes beyond measured noise in each package's latest release.</p>
+      {#each moves as rows, i (i)}
+        {@const row = rows[0]}
+        {#if row}
         {@const next = { bench: row.bench.id, params: row.params, measure: row.change.measure, machine: row.change.machine }}
-        <article class="brief-change"><div><h3><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchmarkLabel(row.bench.name)}</a></h3><strong class={row.way}>{percent(row.change.ratio)} {row.way}</strong></div><p>{row.env} · beyond {noiseText(row.change)} noise</p><p class="brief-context">{row.group.name} · {row.from} → {row.to}{#if index.machines.length > 1} · {index.machines.find((m) => m.id === row.change.machine)?.name}{/if}</p></article>
+        <article class="brief-change"><div><h3><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchmarkLabel(row.bench.name)}</a></h3><strong class={row.way}>{percentRange(rows)} {row.way}</strong></div><p>{#if rows.length > 1}{rows.length} cases, each beyond its noise{:else}{row.env} · beyond {noiseText(row.change)} noise{/if}</p><p class="brief-context">{row.group.name} · {row.from} → {row.to}{#if index.machines.length > 1} · {index.machines.find((m) => m.id === row.change.machine)?.name}{/if}</p></article>
+        {/if}
       {/each}
       {#if moves.length === 0}<p class="coverage-text">No release changes beyond measured noise were published.</p>{/if}
       <a class="section-link" href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Open all release changes</a>

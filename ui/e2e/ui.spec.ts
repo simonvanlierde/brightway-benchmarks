@@ -37,7 +37,7 @@ test.describe("looks", () => {
       // Nothing wider than the screen: the tables scroll inside their own box.
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await page.goto("?page=changes");
-      await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "What changed in the latest releases" })).toBeVisible();
       await page.screenshot({ path: `${shots}/start-${name}.png`, fullPage: true });
       await page.screenshot({ path: `${shots}/start-${name}-viewport.png` });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -225,7 +225,7 @@ test("overview filters scope their counts and survive a shared URL", async ({ pa
 
 test("release changes list regressions before grouped improvements", async ({ page }) => {
   await page.goto("?page=changes");
-  const changes = page.getByRole("region", { name: "What moved in the latest releases" });
+  const changes = page.getByRole("region", { name: "What changed in the latest releases" });
   await expect(changes.getByRole("heading", { level: 3 })).toHaveText(["Regressions", "Improvements"]);
   const better = Number((await page.getByRole("button", { name: /^Better/ }).textContent())?.match(/\d+/)?.[0]);
   const cases = await page.locator(".gains-table summary").allTextContents();
@@ -258,7 +258,7 @@ test("Benchmarks opens on the findings, and each finding opens its chart", async
   await expect(findings.getByRole("heading", { level: 3 })).toHaveText(
     index.findings.map((f: { title: string }) => f.title),
   );
-  await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What changed in the latest releases" })).toBeVisible();
   await findings
     .getByRole("link", { name: /JacobiGMRESLCA/ })
     .first()
@@ -293,7 +293,7 @@ test("the explorer explains the benchmark and links the chosen values", async ({
 test("clearing a shared package filter stays on release changes", async ({ page }) => {
   // A link from before the page parameter: the filters alone chose the changes page.
   await page.goto("?group=bw-processing-dfb1fd2e3103");
-  const heading = page.getByRole("heading", { name: "What moved in the latest releases" });
+  const heading = page.getByRole("heading", { name: "What changed in the latest releases" });
   await expect(heading).toBeVisible();
   await expect(page.getByRole("status")).toHaveText("3 of 3 changes shown");
   await page.getByLabel("Package", { exact: true }).selectOption({ label: "All packages" });
@@ -316,7 +316,7 @@ test("a link to another page moves keyboard focus to that page", async ({ page }
   await page.goto("./");
   await page.getByRole("link", { name: "Open all release changes" }).focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What changed in the latest releases" })).toBeVisible();
   await expect(page.locator("#main")).toBeFocused();
 });
 
@@ -406,7 +406,7 @@ test("old links open the page that took their place", async ({ page }) => {
   await expect(page.locator(".benchmark-id")).toContainText("bench_lca.MultiScores.time_scores");
   await expect(page.locator(".bench-meta")).toContainText("bw2calc ·");
   await page.goto("?page=changes");
-  await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What changed in the latest releases" })).toBeVisible();
   await page.goto("?page=compatibility");
   await expect(page).toHaveTitle(/^Setup ·/);
   await expect(page.locator("#all-checks")).toBeInViewport();
@@ -568,7 +568,7 @@ for (const [label, status, json] of [
       .getByRole("navigation", { name: "Main", exact: true })
       .getByRole("link", { name: "Benchmarks", exact: true })
       .click();
-    await expect(page.getByRole("heading", { name: "What moved in the latest releases" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "What changed in the latest releases" })).toBeVisible();
   });
 }
 

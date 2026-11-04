@@ -145,6 +145,42 @@ score with `JacobiGMRESLCA` did not change.
 Graph: [bw2calc, Monte Carlo](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.MonteCarlo.time_iterations).
 Rerun: [`bench_lca.MonteCarlo`](../benchmarks/bench_bw2calc/bench_lca.py).
 
+### cuDSS refactorizes real ecoinvent in 37 ms, but that isn't a Monte Carlo draw yet
+
+**On real ecoinvent 3.12 cut-off, NVIDIA's cuDSS factorizes on the GPU in about 0.25 s and
+repeats the numeric factorization in 37 to 38 ms, about 6 times faster than PARDISO on eight
+threads.** It's a solver probe: the repeat reuses the same values and sparsity pattern.
+
+What it means for you: nothing yet. bw2calc can't use cuDSS, and these times don't include
+sampling, rebuilding the matrices, or the inventory and impact scores of a real draw.
+
+Two rounds at each CPU thread count ran on the performance cores of an Intel i9-14900KF with an
+NVIDIA RTX 4090. Each round takes the median of three factorizations and five solves; the table
+gives the range over the two rounds. GPU times include the transfers to and from the host. The
+CUDA context and library warm-up happen before timing.
+
+| Solver | CPU threads | First factorization | Repeated numeric factorization | Solve |
+| --- | --- | --- | --- | --- |
+| SuperLU | 1 | 2.45 to 2.66 s | Not measured | 5.50 to 5.60 ms |
+| UMFPACK, reference BLAS | 1 | 1.07 to 1.08 s | Not measured | 9.70 ms |
+| KLU | 1 | 0.766 to 0.833 s | Not measured | 2.90 to 5.40 ms |
+| PARDISO | 1 | 0.779 to 0.791 s | 0.610 to 0.615 s | 9.70 to 10.4 ms |
+| PARDISO | 8 | 0.291 to 0.392 s | 0.211 to 0.248 s | 7.70 to 9.50 ms |
+| cuDSS | 1 or 8 | 0.250 to 0.257 s | 37.0 to 38.0 ms | 1.00 to 1.10 ms |
+
+The scores agree with UMFPACK to a relative difference of at most 4e-12, checked with a random
+positive characterization row. With changing values (`--cudss-updates`: three row-scaled
+updates, same sparsity), cuDSS still refactorizes in 34 to 37 ms without a new analysis, and the
+solutions stay within a relative difference of 4e-10 of SuperLU's.
+
+Before anyone claims this for Monte Carlo, a GPU backend needs real LCA draws, changed sparsity
+and resource cleanup tested. It's the case for letting callers choose the solver in bw2calc
+([brightway2-calc#184](https://github.com/brightway-lca/brightway2-calc/issues/184)).
+
+Rerun: [`scripts/solver_factorize.py --pardiso --cudss`](../scripts/solver_factorize.py), with
+your own licensed ecoinvent release. Its module docstring gives the container command and the
+pinned GPU packages.
+
 ### Every new LCA object under PyPardiso searches for MKL again
 
 **From 3.0.0, each LCA object under PyPardiso makes a fresh solver, which searches the Python

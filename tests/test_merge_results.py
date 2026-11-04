@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import math
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "merge_results.py"
@@ -103,3 +104,15 @@ def test_samples_merge_per_cell():
     columns = ["result", "params", "version", "samples"]
     old, new = [[1], [["'s'"]], "v", [[1.0, 1.1]]], [[2], [["'u'"]], "v", [[2.0]]]
     assert custom_row(columns, old, new) == [[2, 1], [["'u'", "'s'"]], "v", [[2.0], [1.0, 1.1]]]
+
+
+def test_cells_neither_run_timed_are_skipped_not_failed():
+    old = [[1], [["'s'"], ["'A'"]], "v", 10, 5, [0.1]]
+    new = [[2], [["'u'"], ["'B'"]], "v", 20, 1, [0.2]]
+    row = merged_row(old, new)
+    times = row.pop(0)
+    assert times[0] == 2
+    assert math.isnan(times[1])  # asv writes NaN for a skipped cell, None for a failed one
+    assert math.isnan(times[2])
+    assert times[3] == 1
+    assert row == [[["'u'", "'s'"], ["'B'", "'A'"]], "v", 20, 1, [0.2, None, None, 0.1]]

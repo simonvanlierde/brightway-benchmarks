@@ -10,6 +10,7 @@ version changed keeps only the new cells, as its old ones timed other code.
 import hashlib
 import itertools
 import json
+import math
 import shutil
 import subprocess
 import sys
@@ -44,7 +45,9 @@ def merge_row(old: list, new: list, columns: list[str]) -> list:
     if axes == new[p]:
         return new
     before, after = cells(old, columns), cells(new, columns)
-    merged = [after.get(combo) or before.get(combo) or {} for combo in itertools.product(*axes)]
+    # A cell neither run timed is skipped, as asv writes it: NaN in result, None elsewhere.
+    skipped = {"result": math.nan}
+    merged = [after.get(combo) or before.get(combo) or skipped for combo in itertools.product(*axes)]
     row = new + [None] * (len(columns) - len(new))
     row[p] = axes
     for j, c in enumerate(columns):

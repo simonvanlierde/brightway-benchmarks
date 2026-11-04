@@ -4,10 +4,13 @@
 
     uv run scripts/measure_stats.py --structure-only RELEASE_FOLDER PROFILE.json
 
+    uv run --with pymetis scripts/measure_stats.py --fill-bounds RELEASE_FOLDER OUT.json
+
 ``--structure-only`` skips the SuperLU factorizations, which take most of a full run, and
 keeps the fill figures already in the output file (``FILL_KEYS``). ``measured`` and
 ``versions`` then date the structure, and ``fill_measured`` and ``fill_versions`` the kept
-fill figures; a full run writes only the first pair.
+fill figures; a full run writes only the first pair. ``--fill-bounds`` adds
+``bwbench.synth.fill_bounds`` (it needs the factorizations and pymetis).
 
 Reads the linked ecospold2 datasets (one file per activity and reference product) and
 writes only what ``bwbench.synth.measure`` returns: counts and distributions, never a
@@ -38,7 +41,8 @@ CREDIT = (
     "Calculated from the ecoinvent 3.12 cut-off database (ecoinvent Association, https://ecoinvent.org). "
     "Aggregate statistics only: no dataset, name, amount or single-dataset figure."
 )
-FILL_KEYS = ("lu_fill", "factor_seconds", "lu_fill_no_pivoting", "off_diagonal_pivots")  # need factorizations
+# Stats fields only the factorizations give: --structure-only keeps them from OUT.
+FILL_KEYS = ("lu_fill", "factor_seconds", "lu_fill_no_pivoting", "off_diagonal_pivots", "fill_bounds")
 NS = "{http://www.EcoInvent.org/EcoSpold02}"
 REFERENCE_PRODUCT = "0"  # ecospold2 outputGroup of the reference product
 
@@ -65,12 +69,13 @@ def read(path: Path) -> tuple:
     return ref[0], ref[1], location, isic, inputs
 
 
-def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
+def main(folder: Path, out: Path, *, structure_only: bool = False, fill_bounds: bool = False) -> None:
     """Parse every dataset in ``folder/datasets`` and write the statistics to ``out``.
 
     ``structure_only`` skips the SuperLU factorizations (minutes) and keeps the fill and
     timing figures already in ``out``, with the date and versions they were measured with.
-    It refuses when ``out`` is missing or describes another matrix.
+    It refuses when ``out`` is missing or describes another matrix. ``fill_bounds`` needs the
+    factorizations, so ``measure`` refuses it together with ``structure_only``.
     """
     old = None
     if structure_only:
@@ -107,7 +112,11 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
 
     stats = asdict(
         measure(
-            a, locations=[r[2] for r in records], sectors=[r[3] for r in records], repeats=0 if structure_only else 3
+            a,
+            locations=[r[2] for r in records],
+            sectors=[r[3] for r in records],
+            repeats=0 if structure_only else 3,
+            bounds=fill_bounds,
         )
     )
     fill = {}
@@ -143,5 +152,8 @@ if __name__ == "__main__":
     parser.add_argument("folder", type=Path, help="the release folder, holding datasets/*.spold")
     parser.add_argument("out", type=Path, help="the JSON file to write")
     parser.add_argument("--structure-only", action="store_true", help="skip the factorizations, keep the fill in OUT")
+    parser.add_argument("--fill-bounds", action="store_true", help="add the fill bounds (needs pymetis)")
     args = parser.parse_args()
-    main(args.folder.expanduser(), args.out, structure_only=args.structure_only)
+    if args.structure_only and args.fill_bounds:
+        parser.error("--fill-bounds needs the factorizations that --structure-only skips")
+    main(args.folder.expanduser(), args.out, structure_only=args.structure_only, fill_bounds=args.fill_bounds)

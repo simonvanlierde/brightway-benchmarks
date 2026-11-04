@@ -217,3 +217,62 @@ def test_spectral_radius_branches(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(synth, "DENSE_RADIUS_MAX_PRODUCTS", 2)
     assert synth.spectral_radius(three) is None
     assert synth.spectral_radius(small) == pytest.approx(np.sqrt(4.25))  # the dense branch never calls eigs
+
+
+def test_cholesky_counts_of_arrow_matrices():
+    n = 6
+    dense_first = np.eye(n)
+    dense_first[0, :] = dense_first[:, 0] = 1  # eliminating 0 first fills the whole matrix
+    counts, parent = synth.cholesky_counts(sparse.csc_matrix(dense_first), ata=False)
+    assert counts.tolist() == [6, 5, 4, 3, 2, 1]
+    assert synth.tree_height(parent) == n - 1  # a path
+    dense_last = dense_first[::-1, ::-1]  # the hub eliminated last: no fill
+    counts, parent = synth.cholesky_counts(sparse.csc_matrix(dense_last), ata=False)
+    assert counts.tolist() == [2, 2, 2, 2, 2, 1]
+    assert synth.tree_height(parent) == 1  # a star
+
+
+def test_cholesky_counts_of_ata_without_forming_it():
+    # One dense row makes A^T A dense; a diagonal A gives a diagonal A^T A.
+    a = np.eye(4)
+    a[2, :] = 1
+    assert synth.cholesky_counts(sparse.csc_matrix(a), ata=True)[0].tolist() == [4, 3, 2, 1]
+    assert synth.cholesky_counts(sparse.csc_matrix(np.eye(4)), ata=True)[0].tolist() == [1, 1, 1, 1]
+
+
+def test_cholesky_counts_match_symbolic_elimination():
+    def eliminate(pattern: np.ndarray) -> list[int]:
+        m = pattern.copy()
+        counts = []
+        for k in range(m.shape[0]):
+            below = np.flatnonzero(m[k + 1 :, k]) + k + 1
+            counts.append(1 + below.size)
+            m[np.ix_(below, below)] = True
+        return counts
+
+    rng = np.random.default_rng(0)
+    for _ in range(50):
+        a = (rng.random((12, 10)) < 0.2) | np.eye(12, 10, dtype=bool)
+        ata = (a.T.astype(int) @ a.astype(int)) > 0
+        assert synth.cholesky_counts(sparse.csc_matrix(a.astype(float)), ata=True)[0].tolist() == eliminate(ata)
+        s = ata[:, ::-1][::-1]  # a symmetric pattern in another order
+        assert synth.cholesky_counts(sparse.csc_matrix(s.astype(float)), ata=False)[0].tolist() == eliminate(s)
+
+
+def test_fill_bounds_of_a_tridiagonal_matrix():
+    pytest.importorskip("pymetis")
+    n = 7  # A + A^T is a path: one vertex separates it, then one more in each half
+    a = sparse.csc_matrix(np.eye(n) - 0.3 * np.eye(n, k=1) - 0.2 * np.eye(n, k=-1))
+    b = measure(a, repeats=1, bounds=True).fill_bounds
+    assert b is not None
+    assert b["separator"] == {"top": pytest.approx(1 / n), "second": pytest.approx(2 / n)}
+    assert b["MMD_AT_PLUS_A"]["bound"] == pytest.approx(1)  # a path orders without fill
+    for key in ("COLAMD", "COLAMD (A^T)", "MMD_AT_PLUS_A", "METIS"):
+        assert b[key]["bound"] >= 1
+        assert 0 < b[key]["front"] <= 1
+        assert b[key]["height"] < 1
+    # The bound holds for the fill SuperLU got with that ordering.
+    s = measure(a, repeats=1)
+    assert s.lu_fill["COLAMD"] <= b["COLAMD"]["bound"]
+    with pytest.raises(ValueError, match="need repeats"):
+        measure(a, repeats=0, bounds=True)

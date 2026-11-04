@@ -208,3 +208,18 @@ def test_parser_is_importable_by_fresh_worker(tmp_path: Path, script: ModuleType
     with ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context(start_method)) as pool:
         record = pool.submit(script.read, folder / "datasets" / "A_pa.spold").result()
     assert record == (("A", "pa"), 1.0, "CH", "35", [(("B", "pb"), 0.5)])
+
+
+def test_fill_bounds_are_written_and_need_the_factorizations(tmp_path: Path, script: ModuleType):
+    pytest.importorskip("pymetis")
+    folder = release(
+        tmp_path,
+        {"A_pa": dataset("A", "pa", 1.0, "CH", "", [("B", "pb", 0.5)]), "B_pb": dataset("B", "pb", 1.0, "CH", "", [])},
+    )
+    out = tmp_path / "stats.json"
+    script.main(folder, out, fill_bounds=True)
+    bounds = json.loads(out.read_text())["stats"]["fill_bounds"]
+    assert {"COLAMD", "MMD_AT_PLUS_A", "METIS", "separator"} <= bounds.keys()
+    assert all(v is None or isinstance(v, int | float) for v in leaves(bounds))
+    with pytest.raises(ValueError, match="need repeats"):
+        script.main(folder, out, structure_only=True, fill_bounds=True)

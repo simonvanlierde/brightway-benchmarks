@@ -893,6 +893,7 @@ class Stats:
     core_after_hubs: float | None = None  # share of products in the 2-core of A + A^T without the top 1% by degree
     lu_fill_no_pivoting: dict[str, float] | None = None  # lu_fill with diag_pivot_thresh=0
     off_diagonal_pivots: dict[str, float] | None = None  # share of columns pivoted off the diagonal, default threshold
+    fill_bounds: dict[str, dict[str, float]] | None = None  # see fill_bounds(); measure(bounds=True) only
 
 
 def measure(
@@ -901,12 +902,17 @@ def measure(
     sectors: list[str] | None = None,
     *,
     repeats: int = 3,
+    bounds: bool = False,
 ) -> Stats:
     """Structural statistics of a technosphere matrix ``A`` (production on the diagonal).
 
     ``repeats`` SuperLU factorizations per ordering give the median time, for A and for A^T
-    (keys ending in ``(A^T)``); 0 skips them, and the fill with them.
+    (keys ending in ``(A^T)``); 0 skips them, and the fill with them. ``bounds`` adds
+    ``fill_bounds`` for the orderings SuperLU chose; it needs ``repeats`` and pymetis.
     """
+    if bounds and not repeats:
+        msg = "fill bounds use SuperLU's column orderings: they need repeats > 0"
+        raise ValueError(msg)
     a = sparse.csc_matrix(technosphere, dtype=np.float64)
     n = a.shape[0]
     if n == 0 or not np.all(a.diagonal()):
@@ -922,7 +928,7 @@ def measure(
     sizes = np.bincount(labels)
     loops = sizes[sizes > 1]
 
-    fill, seconds, fill_no_pivoting, pivots = {}, {}, {}, {}
+    fill, seconds, fill_no_pivoting, pivots, perms = {}, {}, {}, {}, {}
     # A^T too: bw2calc's decompose_technosphere factorizes A, scipy's spsolve on CSR input A^T.
     for m, suffix in ((a, ""), (a.T.tocsc(), " (A^T)")) if repeats else ():
         for order in ("COLAMD", "MMD_AT_PLUS_A"):
@@ -932,6 +938,7 @@ def measure(
                 lu = sla.splu(m, permc_spec=order)
                 times.append(time.perf_counter() - t0)
             fill[order + suffix] = _lu_fill(lu, m)
+            perms[order + suffix] = lu.perm_c
             seconds[order + suffix] = float(np.median(times))
             if not suffix:
                 # Column i lands at perm_c[i] and row i at perm_r[i]: the pivot is A[i, i] when they agree.
@@ -970,6 +977,7 @@ def measure(
         **_fill_drivers(a, x, locations, sectors),
         lu_fill_no_pivoting=fill_no_pivoting or None,
         off_diagonal_pivots=pivots or None,
+        fill_bounds=fill_bounds(a, perms) if bounds else None,
     )
 
 
@@ -996,6 +1004,213 @@ def _shared_pairs(
 def _lu_fill(lu: Any, a: sparse.csc_matrix) -> float:  # noqa: ANN401 - scipy's SuperLU object
     """nnz(L + U) / nnz(A), counting the shared unit diagonal once."""
     return float((lu.L.nnz + lu.U.nnz - a.shape[0]) / a.nnz)
+
+
+def _etree(a: sparse.csc_matrix, *, ata: bool) -> NDArray[np.int64]:
+    """Elimination tree of the Cholesky factor of A (upper part used), or of A^T A when ``ata``.
+
+    CSparse's cs_etree (Davis, Direct Methods for Sparse Linear Systems, 2006, section 4.1).
+    """
+    m, n = a.shape
+    parent = np.full(n, -1, dtype=np.int64)
+    ancestor = [-1] * n
+    prev = [-1] * m
+    ap, ai = a.indptr.tolist(), a.indices.tolist()
+    par = parent.tolist()
+    for k in range(n):
+        for p in range(ap[k], ap[k + 1]):
+            r = ai[p]
+            i = prev[r] if ata else r
+            while i != -1 and i < k:
+                inext = ancestor[i]
+                ancestor[i] = k
+                if inext == -1:
+                    par[i] = k
+                i = inext
+            if ata:
+                prev[r] = k
+    parent[:] = par
+    return parent
+
+
+def _postorder(parent: NDArray[np.int64]) -> list[int]:
+    """A postorder of the forest ``parent``: children before parents, each subtree contiguous."""
+    n = parent.size
+    children: list[list[int]] = [[] for _ in range(n)]
+    roots = []
+    for j in range(n - 1, -1, -1):  # reversed, so children pop off the stack in id order
+        (children[parent[j]] if parent[j] != -1 else roots).append(j)
+    post, stack = [], list(roots)
+    expanded = [False] * n
+    while stack:
+        j = stack[-1]
+        if expanded[j]:
+            post.append(stack.pop())
+        else:
+            expanded[j] = True
+            stack.extend(children[j])
+    return post
+
+
+def cholesky_counts(  # noqa: C901, PLR0912, PLR0915 - cs_counts, ported in one piece to compare against it
+    a: sparse.spmatrix, *, ata: bool
+) -> tuple[NDArray[np.int64], NDArray[np.int64]]:
+    """Column counts of the Cholesky factor L of A (symmetric pattern) or of A^T A, and its etree.
+
+    Symbolic only, in about O(nnz(A)) steps, without forming A^T A: CSparse's cs_counts
+    (Gilbert, Ng and Peyton's skeleton-matrix method). Counts include the diagonal, so
+    ``counts.sum()`` is nnz(L). Values are ignored; only the pattern matters.
+    """
+    a = sparse.csc_matrix(a)
+    a.sort_indices()
+    m, n = a.shape
+    parent = _etree(a, ata=ata)
+    post = _postorder(parent)
+    par = parent.tolist()
+    at = a.T.tocsc()  # column J of A^T is row J of A
+    at.sort_indices()
+    atp, ati = at.indptr.tolist(), at.indices.tolist()
+    first = [-1] * n
+    delta = [0] * n
+    for k in range(n):
+        j = post[k]
+        delta[j] = 1 if first[j] == -1 else 0  # 1 if j is a leaf
+        while j != -1 and first[j] == -1:
+            first[j] = k
+            j = par[j]
+    head, nxt = [-1] * (n + 1), [-1] * m
+    if ata:
+        # Row i of A is a clique in A^T A: visit it once, at its earliest column in postorder.
+        where = [0] * n
+        for k, j in enumerate(post):
+            where[j] = k
+        for i in range(m):
+            k = min((where[c] for c in ati[atp[i] : atp[i + 1]]), default=n)
+            nxt[i] = head[k]
+            head[k] = i
+    ancestor = list(range(n))
+    maxfirst = [-1] * n
+    prevleaf = [-1] * n
+    for k in range(n):
+        j = post[k]
+        if par[j] != -1:
+            delta[par[j]] -= 1  # j is not a root
+        rows = []
+        if ata:
+            r = head[k]
+            while r != -1:
+                rows.append(r)
+                r = nxt[r]
+        else:
+            rows.append(j)
+        for r in rows:
+            for p in range(atp[r], atp[r + 1]):
+                i = ati[p]
+                # cs_leaf: is j a leaf of row i's subtree, and where does it meet the previous leaf?
+                if i <= j or first[j] <= maxfirst[i]:
+                    continue
+                maxfirst[i] = first[j]
+                jprev = prevleaf[i]
+                prevleaf[i] = j
+                delta[j] += 1  # A(i, j) is in the skeleton matrix
+                if jprev != -1:
+                    q = jprev
+                    while q != ancestor[q]:
+                        q = ancestor[q]
+                    s = jprev
+                    while s != q:  # path compression
+                        sparent = ancestor[s]
+                        ancestor[s] = q
+                        s = sparent
+                    delta[q] -= 1  # the overlap at the least common ancestor
+        if par[j] != -1:
+            ancestor[j] = par[j]
+    for j in post:  # children come first, so each subtree's sum is complete when its root adds it
+        if par[j] != -1:
+            delta[par[j]] += delta[j]
+    return np.asarray(delta, dtype=np.int64), parent
+
+
+def tree_height(parent: NDArray[np.int64]) -> int:
+    """Edges on the longest leaf-to-root path of the forest ``parent``."""
+    depth = np.zeros(parent.size, dtype=np.int64)
+    for j in reversed(_postorder(parent)):  # parents before children
+        if parent[j] != -1:
+            depth[j] = depth[parent[j]] + 1
+    return int(depth.max()) if depth.size else 0
+
+
+def _bisection_separator(graph: sparse.csr_matrix) -> tuple[int, NDArray[np.int64], NDArray[np.int64]]:
+    """A vertex separator from METIS's edge bisection of ``graph``, and the two sides it leaves.
+
+    The smallest vertex set that covers every cut edge: by Konig's theorem its size is a
+    maximum matching of the bipartite graph of cut edges. The sides are the two parts whole.
+    shortcut: separator vertices stay in their part for the next level, which overstates the
+    second level slightly; build the Konig cover itself if that level matters.
+    """
+    import pymetis  # noqa: PLC0415 - only fill_bounds needs it
+
+    n = graph.shape[0]
+    if n < 2 or graph.nnz == 0:  # nothing to separate
+        return 0, np.arange(n), np.arange(0)
+    _, parts = pymetis.part_graph(2, pymetis.CSRAdjacency(graph.indptr, graph.indices), options=pymetis.Options(seed=0))
+    parts = np.asarray(parts)
+    left, right = np.flatnonzero(parts == 0), np.flatnonzero(parts == 1)
+    cut = graph[left][:, right].tocsr()
+    match = csgraph.maximum_bipartite_matching(cut, perm_type="column")
+    return int((match != -1).sum()), left, right
+
+
+def fill_bounds(a: sparse.csc_matrix, perms: dict[str, NDArray]) -> dict[str, dict[str, float]]:
+    """Fill-governing structure of ``a`` under the column orderings SuperLU chose (``perms``).
+
+    - ``COLAMD``: with partial pivoting, L + U of A Q fits in the Cholesky pattern of
+      (A Q)^T (A Q) (George and Ng 1987). ``bound`` is 2 nnz(L_c) - n over nnz(A), on the
+      scale of ``lu_fill``; ``bound_sparse`` drops rows above COLAMD's dense cut-off first,
+      as COLAMD does. For the ``(A^T)`` key that pattern is A A^T.
+    - ``MMD_AT_PLUS_A`` and ``METIS``: the same for A + A^T under that symmetric ordering,
+      the fill LU gets without off-diagonal pivots.
+    - ``height`` is the elimination tree's longest path and ``front`` the largest column
+      count of L_c, both as a share of n: long trees and big fronts mean large dense blocks.
+    - ``separator``: the vertex separator of A + A^T from METIS's bisection, and the two
+      second-level ones summed, as shares of n. Nested dissection's fill grows with them.
+    """
+    import pymetis  # noqa: PLC0415 - not a runtime dependency of the benchmarks
+
+    n = a.shape[0]
+    pattern = (a != 0).astype(np.float64).tocsc()
+    sym = ((pattern + pattern.T) != 0).astype(np.float64).tocsr()
+
+    def summary(counts: NDArray[np.int64], parent: NDArray[np.int64]) -> dict[str, float]:
+        return {
+            "bound": float((2 * counts.sum() - n) / a.nnz),
+            "height": tree_height(parent) / n,
+            "front": float(counts.max()) / n,
+        }
+
+    out = {}
+    cutoff = max(16, int(10 * math.sqrt(n)))
+    for key, perm in perms.items():
+        order = np.argsort(perm)  # column i of A lands at perm[i]
+        if key.startswith("COLAMD"):
+            m = (pattern.T if key.endswith("(A^T)") else pattern).tocsc()[:, order]
+            out[key] = summary(*cholesky_counts(m, ata=True))
+            r = m.tocsr()
+            m_sparse = r[np.flatnonzero(np.diff(r.indptr) <= cutoff)].tocsc()
+            out[key]["bound_sparse"] = float((2 * cholesky_counts(m_sparse, ata=True)[0].sum() - n) / a.nnz)
+        else:
+            out[key] = summary(*cholesky_counts(sym[order][:, order], ata=False))
+    graph = sym.copy()
+    graph.setdiag(0)
+    graph.eliminate_zeros()
+    graph = graph.astype(np.int32).tocsr()
+    dissection = np.asarray(pymetis.nested_dissection(pymetis.CSRAdjacency(graph.indptr, graph.indices))[0])
+    # nested_dissection returns (perm, iperm); perm[k] is the vertex eliminated k-th.
+    out["METIS"] = summary(*cholesky_counts(sym[dissection][:, dissection], ata=False))
+    top, left, right = _bisection_separator(graph)
+    second = sum(_bisection_separator(graph[side][:, side].tocsr())[0] for side in (left, right))
+    out["separator"] = {"top": top / n, "second": second / n}
+    return out
 
 
 def _fill_drivers(

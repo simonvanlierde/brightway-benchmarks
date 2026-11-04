@@ -1,8 +1,7 @@
 ---
 import StoryBars from "../../components/StoryBars.astro";
-import "../../styles.css";
+import StaticPage from "../../layouts/StaticPage.astro";
 import { viewerHref } from "../../lib/story-links";
-import Head from "../_Head.astro";
 
 const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
 const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
@@ -18,32 +17,14 @@ const pipScore = link("bw2calc", single, "ecoinvent", "LCA");
 const thirty = (variant: string) => link("bw2calc-conda", multi, "ecoinvent", "30", variant);
 ---
 
-<html lang="en">
-  <head>
-    <Head
-      title="Your solver can make the same LCA ten times slower: Brightway benchmarks"
-      description="One Brightway score on an ecoinvent-sized database takes 2.63 s, 10.0 s or 27.7 s, depending on which sparse solver you install."
-      canonical="https://simonvanlierde.com/brightway-benchmarks/stories/solver-choice/"
-      image="https://simonvanlierde.com/brightway-benchmarks/ui/story-solver-choice.png"
-      imageAlt="Three bars for one Brightway score on an ecoinvent-sized database: UMFPACK 2.63 seconds, PyPardiso 10.0 seconds, SuperLU 27.7 seconds."
-    />
-  </head>
-  <body>
-    <a class="skip" href="#main">Skip to the content</a>
-    <header class="top">
-      <div class="top-inner">
-        <a class="story-brand" href={home}>brightway-benchmarks</a>
-        <nav class="primary-nav" aria-label="Main">
-          <a href={home}>Setup</a>
-          <a href={`${home}?page=explorer`}>Benchmarks</a>
-        </nav>
-        <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme">
-          <svg data-theme-icon="sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg>
-          <svg data-theme-icon="moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/></svg>
-        </button>
-      </div>
-    </header>
-    <main class="story" id="main" tabindex="-1">
+<StaticPage
+  mainClass="story"
+  title="Your solver can make the same LCA ten times slower: Brightway benchmarks"
+  description="One Brightway score on an ecoinvent-sized database takes 2.63 s, 10.0 s or 27.7 s, depending on which sparse solver you install."
+  canonical="https://simonvanlierde.com/brightway-benchmarks/stories/solver-choice/"
+  image="https://simonvanlierde.com/brightway-benchmarks/ui/story-solver-choice.png"
+  imageAlt="Three bars for one Brightway score on an ecoinvent-sized database: UMFPACK 2.63 seconds, PyPardiso 10.0 seconds, SuperLU 27.7 seconds."
+>
       <h1>Your solver can make the same LCA ten times slower</h1>
       <p class="lede">Every Brightway score ends in one large sparse linear system. Which package solves it depends on what happens to be installed, not on anything in your code. On an ecoinvent-sized database, that is the difference between 2.6 s and 28 s.</p>
       <p>The times come from one pinned benchmark machine, on one thread, with a synthetic database that has ecoinvent's size and shape. Each chart links to its benchmark's full history.</p>
@@ -72,7 +53,7 @@ const thirty = (variant: string) => link("bw2calc-conda", multi, "ecoinvent", "3
           { label: "SuperLU, with or without scikit-umfpack", seconds: 28.7, tone: "base" },
         ]}
       />
-      <p>Here scikit-umfpack does nothing. <code>MultiLCA</code> hands SciPy all 30 demands as one matrix, and SciPy uses UMFPACK only for a single right-hand side. The SuperLU bar is the same with or without it, and PyPardiso is 2.7 times faster.</p>
+      <p>Here scikit-umfpack does nothing. <code>MultiLCA</code> hands SciPy all 30 demands as one matrix, and SciPy uses UMFPACK only for a single right-hand side. The SuperLU bar is the same with or without scikit-umfpack, and PyPardiso is 2.7 times faster.</p>
       <p>If you only need the scores, <code>FastScoresOnlyMultiLCA</code> solves one product at a time and UMFPACK is back in front: 3.56 s, against 10.5 s for PyPardiso (<a href={thirty("forward")}>the forward-direction history</a>). It does not run on SuperLU at all.</p>
 
       <h2>Monte Carlo</h2>
@@ -81,37 +62,28 @@ const thirty = (variant: string) => link("bw2calc-conda", multi, "ecoinvent", "3
       <h2>What to install</h2>
       <p>For one score at a time: scikit-umfpack from conda-forge, without PyPardiso. For many products in one go: PyPardiso, or <code>FastScoresOnlyMultiLCA</code> with UMFPACK if you only need the scores.</p>
       <p><a href={home}>Setup</a> has install sets that passed their checks on each platform. <a href={`${repository}/blob/main/docs/faster.md`}>Make your Brightway faster</a> lists other install choices and calls that change the time, each with its measured gain. The <a href={`${repository}/blob/main/docs/method.md`}>method</a> describes the database and how noisy the timings are.</p>
-    </main>
-  </body>
-</html>
+    </StaticPage>
+
 
 <style>
-  .top-inner > .theme-toggle {
-    margin-left: auto;
-  }
-  .story-brand {
-    color: var(--ink);
-    font-weight: 650;
-    text-decoration: none;
-  }
-  .story {
+  :global(.story) {
     max-width: 52rem;
     margin: 0 auto;
     padding: 40px 24px 64px;
   }
-  .story h1 {
+  :global(.story) h1 {
     font-size: clamp(1.8rem, 4vw, 2.4rem);
     letter-spacing: -0.03em;
   }
-  .story h2 {
+  :global(.story) h2 {
     font-size: 1.25rem;
     margin: 32px 0 10px;
   }
-  .story p {
+  :global(.story) p {
     margin: 12px 0;
     max-width: 70ch;
   }
-  .story .lede {
+  :global(.story) .lede {
     color: var(--ink-2);
   }
 </style>

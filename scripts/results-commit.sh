@@ -77,6 +77,11 @@ here=$(cd "$(dirname "$0")" && pwd)
 uv run --quiet --frozen --project "$here/.." python "$here/merge_results.py" "$tree"
 uv run --quiet --frozen --project "$here/.." python "$here/run_crate.py" "$tree"
 git -C "$tree" add -A
+# The merge can rebuild the committed files exactly; a new crate alone is nothing new.
+if git -C "$tree" diff --cached --quiet -- . ':!ro-crate-metadata.json'; then
+    echo "results-commit: nothing new"
+    exit 0
+fi
 git -C "$tree" diff --cached --stat | tail -1
 # --no-verify: the repo's hooks lint code, and this branch holds data only (no hook config).
 git -C "$tree" commit -q --no-verify -m "results: $(date -u +%F) from $(git rev-parse --short HEAD)"

@@ -175,3 +175,14 @@ def test_a_run_at_one_size_keeps_the_other_sizes(repo: Path, env: dict[str, str]
         "bench_lca.Score.time_score"
     ]
     assert row[:2] == [[1.5, 9.0], [["'smoke'", "'ecoinvent'"], ["'LCA'"]]]
+
+
+def test_the_same_run_twice_is_nothing_new(repo: Path, env: dict[str, str]):
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.0, "ecoinvent": 9.0}))
+    assert commit_results(repo, env).returncode == 0
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.5}))
+    assert commit_results(repo, env).returncode == 0
+    run = commit_results(repo, env)
+    assert run.returncode == 0, run.stderr
+    assert "nothing new" in run.stdout
+    assert git(repo, env, "rev-list", "--count", "refs/heads/results").strip() == "2"

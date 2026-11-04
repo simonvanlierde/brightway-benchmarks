@@ -1,22 +1,14 @@
-# Checking experimental input-sharing controls
+# Checking the profile against its calibration
 
-`scripts/calibration_sweep.py` compares the current `ecoinvent` profile with three explicit
-experimental configurations. It does not change the generator or calibrate new parameters.
-Only aggregate statistics are written; it does not read a licensed database.
-
-| Case | Overrides |
-| --- | --- |
-| `baseline` | None; the experimental controls retain their disabled defaults. |
-| `sector` | `markets=0.95`, `market_by="sector"` |
-| `copied` | `copy_long=0.85`, `market_by="sector"`; markets remain disabled. |
-| `copied-sector` | `markets=0.95`, `market_by="sector"`, `copy_long=0.85` |
-
-These are controlled comparisons, not a reconstruction of an earlier untracked experiment.
+`scripts/calibration_sweep.py` measures the `ecoinvent` profile at full size over several
+seeds and judges each against the calibration guards. Its one case, `baseline`, is the
+registered profile; a generator change under test adds a case to `CASES` with the profile
+overrides it needs. Only aggregate statistics are written; it does not read a licensed database.
 The report records each case's overrides, resolved profile, seed and NumPy/SciPy versions.
 
 ## Measurements and guards
 
-By default, the command runs all four cases at seeds 0–3. Each case/seed runs in a fresh
+By default, the command runs every case at seeds 0–3. Each case/seed runs in a fresh
 process, serially. At most one LU factorization is retained at a time. It records:
 
 - Structural statistics, including SCC size, locality and supplier overlap by degree band.
@@ -49,7 +41,7 @@ PYTHONPATH=src uv run --no-project --python 3.12 \
   python scripts/calibration_sweep.py --output /out/calibration-sweep.json
 ```
 
-`--cases baseline sector` or `--seeds 0 1` selects a smaller experiment. `--products 100` is a
+`--cases baseline` or `--seeds 0 1` selects a smaller experiment. `--products 100` is a
 small development fixture; the full target guards still apply, so it is not a passing
 calibration run. There is no parallel-worker option.
 

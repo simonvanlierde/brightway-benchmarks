@@ -1,7 +1,6 @@
 import hashlib
 import os
 import types
-from itertools import pairwise
 from pathlib import Path
 
 import numpy as np
@@ -82,96 +81,6 @@ def test_profiles_take_overrides():
         system("smoke", no_such_field=1)
 
 
-def test_market_lists_draw_from_their_family_pool():
-    # Products 0 and 1 are one family, 2 and 3 another; 0 and 2 are the longest, so the pools.
-    lengths = [20, 18, 30, 3]
-    cols = np.repeat(np.arange(4), lengths)
-    rows = np.arange(cols.size) + 100  # every draw a different supplier
-    p = synth.profile("smoke", products=4, markets=1.0, market_min=17)
-    got = synth._market_lists(np.random.default_rng(0), rows, cols, np.array([0, 0, 1, 1]), p)  # noqa: SLF001
-    assert np.array_equal(got[cols != 1], rows[cols != 1])  # the pools, and a list too short to be a market
-    assert set(got[cols == 1]) <= set(rows[cols == 0])  # all from its own family's pool
-    assert np.unique(got[cols == 1]).size == 18  # never one supplier twice: the length stays
-
-
-def test_same_region_by_length_follows_its_curve():
-    curve = (0.6, 0.4, 0.2, 0.1, 0.05)  # one share per band of OVERLAP_BANDS
-    s = system("ecoinvent", products=6000, same_region_by_length=curve, seed=0)
-    assert s.region is not None
-    a = (s.technosphere() != 0).tocoo()
-    off = a.row != a.col
-    rows, cols = a.row[off], a.col[off]
-    length = np.bincount(cols, minlength=s.profile.products)[cols]
-    local = s.region[rows] == s.region[cols]
-    for (low, high), want in zip(synth.OVERLAP_BANDS[:3], curve, strict=False):
-        m = (length >= low) & (length <= high)
-        assert local[m].mean() == pytest.approx(want, abs=0.08)
-
-    with pytest.raises(ValueError, match="same_region_by_length must have 5 elements"):
-        system("smoke", same_region_by_length=(0.5, 0.5))
-
-
-@pytest.mark.parametrize(("control", "axis"), [("copies", 0), ("bundles", 1)])
-def test_copy_lists_and_bundles(control: str, axis: int):
-    def adjacent_overlap(s: synth.System, axis: int) -> float:
-        pattern = s.technosphere().astype(bool)
-        pattern.setdiag(0)
-        pattern.eliminate_zeros()
-        matrix = pattern.tocsc() if axis == 0 else pattern.tocsr()
-        lists = [set(matrix.indices[matrix.indptr[j] : matrix.indptr[j + 1]]) for j in range(matrix.shape[0])]
-        overlaps = [len(a & b) / len(a | b) for a, b in pairwise(lists) if a and b]
-        return float(np.mean(overlaps))
-
-    baseline = system("smoke", seed=0)
-    changed = system(
-        "smoke", seed=0, copies=0.8 if control == "copies" else 0.0, bundles=0.8 if control == "bundles" else 0.0
-    )
-    # Copies share suppliers down columns; bundles share consumers across rows.
-    overlap = adjacent_overlap(changed, axis)
-    assert overlap > adjacent_overlap(baseline, axis) + 0.2
-    assert overlap > adjacent_overlap(changed, 1 - axis) + 0.2
-    np.testing.assert_array_equal(changed.technosphere().diagonal(), np.ones(changed.profile.products))
-    cells = changed.tech_rows * changed.profile.products + changed.tech_cols
-    assert np.unique(cells).size == cells.size
-
-
-def test_sector_markets_share_one_pool_across_regions():
-    def jaccard(market_by: str) -> float:
-        """Mean input-list Jaccard of two long lists in one sector and different regions."""
-        s = system("ecoinvent", products=6000, markets=1.0, market_by=market_by)
-        assert s.region is not None
-        assert s.sector is not None
-        x = (s.technosphere() != 0).astype(np.float64).tolil()
-        x.setdiag(0)
-        x = x.tocsc()
-        x.eliminate_zeros()
-        length = np.diff(x.indptr)
-        long = np.flatnonzero(length >= s.profile.market_min)
-        q = x[:, long]
-        shared = (q.T @ q).toarray()
-        jac = shared / (length[long][:, None] + length[long][None, :] - shared)
-        sector, region = s.sector[long], s.region[long]
-        pair = (sector[:, None] == sector[None, :]) & (region[:, None] != region[None, :])
-        return float(jac[pair].mean())
-
-    assert jaccard("sector") > 2 * jaccard("region")  # 0.18 against 0.075 at seed 0
-
-
-def test_copy_long_lists_shares_inputs_only_in_its_sector():
-    cols = np.repeat(np.arange(8, 16), 3)
-    rows = np.concatenate([np.roll(np.arange(4) + (4 if c >= 12 else 0), c % 4)[:3] for c in range(8, 16)])
-    sector = np.array([0] * 12 + [1] * 4)
-    p = synth.profile("smoke", products=16, copy_long_min=3, copy_max=4)
-    got_rows, got_cols = synth._copy_long_lists(  # noqa: SLF001
-        np.random.default_rng(0), rows, cols, sector, p, share=1.0
-    )
-    assert got_rows.size == rows.size
-    assert np.all(got_rows[got_cols < 12] < 4)
-    assert np.all(got_rows[got_cols >= 12] >= 4)
-    lists = [set(got_rows[got_cols == c]) for c in range(8, 16)]
-    assert len({frozenset(inputs) for inputs in lists}) < 8  # some variants inherited a template
-
-
 def test_bw2data_form_has_every_exchange():
     s = system("smoke")
     bio, tech, cfs = as_bw2data(s)
@@ -220,31 +129,6 @@ def test_cache_folder_follows_everything_that_shapes_the_files(monkeypatch: pyte
     assert len({base, key(seed=1), key(uncertain=True), key(bwp_version="1.5"), key(products=8_000)}) == 5
     monkeypatch.setattr(synth, "GENERATOR_VERSION", "test")
     assert key() != base
-
-
-def test_default_experiments_keep_the_existing_history_version():
-    assert synth.profile_version() == "3-05303220"
-    assert synth.profile("smoke").digest() == "08db63889250"
-
-
-@pytest.mark.parametrize(
-    "override",
-    [
-        {"same_region_by_length": (0.6, 0.4, 0.2, 0.1, 0.05)},
-        {"copies": 0.5},
-        {"bundles": 0.5},
-        {"copy_long": 0.85},
-        {"copy_long_min": 18},
-        {"copy_zipf": 2.2},
-        {"copy_max": 30},
-        {"copy_keep": 0.8},
-        {"markets": 0.5},
-        {"market_min": 18},
-        {"market_by": "sector"},
-    ],
-)
-def test_experimental_overrides_change_the_digest(override: dict[str, object]):
-    assert synth.profile("ecoinvent", **override).digest() != synth.profile("ecoinvent").digest()
 
 
 def test_new_measurements_in_the_calibration_file_keep_the_digest(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -416,9 +300,9 @@ def test_property_neumann_agrees_with_the_reference(s: synth.System, product: in
     assert synth.neumann_score(lca, s.scale) == pytest.approx(s.reference[product][0], rel=1e-9)
 
 
-# What system("smoke") builds under GENERATOR_VERSION "3". A builder change that moves the
+# What system("smoke") builds under GENERATOR_VERSION "4". A builder change that moves the
 # arrays fails here: bump GENERATOR_VERSION in synth.py and this pair together.
-SMOKE_VERSION = "3"
+SMOKE_VERSION = "4"
 SMOKE_SHA256 = "92e68c73c66a3db51a2baf067782ac4e3fdb292f0db777cbcbcfaf1199c9d71c"
 
 

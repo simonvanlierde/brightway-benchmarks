@@ -1,4 +1,4 @@
-"""Compare experimental input-sharing controls without changing the generator.
+"""Check the ecoinvent profile, and generator changes as further cases, against the calibration guards.
 
 Each case/seed runs in a fresh process, with one COLAMD factorization alive at a time.
 The JSON report is updated after every case; only a complete, passing report exits zero.
@@ -25,12 +25,7 @@ from bwbench import synth
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-CASES = {
-    "baseline": {},
-    "sector": {"markets": 0.95, "market_by": "sector"},
-    "copied": {"copy_long": 0.85, "market_by": "sector"},
-    "copied-sector": {"markets": 0.95, "market_by": "sector", "copy_long": 0.85},
-}
+CASES = {"baseline": {}}  # profile overrides per case: add one to compare a generator change
 SEEDS = (0, 1, 2, 3)
 
 

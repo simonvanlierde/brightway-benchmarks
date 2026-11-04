@@ -63,22 +63,12 @@ Review text, which bw2io skips, makes up the rest. At `ecoinvent` size the impor
 against 4.5 GB for the real release. `just bw2io-import RELEASE_FOLDER all` does the same on a
 licensed release, read-only.
 
-### Experimental input sharing
+### What did not lower the fill
 
-`bwbench.synth.system` accepts overrides for calibration experiments. `copy_long` copies long
-input lists within a sector; `copies` and `bundles` copy input or consumer lists in runs, and
-`copy_regional` makes `copies` keep each variant's regional inputs and give it the template's
-sector. `markets` draws long lists from one pool per region, or per sector with
-`market_by="sector"`. `same_region_by_length` sets locality separately for the five input-list
-length bands in [`OVERLAP_BANDS`](../src/bwbench/synth.py). `communities` gives products hidden
-communities that buy mostly in their own market and a few partner markets.
-
-These controls are off in every registered profile. They do not fix
-[#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54). None gets the top
-separator of A + Aᵀ below 0.25 (ecoinvent 0.11). `copies=0.5, copy_regional=True,
-copy_keep=0.8` passes the calibration guards and lowers COLAMD fill on Aᵀ from 85 to 73;
-`communities` raises fill; `copy_long=0.85` shrinks the largest loop too far.
-Default controls preserve existing cache keys and benchmark histories; overrides get separate keys.
+Copying input lists to regional variants, drawing long lists from market pools, and hidden
+supplier communities were tried as generator controls and removed: none brings the top separator
+of A + Aᵀ below 0.25, against ecoinvent's 0.11
+([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
 
 ## The real databases
 

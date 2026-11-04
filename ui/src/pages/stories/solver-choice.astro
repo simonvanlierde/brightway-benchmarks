@@ -46,39 +46,42 @@ const thirty = (variant: string) => link("bw2calc-conda", multi, "ecoinvent", "3
     <main class="story" id="main" tabindex="-1">
       <h1>The same LCA takes 2.6 s or 28 s, depending on one install choice</h1>
       <p class="lede">Every Brightway score solves a large sparse linear system. What you install decides which solver does it, and the times differ by a factor of ten.</p>
-      <p>All times below are for an ecoinvent-sized synthetic database on one thread, measured on one pinned benchmark machine. Each row opens its benchmark in the viewer, where you can see the history by release.</p>
+      <p>All times below are for an ecoinvent-sized synthetic database on one thread, measured on one pinned benchmark machine. Each chart links to its benchmark in the viewer, where you can see the history by release.</p>
 
       <h2>One score</h2>
       <p>The first score with bw2calc's <code>LCA</code> class builds the matrices, factorizes, solves and characterizes.</p>
       <StoryBars
         caption="Time to the first score"
+        href={oneScore}
         rows={[
-          { label: "UMFPACK, conda-forge build on OpenBLAS", seconds: 2.63, href: oneScore, tone: "fast" },
-          { label: "PyPardiso", seconds: 10.0, href: oneScore, tone: "mid" },
-          { label: "SuperLU, SciPy's default", seconds: 27.7, href: oneScore, tone: "base" },
+          { label: "UMFPACK, conda-forge build on OpenBLAS", seconds: 2.63, tone: "fast" },
+          { label: "PyPardiso, MKL", seconds: 10.0, tone: "mid" },
+          { label: "SuperLU, SciPy's default", seconds: 27.7, tone: "base" },
         ]}
       />
       <p>SuperLU is what you get with nothing extra installed. bw2calc uses PyPardiso whenever it is installed, and bw_timex pulls it in on Linux x86_64. To get UMFPACK, install scikit-umfpack from conda-forge and leave PyPardiso out.</p>
-      <p>The BLAS library under UMFPACK matters too. A scikit-umfpack build on reference BLAS takes about 9 s for the same score (<a href={pipScore}>see the view</a>).</p>
+      <p>The BLAS library under UMFPACK matters too. A scikit-umfpack build on reference BLAS takes about 9 s for the same score (<a href={pipScore}>the reference-BLAS view</a>).</p>
 
       <h2>30 products</h2>
       <p><code>MultiLCA</code> scores 30 products against three impact methods in one calculation.</p>
       <StoryBars
         caption="MultiLCA, 30 products"
+        href={thirty("MultiLCA")}
         rows={[
-          { label: "UMFPACK, conda-forge build on OpenBLAS", seconds: 28.7, href: thirty("MultiLCA"), tone: "base" },
-          { label: "PyPardiso", seconds: 10.6, href: thirty("MultiLCA"), tone: "fast" },
-          { label: "SuperLU, SciPy's default", seconds: 28.7, href: thirty("MultiLCA"), tone: "base" },
+          { label: "UMFPACK, scikit-umfpack installed (SciPy uses SuperLU)", seconds: 28.7, tone: "base" },
+          { label: "PyPardiso, MKL", seconds: 10.6, tone: "fast" },
+          { label: "SuperLU, SciPy's default", seconds: 28.7, tone: "base" },
         ]}
       />
-      <p>Here UMFPACK is no faster than SuperLU, and PyPardiso is 2.7 times faster than both. The best solver depends on the task.</p>
-      <p><code>FastScoresOnlyMultiLCA</code> solves one system per product and keeps only the scores. For the same 30 products it takes 3.56 s with UMFPACK and 10.5 s with PyPardiso (<a href={thirty("forward")}>see the view</a>). No SuperLU run of it is published.</p>
+      <p><code>MultiLCA</code> hands SciPy all 30 demands at once, and SciPy solves a multi-column system with SuperLU even when scikit-umfpack is installed, so both bars are SuperLU. PyPardiso is 2.7 times faster.</p>
+      <p><code>FastScoresOnlyMultiLCA</code> keeps only the scores and, in its default forward direction, solves one system per product. For the same 30 products it takes 3.56 s with UMFPACK and 10.5 s with PyPardiso (<a href={thirty("forward")}>the forward-direction view</a>). It cannot run on SuperLU: bw2calc needs PyPardiso or UMFPACK for it.</p>
 
       <h2>Monte Carlo</h2>
-      <p>Each Monte Carlo draw samples new matrix values, so the solver works again on every draw. Ten draws with <code>LCA</code> under PyPardiso take 99.3 s (<a href={link("bw2calc-conda", carlo, "ecoinvent", "10", "LCA")}>see the view</a>).</p>
+      <p>Each Monte Carlo draw samples new matrix values, so the solver works again on every draw. Ten draws with <code>LCA</code> under PyPardiso take 99.3 s (<a href={link("bw2calc-conda", carlo, "ecoinvent", "10", "LCA")}>the Monte Carlo view</a>).</p>
       <p>This page gives no time for 1,000 draws, and none for UMFPACK or SuperLU: the published runs do not include them.</p>
 
       <h2>What to do</h2>
+      <p>For one score, use UMFPACK from the conda-forge build. For many products, use PyPardiso, or <code>FastScoresOnlyMultiLCA</code> with UMFPACK.</p>
       <p><a href={home}>Setup</a> lists install sets that passed their checks on each platform. <a href={`${repository}/blob/main/docs/faster.md`}>Make your Brightway faster</a> lists the other install choices and calls that change the time, each with its measured gain. The <a href={`${repository}/blob/main/docs/method.md`}>method</a> describes the database, the reference checks and the measurement noise.</p>
     </main>
   </body>

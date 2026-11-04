@@ -24,7 +24,10 @@ test("the static About page explains evidence and browser storage without JavaSc
   await context.close();
 });
 
-test("the solver story is static, links the viewer at exact views and has its own preview", async ({ browser }) => {
+test("the solver story is static, links the viewer at exact views and has its own preview", async ({
+  browser,
+  request,
+}) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto("/stories/solver-choice/");
@@ -34,16 +37,29 @@ test("the solver story is static, links the viewer at exact views and has its ow
     "content",
     `${SITE}ui/story-solver-choice.png`,
   );
-  const bars = page.locator("figure.bars a");
-  await expect(bars).toHaveCount(6);
-  const href = (await bars.first().getAttribute("href")) ?? "";
-  for (const part of [
-    "page=explorer",
-    "group=bw2calc-conda",
-    "bench=bench_lca.SingleScore.time_first_score",
-    "p=ecoinvent&p=LCA",
-  ]) {
-    expect(href).toContain(part);
+  const index = await (await request.get("/data/index.json")).json();
+  const links = await page
+    .locator('main a[href*="page=explorer"]')
+    .evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
+  // Two chart links and three inline links.
+  expect(links).toHaveLength(5);
+  for (const href of links) {
+    const q = new URL(href, SITE).searchParams;
+    const group = index.groups.find((g: { name: string }) => g.name === q.get("group"));
+    expect(group, href).toBeDefined();
+    const bench = index.benchmarks.find(
+      (b: { group: string; name: string }) => b.group === group.id && b.name === q.get("bench"),
+    );
+    expect(bench, href).toBeDefined();
+    const labels = q.getAll("p");
+    expect(labels, href).toHaveLength(bench.params.length);
+    const values = labels.map((label, i) => bench.params[i].values[bench.params[i].labels.indexOf(label)]);
+    expect(values, href).not.toContain(undefined);
+    const exists = index.cases.some(
+      (c: { benchmark: string; params: string[] }) =>
+        c.benchmark === bench.id && values.every((v, i) => c.params[i] === v),
+    );
+    expect(exists, href).toBe(true);
   }
   await context.close();
 });

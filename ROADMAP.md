@@ -7,11 +7,14 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
 
 ## Planned
 
-- **A more faithful `ecoinvent` profile.** Its LU fill is too high, so SuperLU times on it
-  overstate real ecoinvent ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
-  [Experimental input sharing](docs/method.md#experimental-input-sharing) lowers fill but also
-  shrinks the largest loop too far. The next step is to preserve the calibrated structure
-  while lowering fill before enabling those controls.
+- **A more faithful `ecoinvent` profile.** Its LU fill is too high (110 against 31 for METIS on
+  A + Aᵀ), so direct-solver times on it overstate real ecoinvent
+  ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)). ecoinvent's low fill
+  comes from regional variants of one activity sharing their inputs, and divisions buying from
+  their own suppliers. Hidden supplier communities and
+  [copied input lists](docs/method.md#what-did-not-lower-the-fill) don't reproduce it.
+  The next step is a generator that builds activities and their regional variants, not single
+  products. `tests/test_measure.py` holds the fill target.
 - **Our own results UI,** replacing asv's pages: what changed in each release against the
   measured noise, each benchmark's history, and comparisons across solvers and environments
   ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).

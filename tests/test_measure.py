@@ -59,34 +59,71 @@ def test_measure_matches_the_generator_bounds():
     assert measure(s.technosphere(), repeats=0).lu_fill == {}
 
 
+# The calibration guards run on seeds 0 to 3. The giant loop's share and the negative share
+# vary by seed (SD 0.042 and 0.012 over seeds 0 to 7 and 64 seeds, measured 2026-11-04), so each
+# seed gets 3 SD and the mean of the four gets 3 SD / sqrt(4). The other guards vary by less
+# than a third of their tolerance.
+SEEDS = (0, 1, 2, 3)
+SCC_SEED, SCC_MEAN = 0.12, 0.06
+NEGATIVE_SEED, NEGATIVE_MEAN = 0.035, 0.02
+
+
+def _ecoinvent_target() -> dict:
+    return json.loads((PROFILES_DIR / "ecoinvent-3.12-cutoff.json").read_text())["stats"]
+
+
 def test_ecoinvent_profile_matches_its_target():
     """measure() as the oracle: the generated structure against ecoinvent 3.12 cut-off.
 
-    LU fill is left out here (minutes per factorization at this size); it was checked when
-    the profile was calibrated, as the profile's comment records.
+    LU fill is test_ecoinvent_profile_fills_like_its_target's.
     """
-    s = system("ecoinvent")
-    assert s.region is not None
-    assert s.sector is not None
-    got = measure(s.technosphere(), [str(r) for r in s.region], [str(r) for r in s.sector], repeats=0)
-    want = Stats(**json.loads((PROFILES_DIR / "ecoinvent-3.12-cutoff.json").read_text())["stats"])
-    assert got.products == want.products
-    assert got.entries == pytest.approx(want.entries, rel=0.05)
-    assert got.inputs_per_product["q90"] == pytest.approx(want.inputs_per_product["q90"], rel=0.1)
-    assert abs(got.inputs_per_product["q50"] - want.inputs_per_product["q50"]) <= 1
-    assert got.inputs_per_product["q99"] == pytest.approx(want.inputs_per_product["q99"], rel=0.3)
-    for q in ("q25", "q50"):
-        assert got.consumers_per_supplier[q] == want.consumers_per_supplier[q]
-    for q in ("q90", "q99"):
-        assert got.consumers_per_supplier[q] == pytest.approx(want.consumers_per_supplier[q], rel=0.3)
-    share = got.loops["largest"] / got.products
-    # Seed 0 only: over 64 seeds the giant loop's share is 0.664 +- 0.042 (0.57 to 0.74), so this
-    # band is tighter than one realization; seed 0 is typical (z -1.1). Other seeds need +-0.1.
-    assert share == pytest.approx(want.loops["largest"] / want.products, abs=0.03)
-    assert got.negative_input_share == pytest.approx(want.negative_input_share, abs=0.02)
-    assert got.spectral_radius == pytest.approx(want.spectral_radius, abs=0.01)
-    assert got.same_location_share == pytest.approx(want.same_location_share, abs=0.03)
-    assert got.same_sector_share == pytest.approx(want.same_sector_share, abs=0.03)
+    want = Stats(**_ecoinvent_target())
+    scc, negative = [], []
+    for seed in SEEDS:
+        s = system("ecoinvent", seed=seed)
+        assert s.region is not None
+        assert s.sector is not None
+        got = measure(s.technosphere(), [str(r) for r in s.region], [str(r) for r in s.sector], repeats=0)
+        assert got.products == want.products
+        assert got.entries == pytest.approx(want.entries, rel=0.05)
+        assert got.inputs_per_product["q90"] == pytest.approx(want.inputs_per_product["q90"], rel=0.1)
+        assert abs(got.inputs_per_product["q50"] - want.inputs_per_product["q50"]) <= 1
+        assert got.inputs_per_product["q99"] == pytest.approx(want.inputs_per_product["q99"], rel=0.3)
+        for q in ("q25", "q50"):
+            assert got.consumers_per_supplier[q] == want.consumers_per_supplier[q]
+        for q in ("q90", "q99"):
+            assert got.consumers_per_supplier[q] == pytest.approx(want.consumers_per_supplier[q], rel=0.3)
+        scc.append(got.loops["largest"] / got.products)
+        negative.append(got.negative_input_share)
+        assert scc[-1] == pytest.approx(want.loops["largest"] / want.products, abs=SCC_SEED)
+        assert negative[-1] == pytest.approx(want.negative_input_share, abs=NEGATIVE_SEED)
+        assert got.spectral_radius == pytest.approx(want.spectral_radius, abs=0.01)
+        assert got.same_location_share == pytest.approx(want.same_location_share, abs=0.03)
+        assert got.same_sector_share == pytest.approx(want.same_sector_share, abs=0.03)
+    assert np.mean(scc) == pytest.approx(want.loops["largest"] / want.products, abs=SCC_MEAN)
+    assert np.mean(negative) == pytest.approx(want.negative_input_share, abs=NEGATIVE_MEAN)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="#54: the profile is a random graph with ecoinvent's degrees, so it fills about 3.5 times as much",
+)
+def test_ecoinvent_profile_fills_like_its_target():
+    """Fill against ecoinvent 3.12 cut-off: METIS on A + A^T over seeds 0 to 3, and SuperLU's COLAMD on A^T.
+
+    Within 25%: shuffling ecoinvent's inputs keeps its fill within 14% when regional variants
+    keep their suppliers, and doubles it when only the ISIC division does. COLAMD runs on
+    seed 0 only (half a minute a factorization), so it also gets 3 SD of its spread over seeds 0 to 3 (SD 4%).
+    """
+    pytest.importorskip("pymetis")
+    want = _ecoinvent_target()
+    metis = [synth.fill_bounds(system("ecoinvent", seed=seed).technosphere(), {})["METIS"]["bound"] for seed in SEEDS]
+    assert np.mean(metis) == pytest.approx(want["fill_bounds"]["METIS"]["bound"], rel=0.25)
+    a = system("ecoinvent").technosphere()
+    at = (a @ sparse.diags(1.0 / a.diagonal())).T.tocsc()
+    lu = sla.splu(at, permc_spec="COLAMD")
+    fill = (lu.L.nnz + lu.U.nnz - at.shape[0]) / at.nnz
+    assert fill == pytest.approx(want["lu_fill"]["COLAMD (A^T)"], rel=0.37)
 
 
 def test_fill_drivers_on_a_known_matrix():

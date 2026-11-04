@@ -23,7 +23,9 @@ SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 @pytest.fixture
 def sweep(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.syspath_prepend(str(SCRIPTS))
-    return importlib.import_module("calibration_sweep")
+    module = importlib.import_module("calibration_sweep")
+    monkeypatch.setitem(module.CASES, "denser", {"back": 0.2})  # a second case, as a generator change adds
+    return module
 
 
 @pytest.fixture
@@ -33,13 +35,7 @@ def target():
 
 
 def row(case: str, seed: int, target: synth.Stats) -> dict:
-    cases = {
-        "baseline": {},
-        "sector": {"markets": 0.95, "market_by": "sector"},
-        "copied": {"copy_long": 0.85, "market_by": "sector"},
-        "copied-sector": {"markets": 0.95, "market_by": "sector", "copy_long": 0.85},
-    }
-    overrides = cases[case]
+    overrides = {"baseline": {}, "denser": {"back": 0.2}}[case]
     return json.loads(
         json.dumps(
             {
@@ -64,12 +60,12 @@ def test_complete_passing_cases_are_the_only_success(sweep: ModuleType, target: 
         assert json.loads(output.read_text())["passed"] is False
         return row(case, seed, target)
 
-    report = sweep.run_sweep(["baseline", "copied-sector"], [0, 1], worker, target, output)
-    assert seen == [("baseline", 0), ("baseline", 1), ("copied-sector", 0), ("copied-sector", 1)]
+    report = sweep.run_sweep(["baseline", "denser"], [0, 1], worker, target, output)
+    assert seen == [("baseline", 0), ("baseline", 1), ("denser", 0), ("denser", 1)]
     assert report["complete"] is True
     assert report["passed"] is True
     assert json.loads(output.read_text()) == report
-    assert report["cases"]["copied-sector"] == {"markets": 0.95, "market_by": "sector", "copy_long": 0.85}
+    assert report["cases"]["denser"] == {"back": 0.2}
 
 
 def test_worker_crash_cannot_be_a_success(sweep: ModuleType, target: synth.Stats, tmp_path: Path):
@@ -86,14 +82,14 @@ def test_worker_crash_cannot_be_a_success(sweep: ModuleType, target: synth.Stats
     assert len(report["results"]) == 3
 
 
-def test_scc_failure_is_reported_with_original_threshold(sweep: ModuleType, target: synth.Stats, tmp_path: Path):
-    changed = replace(target, loops=target.loops | {"largest": round(target.products * 0.565)})
-    report = sweep.run_sweep(["copied"], [0], lambda c, s: row(c, s, changed), target, tmp_path / "report.json")
+def test_scc_failure_is_reported_with_its_threshold(sweep: ModuleType, target: synth.Stats, tmp_path: Path):
+    changed = replace(target, loops=target.loops | {"largest": round(target.products * 0.5)})
+    report = sweep.run_sweep(["denser"], [0], lambda c, s: row(c, s, changed), target, tmp_path / "report.json")
     assert report["complete"] is True
     assert report["passed"] is False
     assert len(report["results"][0]["failures"]) == 1
     assert "SCC share" in report["results"][0]["failures"][0]
-    assert "abs 0.03" in report["results"][0]["failures"][0]
+    assert "abs 0.12" in report["results"][0]["failures"][0]
 
 
 @pytest.mark.parametrize("damage", ["wrong seed", "missing stats", "missing transpose", "nonfinite"])
@@ -119,14 +115,14 @@ def test_incomplete_or_nonfinite_worker_output_fails(
 
 
 def test_small_real_measurement_has_both_fills_and_labels(sweep: ModuleType):
-    data = sweep.measure_case("copied-sector", 0, products=100)
+    data = sweep.measure_case("baseline", 0, products=100)
     stats = data["stats"]
     assert set(stats["lu_fill"]) == {"COLAMD", "COLAMD (A^T)"}
     assert all(v > 0 for v in stats["lu_fill"].values())
     assert stats["same_location_share"] is not None
     assert stats["same_sector_share"] is not None
     assert stats["overlap_by_band"]
-    assert data["overrides"]["copy_long"] == 0.85
+    assert data["overrides"] == {"products": 100}
 
 
 def test_cli_keeps_failed_guard_output_and_returns_nonzero(tmp_path: Path):
@@ -218,7 +214,7 @@ def test_relative_guard_uses_target_not_the_larger_observation(sweep: ModuleType
 def test_missing_or_wrong_provenance_never_completes(
     sweep: ModuleType, target: synth.Stats, tmp_path: Path, damage: str
 ):
-    data = row("sector", 0, target)
+    data = row("denser", 0, target)
     match damage:
         case "missing overrides":
             del data["overrides"]
@@ -229,14 +225,14 @@ def test_missing_or_wrong_provenance_never_completes(
         case "wrong overrides":
             data["overrides"] = {}
         case "wrong profile":
-            data["profile"]["markets"] = 0.0
+            data["profile"]["back"] = 0.0
         case "bad overlap":
             data["input_overlap_by_band"]["2-4"]["overlap"] = -0.5
         case "unknown band":
             data["input_overlap_by_band"] = {"invented": {"overlap": 0.5, "pairs_share": 0.5}}
         case "nonfinite overlap":
             data["input_overlap_by_band"]["2-4"]["overlap"] = float("nan")
-    report = sweep.run_sweep(["sector"], [0], lambda _c, _s: data, target, tmp_path / "report.json")
+    report = sweep.run_sweep(["denser"], [0], lambda _c, _s: data, target, tmp_path / "report.json")
     assert report["complete"] is False
     assert report["passed"] is False
     assert "error" in report["results"][0]

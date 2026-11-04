@@ -13,11 +13,14 @@ many functional units at once, Monte Carlo. Correctness checks run alongside the
 calculations and their coverage limits. A release that slows a calculation or changes a checked
 score shows up in the history.
 
-The benchmarks run on synthetic databases that copy ecoinvent's structure, so anyone can rerun
-them and the results can be published. Two real databases sit beside them: USEEIO 1.1 (US EPA,
-public domain) and BAFU 2025 (Swiss Federal Office for the Environment), downloaded from
-[files.brightway.dev](https://files.brightway.dev/) by a pinned SHA-256 when `BWBENCH_SIZES=useeio`
-or `bafu` asks for them. BAFU 2025 is never copied into this repository or its results.
+The benchmarks run on synthetic databases that copy ecoinvent's degrees, loops and locality, so
+anyone can rerun them and the results can be published. They fill more than ecoinvent in a direct
+solver, so direct-solver times on them run high
+([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)). Two real databases sit
+beside them: USEEIO 1.1 (US EPA, public domain) and BAFU 2025 (Swiss Federal Office for the
+Environment), downloaded from [files.brightway.dev](https://files.brightway.dev/) by a pinned SHA-256
+when `BWBENCH_SIZES=useeio` or `bafu` asks for them. BAFU 2025 is never copied into this repository
+or its results.
 
 Every case's history is in the
 [benchmark explorer](https://simonvanlierde.com/brightway-benchmarks/).
@@ -58,7 +61,7 @@ just compat 3.13                           # today's releases together on Python
 
 - [Findings](docs/findings.md): what the histories show
 - [Method](docs/method.md): what is measured, the synthetic databases, the noise floor
-- [Calibration experiments](docs/calibration-sweep.md): compare input-sharing controls and inspect failed guards
+- [Calibration experiments](docs/calibration-sweep.md): check a profile against the calibration guards over several seeds
 - [Running](docs/running.md): every recipe, the compat columns and the `BWBENCH_*` variables
 - [CONTRIBUTING.md](.github/CONTRIBUTING.md): checks, tests and how to sign off commits
 - [SECURITY.md](.github/SECURITY.md) and the [assurance case](docs/assurance-case.md)

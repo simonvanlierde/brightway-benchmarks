@@ -23,8 +23,10 @@ A database is generated from a seed, so the same settings give the same matrices
 Its shape comes from a profile:
 
 - `ecoinvent`: 26,533 products, like ecoinvent 3.12 cut-off, with its measured inputs per
-  process and consumers per product, one loop holding 64% of the products, negative waste
-  inputs, and a spectral radius of 0.78.
+  process and consumers per product, one loop holding about two thirds of the products (64% in
+  ecoinvent), negative waste inputs, its shares of inputs from the consumer's own location and
+  sector, and a spectral radius of 0.78. `tests/test_measure.py` checks these on seeds 0 to 3,
+  each within three standard deviations of its spread over seeds.
 - `smoke`: the same structure at 200 products.
 - `mc100k` and `regional`: 100,000 and 250,000 products.
 - `exiobase` and `stress-random`: a random structure, a worst case for the solvers.
@@ -33,9 +35,15 @@ Only aggregate statistics of the ecoinvent database (ecoinvent Association) went
 `ecoinvent` profile, no dataset or figure of one. They are in
 [`src/bwbench/profiles/`](../src/bwbench/profiles).
 
-The profile is harder on a direct solver than real ecoinvent: SuperLU's factors hold 323 times
-as many entries as the matrix, against 175 for ecoinvent. So SuperLU times overstate real
-ecoinvent ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)). With a
+The profile is harder on a direct solver than real ecoinvent. It has ecoinvent's degrees but
+wires them at random, while in ecoinvent the regional variants of one activity share their
+inputs and each ISIC division buys from its own set of suppliers. So its factors fill more:
+SuperLU with COLAMD on Aᵀ, the factorization bw2calc 3.1 runs, holds 85 times as many entries
+as the matrix against 26 for ecoinvent (323 against 175 on A), and METIS on A + Aᵀ 110 against
+31. Direct-solver times overstate real ecoinvent by 6 to 11 times on Aᵀ
+([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
+`test_ecoinvent_profile_fills_like_its_target` holds the fill target as an expected failure
+until a profile meets it. With a
 licence of your own, [`scripts/solver_factorize.py`](../scripts/solver_factorize.py) times each
 direct solver on the real matrix, and with `--cudss` NVIDIA's cuDSS on a GPU. That option
 refactorizes unchanged values. `--cudss-updates` instead applies three deterministic row-scaled
@@ -55,18 +63,12 @@ Review text, which bw2io skips, makes up the rest. At `ecoinvent` size the impor
 against 4.5 GB for the real release. `just bw2io-import RELEASE_FOLDER all` does the same on a
 licensed release, read-only.
 
-### Experimental input sharing
+### What did not lower the fill
 
-`bwbench.synth.system` accepts overrides for calibration experiments. `copy_long` copies long
-input lists within a sector; `copies` and `bundles` copy input or consumer lists in runs.
-`markets` draws long lists from one pool per region, or per sector with `market_by="sector"`.
-`same_region_by_length` sets locality separately for the five input-list length bands in
-[`OVERLAP_BANDS`](../src/bwbench/synth.py).
-
-These controls are off in every registered profile. They do not fix
-[#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54): `copy_long=0.85` lowers
-fill, but shrinks the largest loop below the calibration test's accepted range.
-Default controls preserve existing cache keys and benchmark histories; overrides get separate keys.
+Copying input lists to regional variants, drawing long lists from market pools, and hidden
+supplier communities were tried as generator controls and removed: none brings the top separator
+of A + Aᵀ below 0.25, against ecoinvent's 0.11
+([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
 
 ## The real databases
 

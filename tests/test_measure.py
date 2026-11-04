@@ -293,6 +293,33 @@ def test_fill_bounds_of_a_tridiagonal_matrix():
     assert measure(a, repeats=0).fill_bounds == {k: b[k] for k in ("METIS", "separator")}
 
 
+def bound_of(pattern: np.ndarray, nnz: int) -> dict[str, object]:
+    """``fill_bounds``' summary of a symmetric pattern by dense elimination, as approx values to compare."""
+    n = pattern.shape[0]
+    counts, parent = eliminate(pattern)
+    depth = [0] * n
+    for j in reversed(range(n)):  # a parent comes after its children
+        if parent[j] != -1:
+            depth[j] = depth[parent[j]] + 1
+    return {
+        "bound": pytest.approx((2 * sum(counts) - n) / nnz),
+        "height": pytest.approx(max(depth) / n),
+        "front": pytest.approx(max(counts) / n),
+    }
+
+
+def test_colamd_fill_bounds_follow_each_ordering_and_matrix():
+    rng = np.random.default_rng(5)
+    n = 12
+    a = (rng.random((n, n)) < 0.2) | np.eye(n, dtype=bool)
+    p, q = rng.permutation(n), rng.permutation(n)
+    assert (p[p] != np.arange(n)).any()  # not its own inverse, so argsort(perm) matters
+    b = synth.fill_bounds(sparse.csc_matrix(a.astype(float)), {"COLAMD": p, "COLAMD (A^T)": q})
+    for key, m in (("COLAMD", a[:, np.argsort(p)]), ("COLAMD (A^T)", a.T[:, np.argsort(q)])):
+        ata = (m.T.astype(int) @ m.astype(int)) > 0
+        assert b[key] == bound_of(ata, a.sum()), key
+
+
 def test_metis_fill_bounds_match_symbolic_elimination():
     rng = np.random.default_rng(3)
     n = 14
@@ -300,18 +327,9 @@ def test_metis_fill_bounds_match_symbolic_elimination():
     assert (a != a.T).any()  # A alone would give another pattern than A + A^T
     sym = a | a.T
     graph, perm = metis_order(sym)
-    counts, parent = eliminate(sym[np.ix_(perm, perm)])
-    depth = [0] * n
-    for j in reversed(range(n)):  # a parent comes after its children
-        if parent[j] != -1:
-            depth[j] = depth[parent[j]] + 1
     b = synth.fill_bounds(sparse.csc_matrix(a.astype(float)), {})
     assert b.keys() == {"METIS", "separator"}
-    assert b["METIS"] == {
-        "bound": pytest.approx((2 * sum(counts) - n) / a.sum()),
-        "height": pytest.approx(max(depth) / n),
-        "front": pytest.approx(max(counts) / n),
-    }
+    assert b["METIS"] == bound_of(sym[np.ix_(perm, perm)], a.sum())
     # The separator: the fewest vertices that cover every edge METIS's bisection cuts.
     _, parts = pymetis.part_graph(2, pymetis.CSRAdjacency(graph.indptr, graph.indices), options=pymetis.Options(seed=0))
     cut = [(i, j) for i, j in zip(*graph.nonzero(), strict=True) if parts[i] == 0 and parts[j] == 1]

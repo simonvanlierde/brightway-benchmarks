@@ -31,7 +31,6 @@ from importlib.metadata import version
 from pathlib import Path
 
 import numpy as np
-import pymetis  # noqa: F401 - fill_bounds needs it: fail before the parse and the factorizations
 from scipy import sparse
 
 from bwbench.synth import measure
@@ -77,6 +76,8 @@ def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
     timing figures already in ``out``, with the date and versions they were measured with.
     It refuses when ``out`` is missing or describes another matrix.
     """
+    import pymetis  # noqa: F401, PLC0415 - fill_bounds needs it: fail before the parse. Not at import: solver_factorize imports this module.
+
     old = None
     if structure_only:
         if not out.exists():

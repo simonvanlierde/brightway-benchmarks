@@ -171,6 +171,29 @@ environment if it is missing and is safe to rerun; `--prune` removes anything el
 keep your own packages in another environment. The conda and pixi commands use the
 `conda-forge` row.
 
+## Contribute a run
+
+Timings from your own machine are welcome. Timings only compare within one machine, so
+yours go under a machine name of their own.
+
+1. Pick a name that says what the machine is, such as `laptop-m3-macos`, and not its host
+   name. Keep it for later runs: a stopped run resumes only under the same name.
+2. Measure your noise floor first with `just noise bw2calc`. A laptop is noisier than a
+   pinned benchmark machine, so plug it in and use its performance power mode.
+3. Run the suite at the ecoinvent size:
+
+   ```sh
+   export BWBENCH_MACHINE=laptop-m3-macos
+   export BWBENCH_SIZES=ecoinvent BWBENCH_MC_SIZES=ecoinvent BWBENCH_WRITE_SIZES=ecoinvent
+   just bench bw2calc
+   ```
+
+   Without the three size variables, the run falls back to the smoke size. Off x86_64,
+   the PyPardiso column is skipped, as MKL has no wheels there.
+4. `just results-commit` puts `results/` on your local `results` branch. Push that branch to
+   your fork and open a pull request into this repository's `results` branch. Say in it
+   which CPU, memory and OS the machine has, and paste the `just noise` spread.
+
 ## Environment variables
 
 `scripts/box.sh` passes every `BWBENCH_*` variable into the box.

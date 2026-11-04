@@ -893,7 +893,7 @@ class Stats:
     core_after_hubs: float | None = None  # share of products in the 2-core of A + A^T without the top 1% by degree
     lu_fill_no_pivoting: dict[str, float] | None = None  # lu_fill with diag_pivot_thresh=0
     off_diagonal_pivots: dict[str, float] | None = None  # share of columns pivoted off the diagonal, default threshold
-    fill_bounds: dict[str, dict[str, float]] | None = None  # see fill_bounds(); measure(bounds=True) only
+    fill_bounds: dict[str, dict[str, float]] | None = None  # see fill_bounds(); COLAMD keys need the factorizations
 
 
 def measure(
@@ -902,17 +902,13 @@ def measure(
     sectors: list[str] | None = None,
     *,
     repeats: int = 3,
-    bounds: bool = False,
 ) -> Stats:
     """Structural statistics of a technosphere matrix ``A`` (production on the diagonal).
 
     ``repeats`` SuperLU factorizations per ordering give the median time, for A and for A^T
-    (keys ending in ``(A^T)``); 0 skips them, and the fill with them. ``bounds`` adds
-    ``fill_bounds`` for the orderings SuperLU chose; it needs ``repeats`` and pymetis.
+    (keys ending in ``(A^T)``); 0 skips them, and the fill with them. ``fill_bounds`` needs
+    pymetis; its COLAMD keys use SuperLU's column orderings, so 0 leaves them out too.
     """
-    if bounds and not repeats:
-        msg = "fill bounds use SuperLU's column orderings: they need repeats > 0"
-        raise ValueError(msg)
     a = sparse.csc_matrix(technosphere, dtype=np.float64)
     n = a.shape[0]
     if n == 0 or not np.all(a.diagonal()):
@@ -938,7 +934,8 @@ def measure(
                 lu = sla.splu(m, permc_spec=order)
                 times.append(time.perf_counter() - t0)
             fill[order + suffix] = _lu_fill(lu, m)
-            perms[order + suffix] = lu.perm_c
+            if order == "COLAMD":
+                perms[order + suffix] = lu.perm_c
             seconds[order + suffix] = float(np.median(times))
             if not suffix:
                 # Column i lands at perm_c[i] and row i at perm_r[i]: the pivot is A[i, i] when they agree.
@@ -977,7 +974,7 @@ def measure(
         **_fill_drivers(a, x, locations, sectors),
         lu_fill_no_pivoting=fill_no_pivoting or None,
         off_diagonal_pivots=pivots or None,
-        fill_bounds=fill_bounds(a, perms) if bounds else None,
+        fill_bounds=fill_bounds(a, perms),
     )
 
 
@@ -1061,7 +1058,7 @@ def cholesky_counts(  # noqa: C901, PLR0912, PLR0915 - cs_counts, ported in one 
     (Gilbert, Ng and Peyton's skeleton-matrix method). Counts include the diagonal, so
     ``counts.sum()`` is nnz(L). Values are ignored; only the pattern matters.
     """
-    a = sparse.csc_matrix(a)
+    a = sparse.csc_matrix(a, copy=True)  # sort_indices works in place
     a.sort_indices()
     m, n = a.shape
     parent = _etree(a, ata=ata)
@@ -1140,40 +1137,36 @@ def tree_height(parent: NDArray[np.int64]) -> int:
     return int(depth.max()) if depth.size else 0
 
 
-def _bisection_separator(graph: sparse.csr_matrix) -> tuple[int, NDArray[np.int64], NDArray[np.int64]]:
-    """A vertex separator from METIS's edge bisection of ``graph``, and the two sides it leaves.
+def _bisection_separator(graph: sparse.csr_matrix) -> int:
+    """Size of a vertex separator from METIS's edge bisection of ``graph``.
 
     The smallest vertex set that covers every cut edge: by Konig's theorem its size is a
-    maximum matching of the bipartite graph of cut edges. The sides are the two parts whole.
-    shortcut: separator vertices stay in their part for the next level, which overstates the
-    second level slightly; build the Konig cover itself if that level matters.
+    maximum matching of the bipartite graph of cut edges.
     """
     import pymetis  # noqa: PLC0415 - only fill_bounds needs it
 
     n = graph.shape[0]
     if n < 2 or graph.nnz == 0:  # nothing to separate
-        return 0, np.arange(n), np.arange(0)
+        return 0
     _, parts = pymetis.part_graph(2, pymetis.CSRAdjacency(graph.indptr, graph.indices), options=pymetis.Options(seed=0))
     parts = np.asarray(parts)
-    left, right = np.flatnonzero(parts == 0), np.flatnonzero(parts == 1)
-    cut = graph[left][:, right].tocsr()
-    match = csgraph.maximum_bipartite_matching(cut, perm_type="column")
-    return int((match != -1).sum()), left, right
+    cut = graph[parts == 0][:, parts == 1].tocsr()
+    return int((csgraph.maximum_bipartite_matching(cut, perm_type="column") != -1).sum())
 
 
 def fill_bounds(a: sparse.csc_matrix, perms: dict[str, NDArray]) -> dict[str, dict[str, float]]:
-    """Fill-governing structure of ``a`` under the column orderings SuperLU chose (``perms``).
+    """Fill-governing structure of ``a``, under METIS and under SuperLU's COLAMD orderings.
 
-    - ``COLAMD``: with partial pivoting, L + U of A Q fits in the Cholesky pattern of
-      (A Q)^T (A Q) (George and Ng 1987). ``bound`` is 2 nnz(L_c) - n over nnz(A), on the
-      scale of ``lu_fill``; ``bound_sparse`` drops rows above COLAMD's dense cut-off first,
-      as COLAMD does. For the ``(A^T)`` key that pattern is A A^T.
-    - ``MMD_AT_PLUS_A`` and ``METIS``: the same for A + A^T under that symmetric ordering,
-      the fill LU gets without off-diagonal pivots.
+    - ``COLAMD`` and ``COLAMD (A^T)``, one per entry of ``perms`` (SuperLU's ``perm_c``):
+      with partial pivoting, L + U of A Q fits in the Cholesky pattern of (A Q)^T (A Q)
+      (George and Ng 1987). ``bound`` is 2 nnz(L_c) - n over nnz(A), on the scale of
+      ``lu_fill``. For the ``(A^T)`` key that pattern is A A^T.
+    - ``METIS``: the same for A + A^T under METIS's nested dissection, the fill LU gets
+      in that order without off-diagonal pivots. It needs only A.
     - ``height`` is the elimination tree's longest path and ``front`` the largest column
       count of L_c, both as a share of n: long trees and big fronts mean large dense blocks.
-    - ``separator``: the vertex separator of A + A^T from METIS's bisection, and the two
-      second-level ones summed, as shares of n. Nested dissection's fill grows with them.
+    - ``separator``: ``top`` is the vertex separator of A + A^T from METIS's bisection, as a
+      share of n. Nested dissection's fill grows with it.
     """
     import pymetis  # noqa: PLC0415 - not a runtime dependency of the benchmarks
 
@@ -1189,17 +1182,10 @@ def fill_bounds(a: sparse.csc_matrix, perms: dict[str, NDArray]) -> dict[str, di
         }
 
     out = {}
-    cutoff = max(16, int(10 * math.sqrt(n)))
     for key, perm in perms.items():
         order = np.argsort(perm)  # column i of A lands at perm[i]
-        if key.startswith("COLAMD"):
-            m = (pattern.T if key.endswith("(A^T)") else pattern).tocsc()[:, order]
-            out[key] = summary(*cholesky_counts(m, ata=True))
-            r = m.tocsr()
-            m_sparse = r[np.flatnonzero(np.diff(r.indptr) <= cutoff)].tocsc()
-            out[key]["bound_sparse"] = float((2 * cholesky_counts(m_sparse, ata=True)[0].sum() - n) / a.nnz)
-        else:
-            out[key] = summary(*cholesky_counts(sym[order][:, order], ata=False))
+        m = (pattern.T if key.endswith("(A^T)") else pattern).tocsc()[:, order]
+        out[key] = summary(*cholesky_counts(m, ata=True))
     graph = sym.copy()
     graph.setdiag(0)
     graph.eliminate_zeros()
@@ -1207,9 +1193,7 @@ def fill_bounds(a: sparse.csc_matrix, perms: dict[str, NDArray]) -> dict[str, di
     dissection = np.asarray(pymetis.nested_dissection(pymetis.CSRAdjacency(graph.indptr, graph.indices))[0])
     # nested_dissection returns (perm, iperm); perm[k] is the vertex eliminated k-th.
     out["METIS"] = summary(*cholesky_counts(sym[dissection][:, dissection], ata=False))
-    top, left, right = _bisection_separator(graph)
-    second = sum(_bisection_separator(graph[side][:, side].tocsr())[0] for side in (left, right))
-    out["separator"] = {"top": top / n, "second": second / n}
+    out["separator"] = {"top": _bisection_separator(graph) / n}
     return out
 
 

@@ -4,13 +4,12 @@
 
     uv run scripts/measure_stats.py --structure-only RELEASE_FOLDER PROFILE.json
 
-    uv run --with pymetis scripts/measure_stats.py --fill-bounds RELEASE_FOLDER OUT.json
-
 ``--structure-only`` skips the SuperLU factorizations, which take most of a full run, and
 keeps the fill figures already in the output file (``FILL_KEYS``). ``measured`` and
 ``versions`` then date the structure, and ``fill_measured`` and ``fill_versions`` the kept
-fill figures; a full run writes only the first pair. ``--fill-bounds`` adds
-``bwbench.synth.fill_bounds`` (it needs the factorizations and pymetis).
+fill figures; a full run writes only the first pair. ``fill_bounds`` is measured on every
+run, except its COLAMD keys, which need the factorizations: ``--structure-only`` keeps
+those from the output file too. pymetis, in the dev group, computes the METIS keys.
 
 Reads the linked ecospold2 datasets (one file per activity and reference product) and
 writes only what ``bwbench.synth.measure`` returns: counts and distributions, never a
@@ -32,6 +31,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 import numpy as np
+import pymetis  # noqa: F401 - fill_bounds needs it: fail before the parse and the factorizations
 from scipy import sparse
 
 from bwbench.synth import measure
@@ -41,8 +41,9 @@ CREDIT = (
     "Calculated from the ecoinvent 3.12 cut-off database (ecoinvent Association, https://ecoinvent.org). "
     "Aggregate statistics only: no dataset, name, amount or single-dataset figure."
 )
-# Stats fields only the factorizations give: --structure-only keeps them from OUT.
-FILL_KEYS = ("lu_fill", "factor_seconds", "lu_fill_no_pivoting", "off_diagonal_pivots", "fill_bounds")
+# Stats fields only the factorizations give: --structure-only keeps them from OUT, and the
+# fill_bounds keys that start with COLAMD.
+FILL_KEYS = ("lu_fill", "factor_seconds", "lu_fill_no_pivoting", "off_diagonal_pivots")
 NS = "{http://www.EcoInvent.org/EcoSpold02}"
 REFERENCE_PRODUCT = "0"  # ecospold2 outputGroup of the reference product
 
@@ -69,13 +70,12 @@ def read(path: Path) -> tuple:
     return ref[0], ref[1], location, isic, inputs
 
 
-def main(folder: Path, out: Path, *, structure_only: bool = False, fill_bounds: bool = False) -> None:
+def main(folder: Path, out: Path, *, structure_only: bool = False) -> None:
     """Parse every dataset in ``folder/datasets`` and write the statistics to ``out``.
 
     ``structure_only`` skips the SuperLU factorizations (minutes) and keeps the fill and
     timing figures already in ``out``, with the date and versions they were measured with.
-    It refuses when ``out`` is missing or describes another matrix. ``fill_bounds`` needs the
-    factorizations, so ``measure`` refuses it together with ``structure_only``.
+    It refuses when ``out`` is missing or describes another matrix.
     """
     old = None
     if structure_only:
@@ -116,7 +116,6 @@ def main(folder: Path, out: Path, *, structure_only: bool = False, fill_bounds: 
             locations=[r[2] for r in records],
             sectors=[r[3] for r in records],
             repeats=0 if structure_only else 3,
-            bounds=fill_bounds,
         )
     )
     fill = {}
@@ -125,6 +124,8 @@ def main(folder: Path, out: Path, *, structure_only: bool = False, fill_bounds: 
             msg = f"{out} describes another matrix: run without --structure-only"
             raise SystemExit(msg)
         stats |= {k: old["stats"][k] for k in FILL_KEYS if old["stats"].get(k)}
+        kept = {k: v for k, v in (old["stats"].get("fill_bounds") or {}).items() if k.startswith("COLAMD")}
+        stats["fill_bounds"] = kept | stats["fill_bounds"]
         if old["stats"].get("lu_fill"):
             fill = {
                 "fill_measured": old.get("fill_measured", old["measured"]),
@@ -137,7 +138,7 @@ def main(folder: Path, out: Path, *, structure_only: bool = False, fill_bounds: 
         "datasets": n,
         "unlinked_inputs": unlinked,
         "self_inputs": self_inputs,
-        "versions": {"numpy": version("numpy"), "scipy": version("scipy")},
+        "versions": {"numpy": version("numpy"), "scipy": version("scipy"), "pymetis": version("pymetis")},
         "stats": stats,
         **fill,
     }
@@ -152,8 +153,5 @@ if __name__ == "__main__":
     parser.add_argument("folder", type=Path, help="the release folder, holding datasets/*.spold")
     parser.add_argument("out", type=Path, help="the JSON file to write")
     parser.add_argument("--structure-only", action="store_true", help="skip the factorizations, keep the fill in OUT")
-    parser.add_argument("--fill-bounds", action="store_true", help="add the fill bounds (needs pymetis)")
     args = parser.parse_args()
-    if args.structure_only and args.fill_bounds:
-        parser.error("--fill-bounds needs the factorizations that --structure-only skips")
-    main(args.folder.expanduser(), args.out, structure_only=args.structure_only, fill_bounds=args.fill_bounds)
+    main(args.folder.expanduser(), args.out, structure_only=args.structure_only)

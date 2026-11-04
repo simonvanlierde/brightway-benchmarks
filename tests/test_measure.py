@@ -1,6 +1,8 @@
 import json
+from itertools import combinations
 
 import numpy as np
+import pymetis
 import pytest
 from scipy import sparse
 from scipy.sparse import linalg as sla
@@ -240,39 +242,99 @@ def test_cholesky_counts_of_ata_without_forming_it():
     assert synth.cholesky_counts(sparse.csc_matrix(np.eye(4)), ata=True)[0].tolist() == [1, 1, 1, 1]
 
 
-def test_cholesky_counts_match_symbolic_elimination():
-    def eliminate(pattern: np.ndarray) -> list[int]:
-        m = pattern.copy()
-        counts = []
-        for k in range(m.shape[0]):
-            below = np.flatnonzero(m[k + 1 :, k]) + k + 1
-            counts.append(1 + below.size)
-            m[np.ix_(below, below)] = True
-        return counts
+def eliminate(pattern: np.ndarray) -> tuple[list[int], list[int]]:
+    """Column counts of L and the etree, by eliminating a symmetric pattern on a dense copy."""
+    m = pattern.copy()
+    counts, parent = [], []
+    for k in range(m.shape[0]):
+        below = np.flatnonzero(m[k + 1 :, k]) + k + 1
+        counts.append(1 + below.size)
+        parent.append(int(below[0]) if below.size else -1)
+        m[np.ix_(below, below)] = True
+    return counts, parent
 
+
+def metis_order(sym: np.ndarray) -> tuple[sparse.csr_matrix, np.ndarray]:
+    """The graph of a symmetric pattern, and METIS's nested dissection order of it."""
+    graph = sparse.csr_matrix(sym & ~np.eye(sym.shape[0], dtype=bool), dtype=np.int32)
+    return graph, np.asarray(pymetis.nested_dissection(pymetis.CSRAdjacency(graph.indptr, graph.indices))[0])
+
+
+def test_cholesky_counts_match_symbolic_elimination():
     rng = np.random.default_rng(0)
     for _ in range(50):
         a = (rng.random((12, 10)) < 0.2) | np.eye(12, 10, dtype=bool)
         ata = (a.T.astype(int) @ a.astype(int)) > 0
-        assert synth.cholesky_counts(sparse.csc_matrix(a.astype(float)), ata=True)[0].tolist() == eliminate(ata)
+        assert synth.cholesky_counts(sparse.csc_matrix(a.astype(float)), ata=True)[0].tolist() == eliminate(ata)[0]
         s = ata[:, ::-1][::-1]  # a symmetric pattern in another order
-        assert synth.cholesky_counts(sparse.csc_matrix(s.astype(float)), ata=False)[0].tolist() == eliminate(s)
+        assert synth.cholesky_counts(sparse.csc_matrix(s.astype(float)), ata=False)[0].tolist() == eliminate(s)[0]
+
+
+def test_cholesky_counts_leave_the_input_alone():
+    a = sparse.csc_matrix((np.ones(3), np.array([2, 0, 1]), np.array([0, 3, 3, 3])), shape=(3, 3))  # unsorted
+    synth.cholesky_counts(a, ata=True)
+    assert a.indices.tolist() == [2, 0, 1]
 
 
 def test_fill_bounds_of_a_tridiagonal_matrix():
-    pytest.importorskip("pymetis")
-    n = 7  # A + A^T is a path: one vertex separates it, then one more in each half
+    n = 7  # A + A^T is a path: one vertex separates it
     a = sparse.csc_matrix(np.eye(n) - 0.3 * np.eye(n, k=1) - 0.2 * np.eye(n, k=-1))
-    b = measure(a, repeats=1, bounds=True).fill_bounds
+    b = measure(a, repeats=1).fill_bounds
     assert b is not None
-    assert b["separator"] == {"top": pytest.approx(1 / n), "second": pytest.approx(2 / n)}
-    assert b["MMD_AT_PLUS_A"]["bound"] == pytest.approx(1)  # a path orders without fill
-    for key in ("COLAMD", "COLAMD (A^T)", "MMD_AT_PLUS_A", "METIS"):
+    assert b.keys() == {"COLAMD", "COLAMD (A^T)", "METIS", "separator"}
+    assert b["separator"] == {"top": pytest.approx(1 / n)}
+    for key in ("COLAMD", "COLAMD (A^T)", "METIS"):
         assert b[key]["bound"] >= 1
         assert 0 < b[key]["front"] <= 1
         assert b[key]["height"] < 1
     # The bound holds for the fill SuperLU got with that ordering.
-    s = measure(a, repeats=1)
-    assert s.lu_fill["COLAMD"] <= b["COLAMD"]["bound"]
-    with pytest.raises(ValueError, match="need repeats"):
-        measure(a, repeats=0, bounds=True)
+    assert measure(a, repeats=1).lu_fill["COLAMD"] <= b["COLAMD"]["bound"]
+    # Without the factorizations, only the keys that need A alone.
+    assert measure(a, repeats=0).fill_bounds == {k: b[k] for k in ("METIS", "separator")}
+
+
+def test_metis_fill_bounds_match_symbolic_elimination():
+    rng = np.random.default_rng(3)
+    n = 14
+    a = (rng.random((n, n)) < 0.15) | np.eye(n, dtype=bool)
+    assert (a != a.T).any()  # A alone would give another pattern than A + A^T
+    sym = a | a.T
+    graph, perm = metis_order(sym)
+    counts, parent = eliminate(sym[np.ix_(perm, perm)])
+    depth = [0] * n
+    for j in reversed(range(n)):  # a parent comes after its children
+        if parent[j] != -1:
+            depth[j] = depth[parent[j]] + 1
+    b = synth.fill_bounds(sparse.csc_matrix(a.astype(float)), {})
+    assert b.keys() == {"METIS", "separator"}
+    assert b["METIS"] == {
+        "bound": pytest.approx((2 * sum(counts) - n) / a.sum()),
+        "height": pytest.approx(max(depth) / n),
+        "front": pytest.approx(max(counts) / n),
+    }
+    # The separator: the fewest vertices that cover every edge METIS's bisection cuts.
+    _, parts = pymetis.part_graph(2, pymetis.CSRAdjacency(graph.indptr, graph.indices), options=pymetis.Options(seed=0))
+    cut = [(i, j) for i, j in zip(*graph.nonzero(), strict=True) if parts[i] == 0 and parts[j] == 1]
+    ends = sorted({v for edge in cut for v in edge})
+    top = next(k for k in range(n + 1) if any(all({i, j} & set(c) for i, j in cut) for c in combinations(ends, k)))
+    assert top > 0
+    assert b["separator"] == {"top": pytest.approx(top / n)}
+
+
+def test_separator_of_a_diagonal_and_of_two_cliques():
+    b = synth.fill_bounds(sparse.csc_matrix(np.eye(5)), {})
+    assert b == {"METIS": {"bound": 1.0, "height": 0.0, "front": 0.2}, "separator": {"top": 0.0}}
+    cliques = np.kron(np.eye(2), np.ones((4, 4)))
+    cliques[3, 4] = 1  # one edge between them: one vertex separates them
+    assert synth.fill_bounds(sparse.csc_matrix(cliques), {})["separator"] == {"top": pytest.approx(1 / 8)}
+
+
+def test_metis_bound_holds_for_lu_without_pivoting():
+    rng = np.random.default_rng(1)
+    n = 30
+    for _ in range(30):
+        a = sparse.csc_matrix(sparse.random(n, n, density=0.08, random_state=rng) + 3 * sparse.identity(n))
+        _, perm = metis_order((a != 0).toarray() | (a != 0).toarray().T)
+        b = a[perm][:, perm].tocsc()
+        lu = sla.splu(b, permc_spec="NATURAL", diag_pivot_thresh=0.0)
+        assert (lu.L.nnz + lu.U.nnz - n) / b.nnz <= synth.fill_bounds(a, {})["METIS"]["bound"]

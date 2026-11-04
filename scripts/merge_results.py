@@ -101,7 +101,8 @@ def main(tree: str) -> None:
         merged = merge(old, new)
         if merged != new:
             Path(tree, path).write_text(merged)
-            print(f"results-commit: kept earlier cells in {path}")
+            if merged != old:
+                print(f"results-commit: kept earlier cells in {path}")
             head = run_head(Path(tree), hashlib.sha256(new.encode()).hexdigest())
             if head and merged != old:  # an unchanged file keeps the record that listed it
                 sha = hashlib.sha256(merged.encode()).hexdigest()

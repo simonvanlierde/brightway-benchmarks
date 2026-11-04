@@ -24,11 +24,13 @@ process, serially. At most one LU factorization is retained at a time. It record
   shared supplier pairs on the input-list side; it is separate from supplier-row overlap.
 - COLAMD fill and factorization wall time for the column-normalized matrix and its transpose.
 
-The calibration guards match `tests/test_measure.py::test_ecoinvent_profile_matches_its_target`,
-including the SCC tolerance of three percentage points. The same guards apply to every seed.
-They were originally chosen for seed 0, so a later seed can fail even for `baseline`; the
-sweep reports that failure rather than widening the tolerance. LU fill and overlap remain
-measurements, not new pass thresholds.
+The calibration guards are the per-seed ones of
+`tests/test_measure.py::test_ecoinvent_profile_matches_its_target`, and the same guards apply
+to every seed. The giant loop's share and the negative share vary by seed (SD 0.04 and 0.012),
+so each seed gets 3 SD: 0.12 and 0.035. The test also holds the mean of seeds 0 to 3 to 3 SD
+over the square root of four (0.06 and 0.02); the sweep reports per seed only. LU fill and
+overlap are measurements here, not pass thresholds. The fill target is
+`test_ecoinvent_profile_fills_like_its_target`, which the profile does not meet yet (#54).
 
 ## Running a sweep
 

@@ -86,14 +86,14 @@ def test_worker_crash_cannot_be_a_success(sweep: ModuleType, target: synth.Stats
     assert len(report["results"]) == 3
 
 
-def test_scc_failure_is_reported_with_original_threshold(sweep: ModuleType, target: synth.Stats, tmp_path: Path):
-    changed = replace(target, loops=target.loops | {"largest": round(target.products * 0.565)})
+def test_scc_failure_is_reported_with_its_threshold(sweep: ModuleType, target: synth.Stats, tmp_path: Path):
+    changed = replace(target, loops=target.loops | {"largest": round(target.products * 0.5)})
     report = sweep.run_sweep(["copied"], [0], lambda c, s: row(c, s, changed), target, tmp_path / "report.json")
     assert report["complete"] is True
     assert report["passed"] is False
     assert len(report["results"][0]["failures"]) == 1
     assert "SCC share" in report["results"][0]["failures"][0]
-    assert "abs 0.03" in report["results"][0]["failures"][0]
+    assert "abs 0.12" in report["results"][0]["failures"][0]
 
 
 @pytest.mark.parametrize("damage", ["wrong seed", "missing stats", "missing transpose", "nonfinite"])

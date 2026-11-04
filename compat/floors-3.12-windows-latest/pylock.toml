@@ -721,9 +721,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/86/bf/899e81e4cce32fe
 
 [[packages]]
 name = "pyzmq"
-version = "27.2.0"
-sdist = { url = "https://files.pythonhosted.org/packages/e7/8d/5b3d5631c2f4b4b8862f64cd0c9eb777b5710eeb5125b4be8dd0a200a4c0/pyzmq-27.2.0.tar.gz", upload-time = 2026-08-20T19:08:21Z, size = 292316, hashes = { sha256 = "54d4259d1bfae24ecdb5ca79f7acc2eac6c286a02d6a0ae617797cb45f0726d3" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/02/8b/b83f7780dad22e0878e4c7bd9158ebd24ed12bc3d5e3a471cd0576f77ded/pyzmq-27.2.0-cp312-abi3-win_amd64.whl", upload-time = 2026-08-20T19:06:53Z, size = 628633, hashes = { sha256 = "2c218c6ab8bc447ba62054b581fd30209689d199c6ecb253f79615ca74a38e12" } }]
+version = "27.3.0"
+sdist = { url = "https://files.pythonhosted.org/packages/e2/e1/ea46ab0d707219c098065a37d2add5b53d3b124241aa19429bcd0863e5b4/pyzmq-27.3.0.tar.gz", upload-time = 2026-11-04T00:31:33Z, size = 293249, hashes = { sha256 = "bbedb3d1d99babc625f1dd9d7438acefd442b36b75073fd6bc1ef7c0a4b96d56" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/fa/6d/23a02024011a494fb52bcfb179f10a3b230cff7b6fe0d5b8a3c775ce3b82/pyzmq-27.3.0-cp312-abi3-win_amd64.whl", upload-time = 2026-11-04T00:29:25Z, size = 642389, hashes = { sha256 = "3ea8e8fa5c097e68fef91d70b150fda96f307758103868018fc4deeb9c214122" } }]
 
 [[packages]]
 name = "randonneur"
@@ -811,9 +811,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/41/a4/ee0bdba1d1e98db
 
 [[packages]]
 name = "soupsieve"
-version = "3.0.4"
-sdist = { url = "https://files.pythonhosted.org/packages/19/63/0b6bae54546aed98d72f12d09df57b19a287f01c84d22047fa2e23772ab9/soupsieve-3.0.4.tar.gz", upload-time = 2026-10-22T00:45:26Z, size = 119017, hashes = { sha256 = "924fab84ae21604c19e175e1f39815eb6fa83ba23836e09e9de180925e5bc4c0" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/07/66/473f7ca0be0b06e38ee8c85ee2db184e3981bd769fac2e7c19c8a8865211/soupsieve-3.0.4-py3-none-any.whl", upload-time = 2026-10-22T00:45:24Z, size = 42458, hashes = { sha256 = "8412826614f9c632227067d0985aeb9f584bd15efc852955430e097a9fe7afbf" } }]
+version = "4.0"
+sdist = { url = "https://files.pythonhosted.org/packages/7d/5e/19b7c5d20bc2f226c44f33a9d9aab9740efed7555b96e656231fd564e514/soupsieve-4.0.tar.gz", upload-time = 2026-11-03T14:28:55Z, size = 151929, hashes = { sha256 = "ccd6470b256394ac44b08b86fd94b30a17d335a5335c8a3d15565f7b03d3c8cf" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/4f/18/d24df2f733ee0655c58717d51add4118a70e64692d0e47d403b9aac4cf98/soupsieve-4.0-py3-none-any.whl", upload-time = 2026-11-03T14:28:53Z, size = 50158, hashes = { sha256 = "5e7494bfce90e06676cfb4c5c2cf22243e98e5cf24646bb1ecdda46d318550a0" } }]
 
 [[packages]]
 name = "sparqlwrapper"

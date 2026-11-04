@@ -24,7 +24,7 @@ dependencies:
   - bzip2=1.0.8=hda65f42_10
   - ca-certificates=2026.10.23=hbd8a1cb_0
   - cachebox=5.2.3=py312h868fb18_1
-  - certifi=2026.10.23=pyhd8ed1ab_2
+  - certifi=2026.10.23=pyhd8ed1ab_3
   - cffi=2.1.1=py312h703531f_3
   - charset-normalizer=3.5.2=h1114479_0
   - contourpy=1.4.0=py312h9be0db6_1

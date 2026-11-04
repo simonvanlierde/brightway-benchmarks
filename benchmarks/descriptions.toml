@@ -103,6 +103,7 @@ steps      = "How many yearly steps each background exchange is spread over."
 [values.size]
 smoke     = "200 products: a quick check that the case runs."
 useeio    = "388 products and 1,871 elementary flows, shaped like USEEIO 1.1."
+bafu      = "11,747 products and 2,678 elementary flows: the BAFU 2025 database itself."
 ecoinvent = "26,533 products and 4,000 elementary flows, shaped like ecoinvent 3.12 cut-off."
 
 [values.cls]
@@ -177,7 +178,8 @@ SuperLU   = "https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.l
 smoke     = "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/method.md#the-synthetic-databases"
 ecoinvent = "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/method.md#the-synthetic-databases"
 exiobase  = "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/method.md#the-synthetic-databases"
-useeio    = "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/method.md#the-real-database"
+useeio    = "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/method.md#the-real-databases"
+bafu      = "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/method.md#the-real-databases"
 
 [links.values.cls]
 LCA            = "https://docs.brightway.dev/en/latest/content/api/bw2calc/lca/index.html#bw2calc.lca.LCA"

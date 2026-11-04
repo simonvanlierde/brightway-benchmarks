@@ -14,9 +14,10 @@ calculations and their coverage limits. A release that slows a calculation or ch
 score shows up in the history.
 
 The benchmarks run on synthetic databases that copy ecoinvent's structure, so anyone can rerun
-them and the results can be published. One real database sits beside them: USEEIO 1.1 (US EPA,
-public domain), downloaded from [files.brightway.dev](https://files.brightway.dev/USEEIO-1.1.tar.gz)
-by a pinned SHA-256 when `BWBENCH_SIZES=useeio` asks for it.
+them and the results can be published. Two real databases sit beside them: USEEIO 1.1 (US EPA,
+public domain) and BAFU 2025 (Swiss Federal Office for the Environment), downloaded from
+[files.brightway.dev](https://files.brightway.dev/) by a pinned SHA-256 when `BWBENCH_SIZES=useeio`
+or `bafu` asks for them. BAFU 2025 is never copied into this repository or its results.
 
 Every case's history is in the
 [benchmark explorer](https://simonvanlierde.com/brightway-benchmarks/).

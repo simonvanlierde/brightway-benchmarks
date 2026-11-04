@@ -215,7 +215,7 @@ yours go under a machine name of their own.
 
 | Variable | Default | What it sets |
 | --- | --- | --- |
-| `BWBENCH_SIZES` | `smoke` | Database sizes: `smoke`, `ecoinvent`, `mc100k`, `regional`, `exiobase`, `stress-random`, `useeio` (real data, downloaded once; [method.md](method.md#the-real-database)) |
+| `BWBENCH_SIZES` | `smoke` | Database sizes: `smoke`, `ecoinvent`, `mc100k`, `regional`, `exiobase`, `stress-random`, `useeio`, `bafu` (real data, downloaded once; [method.md](method.md#the-real-databases)) |
 | `BWBENCH_MC_SIZES` | `smoke` | Sizes for bw2calc's Monte Carlo |
 | `BWBENCH_WRITE_SIZES` | `smoke` | Sizes for bw2data's write |
 | `BWBENCH_TIMEX_SIZES` | `smoke` | Sizes for bw_timex |

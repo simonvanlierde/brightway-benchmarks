@@ -4,6 +4,7 @@ Importing this package pins the BLAS and OpenMP thread pools to ``$BWBENCH_THREA
 (default 1) before numpy loads, so timings do not depend on how many cores are free.
 """
 
+import math
 import os
 import sys
 import warnings
@@ -49,9 +50,14 @@ def peak_rss_bytes() -> int:
     return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
 
-def check(score: float, reference: float, rtol: float, what: str = "score") -> float:
-    """Relative error of ``score`` against ``reference``; raises ``AssertionError`` above ``rtol``."""
-    err = abs(score - reference) / abs(reference)
+def check(score: float, reference: float, rtol: float, what: str = "score", scale: float = 0.0) -> float:
+    """Relative error of ``score`` against ``reference``; raises ``AssertionError`` above ``rtol``.
+
+    A zero reference (a product that emits nothing a method counts) is measured against
+    ``scale``, the size of that method's other scores, and must match exactly without one.
+    """
+    denominator = abs(reference) or abs(scale)
+    err = abs(score - reference) / denominator if denominator else (0.0 if score == reference else math.inf)
     if not err <= rtol:  # `not <=` also catches NaN
         msg = f"{what} {score!r} vs reference {reference!r}: relative error {err:.2e} > {rtol:.0e}"
         raise AssertionError(msg)
@@ -63,8 +69,9 @@ def check_table(scores: list[list[float]], references: list[list[float]], rtol: 
     if len(scores) != len(references):
         msg = f"{len(scores)} rows of scores against {len(references)} rows of references"
         raise AssertionError(msg)
+    scales = [max(abs(row[m]) for row in references) for m in range(len(references[0]))] if references else []
     return max(
-        check(score, ref, rtol, f"{what} [{p}][{m}]")
+        check(score, ref, rtol, f"{what} [{p}][{m}]", scales[m])
         for p, (row, ref_row) in enumerate(zip(scores, references, strict=True))
         for m, (score, ref) in enumerate(zip(row, ref_row, strict=True))
     )

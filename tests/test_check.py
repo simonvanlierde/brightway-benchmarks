@@ -21,6 +21,16 @@ def test_check_raises_above_the_tolerance(score: float):
         check(score, 1.0, DIRECT_RTOL)
 
 
+def test_a_zero_reference_is_measured_against_its_method():
+    assert check(0.0, 0.0, DIRECT_RTOL) == 0
+    with pytest.raises(AssertionError, match="relative error"):
+        check(1e-300, 0.0, DIRECT_RTOL)
+    refs = [[2.0, 5.0], [0.0, 4.0]]  # product 1 has no score in method 0, as some BAFU products
+    assert check_table([[2.0, 5.0], [1e-12, 4.0]], refs, DIRECT_RTOL) == pytest.approx(5e-13)
+    with pytest.raises(AssertionError, match=r"\[1\]\[0\]"):
+        check_table([[2.0, 5.0], [1e-6, 4.0]], refs, DIRECT_RTOL)
+
+
 def test_check_table_catches_swapped_demands():
     refs = system("smoke").reference
     assert check_table(refs, refs, DIRECT_RTOL) == 0

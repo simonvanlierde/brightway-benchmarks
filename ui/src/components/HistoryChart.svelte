@@ -67,7 +67,7 @@ function words(change: Change): string {
   return `level shift ${percent(change.ratio)} ${way}`;
 }
 
-function describe(step: (typeof steps)[number]): string {
+function stepText(step: (typeof steps)[number]): string {
   const [first] = step;
   if (!first) return "";
   const rows = step.map((p) => `${p.short}: ${format(p.value, unit)}`);
@@ -98,7 +98,7 @@ $effect(() => {
   const tips = steps.map((s) => ({
     label: s[0]?.label ?? "",
     y: Math.max(...s.map((p) => p.value)) / divisor,
-    text: describe(s),
+    text: stepText(s),
   }));
   const ys = data.map((d) => d.y);
   const [low, high] = [Math.min(...ys), Math.max(...ys)];
@@ -271,7 +271,7 @@ function download() {
 
 const said = $derived.by(() => {
   const step = active === null ? undefined : steps[active];
-  return step ? describe(step).replaceAll("\n", "; ") : "";
+  return step ? stepText(step).replaceAll("\n", "; ") : "";
 });
 </script>
 

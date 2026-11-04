@@ -85,7 +85,7 @@ export function pickParams(bench: Benchmark, wanted: string[]): string[] {
   return bench.params.map((axis, i) => {
     const labels = axis.labels ?? axis.values;
     const at = labels.indexOf(wanted[i] ?? "");
-    return axis.values[at >= 0 ? at : 0] ?? "";
+    return axis.values[Math.max(at, 0)] ?? "";
   });
 }
 

@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import functools
 import hashlib
+import importlib
 import json
 import math
 import os
@@ -162,10 +163,12 @@ PROFILES: dict[str, Profile] = {
     "regional": replace(ECOINVENT, products=250_000),
     # The earlier generator at about ecoinvent's size: L+U fills to about 60% of a dense matrix.
     "stress-random": Profile(products=20_000, flows=4_000, builder="random", inputs=8),
-    # USEEIO 1.1, the real system (bwbench.useeio). Its data come from a pinned archive, so
-    # the generator's version says nothing about it and `profile_version` leaves it out.
+    # The real systems (bwbench.useeio, bwbench.bafu). Their data come from pinned archives, so
+    # the generator's version says nothing about them and `profile_version` leaves them out.
     "useeio": Profile(products=388, flows=1_871, builder="useeio", methods=3, target="USEEIO-1.1"),
+    "bafu": Profile(products=11_747, flows=2_678, builder="bafu", methods=3, target="BAFU-2025-v2"),
 }
+ARCHIVES = ("useeio", "bafu")  # the builders that read a real system, each from its bwbench module
 
 
 def profile(name: str, **overrides: object) -> Profile:
@@ -304,13 +307,11 @@ def system(name: str, *, seed: int = 0, uncertain: bool = False, **overrides: ob
 # Keyed on the resolved profile, not its name, so an edited profile never returns a stale system.
 @functools.lru_cache(maxsize=4)  # benchmark setups ask for the same system before every sample
 def _build(name: str, p: Profile, seed: int, uncertain: bool) -> System:  # noqa: FBT001
-    if p.builder == "useeio":
-        from bwbench import useeio  # noqa: PLC0415 - it imports this module
-
+    if p.builder in ARCHIVES:
         if uncertain:
-            msg = "USEEIO has no uncertainty here: its Monte Carlo case is not defined"
+            msg = f"{p.target} has no uncertainty here: its Monte Carlo case is not defined"
             raise NotImplementedError(msg)
-        return useeio.system(p, seed)
+        return importlib.import_module(f"bwbench.{p.builder}").system(p, seed)  # it imports this module
     rng = np.random.default_rng(seed)
     n = p.products
     region = sector = None
@@ -786,7 +787,7 @@ def profile_version() -> str:
     It covers every registered profile, not the ones a run selects, so runs over different
     sizes share one history. asv drops results whose version differs.
     """
-    generated = sorted((n, p.digest()) for n, p in PROFILES.items() if p.builder != "useeio")
+    generated = sorted((n, p.digest()) for n, p in PROFILES.items() if p.builder not in ARCHIVES)
     return f"{GENERATOR_VERSION}-{_short_hash(generated, 8)}"
 
 

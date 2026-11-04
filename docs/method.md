@@ -68,7 +68,7 @@ These controls are off in every registered profile. They do not fix
 fill, but shrinks the largest loop below the calibration test's accepted range.
 Default controls preserve existing cache keys and benchmark histories; overrides get separate keys.
 
-## The real database
+## The real databases
 
 `BWBENCH_SIZES=useeio` runs the cases on USEEIO 1.1, the US EPA's input-output model: 388
 commodities, 1,871 flows, and three of its impact categories (GCC, ACID, ETOX). It is
@@ -81,6 +81,17 @@ ids, so the values are the model's own. Its reference scores come from a solve w
 code, like the synthetic ones. It is small, so it times a real structure with negative inputs and
 duplicate exchanges, not the cost of a large factorization. Only timings are published, never scores.
 It has no Monte Carlo case.
+
+`BWBENCH_SIZES=bafu` runs them on BAFU 2025, cited as "Life Cycle Inventory database of the Swiss
+Federal Administration, BAFU:2025": 11,747 processes, 2,678 flows, and three EN 15804+A2
+categories (climate change, acidification, freshwater ecotoxicity). It is the archive that
+`bw2io.install_project("BAFU-2025-v2")` fetches, read the same way
+([`src/bwbench/bafu.py`](../src/bwbench/bafu.py)). At under half of ecoinvent's size, it times a
+real LCI database's factorization. Its licence allows use in LCA studies but not distribution, so
+the harness downloads it at run time and the repository, the results and the Zenodo dataset hold
+only timings and aggregate statistics. Its matrix is badly conditioned (a condition number near
+1e22), and its reference scores agree with a refined direct solve to about 2e-15. It has no Monte
+Carlo case, although the archive carries uncertainty.
 
 ## How the results stay reproducible
 

@@ -117,8 +117,11 @@ def remap(
     return arrays, cf_flows, cf_data
 
 
-def read(archive: Path) -> tuple[tuple, tuple, list[tuple[NDArray, NDArray]]]:
-    """The technosphere, biosphere and ``METHODS`` characterization arrays of the archive's datapackages."""
+def read(archive: Path, methods: tuple[str, ...]) -> tuple[tuple, tuple, list[tuple[NDArray, NDArray]]]:
+    """The technosphere, biosphere and characterization arrays of the archive's datapackages.
+
+    ``methods`` names each method by its resources' prefix, before ``_matrix_data``.
+    """
     import bw_processing as bwp  # noqa: PLC0415 - only the container has it
     import fsspec  # noqa: PLC0415  # ty: ignore[unresolved-import] - a bw_processing dependency
 
@@ -135,14 +138,12 @@ def read(archive: Path) -> tuple[tuple, tuple, list[tuple[NDArray, NDArray]]]:
         tech = tuple(np.array(column(database, f"_technosphere_matrix.{k}")) for k in ("indices", "data", "flip"))
         bio = tuple(np.array(column(database, f"_biosphere_matrix.{k}")) for k in ("indices", "data"))
         cfs = []
-        for code in METHODS:
-            dp = next(
-                dp for dp in dps if any(r["name"] == f"Impact_Potential_{code}_matrix_data.data" for r in dp.resources)
-            )
+        for method in methods:
+            dp = next(dp for dp in dps if any(r["name"] == f"{method}_matrix_data.data" for r in dp.resources))
             cfs.append(
                 (
-                    np.array(column(dp, f"Impact_Potential_{code}_matrix_data.indices")["row"]),
-                    np.array(column(dp, f"Impact_Potential_{code}_matrix_data.data")),
+                    np.array(column(dp, f"{method}_matrix_data.indices")["row"]),
+                    np.array(column(dp, f"{method}_matrix_data.data")),
                 )
             )
     return tech, bio, cfs
@@ -150,20 +151,28 @@ def read(archive: Path) -> tuple[tuple, tuple, list[tuple[NDArray, NDArray]]]:
 
 def system(p: Profile, seed: int) -> System:
     """The USEEIO 1.1 system of profile ``p``, fetched into the cache on first use."""
-    from bwbench.synth import System, data_root  # noqa: PLC0415 - synth imports this module
+    from bwbench.synth import data_root  # noqa: PLC0415 - synth imports this module
 
-    tech, bio, cfs = read(fetch(data_root() / "useeio-1.1.tar.gz"))
+    methods = tuple(f"Impact_Potential_{code}" for code in METHODS)
+    return archive_system("useeio", p, seed, fetch(data_root() / "useeio-1.1.tar.gz"), methods)
+
+
+def archive_system(name: str, p: Profile, seed: int, archive: Path, methods: tuple[str, ...]) -> System:
+    """The system ``name`` of profile ``p`` from a project archive's processed datapackages."""
+    from bwbench.synth import System  # noqa: PLC0415 - synth imports this module
+
+    tech, bio, cfs = read(archive, methods)
     arrays, cf_flows, cf_data = remap(tech[0], tech[1], tech[2], bio[0], bio[1], cfs)
     n = int(arrays["tech_rows"].max()) + 1
     flows = int(arrays["bio_rows"].max()) + 1 - n
-    if (n, flows, len(METHODS)) != (p.products, p.flows, p.methods):
+    if (n, flows, len(methods)) != (p.products, p.flows, p.methods):
         msg = f"the archive has {n} products and {flows} flows; the profile says {p.products} and {p.flows}"
         raise ValueError(msg)
     scale = np.ones(n)
     for a in (*arrays.values(), *cf_flows, *cf_data, scale):
         a.setflags(write=False)
     return System(
-        "useeio",
+        name,
         p,
         seed,
         arrays["tech_rows"],

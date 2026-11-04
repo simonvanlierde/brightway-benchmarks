@@ -24,7 +24,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   jobs retain an upstream issue draft for a person to review and post
   ([compatibility reports](docs/running.md#report-newly-failing-jobs)).
 - USEEIO 1.1 as a public-domain input for bw2calc benchmarks, fetched by a pinned checksum and checked
-  against a reference solve ([real database](docs/method.md#the-real-database)).
+  against a reference solve ([real database](docs/method.md#the-real-databases)).
 - Synthetic ecoSpold2 import benchmarks that require no ecoinvent licence, plus optional benchmarks
   of a licensed release. The import checks that every exchange links ([method](docs/method.md)).
 - Experimental controls for shared input lists and locality, with seed-by-seed calibration reports.

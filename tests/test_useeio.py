@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 from scipy import sparse
 
-from bwbench import synth, useeio
+from bwbench import bafu, synth, useeio
 
 IDX = [("row", "<i4"), ("col", "<i4")]
 
@@ -91,15 +91,29 @@ def test_fetch_replaces_a_file_that_does_not_match(tmp_path: Path):
     assert dest.read_bytes() == b"archive"
 
 
-def test_the_profile_stays_out_of_the_asv_version(monkeypatch: pytest.MonkeyPatch):
+@pytest.mark.parametrize("name", synth.ARCHIVES)
+def test_the_profile_stays_out_of_the_asv_version(name: str, monkeypatch: pytest.MonkeyPatch):
     base = synth.profile_version()
-    monkeypatch.delitem(synth.PROFILES, "useeio")
+    monkeypatch.delitem(synth.PROFILES, name)
     assert synth.profile_version() == base
 
 
-def test_useeio_has_no_monte_carlo():
+@pytest.mark.parametrize("name", synth.ARCHIVES)
+def test_an_archive_has_no_monte_carlo(name: str):
     with pytest.raises(NotImplementedError, match="uncertainty"):
-        synth.system("useeio", uncertain=True)
+        synth.system(name, uncertain=True)
+
+
+def test_bafu_reads_its_pinned_archive_with_its_methods(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    calls = {}
+    monkeypatch.setattr(synth, "data_root", lambda: tmp_path)
+    monkeypatch.setattr(useeio, "fetch", lambda *args: calls.setdefault("fetch", args) and "archive")
+    monkeypatch.setattr(useeio, "archive_system", lambda *args: calls.setdefault("system", args))
+    p = synth.profile("bafu")
+    bafu.system(p, 0)
+    assert calls["fetch"] == (tmp_path / "bafu-2025-v2.tar.gz", bafu.URL, bafu.SHA256)
+    assert calls["system"] == ("bafu", p, 0, "archive", bafu.METHODS)
+    assert (p.products, p.flows, p.methods) == (11_747, 2_678, len(bafu.METHODS))
 
 
 class FixtureDatapackage:

@@ -538,6 +538,15 @@ a:hover {
   color: var(--ink);
   font-weight: 700;
 }
+.rail h2:has(+ .rail-about) {
+  margin-bottom: 2px;
+}
+.rail-about {
+  margin: 0 0 7px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
 .rail ul {
   list-style: none;
   margin: 0;
@@ -1027,6 +1036,13 @@ details.data[open] summary {
   }
   .responsive-table th {
     grid-column: 1 / -1;
+  }
+  /* A change's history sits right beside its value, not across the row. */
+  .latest-table tr {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 4px 16px;
+    padding: 12px 0;
   }
 
   .platform-tabs button {

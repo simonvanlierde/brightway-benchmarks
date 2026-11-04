@@ -340,6 +340,7 @@ $effect(() => {
         {#if matching.length === 0}<p class="rail-empty">No benchmarks match “{search}”.</p>{/if}
         {#each index.groups.filter((g) => matching.some((b) => b.group === g.id)) as g (g.id)}
           <h2 id="rail-{g.id}">{g.name}</h2>
+          {#if g.description}<p class="rail-about">{g.description}</p>{/if}
           <ul aria-labelledby="rail-{g.id}">
             {#each matching.filter((b) => b.group === g.id) as b (b.id)}
               {@const next = { bench: b.id, params: [] }}

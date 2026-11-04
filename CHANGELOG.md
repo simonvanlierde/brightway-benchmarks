@@ -7,6 +7,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- A [cuDSS finding](docs/findings.md#cudss-refactorizes-real-ecoinvent-in-37-ms-but-that-isnt-a-monte-carlo-draw-yet):
+  GPU factorization times on real ecoinvent next to the CPU solvers, and what they don't cover.
+
 ## [0.2.0] - 2026-11-01
 
 ### Added

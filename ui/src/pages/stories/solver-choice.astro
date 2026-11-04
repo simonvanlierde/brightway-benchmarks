@@ -68,12 +68,11 @@ const thirty = (variant: string) => link("bw2calc-conda", multi, "ecoinvent", "3
         caption="MultiLCA, 30 products"
         href={thirty("MultiLCA")}
         rows={[
-          { label: "scikit-umfpack installed (SciPy uses SuperLU)", seconds: 28.7, tone: "base" },
           { label: "PyPardiso, MKL", seconds: 10.6, tone: "fast" },
-          { label: "SuperLU, SciPy's default", seconds: 28.7, tone: "base" },
+          { label: "SuperLU, with or without scikit-umfpack", seconds: 28.7, tone: "base" },
         ]}
       />
-      <p>Here scikit-umfpack does nothing. <code>MultiLCA</code> hands SciPy all 30 demands as one matrix, and SciPy uses UMFPACK only for a single right-hand side. The first and last bars are both SuperLU, and PyPardiso is 2.7 times faster.</p>
+      <p>Here scikit-umfpack does nothing. <code>MultiLCA</code> hands SciPy all 30 demands as one matrix, and SciPy uses UMFPACK only for a single right-hand side. The SuperLU bar is the same with or without it, and PyPardiso is 2.7 times faster.</p>
       <p>If you only need the scores, <code>FastScoresOnlyMultiLCA</code> solves one product at a time and UMFPACK is back in front: 3.56 s, against 10.5 s for PyPardiso (<a href={thirty("forward")}>the forward-direction history</a>). It does not run on SuperLU at all.</p>
 
       <h2>Monte Carlo</h2>

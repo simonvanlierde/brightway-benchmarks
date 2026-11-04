@@ -84,4 +84,13 @@ const time = (s: number) => `${s >= 10 ? s.toPrecision(3) : s.toFixed(2)} s`;
   .base {
     fill: var(--s2);
   }
+  /* Dark: --s2 is brighter than the fast bar. This one stays dimmer, 3.3:1 on the track. */
+  :global(:root[data-theme="dark"]) .base {
+    fill: #7488b3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme="light"])) .base {
+      fill: #7488b3;
+    }
+  }
 </style>

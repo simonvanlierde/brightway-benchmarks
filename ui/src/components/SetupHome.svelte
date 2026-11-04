@@ -104,7 +104,7 @@ $effect(() => {
 
 <header class="home-intro">
   <h2>{guidance?.title ?? index.project.name}</h2>
-  <p>Which Brightway packages work together, and which combination runs your LCA fastest? <a href="https://docs.brightway.dev/en/latest/">Brightway</a> is a family of open-source Python packages for life cycle assessment (LCA), each released on its own. Every night this site tests the combinations on Linux, macOS and Windows, and it times every release. {guidance?.intro ?? index.project.description ?? ""}</p>
+  <p>Which Brightway packages work together, and which combination runs your LCA fastest? <a href="https://docs.brightway.dev/en/latest/">Brightway</a> is a family of open-source Python packages for life cycle assessment (LCA), each released on its own. Every night this site installs the latest releases on Linux, macOS and Windows and checks that they work together. It times every release on one Linux machine. {guidance?.intro ?? index.project.description ?? ""}</p>
 </header>
 
 <div class="home-columns">

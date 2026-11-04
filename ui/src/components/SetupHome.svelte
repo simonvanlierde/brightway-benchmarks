@@ -88,7 +88,7 @@ $effect(() => {
 
 <header class="home-intro">
   <h2>{guidance?.title ?? index.project.name}</h2>
-  <p>This site installs and checks <a href="https://docs.brightway.dev/en/latest/">Brightway</a>, the open-source Python framework for life cycle assessment (LCA), on each platform, and times every release. {guidance?.intro ?? index.project.description ?? ""}</p>
+  <p><a href="https://docs.brightway.dev/en/latest/">Brightway</a> is the open-source Python framework for life cycle assessment (LCA). What you install alongside it decides whether it runs, and how fast: the same score can take ten times longer with a different solver. Every night this site installs Brightway on Linux, macOS and Windows and runs its tests, and it times every release on one fixed machine. {guidance?.intro ?? index.project.description ?? ""}</p>
 </header>
 
 <div class="home-columns">

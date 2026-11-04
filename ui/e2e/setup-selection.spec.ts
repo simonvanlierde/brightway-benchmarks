@@ -103,3 +103,12 @@ test("the OS select keeps focus when the new platform has no passing set", async
   await expect(page.locator(".no-saved")).toContainText("No passing set is published for macOS");
   await expect(page.getByLabel("Operating system", { exact: true })).toBeFocused();
 });
+
+test("a failed test-suite result beside the command says what it covers", async ({ page }) => {
+  await page.goto("?platform=linux");
+  await expect(page.locator(".result-line")).toContainText("Upstream test suites · Python 3.12 Failed");
+  await expect(page.locator(".install-set")).toContainText(
+    "Upstream test suites run each package's own tests on the latest releases",
+  );
+  await expect(page.locator(".install-set")).toContainText("the set that last passed the Latest releases check");
+});

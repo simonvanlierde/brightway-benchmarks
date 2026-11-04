@@ -1,5 +1,6 @@
 """scripts/results-commit.sh in throwaway git repos, with a fixed host name."""
 
+import hashlib
 import json
 import os
 import shutil
@@ -186,3 +187,26 @@ def test_the_same_run_twice_is_nothing_new(repo: Path, env: dict[str, str]):
     assert run.returncode == 0, run.stderr
     assert "nothing new" in run.stdout
     assert git(repo, env, "rev-list", "--count", "refs/heads/results").strip() == "2"
+
+
+def record(repo: Path, commit: str, text: str) -> None:
+    """asv.sh's run record for one result file."""
+    sha = hashlib.sha256(text.encode()).hexdigest()
+    write(
+        repo,
+        f"bw2calc/m/bwbench-run-20260101T00000{commit[0]}Z-{commit}.txt",
+        f"commit {commit}\ngenerator 3\n{sha}  .asv/results/bw2calc/m/abc-env.json\n",
+    )
+
+
+def test_a_merged_file_is_credited_to_the_run_that_wrote_it(repo: Path, env: dict[str, str]):
+    full, partial = asv_result({"smoke": 1.0, "ecoinvent": 9.0}), asv_result({"smoke": 1.5})
+    write(repo, "bw2calc/m/abc-env.json", full)
+    record(repo, "1aaa", full)
+    assert commit_results(repo, env).returncode == 0
+    write(repo, "bw2calc/m/abc-env.json", partial)
+    record(repo, "2bbb", partial)
+    assert commit_results(repo, env).returncode == 0
+    crate = json.loads(git(repo, env, "show", "refs/heads/results:ro-crate-metadata.json"))
+    (run,) = [e for e in crate["@graph"] if {"@id": "bw2calc/m/abc-env.json"} in e.get("result", [])]
+    assert run["@id"] == "#run-2bbb"

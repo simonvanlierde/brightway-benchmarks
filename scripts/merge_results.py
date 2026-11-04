@@ -7,11 +7,13 @@ run timed comes from the new file, and every other cell from HEAD. A benchmark w
 version changed keeps only the new cells, as its old ones timed other code.
 """
 
+import hashlib
 import itertools
 import json
 import shutil
 import subprocess
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 # Columns with one entry per parameter combination; the others hold one value per benchmark.
@@ -74,15 +76,37 @@ def git(tree: str, *args: str) -> str:
     ).stdout
 
 
+def run_head(tree: Path, sha: str) -> str | None:
+    """The commit and generator lines of the bwbench-run record that lists SHA, if one does."""
+    for record in sorted(tree.rglob("bwbench-run-*.txt"), key=lambda p: p.name, reverse=True):
+        lines = record.read_text().splitlines()
+        if any(line[:64] == sha and line[64:66] == "  " for line in lines):
+            return "".join(f"{line}\n" for line in lines if line.startswith(("commit ", "generator ")))
+    return None
+
+
 def main(tree: str) -> None:
-    """Merge every changed result file in TREE with its version at HEAD, in place."""
+    """Merge every changed result file in TREE with its version at HEAD, in place.
+
+    run_crate.py credits a file by its checksum, so each merged file gets a run record in its
+    folder that copies the run of the file it replaced. A file no record lists gets none.
+    """
     changed = git(tree, "diff", "--cached", "--name-only", "--diff-filter=M", "-z", "--", "*.json").split("\0")
+    records: dict[tuple[Path, str], list[str]] = {}  # (folder, run lines): checksum lines
     for path in filter(None, changed):
-        new = git(tree, "show", f":{path}")
-        merged = merge(git(tree, "show", f"HEAD:{path}"), new)
+        new, old = git(tree, "show", f":{path}"), git(tree, "show", f"HEAD:{path}")
+        merged = merge(old, new)
         if merged != new:
             Path(tree, path).write_text(merged)
             print(f"results-commit: kept earlier cells in {path}")
+            head = run_head(Path(tree), hashlib.sha256(new.encode()).hexdigest())
+            if head and merged != old:  # an unchanged file keeps the record that listed it
+                sha = hashlib.sha256(merged.encode()).hexdigest()
+                records.setdefault((Path(tree, path).parent, head), []).append(f"{sha}  {path}\n")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    for (folder, head), lines in records.items():
+        commit = head.partition("commit ")[2].split("\n", 1)[0][:12]
+        (folder / f"bwbench-run-{stamp}-merge-{commit}.txt").write_text(head + "".join(lines))
 
 
 if __name__ == "__main__":

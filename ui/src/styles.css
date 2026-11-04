@@ -636,6 +636,13 @@ details.data {
   color: var(--ink-2);
   font-size: 0.8rem;
 }
+/* Styled like a finding title: the way into the story, not a footnote. */
+.solver-evidence > p.story-link {
+  margin: 14px 0 12px;
+  color: var(--ink);
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
 .solver-evidence caption {
   font-size: 0.8rem;
   padding-bottom: 9px;

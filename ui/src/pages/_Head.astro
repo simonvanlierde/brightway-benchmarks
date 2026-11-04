@@ -5,10 +5,16 @@ interface Props {
   title: string;
   description: string;
   canonical: string;
+  image?: string;
+  imageAlt?: string;
 }
-const { title, description, canonical } = Astro.props;
-const image = "https://simonvanlierde.com/brightway-benchmarks/ui/og.png";
-const imageAlt = "Brightway benchmarks: tested installation sets and a comparison of measured solver times.";
+const {
+  title,
+  description,
+  canonical,
+  image = "https://simonvanlierde.com/brightway-benchmarks/ui/og.png",
+  imageAlt = "Brightway benchmarks: tested installation sets and a comparison of measured solver times.",
+} = Astro.props;
 ---
 
 <meta charset="utf-8" />

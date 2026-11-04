@@ -82,6 +82,7 @@ jobs:
           cp ui/dist/index.html site/index.html
           cp ui/dist/favicon.svg ui/dist/favicon.ico ui/dist/og.png ui/dist/apple-touch-icon.png site/
           cp -r ui/dist/about site/about
+          cp -r ui/dist/stories site/stories
           cp ui/dist/sitemap.xml site/sitemap.xml
           uvx --from rust-just==1.58.0 just ui-data site/ui/data
 

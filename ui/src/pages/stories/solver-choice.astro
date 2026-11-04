@@ -1,0 +1,158 @@
+---
+import StoryBars from "../../components/StoryBars.astro";
+import StaticPage from "../../layouts/StaticPage.astro";
+import { viewerHref } from "../../lib/story-links";
+
+const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
+const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
+const single = "bench_lca.SingleScore.time_first_score";
+const multi = "bench_lca.MultiScores.time_scores";
+const carlo = "bench_lca.MonteCarlo.time_iterations";
+const scipySource = "https://github.com/scipy/scipy/blob/v1.18.1/scipy/sparse/linalg/_dsolve/linsolve.py";
+const link = (group: string, bench: string, ...params: string[]) => viewerHref(home, group, bench, params);
+
+// One score: benchmarks/findings.toml, "The solver sets the time for one score".
+const oneScore = link("bw2calc-conda", single, "ecoinvent", "LCA");
+const pipScore = link("bw2calc", single, "ecoinvent", "LCA");
+// 30 products: published results of the latest bw2calc-conda run, in the viewer's MultiScores view.
+const thirty = (variant: string) => link("bw2calc-conda", multi, "ecoinvent", "30", variant);
+// Real ecoinvent: docs/findings.md, the solver table under "On the real ecoinvent 3.12 matrix".
+const realFindings = `${repository}/blob/main/docs/findings.md#umfpacks-speed-depends-on-its-blas-and-its-refinement-step`;
+---
+
+<StaticPage
+  mainClass="story"
+  title="Your solver can make the same LCA five times slower: Brightway benchmarks"
+  description="On the real ecoinvent 3.12 matrix, the solver work behind one Brightway score takes 3.66 s with SciPy's SuperLU, 1.48 s with PyPardiso or 0.66 s with scikit-umfpack from conda-forge."
+  canonical="https://simonvanlierde.com/brightway-benchmarks/stories/solver-choice/"
+  image="https://simonvanlierde.com/brightway-benchmarks/ui/story-solver-choice.png"
+  imageAlt="Three bars for factorizing the real ecoinvent 3.12 matrix: UMFPACK from conda-forge 0.66 seconds, PyPardiso 1.48 seconds, SuperLU 3.66 seconds."
+>
+      <h1>Your solver can make the same LCA five times slower</h1>
+      <p class="lede">Every Brightway score ends by solving one large sparse linear system: one equation per product, with almost every coefficient zero. The solver is the part that does the arithmetic behind each score, and bw2calc picks it from what you have installed. On the real ecoinvent 3.12 cut-off matrix, that arithmetic takes 3.66 s with SciPy's SuperLU, 1.48 s with PyPardiso and 0.66 s with scikit-umfpack from conda-forge. So with nothing extra installed, the solver takes more than five times as long as it needs to.</p>
+
+      <aside class="install" aria-labelledby="install">
+        <h2 id="install">What to install</h2>
+        <p>First check which solver you have: <code>python -c "import bw2calc as bc; print('PyPardiso' if bc.PYPARDISO else 'UMFPACK' if bc.UMFPACK else 'SuperLU')"</code>. If it prints SuperLU, install one of these:</p>
+        <ul>
+          <li><strong>conda:</strong> <code>conda install -c conda-forge scikit-umfpack</code>, and don't install PyPardiso. bw2calc uses PyPardiso whenever it is installed, so it runs UMFPACK only without it.</li>
+          <li><strong>pip or uv:</strong> <code>pip install pypardiso</code> or <code>uv add pypardiso</code>. PyPardiso needs Intel's MKL, which PyPI has for Linux x86_64, 64-bit Windows and, up to MKL 2023.2.2, Intel Macs. scikit-umfpack from PyPI is about the same speed as PyPardiso.</li>
+          <li><strong>Mac with Apple silicon:</strong> PyPardiso won't install, so take scikit-umfpack from conda-forge.</li>
+          <li><strong>bw_timex on Linux x86_64 or 64-bit Windows:</strong> bw_timex requires PyPardiso there, so you get PyPardiso. Removing it breaks bw_timex, so keep it.</li>
+          <li><strong>Many products in one go (<code>MultiLCA</code>):</strong> PyPardiso. If you only need the scores, <code>from bw2calc import FastScoresOnlyMultiLCA</code> with UMFPACK is faster still.</li>
+        </ul>
+      </aside>
+
+      <h2>Real ecoinvent</h2>
+      <p>Factorizing the technosphere matrix (splitting it into two triangular matrices that are quick to solve) is 96 to over 99% of the solver's time for one score. These are the factorization times on the ecoinvent 3.12 cut-off matrix, on one thread.</p>
+      <StoryBars
+        caption="Factorizing real ecoinvent 3.12"
+        href={realFindings}
+        linkText="The numbers in the findings"
+        rows={[
+          { label: "scikit-umfpack from conda-forge (UMFPACK, on OpenBLAS)", seconds: 0.66, tone: "fast" },
+          { label: "PyPardiso (PARDISO, on MKL)", seconds: 1.48, tone: "mid" },
+          { label: "scikit-umfpack from PyPI (UMFPACK, on reference BLAS)", seconds: 1.78, tone: "mid" },
+          { label: "Nothing extra (SciPy's SuperLU)", seconds: 3.66, tone: "base" },
+        ]}
+      />
+
+      <p>The charts below come from a pinned benchmark machine, on one thread, and each links to its benchmark's full history. They use a synthetic database with ecoinvent's size and shape, which is harder on direct solvers than real ecoinvent. So its times run longer, SuperLU's most, but the three solvers in the charts come in the same order.</p>
+
+      <h2>One score</h2>
+      <p>bw2calc's <code>LCA</code> class builds the matrices, factorizes the technosphere, solves it and characterizes the result.</p>
+      <StoryBars
+        caption="Time to the first score"
+        href={oneScore}
+        rows={[
+          { label: "scikit-umfpack from conda-forge (UMFPACK, on OpenBLAS)", seconds: 2.63, tone: "fast" },
+          { label: "PyPardiso (PARDISO, on MKL)", seconds: 10.0, tone: "mid" },
+          { label: "Nothing extra (SciPy's SuperLU)", seconds: 27.7, tone: "base" },
+        ]}
+      />
+      <p>With nothing extra installed, bw2calc uses SciPy's SuperLU, the slowest bar. With PyPardiso installed, bw2calc uses it even when scikit-umfpack is there too. So the fastest bar needs scikit-umfpack and no PyPardiso.</p>
+      <p>Where scikit-umfpack comes from matters too. UMFPACK does most of its work through BLAS, the library of basic matrix routines that NumPy also uses. conda-forge links it to OpenBLAS, a fast BLAS. PyPI has only scikit-umfpack's source, so pip compiles it against whatever BLAS you have. The pip build measured here runs on reference BLAS, the plain textbook version, and is about the same speed as PyPardiso: 9.05 s against 10.0 s here (<a href={pipScore}>the pip build's history</a>), and 1.78 s against 1.48 s on real ecoinvent.</p>
+
+      <h2>Thirty products at once</h2>
+      <p><code>MultiLCA</code> scores 30 products against three impact methods in one call.</p>
+      <StoryBars
+        caption="MultiLCA, 30 products"
+        href={thirty("MultiLCA")}
+        rows={[
+          { label: "PyPardiso (PARDISO, on MKL)", seconds: 10.6, tone: "fast" },
+          { label: "Nothing extra, or scikit-umfpack (SciPy's SuperLU)", seconds: 28.7, tone: "base" },
+        ]}
+      />
+      <p>Here scikit-umfpack makes no difference. Without PyPardiso, <code>MultiLCA</code> passes all 30 demands to SciPy's <code>spsolve</code> at once, as one matrix with 30 columns. <code>spsolve</code> hands the work to UMFPACK only for a single right-hand side, one demand vector (<a href={`${scipySource}#L233`}>SciPy's source</a>). For more, it uses SuperLU. PyPardiso solves all 30 itself and is 2.7 times faster.</p>
+      <p>If you only need the scores, <code>FastScoresOnlyMultiLCA</code> factorizes the matrix once and solves one product at a time, so UMFPACK is back in front: in bw2calc 3.1.0, 3.56 s, against 10.5 s for PyPardiso (<a href={thirty("forward")}>the forward-direction history</a>). It needs PyPardiso or UMFPACK and refuses to run on SuperLU.</p>
+
+      <h2>Monte Carlo, and the class you call</h2>
+      <p>Each Monte Carlo draw has new matrix values, so the solver starts over and its time counts once per draw: ten draws with <code>LCA</code> and PyPardiso take 99.3 s (<a href={link("bw2calc-conda", carlo, "ecoinvent", "10", "LCA")}>the Monte Carlo history</a>).</p>
+      <p>The bw2calc class matters too. <code>JacobiGMRESLCA</code> doesn't factorize: it improves a guess step by step until the result is within a tolerance, so its score is close, not exact. In bw2calc 3.1.0 it gives one score in about 150 ms, with a relative error of 1.4e-9, and ten draws in 0.70 s (<a href={link("bw2calc-conda", carlo, "ecoinvent", "10", "JacobiGMRESLCA")}>its history</a>). <code>IterativeLCA</code> takes 0.95 s for ten draws with UMFPACK. These times are on the synthetic database only.</p>
+      <p>BLAS and MKL run on one thread here, so PyPardiso, which can use several, shows at its slowest. How much faster it gets with more threads isn't measured here.</p>
+
+      <details class="setup">
+        <summary>How this was measured</summary>
+        <ul>
+          <li>A pinned benchmark machine, Linux x86_64, in a container, on an efficiency core. BLAS and OpenMP run on one thread: <code>OPENBLAS_NUM_THREADS=1</code>, <code>MKL_NUM_THREADS=1</code>, <code>OMP_NUM_THREADS=1</code>.</li>
+          <li>Python 3.12 from conda-forge, bw2calc 3.1.0, NumPy 2.5.3, SciPy 1.18.1, PyPardiso 0.4.7 with MKL 2026.1.0, and scikit-umfpack 0.4.2 (SuiteSparse 7.10.1) on OpenBLAS 0.3.34. The pip build is scikit-umfpack 0.4.2 from PyPI. The one-score times are the same in every bw2calc release from 2.0 to 3.1.0.</li>
+          <li>A synthetic database with 26,533 products, like ecoinvent 3.12 cut-off.</li>
+          <li>Real ecoinvent: the ecoinvent 3.12 cut-off technosphere matrix, 26,533 rows and 338,195 nonzeros, on an efficiency core, one thread. <a href={`${repository}/blob/main/scripts/solver_factorize.py`}><code>scripts/solver_factorize.py</code></a> times one factorization of each solver (median of 3) through bw2calc 3.1.0's <code>spsolve</code> and <code>lu_solver</code>, with SciPy 1.18.1, PyPardiso 0.4.7 and scikit-umfpack 0.4.2 from PyPI and from conda-forge. A performance core gives 1.7 to 2 times shorter times in the same order.</li>
+          <li>One score: <code>LCA(demand=&#123;0: 1&#125;, data_objs=[inventory, method])</code>, then <code>lci()</code> and <code>lcia()</code>. Thirty products: <code>MultiLCA(demands=..., method_config=..., data_objs=...)</code>, then <code>lci()</code> and <code>lcia()</code>, or <code>FastScoresOnlyMultiLCA(..., direction="forward")</code> and <code>next(lca)</code>. Monte Carlo: <code>LCA(..., use_distributions=True, seed_override=1)</code>, then ten <code>next(lca)</code> calls.</li>
+          <li>Each timed call has a fresh setup that has already solved once, so imports stay out of the time. Each time is asv's median of 4 to 10 calls. Every score is checked against a reference outside the timed call.</li>
+          <li>Source: <a href={`${repository}/blob/main/benchmarks/bench_bw2calc/bench_lca.py`}>the benchmarks</a> and <a href={scipySource}>SciPy's <code>spsolve</code></a>.</li>
+        </ul>
+      </details>
+
+      <p><a href={home}>Setup</a> has install sets that passed their checks on each platform. <a href={`${repository}/blob/main/docs/faster.md`}>Make your Brightway faster</a> lists other install choices and calls that change the time, each with its measured gain. The <a href={`${repository}/blob/main/docs/method.md`}>method</a> describes the database and how noisy the timings are.</p>
+    </StaticPage>
+
+
+<style>
+  :global(.story) {
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: 40px 24px 64px;
+  }
+  :global(.story) h1 {
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    letter-spacing: -0.03em;
+  }
+  :global(.story) h2 {
+    font-size: 1.25rem;
+    margin: 32px 0 10px;
+  }
+  :global(.story) p {
+    margin: 12px 0;
+    max-width: 70ch;
+  }
+  :global(.story) .lede {
+    color: var(--ink-2);
+  }
+  .install,
+  .setup {
+    border: 1px solid var(--line);
+    padding: 4px 20px;
+    margin: 24px 0;
+  }
+  .install {
+    background: var(--accent-wash);
+  }
+  .install h2 {
+    margin-top: 16px;
+  }
+  .install li,
+  .setup li {
+    margin: 10px 0;
+    max-width: 70ch;
+  }
+  .install code,
+  .setup code {
+    overflow-wrap: anywhere;
+  }
+  .setup summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 12px 0;
+  }
+</style>

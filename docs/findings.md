@@ -77,6 +77,25 @@ comes from [`scripts/solver_factorize.py`](../scripts/solver_factorize.py) throu
 `lu_solver`. The second times UMFPACK's direct solve of Aᵀx = b. MKL takes no refinement step.
 With refinement off, conda-forge's UMFPACK is about 30% slower per solve than the PyPI build.
 
+Every direct solver on the same matrix, through the same script, with bw2calc 3.1.0, SciPy
+1.18.1, scikit-umfpack 0.4.2 from PyPI, PyPardiso 0.4.7 and pyklu 0.2.0, on one thread and
+the same efficiency cores. The two conda-forge rows repeat the table above.
+
+| Solver | Factorize |
+| --- | --- |
+| SuperLU (SciPy) | 3.66 s |
+| UMFPACK, PyPI build on reference BLAS | 1.78 s |
+| PyPardiso | 1.48 s |
+| KLU through pyklu, which bw2calc can't pick | 1.31 s |
+| UMFPACK, conda-forge's build on OpenBLAS | 0.66 s |
+| UMFPACK, conda-forge's build on MKL's BLAS | 0.63 s |
+
+The matrix has 26,533 rows and 338,195 nonzeros. A solve on the factors takes 5 to 24 ms, so
+factorizing is 96 to over 99% of the solver's time. SuperLU's whole `spsolve`, the call
+`LCA.lci()` makes, takes 3.66 s. So SuperLU takes about 5.5 times as long as conda-forge's
+UMFPACK, against about 10 times on the synthetic database. On a performance core, each time is
+1.7 to 2 times shorter, in the same order (conda-forge's builds weren't run there).
+
 Graph: [bw2calc-conda, one score](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc-conda&bench=bench_lca.SingleScore.time_first_score).
 Rerun: [`bench_lca.NewDemandRefinement`](../benchmarks/bench_bw2calc/bench_lca.py).
 

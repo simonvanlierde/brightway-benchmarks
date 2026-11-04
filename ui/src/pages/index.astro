@@ -23,6 +23,7 @@ const build = {
 };
 const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
 const aboutHref = `${home}about/`;
+const storyHref = `${home}stories/solver-choice/`;
 ---
 
 <html lang="en">
@@ -34,7 +35,7 @@ const aboutHref = `${home}about/`;
     />
   </head>
   <body>
-    <App client:only="svelte" base={base} build={build} about={aboutHref} />
+    <App client:only="svelte" base={base} build={build} about={aboutHref} story={storyHref} />
     <noscript>
       <main class="view">
         <h1>Brightway benchmarks</h1>

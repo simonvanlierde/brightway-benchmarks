@@ -23,6 +23,7 @@ let {
   view,
   go,
   follow,
+  story,
 }: {
   guidance: Guidance | undefined;
   ready: boolean;
@@ -30,6 +31,7 @@ let {
   view: View;
   go: (view: View) => void;
   follow: (event: MouseEvent, view: View) => void;
+  story?: string;
 } = $props();
 const chosen = $derived(guidance?.checks.find((c) => c.id === view.check));
 const platform = $derived(
@@ -171,6 +173,7 @@ $effect(() => {
       <section class="solver-evidence" aria-labelledby="solver-heading"><h2 id="solver-heading">{comparison.title}</h2><p>{comparison.context}</p>
         {#if platform && comparison.platform && comparison.platform !== platform.id}<p class="measurement-note">No {platform.label} machine was timed, so these values may not hold there.</p>{/if}
         <table><caption>Recorded measurements; follow a solver to inspect its benchmark.</caption><thead><tr><th scope="col">Solver</th><th scope="col" class="solver-bar-column">Relative time</th><th scope="col" class="num">Measured value</th></tr></thead><tbody>{#each comparison.rows as row (row.label)}<tr><th scope="row"><a href={row.href}>{row.label}</a></th><td class="solver-bar-column"><div class="solver-track" aria-hidden="true"><span style:width={`${largest > 0 ? (row.value / largest) * 100 : 0}%`}></span></div></td><td class="num">{format(row.value, row.unit)}</td></tr>{/each}</tbody></table>
+        {#if story}<p class="story-link">Why the solver work for one score on real ecoinvent takes 0.66 s on one install and 3.66 s on another, and when PyPardiso wins instead: <a href={story}>the solver story</a>.</p>{/if}
         {#if comparison.note}<p class="measurement-note">{comparison.note}</p>{/if}
       </section>
     {:else if guidance}

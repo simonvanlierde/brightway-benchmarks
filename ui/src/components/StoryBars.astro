@@ -1,0 +1,97 @@
+---
+// A static bar chart: one row per measurement, with one link to the chart's view in the viewer.
+interface Row {
+  label: string;
+  seconds: number;
+  tone: "fast" | "mid" | "base";
+}
+interface Props {
+  rows: Row[];
+  caption: string;
+  href: string;
+  linkText?: string;
+}
+const { rows, caption, href, linkText = "Open in the viewer" } = Astro.props;
+const longest = Math.max(...rows.map((row) => row.seconds));
+const time = (s: number) => `${s >= 10 ? s.toPrecision(3) : s.toFixed(2)} s`;
+---
+
+<figure class="bars">
+  <figcaption>{caption}</figcaption>
+  <a class="open" href={href}>{linkText}<span class="sr">: {caption}</span></a>
+  <ul>
+    {
+      rows.map((row) => (
+        <li>
+            <span class="row-head">
+              <span>{row.label}</span>
+              <strong>{time(row.seconds)}</strong>
+            </span>
+            <svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+              <rect class="track" width="100" height="10" />
+              <rect class={`fill ${row.tone}`} width={(row.seconds / longest) * 100} height="10" />
+            </svg>
+        </li>
+      ))
+    }
+  </ul>
+</figure>
+
+<style>
+  .bars {
+    margin: 20px 0;
+  }
+  figcaption {
+    color: var(--ink-2);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+  }
+  .open {
+    display: inline-block;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+  }
+  .row-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 3px;
+  }
+  .row-head strong {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  svg {
+    display: block;
+    width: 100%;
+    height: 14px;
+  }
+  .track {
+    fill: var(--grid);
+  }
+  .fast {
+    fill: var(--better);
+  }
+  .mid {
+    fill: var(--s1);
+  }
+  .base {
+    fill: var(--s2);
+  }
+  /* Dark: --s2 is brighter than the fast bar. This one stays dimmer, 3.3:1 on the track. */
+  :global(:root[data-theme="dark"]) .base {
+    fill: #7488b3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme="light"])) .base {
+      fill: #7488b3;
+    }
+  }
+</style>

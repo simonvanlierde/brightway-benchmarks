@@ -3,6 +3,7 @@
 // - ui/public/favicon.ico (Standard 32x32 multi-platform favicon)
 // - ui/public/apple-touch-icon.png (180x180 for iOS/mobile bookmarks)
 // - ui/public/og.png (1200x630 Open Graph card for social sharing)
+// - ui/public/story-solver-choice.png (1200x630 card for the solver story)
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -474,5 +475,45 @@ await ogPage.setContent(ogHtml);
 const ogBuf = await ogPage.screenshot({ type: "png" });
 writeFileSync(join(publicDir, "og.png"), ogBuf);
 
+// 6. Render story-solver-choice.png (1200x630): the solver story's three factorization times on real ecoinvent.
+const storyBars = [
+  ["UMFPACK, conda-forge on OpenBLAS", "0.66 s", 0.66, "#74cfc3"],
+  ["PyPardiso", "1.48 s", 1.48, "#91b4ff"],
+  ["SuperLU, SciPy's default", "3.66 s", 3.66, "#526d91"],
+]
+  .map(
+    ([
+      name,
+      value,
+      seconds,
+      color,
+    ]) => `<div class="row"><div class="info"><span>${name}</span><span class="mono">${value}</span></div>
+    <div class="track"><div style="width:${(seconds / 3.66) * 100}%;background:${color}"></div></div></div>`,
+  )
+  .join("");
+const storyHtml = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width: 1200px; height: 630px; background: #141d32; color: #f8f9fc; padding: 56px 72px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; }
+  .kicker { font-size: 20px; color: #aab9d8; }
+  h1 { font-size: 54px; line-height: 1.15; letter-spacing: -0.03em; margin: 16px 0 40px; max-width: 980px; }
+  .row { margin-bottom: 22px; }
+  .info { display: flex; justify-content: space-between; font-size: 24px; margin-bottom: 8px; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #c7d2ed; }
+  .track { height: 22px; background: #121829; border: 1px solid #2a3755; }
+  .track div { height: 100%; }
+  .foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 18px; color: #aab9d8; }
+</style></head><body>
+  <div class="kicker">Brightway benchmarks</div>
+  <h1>Your solver can make the same LCA five times slower</h1>
+  ${storyBars}
+  <div class="foot"><span>Factorizing real ecoinvent 3.12 cut-off, one thread</span><span class="mono">simonvanlierde.com/brightway-benchmarks</span></div>
+</body></html>`;
+const storyPage = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
+await storyPage.emulateMedia({ colorScheme: "dark" });
+await storyPage.setContent(storyHtml);
+writeFileSync(join(publicDir, "story-solver-choice.png"), await storyPage.screenshot({ type: "png" }));
+
 await browser.close();
-console.log("Assets generated: favicon.svg, favicon.ico, apple-touch-icon.png, og.png");
+console.log("Assets generated: favicon.svg, favicon.ico, apple-touch-icon.png, og.png, story-solver-choice.png");

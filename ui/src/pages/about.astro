@@ -1,41 +1,24 @@
 ---
-import "../styles.css";
-import Head from "./_Head.astro";
+import StaticPage from "../layouts/StaticPage.astro";
 
 const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
 const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
 ---
 
-<html lang="en">
-  <head>
-    <Head
-      title="About and privacy — Brightway benchmarks"
-      description="How the Brightway benchmark evidence is produced, what compatibility checks cover, and what this static viewer stores in your browser."
-      canonical="https://simonvanlierde.com/brightway-benchmarks/about/"
-    />
-  </head>
-  <body>
-    <a class="skip" href="#main">Skip to the content</a>
-    <header class="top">
-      <div class="top-inner">
-        <a class="about-brand" href={home}>brightway-benchmarks</a>
-        <nav class="primary-nav" aria-label="Main">
-          <a href={home}>Setup</a>
-          <a href={`${home}?page=explorer`}>Benchmarks</a>
-        </nav>
-        <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme">
-          <svg data-theme-icon="sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg>
-          <svg data-theme-icon="moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/></svg>
-        </button>
-      </div>
-    </header>
-    <main class="about" id="main" tabindex="-1">
+<StaticPage
+  mainClass="about"
+  title="About and privacy — Brightway benchmarks"
+  description="How the Brightway benchmark evidence is produced, what compatibility checks cover, and what this static viewer stores in your browser."
+  canonical="https://simonvanlierde.com/brightway-benchmarks/about/"
+>
       <h1>About these benchmarks</h1>
       <p class="lede">Performance histories and tested installation sets for the Brightway life cycle assessment stack.</p>
 
       <h2>What the evidence covers</h2>
       <p>The benchmark cases cover calculations, database writes, graph traversal and time-explicit LCA. Each calculation checks its result against an independent reference. The histories keep releases, environments and machines separate so the comparison stays inspectable.</p>
       <p>Most cases use seeded synthetic databases shaped like ecoinvent. USEEIO 1.1, a public-domain US EPA database, is also available. The <a href={`${repository}/blob/main/docs/method.md`}>method</a> describes the inputs, reference checks and measurement noise; the <a href={`${repository}/blob/main/docs/findings.md`}>findings</a> explain the measured changes and their limits.</p>
+
+      <p>One story reads the solver numbers in plain terms: <a href={`${home}stories/solver-choice/`}>your solver can make the same LCA five times slower</a>.</p>
 
       <h2>What a passing setup means</h2>
       <p>Smoke checks install a package set and run small-database calculations. Upstream-suite checks run the packages' own tests. Dependency floors, pre-releases and conda-forge are separate diagnostic checks. A pass in one check does not establish that every workflow, solver or platform works.</p>
@@ -47,37 +30,28 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
       <h2 id="privacy">Privacy</h2>
       <p>The viewer has no analytics or advertising scripts. It saves your package-manager and theme preferences in this browser's local storage; clear this site's browser storage to remove them. Benchmark selections are kept in the page URL so you can share a view.</p>
       <p>The site is hosted on GitHub Pages. GitHub logs and stores visitors' IP addresses for security purposes, as explained in its <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages#data-collection">Pages documentation</a> and <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">privacy statement</a>. Following links to GitHub, Zenodo or package documentation opens those services under their own policies.</p>
-    </main>
-  </body>
-</html>
+    </StaticPage>
+
 
 <style>
-  .top-inner > .theme-toggle {
-    margin-left: auto;
-  }
-  .about-brand {
-    color: var(--ink);
-    font-weight: 650;
-    text-decoration: none;
-  }
-  .about {
+  :global(.about) {
     max-width: 52rem;
     margin: 0 auto;
     padding: 40px 24px 64px;
   }
-  .about h1 {
+  :global(.about) h1 {
     font-size: clamp(1.8rem, 4vw, 2.4rem);
     letter-spacing: -0.03em;
   }
-  .about h2 {
+  :global(.about) h2 {
     font-size: 1.25rem;
     margin: 32px 0 10px;
   }
-  .about p {
+  :global(.about) p {
     margin: 12px 0;
     max-width: 70ch;
   }
-  .about .lede {
+  :global(.about) .lede {
     color: var(--ink-2);
   }
 </style>

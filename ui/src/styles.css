@@ -1480,11 +1480,6 @@ table.check-grid td a[aria-current="true"] {
 :root[data-theme="dark"] [data-theme-icon="moon"] {
   display: none;
 }
-.view .brightway-about {
-  color: var(--ink-2);
-  font-size: 0.875rem;
-  margin-top: 6px;
-}
 .setup-controls {
   display: grid;
   grid-template-columns: 1.2fr 1fr 1.2fr;
@@ -1583,20 +1578,5 @@ table.check-grid td a[aria-current="true"] {
   .setup-controls {
     grid-template-columns: 1fr;
     gap: 8px;
-  }
-}
-
-.home-brand-lockup {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.home-emblem {
-  display: flex;
-  flex: none;
-}
-@media (max-width: 39rem) {
-  .home-emblem {
-    display: none;
   }
 }

@@ -414,9 +414,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/63/34/ba1c580383c9ead
 
 [[packages]]
 name = "pandas"
-version = "3.1.0"
-sdist = { url = "https://files.pythonhosted.org/packages/55/b1/a10c0d1a7e3ce44eb42635771004aa503e3b9ddde0bd39c524dda65f7eff/pandas-3.1.0.tar.gz", upload-time = 2026-10-22T11:57:03Z, size = 5933421, hashes = { sha256 = "ecb9b2d8a817b1e1ba1fdb90c0abe9eab31b4fdf2562b7a56b86ac66ace17e49" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/10/72/06aefff8fe5efc5e1ca8bfb2695b648a435358f6dc224d4e40159314181a/pandas-3.1.0-cp312-cp312-win_amd64.whl", upload-time = 2026-10-22T11:55:23Z, size = 10748836, hashes = { sha256 = "b8c75dbb27c7d170b25c13dd35515da4bb92d40fe8bb3bd2c69a95de2218889b" } }]
+version = "3.1.1"
+sdist = { url = "https://files.pythonhosted.org/packages/17/ca/24c6bc92aca3d366146358e47f1d374c0e1a50763ef226fc71eff20a63fb/pandas-3.1.1.tar.gz", upload-time = 2026-11-04T15:08:01Z, size = 5936163, hashes = { sha256 = "05fed3e3b7c99b226f160e29d7d6cb7ef39638c758cbfe42b3f24ba34f04b859" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/c8/35/54c22df9e6bdb0fa001da2b8855f997addafd9575f14f25c166a8ef96b6e/pandas-3.1.1-cp312-cp312-win_amd64.whl", upload-time = 2026-11-04T15:06:09Z, size = 10751076, hashes = { sha256 = "eef35cb3f07dbc8e10e298b8a55ee4aa04d6511f27d5277f13c3df45d3bbef5c" } }]
 
 [[packages]]
 name = "parso"
@@ -444,9 +444,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/b7/d5/01ea71591a29e88
 
 [[packages]]
 name = "platformdirs"
-version = "4.14.4"
-sdist = { url = "https://files.pythonhosted.org/packages/a1/f1/602599e5879fce55f44b8021d28bd3817d87198a6be63e5c9d7e31891f0d/platformdirs-4.14.4.tar.gz", upload-time = 2026-11-04T07:38:46Z, size = 71235, hashes = { sha256 = "edb4a4aea570d69eb83e6b0973b588bbf868fb0dde2894106d6667739f017751" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/01/7c/562ddff1940562f7701a7e8b0a90a900be606af334cc5f69543293e2293a/platformdirs-4.14.4-py3-none-any.whl", upload-time = 2026-11-04T07:38:44Z, size = 35357, hashes = { sha256 = "89c1bfa30434b2dcc08655bcfb1789e1a6f97602c11ff990615d09a4b823d6be" } }]
+version = "4.14.5"
+sdist = { url = "https://files.pythonhosted.org/packages/d7/9a/8475be631fb33ca1466915e70fd594c42a4e84b512db650eaa14f90fe75d/platformdirs-4.14.5.tar.gz", upload-time = 2026-11-04T16:54:50Z, size = 71464, hashes = { sha256 = "32e9921db7385aa8169bee4fe9501923e5715ba9fb7ea3b9c69b0d8e0639f7a1" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/7c/ae/ecbbbfd0e4343a6a521d49b3c8656fb4643dee2a4f6eaf941cf3280391a8/platformdirs-4.14.5-py3-none-any.whl", upload-time = 2026-11-04T16:54:48Z, size = 35402, hashes = { sha256 = "8e778c6fa421516f4d3369449f8df3b0e1b72c0e0005fe88e3ec772d0a14e750" } }]
 
 [[packages]]
 name = "pluggy"
@@ -492,15 +492,15 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/13/4c/2c1963e4154da53
 
 [[packages]]
 name = "pydantic"
-version = "2.14.2"
-sdist = { url = "https://files.pythonhosted.org/packages/9f/d5/b4867fa7c7f04c34997d7d8aad744f64d210bb99d67cf18bf3fb1eea1aed/pydantic-2.14.2.tar.gz", upload-time = 2026-10-29T16:37:12Z, size = 911596, hashes = { sha256 = "fb7b2db6cefe8414dd612edeede49c4c433acb0432b0f92b95024e45f66c505d" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/97/01/c71a71258b58659c72504e5fd65b451f6e36e34dc931d0b237ded213c814/pydantic-2.14.2-py3-none-any.whl", upload-time = 2026-10-29T16:37:10Z, size = 490403, hashes = { sha256 = "7efbf7507b937931cd32a5755acb00ea1cf5ccb1d4e8067a5850d5069e382118" } }]
+version = "2.14.3"
+sdist = { url = "https://files.pythonhosted.org/packages/b4/fc/1203d011145c98ddce3cd2f505bb54375ef8d43223053df6bfcf3c746f46/pydantic-2.14.3.tar.gz", upload-time = 2026-11-05T09:17:04Z, size = 925636, hashes = { sha256 = "1054f237f4d4733e5a30e1e2333bd33a2004ab9ab1510bd053a9a31bb48e232d" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/72/b8/b864503789ef5c58597d2a7b4adbee62c26440ab1e682581fc6838df8947/pydantic-2.14.3-py3-none-any.whl", upload-time = 2026-11-05T09:17:02Z, size = 494071, hashes = { sha256 = "3f7b347782ab7e4cf4c798496ae3a82787d9f21ec12676a9c564355eeef8daa8" } }]
 
 [[packages]]
 name = "pydantic-core"
-version = "2.50.2"
-sdist = { url = "https://files.pythonhosted.org/packages/af/8e/23ec1021834e35041fbb2f10946141e6acdfd39379c45cc4d65a4e8a1d98/pydantic_core-2.50.2.tar.gz", upload-time = 2026-10-29T16:34:57Z, size = 518711, hashes = { sha256 = "1b0e8dc3932cf4e9ed5727570325cacc716b9409ffc794a221c0ccc72e8eb775" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/b4/fb/679144362d7e5162519d9f6631ec982521417de3196351c6c56485f5b29f/pydantic_core-2.50.2-cp312-cp312-win_amd64.whl", upload-time = 2026-10-29T16:32:29Z, size = 2252238, hashes = { sha256 = "b381574614245f18fdb2d6d1aa8f149e225869c47b5ee7f81812de8977817314" } }]
+version = "2.50.4"
+sdist = { url = "https://files.pythonhosted.org/packages/9c/0f/34f9ce4ba701dd0b815033ef94d99b56f66200e578ee6052aa3ac26f064e/pydantic_core-2.50.4.tar.gz", upload-time = 2026-11-05T09:15:26Z, size = 522249, hashes = { sha256 = "aead3b74b68396bf0feab5d57e050b730ded7df55853c1e048a87e00aaf033c6" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/82/88/d438a8fcf3738e9ff2670f724047ca3893ec899bcd5cdfc077a2aab133c6/pydantic_core-2.50.4-cp312-cp312-win_amd64.whl", upload-time = 2026-11-05T09:12:29Z, size = 2264064, hashes = { sha256 = "ea2f61b0bc12f3592288503961b764579dea0658852d96a0b3d823614d808821" } }]
 
 [[packages]]
 name = "pydantic-settings"
@@ -688,9 +688,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/b9/4d/4de8896d9edcfb4
 
 [[packages]]
 name = "threadpoolctl"
-version = "3.7.0"
-sdist = { url = "https://files.pythonhosted.org/packages/00/dc/6c58154c1c65f758ea979e7139cb76993a9cfc662d14e9be3c4a667cfb77/threadpoolctl-3.7.0.tar.gz", upload-time = 2026-09-15T15:46:20Z, size = 31961, hashes = { sha256 = "61348cfb77d53b9242e0017029244b559b810c142ced65b4e21eeca1843959a7" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/43/3f/f88a53f60a472b46f4023f56d204dd7de33d34c5d2acbfa0d70a674e639e/threadpoolctl-3.7.0-py3-none-any.whl", upload-time = 2026-09-15T15:46:19Z, size = 26362, hashes = { sha256 = "cd8b60b5641b45c67bbf73c64c843235fc2d8a480c87389f52f5dbee893b86be" } }]
+version = "3.8.0"
+sdist = { url = "https://files.pythonhosted.org/packages/56/97/b4748951a683e369513691c8eea33d100298d556308dcb0ab66b132a67f0/threadpoolctl-3.8.0.tar.gz", upload-time = 2026-11-05T11:08:51Z, size = 39424, hashes = { sha256 = "01080674ad7ac6182429c918a79de92da789bb448acc02fc0b620b1abd6b6137" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/54/1b/831f2de4840a25db1dd7b1afea433ccafe6bb10aca07e13264f2079462d0/threadpoolctl-3.8.0-py3-none-any.whl", upload-time = 2026-11-05T11:08:49Z, size = 32091, hashes = { sha256 = "f1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da" } }]
 
 [[packages]]
 name = "tqdm"
@@ -712,9 +712,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/49/d3/b8441a820a491dd
 
 [[packages]]
 name = "typing-inspection"
-version = "0.4.4"
-sdist = { url = "https://files.pythonhosted.org/packages/a3/26/b09b8010994eccc3c09092e6b34058f36a460eea2d4c3e8b910c695975a0/typing_inspection-0.4.4.tar.gz", upload-time = 2026-08-12T12:37:25Z, size = 76928, hashes = { sha256 = "547274fa6b0a561ccf549cc9524b999a578e737d015d8709d021f9d0d13bea47" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/67/81/4add07e5172b7ac40d8ed5ff580409a7801a4fe26d529bdd915401dabfbe/typing_inspection-0.4.4-py3-none-any.whl", upload-time = 2026-08-12T12:37:24Z, size = 14750, hashes = { sha256 = "65b8397ba37ccbce054456aaccddfc91e6e3083c92824df348d96ca832f3f147" } }]
+version = "0.4.5"
+sdist = { url = "https://files.pythonhosted.org/packages/ff/50/0195198eb1d75bab716bb0a813abea4cc394bfa17a92a189f021a34859af/typing_inspection-0.4.5.tar.gz", upload-time = 2026-11-04T14:13:23Z, size = 81194, hashes = { sha256 = "7f16c411e7930dc79596d42ab44672a3fe5f60eb34b781a1647e7872363120c7" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/de/0c/ea2544850a7c135e15033a5c7a8e7211136184b7ae63e2239d557c2b3019/typing_inspection-0.4.5-py3-none-any.whl", upload-time = 2026-11-04T14:13:22Z, size = 14874, hashes = { sha256 = "bc210535442b39e1bf2805e0c7a17dfd6a4ace760c84c7f7d16245d23a6b1c39" } }]
 
 [[packages]]
 name = "tzdata"

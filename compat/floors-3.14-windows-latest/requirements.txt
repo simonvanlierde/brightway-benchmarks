@@ -132,7 +132,7 @@ send2trash==2.1.0
 setuptools==84.2.1
 six==1.17.0
 snowflake-id==1.0.2
-soupsieve==4.0
+soupsieve==4.0.1
 sparqlwrapper==1.8.2
 stats-arrays==4.0
 structlog==22.2.0

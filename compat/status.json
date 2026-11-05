@@ -1,6 +1,6 @@
 {
- "date": "2026-11-04",
- "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
+ "date": "2026-11-05",
+ "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
  "cells": [
   {
    "column": "latest",
@@ -8,9 +8,9 @@
    "os": "macos-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/latest-3.12-macos-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/latest-3.12-macos-latest/2026-11-05",
     "latest": "compat/latest-3.12-macos-latest",
     "files": [
      "requirements.txt",
@@ -33,9 +33,9 @@
    "os": "ubuntu-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/latest-3.12-ubuntu-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/latest-3.12-ubuntu-latest/2026-11-05",
     "latest": "compat/latest-3.12-ubuntu-latest",
     "files": [
      "requirements.txt",
@@ -58,9 +58,9 @@
    "os": "windows-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/latest-3.12-windows-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/latest-3.12-windows-latest/2026-11-05",
     "latest": "compat/latest-3.12-windows-latest",
     "files": [
      "requirements.txt",
@@ -83,9 +83,9 @@
    "os": "macos-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/latest-3.13-macos-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/latest-3.13-macos-latest/2026-11-05",
     "latest": "compat/latest-3.13-macos-latest",
     "files": [
      "requirements.txt",
@@ -108,9 +108,9 @@
    "os": "ubuntu-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/latest-3.13-ubuntu-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/latest-3.13-ubuntu-latest/2026-11-05",
     "latest": "compat/latest-3.13-ubuntu-latest",
     "files": [
      "requirements.txt",
@@ -133,9 +133,9 @@
    "os": "windows-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/latest-3.13-windows-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/latest-3.13-windows-latest/2026-11-05",
     "latest": "compat/latest-3.13-windows-latest",
     "files": [
      "requirements.txt",
@@ -158,9 +158,9 @@
    "os": "macos-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/latest-3.14-macos-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/latest-3.14-macos-latest/2026-11-05",
     "latest": "compat/latest-3.14-macos-latest",
     "files": [
      "requirements.txt",
@@ -183,9 +183,9 @@
    "os": "ubuntu-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/latest-3.14-ubuntu-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/latest-3.14-ubuntu-latest/2026-11-05",
     "latest": "compat/latest-3.14-ubuntu-latest",
     "files": [
      "requirements.txt",
@@ -208,9 +208,9 @@
    "os": "windows-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/latest-3.14-windows-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/latest-3.14-windows-latest/2026-11-05",
     "latest": "compat/latest-3.14-windows-latest",
     "files": [
      "requirements.txt",
@@ -233,9 +233,9 @@
    "os": "macos-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/floors-3.12-macos-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/floors-3.12-macos-latest/2026-11-05",
     "latest": "compat/floors-3.12-macos-latest",
     "files": [
      "requirements.txt",
@@ -258,9 +258,9 @@
    "os": "ubuntu-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/floors-3.12-ubuntu-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/floors-3.12-ubuntu-latest/2026-11-05",
     "latest": "compat/floors-3.12-ubuntu-latest",
     "files": [
      "requirements.txt",
@@ -283,9 +283,9 @@
    "os": "windows-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/floors-3.12-windows-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/floors-3.12-windows-latest/2026-11-05",
     "latest": "compat/floors-3.12-windows-latest",
     "files": [
      "requirements.txt",
@@ -308,9 +308,9 @@
    "os": "macos-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/floors-3.13-macos-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/floors-3.13-macos-latest/2026-11-05",
     "latest": "compat/floors-3.13-macos-latest",
     "files": [
      "requirements.txt",
@@ -333,9 +333,9 @@
    "os": "ubuntu-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/floors-3.13-ubuntu-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/floors-3.13-ubuntu-latest/2026-11-05",
     "latest": "compat/floors-3.13-ubuntu-latest",
     "files": [
      "requirements.txt",
@@ -358,9 +358,9 @@
    "os": "windows-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/floors-3.13-windows-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/floors-3.13-windows-latest/2026-11-05",
     "latest": "compat/floors-3.13-windows-latest",
     "files": [
      "requirements.txt",
@@ -383,9 +383,9 @@
    "os": "macos-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/floors-3.14-macos-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/floors-3.14-macos-latest/2026-11-05",
     "latest": "compat/floors-3.14-macos-latest",
     "files": [
      "requirements.txt",
@@ -408,9 +408,9 @@
    "os": "ubuntu-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/floors-3.14-ubuntu-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/floors-3.14-ubuntu-latest/2026-11-05",
     "latest": "compat/floors-3.14-ubuntu-latest",
     "files": [
      "requirements.txt",
@@ -433,9 +433,9 @@
    "os": "windows-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/floors-3.14-windows-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/floors-3.14-windows-latest/2026-11-05",
     "latest": "compat/floors-3.14-windows-latest",
     "files": [
      "requirements.txt",
@@ -458,9 +458,9 @@
    "os": "macos-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/pre-3.12-macos-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/pre-3.12-macos-latest/2026-11-05",
     "latest": "compat/pre-3.12-macos-latest",
     "files": [
      "requirements.txt",
@@ -483,9 +483,9 @@
    "os": "ubuntu-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/pre-3.12-ubuntu-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/pre-3.12-ubuntu-latest/2026-11-05",
     "latest": "compat/pre-3.12-ubuntu-latest",
     "files": [
      "requirements.txt",
@@ -508,9 +508,9 @@
    "os": "windows-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/pre-3.12-windows-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/pre-3.12-windows-latest/2026-11-05",
     "latest": "compat/pre-3.12-windows-latest",
     "files": [
      "requirements.txt",
@@ -533,9 +533,9 @@
    "os": "macos-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/pre-3.13-macos-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/pre-3.13-macos-latest/2026-11-05",
     "latest": "compat/pre-3.13-macos-latest",
     "files": [
      "requirements.txt",
@@ -558,9 +558,9 @@
    "os": "ubuntu-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/pre-3.13-ubuntu-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/pre-3.13-ubuntu-latest/2026-11-05",
     "latest": "compat/pre-3.13-ubuntu-latest",
     "files": [
      "requirements.txt",
@@ -583,9 +583,9 @@
    "os": "windows-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/pre-3.13-windows-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/pre-3.13-windows-latest/2026-11-05",
     "latest": "compat/pre-3.13-windows-latest",
     "files": [
      "requirements.txt",
@@ -608,9 +608,9 @@
    "os": "macos-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/pre-3.14-macos-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/pre-3.14-macos-latest/2026-11-05",
     "latest": "compat/pre-3.14-macos-latest",
     "files": [
      "requirements.txt",
@@ -633,9 +633,9 @@
    "os": "ubuntu-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/pre-3.14-ubuntu-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/pre-3.14-ubuntu-latest/2026-11-05",
     "latest": "compat/pre-3.14-ubuntu-latest",
     "files": [
      "requirements.txt",
@@ -658,9 +658,9 @@
    "os": "windows-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/pre-3.14-windows-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/pre-3.14-windows-latest/2026-11-05",
     "latest": "compat/pre-3.14-windows-latest",
     "files": [
      "requirements.txt",
@@ -683,9 +683,9 @@
    "os": "ubuntu-latest",
    "today": "success",
    "green": {
-    "date": "2026-11-04",
-    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/41821621730",
-    "dir": "compat/conda-forge-3.12-ubuntu-latest/2026-11-04",
+    "date": "2026-11-05",
+    "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42019195950",
+    "dir": "compat/conda-forge-3.12-ubuntu-latest/2026-11-05",
     "latest": "compat/conda-forge-3.12-ubuntu-latest",
     "files": [
      "requirements.txt",
@@ -733,7 +733,7 @@
    "column": "suites",
    "python": "3.12",
    "os": "windows-latest",
-   "today": "failure",
+   "today": "cancelled",
    "green": null
   },
   {

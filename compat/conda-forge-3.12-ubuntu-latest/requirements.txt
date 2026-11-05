@@ -59,7 +59,7 @@ peewee==4.5.3
 pillow==13.0.0
 pint==0.26.2
 pip==26.2.2
-platformdirs==4.14.3
+platformdirs==4.14.5
 pluggy==1.7.0
 psutil==7.2.2
 py7zr==1.1.4
@@ -104,7 +104,7 @@ threadpoolctl==3.7.0
 tomli==2.5.0
 tqdm==4.70.1
 typing-extensions==4.16.0
-typing-inspection==0.4.4
+typing-inspection==0.4.5
 tzdata==2026.6
 unicodedata2==18.0.0
 urllib3==2.8.0

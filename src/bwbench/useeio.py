@@ -80,7 +80,8 @@ def remap(
     production exchanges (``flip`` false) say which product belongs to which process: product
     ``i`` becomes the one of the ``i``-th process by id, so the production amounts sit on the
     diagonal. Factors for flows no process emits are dropped, as bw2calc drops them.
-    Returns the system's arrays and the per-method flow ids and factors.
+    Returns the system's arrays (``ids``: the process id of each product index) and the
+    per-method flow ids and factors.
     """
     produced = ~tech_flip
     by_product = np.argsort(tech_indices["row"][produced])
@@ -110,6 +111,7 @@ def remap(
         "bio_rows": flow_index(bio_indices["row"]).astype(np.int64),
         "bio_cols": np.searchsorted(processes, bio_indices["col"]).astype(np.int64),
         "bio_data": bio_data.astype(np.float64),
+        "ids": processes.astype(np.int64),
     }
     kept = [np.isin(ids, flows) for ids, _ in cfs]
     cf_flows = [flow_index(ids[k]).astype(np.int64) for (ids, _), k in zip(cfs, kept, strict=True)]
@@ -185,4 +187,5 @@ def archive_system(name: str, p: Profile, seed: int, archive: Path, methods: tup
         cf_flows,
         cf_data,
         scale,
+        ids=arrays["ids"],
     )

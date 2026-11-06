@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any
 
 from bwbench import first_time
 from bwbench.bench import Bench, Prepared, benches
-from bwbench.synth import GENERATOR_VERSION, data_root, profile_version
+from bwbench.synth import GENERATOR_VERSION, profile_version
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -135,11 +135,13 @@ def _verify_once(
     """Check each timed result once per parameter set: later samples run the same code on the same data.
 
     The check's error and the ``track`` values of that result are recorded, so the ``track_``
-    methods asv runs later read them instead of running the case again.
+    methods asv runs later read them instead of running the case again. An empty record goes
+    first, so a check that raises leaves no older value for them to read.
     """
     for bench_name, result in results.items():
         if first_time("verify", cls.__name__, bench_name, *args):
             b = benches[bench_name]
+            _record(cls, bench_name, args, {})
             error = prepared[bench_name].verify(result)
             values = {f"track_{b.error}": error} if b.error else {}
             try:
@@ -151,55 +153,59 @@ def _verify_once(
 
 @functools.cache
 def _record_file() -> Path | None:
-    """This environment's record of check results, or None outside a box run (no ``BWBENCH_COMMIT``).
+    """This environment's record of check results for this run, or None outside a box run.
 
-    Keyed by the benchmark code's commit and source (a run on uncommitted edits shares the
-    commit), the environment and every installed distribution's version, so a record never
-    crosses releases or code changes. ``_case`` adds the benchmark module's own source.
+    It lives in ``$HOME``, which ``scripts/in-box.sh`` makes new for every run, so a record
+    never outlives its run. Inside one run, environments install one release after another
+    into the same folder, so the key also holds every installed distribution's version and
+    asv's commit. Outside the box (no ``BWBENCH_COMMIT``) nothing is recorded.
     """
-    commit = os.environ.get("BWBENCH_COMMIT")
-    if not commit:
+    if not os.environ.get("BWBENCH_COMMIT"):
         return None
     dists = sorted(f"{d.metadata['Name']}=={d.version}" for d in metadata.distributions())
-    source = [p.read_text() for p in sorted(Path(__file__).parent.glob("*.py"))]
-    key = hashlib.sha256("\n".join([commit, sys.prefix, *dists, *source]).encode()).hexdigest()[:16]
-    # shortcut: one small file per environment and code commit, never pruned; prune with the cache.
-    return data_root() / "tracks" / f"{key}.jsonl"
+    parts = [sys.prefix, os.environ.get("ASV_COMMIT", ""), *dists]
+    key = hashlib.sha256("\n".join(parts).encode()).hexdigest()[:16]
+    return Path.home() / ".bwbench-tracks" / f"{key}.jsonl"
 
 
 def _case(cls: type, bench_name: str, args: tuple) -> str:
-    return f"{cls.__module__}.{cls.__name__}.{bench_name}{args!r}@{_module_hash(cls.__module__)}"
+    return f"{cls.__module__}.{cls.__name__}.{bench_name}{args!r}"
 
 
-@functools.cache
-def _module_hash(module: str) -> str:
-    path = getattr(sys.modules.get(module), "__file__", None)
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:16] if path else ""
+def _plain(value: Any) -> Any:
+    """Numpy scalars as Python numbers, for ``json.dumps``."""
+    if hasattr(value, "item"):
+        return value.item()
+    msg = f"{type(value).__name__} is not JSON"
+    raise TypeError(msg)
 
 
 def _record(cls: type, bench_name: str, args: tuple, values: dict[str, Any]) -> None:
     path = _record_file()
-    if path is None or not values:
+    if path is None:
         return
     try:
-        line = json.dumps({"case": _case(cls, bench_name, args), **values})
-    except (TypeError, ValueError):
-        return  # a value JSON cannot hold: the track_ method computes it itself
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a") as f:
-        f.write(line + "\n")
+        line = json.dumps({"case": _case(cls, bench_name, args), **values}, default=_plain)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a") as f:
+            f.write(line + "\n")
+    except (TypeError, ValueError, OSError):
+        return  # the track_ method computes the value itself
 
 
 def _recorded(cls: type, bench_name: str, args: tuple, method: str) -> tuple[bool, Any]:
-    """(True, value) when the timed run of this case recorded ``method``'s value, else (False, None)."""
+    """(True, value) when this case's newest record holds ``method``'s value, else (False, None)."""
     path = _record_file()
     if path is None or not path.exists():
         return False, None
     case = _case(cls, bench_name, args)
     for line in reversed(path.read_text().splitlines()):
-        entry = json.loads(line)
-        if entry["case"] == case and method in entry:
-            return True, entry[method]
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue  # a line cut short by a killed process
+        if entry.get("case") == case:
+            return (True, entry[method]) if method in entry else (False, None)
     return False, None
 
 

@@ -9,6 +9,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
 
 import bwbench
@@ -395,10 +396,10 @@ def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pyt
 
 @pytest.fixture
 def record_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Path]:
-    """A fresh cache root for the timed runs' records; the record file's path is cached per process."""
-    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    """A fresh home for the timed runs' records; the record file's path is cached per process."""
+    monkeypatch.setenv("HOME", str(tmp_path))
     asv._record_file.cache_clear()  # noqa: SLF001
-    yield tmp_path / "bwbench"
+    yield tmp_path / ".bwbench-tracks"
     asv._record_file.cache_clear()  # noqa: SLF001
 
 
@@ -407,7 +408,7 @@ def test_track_methods_reuse_the_timed_run(monkeypatch: pytest.MonkeyPatch, reco
     monkeypatch.setenv("BWBENCH_COMMIT", "abc123")
     runs = []
 
-    @bench({"x": [1, 2]}, rtol=1e-9, error="relative_error", track={"half": lambda r: r / 2})
+    @bench({"x": [1, 2]}, rtol=1e-9, error="relative_error", track={"half": lambda r: np.float64(r) / 2})
     def counted(x: int):
         return (lambda: runs.append(x) or 2.0 * x), 2.0 * x
 
@@ -423,7 +424,36 @@ def test_track_methods_reuse_the_timed_run(monkeypatch: pytest.MonkeyPatch, reco
     obj.setup(2)  # never timed: no record, so it runs as before
     assert obj.track_half(2) == 2.0
     assert runs == [1, 2]
-    assert record_file.exists()
+    (path,) = record_file.iterdir()
+    path.write_text(path.read_text() + '{"case": "cut sho')  # a line a killed process left
+    obj.setup(1)
+    assert obj.track_half(1) == 1.0
+    assert runs == [1, 2]
+
+
+def test_a_failing_check_leaves_no_old_value(monkeypatch: pytest.MonkeyPatch, record_file: Path):
+    """A timed run whose check raises makes track_ run the case and fail, even after an earlier pass."""
+    monkeypatch.setenv("BWBENCH_COMMIT", "abc123")
+    answer = [1.0]
+
+    @bench({"x": [1]}, rtol=1e-9, error="relative_error")
+    def flaky(x: int):
+        return (lambda: answer[0]), 1.0
+
+    (cls,) = asv.classes(module(flaky=flaky).__name__)
+    obj = cls()
+    obj.setup(1)
+    obj.time_flaky(1)
+    obj.teardown(1)
+    answer[0] = 2.0
+    bwbench._SEEN.clear()  # noqa: SLF001 - a new timed process
+    obj.setup(1)
+    obj.time_flaky(1)
+    with pytest.raises(AssertionError):
+        obj.teardown(1)
+    obj.setup(1)
+    with pytest.raises(AssertionError):
+        obj.track_relative_error(1)
 
 
 def test_track_methods_run_the_case_outside_a_box_run(monkeypatch: pytest.MonkeyPatch, record_file: Path):

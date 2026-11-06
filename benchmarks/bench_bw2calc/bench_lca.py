@@ -229,8 +229,10 @@ def scores(size: str, demands: int, variant: str) -> BenchSetup:
 
     ``direction`` is the forward/adjoint switch of bw2calc PR #165. Its ``"auto"`` rule
     picks adjoint when there are more demands than impact categories (3 here), so the
-    demand counts straddle that threshold. 3 itself is left out: it cost about a quarter of
-    this case's run time and sits on the rule's edge, which 1 and 10 already bracket.
+    demand counts straddle that threshold; the variants here pick the direction explicitly, so
+    the counts show where adjoint starts to pay. 3 is left out: at the ecoinvent size each count
+    costs about the same (MultiLCA 27.6 s at 1 demand, 28.6 s at 30, the factorization dominates),
+    so it was a quarter of this case's time, and 1 and 10 bracket the crossover.
     """
     skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=2)
     inventory, methods, refs, _ = packages(size)

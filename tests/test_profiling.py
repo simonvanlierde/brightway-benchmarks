@@ -74,3 +74,19 @@ def test_a_wrong_answer_writes_no_profile_and_still_tears_down(tmp_path: Path):
         profiling.profile(wrong, {"size": "smoke"}, "toy", tmp_path)
     assert torn_down == ["smoke"]
     assert list(tmp_path.iterdir()) == []
+
+
+def test_find_case_needs_exactly_one_benchmark_of_that_name(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    package = tmp_path / "bench_toy"
+    package.mkdir()
+    (package / "__init__.py").write_text("")
+    toy = "from bwbench.bench import UNCHECKED, bench\n\n@bench({'n': [1]})\ndef {name}(n):\n"
+    toy += "    return lambda: n, UNCHECKED\n"
+    (package / "bench_a.py").write_text(toy.replace("{name}", "only") + toy.replace("{name}", "twice"))
+    (package / "bench_b.py").write_text(toy.replace("{name}", "twice"))
+    (package / "helpers.py").write_text(toy.replace("{name}", "hidden"))
+    monkeypatch.syspath_prepend(str(tmp_path))
+    assert profiling.find_case("toy", "only").name == "only"
+    for case in ("twice", "hidden", "missing"):
+        with pytest.raises(SystemExit):
+            profiling.find_case("toy", case)

@@ -62,3 +62,31 @@ jobs:
       - run: uv run ruff format --check
       - run: uv run ty check
       - run: uv run pytest --cov # fails under 80% (`fail_under` in pyproject.toml)
+
+  # The read-count guard needs Brightway, which the job above does not install. This runner is
+  # thrown away after the job, so the packages may run on it. The pins are the heads of
+  # bw_processing #113 and matrix_utils #48: the guard fails on upstream main by design. Move
+  # them to the releases that ship the fixes.
+  scaling:
+    name: group-count scaling guard
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          enable-cache: false
+          version: "0.13.6"
+          python-version: "3.12"
+
+      # The tests skip when Brightway is missing, so the import runs first: a broken install
+      # must fail this job, not pass it with every test skipped.
+      - run: >-
+          uv run --locked
+          --with git+https://github.com/simonvanlierde/bw_processing@1a6f8982adc6ad9197a3b154a82bb747d6c0a374
+          --with git+https://github.com/simonvanlierde/matrix_utils@7335e8a76ae6bd769175bbc650e221e038899afb
+          sh -c 'python -c "import bw_processing, matrix_utils.utils" && pytest tests/test_group_scaling.py'

@@ -36,6 +36,11 @@ Cases run on the 200-product `smoke` database unless `BWBENCH_SIZES` names other
 or 6 with `BWBENCH_SOLVERS=pypardiso`, and `BWBENCH_ROUNDS=1` halves it. `just bench` skips what
 already succeeded, so a stopped run resumes.
 
+After a generator version bump resets the history, `just bench-lines bw2calc` reruns only the
+newest release of each minor line (2.0.x, 2.1.x, ...) and the untagged releases: 9 of bw2calc's 15. The history
+has fewer points but each is valid, and a later `just bench bw2calc` fills in the rest, since it
+skips what already succeeded.
+
 The `codspeed` workflow runs `benchmarks/codspeed` on each pull request and push to `main`
 ([CodSpeed](https://app.codspeed.io/simonvanlierde/brightway-benchmarks)).
 `just ui-data` copies what each benchmark and parameter means from

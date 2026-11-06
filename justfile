@@ -36,6 +36,12 @@ hooks:
 bench subject range="" *args:
     scripts/box.sh scripts/asv.sh {{ subject }} run --skip-existing-successful {{ args }} {{ if range == "" { "HASHFILE:/src/asv/" + subject + ".hashes" } else { quote(range) } }}
 
+# After a generator version bump: only the newest release of each minor line (scripts/minor_lines.py).
+bench-lines subject *args:
+    mkdir -p .asv
+    python3 scripts/minor_lines.py {{ subject }} > .asv/{{ subject }}.lines.hashes
+    scripts/box.sh scripts/asv.sh {{ subject }} run --skip-existing-successful {{ args }} HASHFILE:/src/.asv/{{ subject }}.lines.hashes
+
 # Proves the harness, not the numbers. Results go to .asv/smoke/, never to results/ or the site.
 # One quick pass per subject at its oldest and latest release, smoke size, and a bw2io import of
 # the smoke system written as ecoSpold2 files; fails on any failure.

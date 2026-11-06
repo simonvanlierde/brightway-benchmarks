@@ -23,8 +23,6 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
 - **More solver columns for bw2calc:** NVIDIA cuDSS behind a GPU opt-in, kept out of the default
   run (`scripts/solver_factorize.py --cudss` already times it on real ecoinvent), and Apple's
   Accelerate LU on macOS.
-- **Scaling cells for bw_processing:** how the time to read a datapackage grows with the number of
-  resource groups, from 1,000 to 10,000.
 - **bw2data's write path:** the SQLite database against the Parquet tables proposed for a
   registry, with time and peak memory at ecoinvent size.
 - **bw_timex at a larger timeline,** so the timeline builder, not the graph traversal, sets the

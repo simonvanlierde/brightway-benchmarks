@@ -6,16 +6,19 @@ them before each method, so give them the same ``params``.
 
 from __future__ import annotations
 
+import functools
+import hashlib
 import json
 import os
 import sys
 import time
+from importlib import metadata
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from bwbench import first_time
 from bwbench.bench import Bench, Prepared, benches
-from bwbench.synth import GENERATOR_VERSION, profile_version
+from bwbench.synth import GENERATOR_VERSION, data_root, profile_version
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -40,6 +43,7 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         msg = f"benchmarks in asv class {name} need the same params"
         raise ValueError(msg)
     names = list(params)
+    by_name = {b.name: b for b in group}
 
     def setup(self: Any, *args: Any) -> None:
         self.prepared = {}
@@ -53,7 +57,7 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         prepared: dict[str, Prepared] = getattr(self, "prepared", {})
         _log_usage(self, args)
         try:
-            _verify_once(name, prepared, getattr(self, "results", {}), args)
+            _verify_once(type(self), by_name, prepared, getattr(self, "results", {}), args)
         finally:
             for p in prepared.values():
                 p.teardown()
@@ -78,9 +82,9 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         new: dict[str, Any] = {f"time_{b.name}": _time(b.name)}
         if b.peakmem:
             new[f"peakmem_{b.name}"] = _peak(b.name)
-        new |= {f"track_{t}": _track(b.name, fn) for t, fn in b.track.items()}
+        new |= {f"track_{t}": _track(b.name, fn, f"track_{t}") for t, fn in b.track.items()}
         if b.error:
-            new[f"track_{b.error}"] = _error(b.name)
+            new[f"track_{b.error}"] = _error(b.name, f"track_{b.error}")
         if clash := methods.keys() & new.keys():
             msg = f"asv class {name}: two benchmarks define {sorted(clash)}"
             raise ValueError(msg)
@@ -125,11 +129,78 @@ def _log_usage(obj: Any, args: tuple) -> None:
             f.write(json.dumps(entry) + "\n")
 
 
-def _verify_once(cls_name: str, prepared: dict[str, Prepared], results: dict[str, Any], args: tuple) -> None:
-    """Check each timed result once per parameter set: later samples run the same code on the same data."""
+def _verify_once(
+    cls: type, benches: dict[str, Bench], prepared: dict[str, Prepared], results: dict[str, Any], args: tuple
+) -> None:
+    """Check each timed result once per parameter set: later samples run the same code on the same data.
+
+    The check's error and the ``track`` values of that result are recorded, so the ``track_``
+    methods asv runs later read them instead of running the case again.
+    """
     for bench_name, result in results.items():
-        if first_time("verify", cls_name, bench_name, *args):
-            prepared[bench_name].verify(result)
+        if first_time("verify", cls.__name__, bench_name, *args):
+            b = benches[bench_name]
+            error = prepared[bench_name].verify(result)
+            values = {f"track_{b.error}": error} if b.error else {}
+            try:
+                values |= {f"track_{t}": fn(result) for t, fn in b.track.items()}
+            except Exception:  # noqa: BLE001 - the track_ method reruns the case and reports it
+                values = {f"track_{b.error}": error} if b.error else {}
+            _record(cls, bench_name, args, values)
+
+
+@functools.cache
+def _record_file() -> Path | None:
+    """This environment's record of check results, or None outside a box run (no ``BWBENCH_COMMIT``).
+
+    Keyed by the benchmark code's commit and source (a run on uncommitted edits shares the
+    commit), the environment and every installed distribution's version, so a record never
+    crosses releases or code changes. ``_case`` adds the benchmark module's own source.
+    """
+    commit = os.environ.get("BWBENCH_COMMIT")
+    if not commit:
+        return None
+    dists = sorted(f"{d.metadata['Name']}=={d.version}" for d in metadata.distributions())
+    source = [p.read_text() for p in sorted(Path(__file__).parent.glob("*.py"))]
+    key = hashlib.sha256("\n".join([commit, sys.prefix, *dists, *source]).encode()).hexdigest()[:16]
+    # shortcut: one small file per environment and code commit, never pruned; prune with the cache.
+    return data_root() / "tracks" / f"{key}.jsonl"
+
+
+def _case(cls: type, bench_name: str, args: tuple) -> str:
+    return f"{cls.__module__}.{cls.__name__}.{bench_name}{args!r}@{_module_hash(cls.__module__)}"
+
+
+@functools.cache
+def _module_hash(module: str) -> str:
+    path = getattr(sys.modules.get(module), "__file__", None)
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:16] if path else ""
+
+
+def _record(cls: type, bench_name: str, args: tuple, values: dict[str, Any]) -> None:
+    path = _record_file()
+    if path is None or not values:
+        return
+    try:
+        line = json.dumps({"case": _case(cls, bench_name, args), **values})
+    except (TypeError, ValueError):
+        return  # a value JSON cannot hold: the track_ method computes it itself
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a") as f:
+        f.write(line + "\n")
+
+
+def _recorded(cls: type, bench_name: str, args: tuple, method: str) -> tuple[bool, Any]:
+    """(True, value) when the timed run of this case recorded ``method``'s value, else (False, None)."""
+    path = _record_file()
+    if path is None or not path.exists():
+        return False, None
+    case = _case(cls, bench_name, args)
+    for line in reversed(path.read_text().splitlines()):
+        entry = json.loads(line)
+        if entry["case"] == case and method in entry:
+            return True, entry[method]
+    return False, None
 
 
 def _time(bench_name: str) -> Callable[..., None]:
@@ -148,17 +219,21 @@ def _peak(bench_name: str) -> Callable[..., None]:
     return peak
 
 
-def _track(bench_name: str, fn: Callable[[Any], float]) -> Callable[..., float]:
+def _track(bench_name: str, fn: Callable[[Any], float], method: str) -> Callable[..., float]:
     def track(self: Any, *args: Any) -> float:
-        return fn(self.prepared[bench_name]())
+        found, value = _recorded(type(self), bench_name, args, method)
+        return value if found else fn(self.prepared[bench_name]())
 
     return track
 
 
-def _error(bench_name: str) -> Callable[..., float | None]:
+def _error(bench_name: str, method: str) -> Callable[..., float | None]:
     """A ``track_`` method recording the check's relative error."""
 
     def error(self: Any, *args: Any) -> float | None:
+        found, value = _recorded(type(self), bench_name, args, method)
+        if found:
+            return value
         prepared = self.prepared[bench_name]
         return prepared.verify(prepared())
 

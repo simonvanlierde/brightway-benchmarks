@@ -5,6 +5,7 @@ import os
 import subprocess
 import sys
 import types
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -390,3 +391,55 @@ def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pyt
     assert entry["params"] == "'smoke', 2"
     assert entry["env"] == "env-x"
     assert (entry["wall"], entry["cpu"], entry["nivcsw"]) == (2.0, 1.5, 3)
+
+
+@pytest.fixture
+def record_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Path]:
+    """A fresh cache root for the timed runs' records; the record file's path is cached per process."""
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    asv._record_file.cache_clear()  # noqa: SLF001
+    yield tmp_path / "bwbench"
+    asv._record_file.cache_clear()  # noqa: SLF001
+
+
+def test_track_methods_reuse_the_timed_run(monkeypatch: pytest.MonkeyPatch, record_file: Path):
+    """In a box run, track_ methods read what the timed run's check recorded instead of running again."""
+    monkeypatch.setenv("BWBENCH_COMMIT", "abc123")
+    runs = []
+
+    @bench({"x": [1, 2]}, rtol=1e-9, error="relative_error", track={"half": lambda r: r / 2})
+    def counted(x: int):
+        return (lambda: runs.append(x) or 2.0 * x), 2.0 * x
+
+    (cls,) = asv.classes(module(counted=counted).__name__)
+    obj = cls()
+    obj.setup(1)
+    obj.time_counted(1)
+    obj.teardown(1)
+    obj.setup(1)
+    assert obj.track_relative_error(1) == 0
+    assert obj.track_half(1) == 1.0
+    assert runs == [1], "the track_ methods ran the case again"
+    obj.setup(2)  # never timed: no record, so it runs as before
+    assert obj.track_half(2) == 2.0
+    assert runs == [1, 2]
+    assert record_file.exists()
+
+
+def test_track_methods_run_the_case_outside_a_box_run(monkeypatch: pytest.MonkeyPatch, record_file: Path):
+    monkeypatch.delenv("BWBENCH_COMMIT", raising=False)
+    runs = []
+
+    @bench({"x": [1]}, rtol=1e-9, error="relative_error")
+    def counted(x: int):
+        return (lambda: runs.append(x) or 1.0), 1.0
+
+    (cls,) = asv.classes(module(counted=counted).__name__)
+    obj = cls()
+    obj.setup(1)
+    obj.time_counted(1)
+    obj.teardown(1)
+    obj.setup(1)
+    assert obj.track_relative_error(1) == 0
+    assert runs == [1, 1]
+    assert not record_file.exists()

@@ -5,8 +5,8 @@ Reads asv/SUBJECT.hashes and prints one entry per minor line (2.0.x, 2.1.x, ...)
 that line in file order, one per line and in file order. Entries are release tags, read as
 versions offline (a leading ``v`` is ignored).
 
-A bare commit has no version. It joins the line of the entry before it, since the file is in
-release order, so it is kept only when no later release of that line follows it.
+A bare commit is an untagged release or a fix not yet released, with no version to place it in a
+line (bw_processing's is 1.3, bw2calc's 2.1.1), so it is always kept.
 """
 
 import re
@@ -16,13 +16,10 @@ from pathlib import Path
 
 def minor_lines(entries: list[str]) -> list[str]:
     """Entries to rerun; see the module docstring for the rule."""
-    newest: dict[tuple[int, int] | None, str] = {}
-    line = None
+    newest: dict[tuple[int, int] | str, str] = {}
     for entry in entries:
         match = re.fullmatch(r"v?(\d+)\.(\d+)(?:\.\d+)*", entry)
-        if match:
-            line = (int(match[1]), int(match[2]))
-        newest[line] = entry  # dicts keep first-insertion order, so lines stay in file order
+        newest[(int(match[1]), int(match[2])) if match else entry] = entry  # insertion order is file order
     return list(newest.values())
 
 

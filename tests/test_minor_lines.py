@@ -25,12 +25,9 @@ def test_strips_a_v_prefix_and_orders_by_number_not_text():
     assert load().minor_lines(["v1.9.0", "v1.10.0", "v1.10.1"]) == ["v1.9.0", "v1.10.1"]
 
 
-def test_bare_commit_joins_the_line_before_it():
-    assert load().minor_lines(["2.0", "2.1", SHA, "2.2"]) == ["2.0", SHA, "2.2"]
-
-
-def test_bare_commit_loses_to_a_later_release_of_its_line():
-    assert load().minor_lines(["2.1", SHA, "2.1.1"]) == ["2.1.1"]
+def test_bare_commit_is_always_kept():
+    """An untagged release, such as bw_processing 1.3, must not replace the tagged line before it."""
+    assert load().minor_lines(["1.1", "1.2", SHA, "1.4"]) == ["1.1", "1.2", SHA, "1.4"]
 
 
 def test_every_hashes_file_selects_at_least_one_line():

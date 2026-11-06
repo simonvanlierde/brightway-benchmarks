@@ -49,9 +49,10 @@ NODES = ("grid NL", "heat pump", "burner", "gas boiler", "heat pump, 20 years", 
 GRID, HP, BURNER_NODE, BOILER_NODE, HP_YEARS, BOILER_YEARS = range(len(NODES))
 OPTIONS = {"heat pump": HP_YEARS, "gas boiler": BOILER_YEARS}
 YEARS = 20
+VERSION = "1"  # bump with any change to the foreground or the heating cases: it restarts their history
 MJ_PER_KWH = 3.6
 # - cop 3.0: field trials put air-source heat pumps' seasonal performance factor near 3
-#   (Staffell et al. 2012, Energy Environ. Sci. 5, 9291). BAFU's own process implies 4.4.
+#   (Staffell et al. 2012, Energy Environ. Sci. 5, 9291).
 # - 10,000 kWh of heat a year: a Dutch household burns about 1,000 to 1,200 m³ of gas a year
 #   (CBS), at 9.8 kWh/m³ and a boiler efficiency near 90%.
 # - renewable_share 0: BAFU's Dutch grid as it is; 1 runs on Dutch photovoltaics alone.
@@ -117,7 +118,11 @@ def _copy(system: System, col: int, node: int, redirect: dict[int, tuple[int, fl
 
     ``redirect`` moves the inputs of a product to another, with a new amount where one is given.
     """
-    keep = (system.tech_cols == col) & ~((system.tech_rows == col) & ~system.tech_flip)
+    own = (system.tech_cols == col) & (system.tech_rows == col) & ~system.tech_flip
+    if not np.allclose(system.tech_data[own], 1.0):
+        msg = f"process {col} produces {system.tech_data[own]}, not 1: its inputs would need rescaling"
+        raise ValueError(msg)
+    keep = (system.tech_cols == col) & ~own
     rows, data = system.tech_rows[keep].copy(), system.tech_data[keep].copy()
     for old, (new, amount) in redirect.items():
         hit = rows == old
@@ -225,8 +230,10 @@ def scenarios(n: int) -> list[tuple[float, float]]:
 def reference(system: System, fg: Foreground, demands: list[dict[int, float]]) -> list[list[float]]:
     """Score of each demand per method, ``scores[d][m]``, by ``neumann`` on BAFU and ``fg`` together.
 
-    No Brightway code and no factorization. A foreground node's unit is scaled by its largest
-    input, so the 20 years' 720,000 MJ do not swamp the series' stopping rule.
+    No Brightway code and no factorization. A foreground node's unit is scaled by twice its
+    largest input, so the 20 years' 720,000 MJ do not swamp the series' stopping rule and its
+    columns sum below 1. It shares ``foreground`` with the cases, so it checks bw2calc's solve,
+    not the foreground model; ``tests/test_heating.py`` checks the model.
     """
     n, k = system.profile.products, len(NODES)
     pos = lambda ids: np.where(ids >= fg.base, ids - fg.base + n, ids)  # noqa: E731
@@ -237,7 +244,7 @@ def reference(system: System, fg: Foreground, demands: list[dict[int, float]]) -
     a = sparse.csr_matrix((np.where(flip, -data, data), (rows, cols)), shape=(n + k, n + k))
     inputs = sparse.identity(n + k, format="csr") - a
     scale = np.ones(n + k)
-    scale[n:] = 1 / np.maximum(1.0, np.asarray(abs(inputs).max(axis=0).todense()).ravel()[n:])
+    scale[n:] = 0.5 / np.maximum(1.0, np.asarray(abs(inputs).max(axis=0).todense()).ravel()[n:])
     d = np.zeros((n + k, len(demands)))
     for j, demand in enumerate(demands):
         for i, amount in demand.items():

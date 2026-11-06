@@ -21,13 +21,13 @@ PRODUCTS = (
 )
 AT = {name: i for i, name in enumerate(PRODUCTS)}
 N, FLOWS = len(PRODUCTS), 2
-# (supplier, consumer, amount) inputs, as BAFU holds them: the heat pump's own 0.0631 kWh of CH grid.
+# (supplier, consumer, amount) inputs, invented: the heat pump's own 0.05 kWh of CH grid is what the copy replaces.
 INPUTS = [
-    (AT[heating.GRID_CH], AT[heating.HEAT_PUMP], 0.0631),
+    (AT[heating.GRID_CH], AT[heating.HEAT_PUMP], 0.05),
     (AT[heating.GAS_CH], AT[heating.HEAT_PUMP], 1e-3),
-    (AT[heating.GRID_ENTSOE], AT[heating.BURNER], 7e-4),
+    (AT[heating.GRID_ENTSOE], AT[heating.BURNER], 2e-3),
     (AT[heating.GAS_CH], AT[heating.BURNER], 1.0),
-    (AT[heating.BURNER], AT[heating.BOILER], 0.913),
+    (AT[heating.BURNER], AT[heating.BOILER], 0.9),
     (AT[heating.GRID_ENTSOE], AT[heating.GRID_CH], 0.1),
     (AT[heating.PV_NL], AT[heating.GRID_NL], 0.05),
     (AT[heating.GRID_NL], AT[heating.GAS_NL], 0.02),
@@ -91,9 +91,19 @@ def test_the_heat_pump_draws_one_over_cop_from_the_nl_mix_instead_of_its_own_ele
     }
     assert into(heating.HP) == {fg.id(heating.GRID): pytest.approx(1 / (4.0 * 3.6)), AT[heating.GAS_CH]: 1e-3}
     assert into(heating.GRID) == {AT[heating.GRID_NL]: 0.75, AT[heating.PV_NL]: 0.25}
-    assert into(heating.BURNER_NODE) == {fg.id(heating.GRID): 7e-4, AT[heating.GAS_NL]: 1.0}
-    assert into(heating.BOILER_NODE) == {fg.id(heating.BURNER_NODE): 0.913}
+    assert into(heating.BURNER_NODE) == {fg.id(heating.GRID): 2e-3, AT[heating.GAS_NL]: 1.0}
+    assert into(heating.BOILER_NODE) == {fg.id(heating.BURNER_NODE): 0.9}
     assert into(heating.HP_YEARS) == {fg.id(heating.HP): pytest.approx(20 * 3.6)}
+    assert into(heating.BOILER_YEARS) == {fg.id(heating.BOILER_NODE): pytest.approx(20 * 3.6)}
+    # Each node produces only itself: the copied process's own production is left out.
+    production = [(int(r), int(c)) for r, c, f in zip(fg.tech_rows, fg.tech_cols, fg.tech_flip, strict=True) if not f]
+    assert all(r == c for r, c in production)
+    # The copy emits what its source emits.
+    emits = lambda ids, col: sorted(  # noqa: E731
+        (int(r), float(d)) for r, c, d in zip(ids.bio_rows, ids.bio_cols, ids.bio_data, strict=True) if c == col
+    )
+    assert emits(fg, fg.id(heating.HP)) == emits(system, AT[heating.HEAT_PUMP])
+    assert emits(fg, fg.id(heating.BURNER_NODE)) == emits(system, AT[heating.BURNER])
 
 
 @pytest.mark.parametrize("option", heating.OPTIONS.values())

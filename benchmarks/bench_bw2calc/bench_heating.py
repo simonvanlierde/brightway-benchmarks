@@ -14,7 +14,7 @@ from bwbench import DIRECT_RTOL, bafu, check_table, first_time, heating, knob
 from bwbench.asv import classes
 from bwbench.bench import BenchSetup, NotApplicable, bench
 from bwbench.solvers import assert_reached
-from bwbench.synth import System, method_name, packages, skip_unless_factorizable, system
+from bwbench.synth import System, method_name, packages, profile_version, skip_unless_factorizable, system
 
 SIZES = knob("sizes", "smoke")
 
@@ -58,7 +58,10 @@ def sweep_reference(size: str, n: int) -> list[list[float]]:
     return rows
 
 
-@bench({"size": SIZES}, error="relative_error", asv="HeatingMulti", timeout=900)
+VERSION = f"{profile_version()}-heating{heating.VERSION}"  # asv history key: the generator and the foreground
+
+
+@bench({"size": SIZES}, error="relative_error", asv="HeatingMulti", timeout=900, version=VERSION)
 def heating_scores(size: str) -> BenchSetup:
     """Both options against the three EN 15804 methods with MultiLCA, the foreground loaded beside BAFU."""
     s, at = background(size)
@@ -91,6 +94,7 @@ def heating_scores(size: str) -> BenchSetup:
     error="relative_error",
     asv="HeatingSweep",
     timeout=1800,
+    version=VERSION,
 )
 def heating_sweep(size: str, scenarios: int, variant: str) -> BenchSetup:
     """Both options' climate change score over a grid of heat pump COP and renewable share.
@@ -132,7 +136,7 @@ def heating_sweep(size: str, scenarios: int, variant: str) -> BenchSetup:
             for row in demands:
                 scores = []
                 for demand in row:
-                    lca.redo_lci(demand)
+                    lca.redo_lci(demand)  # the first repeats lci()'s solve: 1 of 2n + 1, kept for clarity
                     scores.append(score(lca))
                 rows.append(scores)
             return rows

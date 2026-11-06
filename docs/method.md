@@ -104,6 +104,9 @@ Carlo case, although the archive carries uncertainty.
   bw_timex at 1.1.0. Every release of the other packages runs.
 - Each run records what was installed (`pylock.toml`) and an RO-Crate naming the code and
   settings.
+- A change to the synthetic generator bumps `GENERATOR_VERSION`, which changes every
+  benchmark's asv version, so each history starts again at the next run. The older times stay in
+  the results branch's git history.
 - CodSpeed turns address randomization (ASLR) off, which needs
   [`docker/seccomp-noaslr.json`](../docker/seccomp-noaslr.json) in the box.
 

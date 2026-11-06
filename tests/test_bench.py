@@ -390,3 +390,47 @@ def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pyt
     assert entry["params"] == "'smoke', 2"
     assert entry["env"] == "env-x"
     assert (entry["wall"], entry["cpu"], entry["nivcsw"]) == (2.0, 1.5, 3)
+    assert "energy_j" not in entry  # BWBENCH_ENERGY is off
+
+
+def rapl(folder: Path, energy_uj: int) -> Path:
+    """A stand-in for /sys/class/powercap/intel-rapl:0, whose counter wraps past 262143328850 µJ."""
+    folder.mkdir(exist_ok=True)
+    (folder / "energy_uj").write_text(f"{energy_uj}\n")
+    (folder / "max_energy_range_uj").write_text("262143328850\n")
+    return folder
+
+
+def test_asv_logs_package_energy_across_a_counter_wrap(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    log = tmp_path / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 262_142_328_850)))
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    obj.setup("smoke", 2)
+    obj.time_double("smoke", 2)
+    rapl(tmp_path / "rapl", 2_000_000)  # 1 J to the wrap, 2 J after it
+    obj.teardown("smoke", 2)
+    (line,) = log.read_text().splitlines()
+    assert json.loads(line)["energy_j"] == pytest.approx(3.0)
+
+
+def test_asv_logs_no_energy_and_warns_once_when_the_counter_is_unreadable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    log = tmp_path / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(tmp_path / "missing"))
+    monkeypatch.setattr(asv, "_energy_warned", False)
+    (cls,) = asv.classes(module(double=double).__name__)
+    for _ in range(2):
+        obj = cls()
+        obj.setup("smoke", 2)
+        obj.time_double("smoke", 2)
+        obj.teardown("smoke", 2)
+    entries = [json.loads(line) for line in log.read_text().splitlines()]
+    assert len(entries) == 2
+    assert not any("energy_j" in e for e in entries)
+    assert capsys.readouterr().err.count("energy_uj") == 1

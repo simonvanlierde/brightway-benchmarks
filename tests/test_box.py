@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -162,3 +163,24 @@ def test_box_passes_the_commit_in(box: tuple[Path, Path]):
     head = subprocess.run([*git, "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
     assert run_box(repo).returncode == 0
     assert f"BWBENCH_COMMIT={head}" in log.read_text().split("\n")
+
+
+RAPL = "/sys/class/powercap/intel-rapl:0/energy_uj"
+
+
+@pytest.mark.skipif(not os.access(RAPL, os.R_OK), reason="needs a readable Intel RAPL counter")
+def test_box_shows_the_energy_counter_without_a_cpu_slot(box: tuple[Path, Path]):
+    """oss-bench takes no extra mounts, so an energy run goes straight to docker."""
+    repo, log = box
+    stub = repo / "stub" / "oss-bench"
+    stub.write_text("#!/bin/sh\n# OSS_BENCH_RW\necho oss-bench >&2\n")
+    stub.chmod(0o755)
+    out = run_box(repo, BWBENCH_ENERGY="1", BWBENCH_CPUSET="0-5")
+    assert out.returncode == 0, out.stderr
+    assert "oss-bench" not in out.stderr
+    args = log.read_text().split("\n")
+    # Docker masks /sys/devices/virtual/powercap in the box, so the counter goes elsewhere.
+    assert "type=bind,source=/sys/class/powercap/intel-rapl:0,target=/run/rapl,readonly" in args
+    assert args[args.index("--group-add") + 1] == str(Path(RAPL).stat().st_gid)
+    assert args[args.index("--cpuset-cpus") + 1] == "0-5"
+    assert "BWBENCH_RAPL=/run/rapl" in args

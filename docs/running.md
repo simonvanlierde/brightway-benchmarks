@@ -65,6 +65,28 @@ build strings, the BLAS among them, to a `versions-*.txt` file.
 ([method.md](method.md#the-noise-floor)). Each sample's CPU time, wall time and context
 switches go to `rounds.jsonl`; `scripts/noise_summary.py` reads them.
 
+#### Energy per operation
+
+On an Intel CPU, `BWBENCH_ENERGY=1` adds each sample's energy in joules to `rounds.jsonl`. It is
+read from the CPU's RAPL package counter, so your user needs read access to
+`/sys/class/powercap/intel-rapl:0/energy_uj`.
+
+```sh
+BWBENCH_ENERGY=1 BWBENCH_CPUSET=0-5 just noise bw2calc 3
+python3 scripts/energy_summary.py .asv/noise/bw2calc/rounds.jsonl --idle-w 15
+```
+
+A bench run logs energy too when it names a log, as in
+`BWBENCH_ENERGY=1 BWBENCH_MACHINE=noise BWBENCH_ROUNDLOG=/src/.asv/energy.jsonl just bench bw2calc "3.1.0^!"`.
+`BWBENCH_MACHINE=noise` keeps its timings out of `results/`.
+
+The counter covers the whole CPU package, all cores and every process, so run on a quiet machine.
+The joules per sample include what the idle CPU draws anyway. To get the energy the operation
+adds, measure the idle draw first (the counter's rise over a quiet minute, in µJ, divided by 60
+million) and pass it as `--idle-w`. The box cannot reach the counter through `oss-bench`, so an
+energy run has no CPU slot: `BWBENCH_CPUSET` pins it to CPUs you choose. The numbers stay
+local. They never go to `results/` or the site.
+
 ## Memory
 
 The box has 2 GB and no swap by default. A job over the limit is killed: under asv as a failed

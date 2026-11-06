@@ -15,6 +15,10 @@
 "bench_lca.NewDemandRefinement.track_relative_error"       = "How far the score is from the reference, with refinement on or off."
 "bench_lca.MultiScores.time_scores"                        = "Several demands against three impact methods in one calculation."
 "bench_lca.MonteCarlo.time_iterations"                     = "Monte Carlo draws after the first score; each draw samples new matrix values and solves again."
+"bench_heating.HeatingMulti.time_heating_scores"           = "Twenty years of home heating in the Netherlands, a heat pump against a gas boiler, on BAFU 2025: both options against three impact methods with MultiLCA."
+"bench_heating.HeatingMulti.track_relative_error"          = "How far the heating scores are from a reference solved without Brightway."
+"bench_heating.HeatingSweep.time_heating_sweep"            = "The same heating question over a grid of heat pump efficiencies and renewable electricity shares: a new calculation per scenario, or one factorization with each scenario as a new demand."
+"bench_heating.HeatingSweep.track_relative_error"          = "How far the scenario scores are from a reference solved without Brightway."
 "bench_write.DatabaseWrite.time_write"                     = "Writing a synthetic database into a new bw2data project."
 "bench_write.DatabaseWrite.peakmem_write"                  = "The process's peak memory while writing that database, building it included."
 "bench_write.DatabaseWrite.track_score_error"              = "How far a score from the written database is from the reference."
@@ -41,6 +45,10 @@
 "bench_lca.NewDemandRefinement.track_relative_error"       = "Second demand with refinement · Error"
 "bench_lca.MultiScores.time_scores"                        = "MultiLCA"
 "bench_lca.MonteCarlo.time_iterations"                     = "Monte Carlo draws"
+"bench_heating.HeatingMulti.time_heating_scores"           = "Home heating, MultiLCA"
+"bench_heating.HeatingMulti.track_relative_error"          = "Home heating, MultiLCA · Error"
+"bench_heating.HeatingSweep.time_heating_sweep"            = "Home heating scenarios"
+"bench_heating.HeatingSweep.track_relative_error"          = "Home heating scenarios · Error"
 "bench_write.DatabaseWrite.time_write"                     = "Database write"
 "bench_write.DatabaseWrite.peakmem_write"                  = "Database write · Peak memory"
 "bench_write.DatabaseWrite.track_score_error"              = "Database write · Error"
@@ -65,6 +73,7 @@ max_calc   = "Calculation limit"
 entries    = "Matrix entries"
 groups     = "Resource groups"
 steps      = "Yearly steps"
+scenarios  = "Scenarios"
 
 # The name the viewer shows for a group; its id and URLs keep the group's own name.
 [labels.groups]
@@ -98,6 +107,7 @@ max_calc   = "The most calculations the traversal may make."
 entries    = "How many matrix entries are added."
 groups     = "How many resource groups the datapackage holds, one matrix entry each."
 steps      = "How many yearly steps each background exchange is spread over."
+scenarios  = "How many scenarios of heat pump efficiency (COP 2.5 to 4.5) and renewable electricity share (0 to 100%) are scored, on a square grid."
 
 # A parameter value's meaning, by parameter and value as the viewer shows it.
 [values.size]
@@ -115,6 +125,8 @@ JacobiGMRESLCA = "Solves by GMRES with a Jacobi preconditioner and never factori
 MultiLCA = "bw2calc's MultiLCA, which keeps each demand's full inventory."
 forward  = "FastScoresOnlyMultiLCA, solving one system per demand and keeping only scores."
 adjoint  = "FastScoresOnlyMultiLCA, solving one transposed system per impact method instead of one per demand."
+rebuild  = "A new foreground and a new LCA per scenario, factorized once for both options."
+redo_lci = "One LCA of the part no scenario changes, factorized once; each scenario's electricity enters as part of the demand, solved with redo_lci."
 
 [values.refinement]
 on  = "UMFPACK's default: it refines the solution after solving."

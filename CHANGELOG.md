@@ -19,6 +19,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - BAFU 2025, the Swiss Federal Administration's LCI database, as a real size beside USEEIO
   (`BWBENCH_SIZES=bafu`). It is downloaded once and never copied into this repository
   ([real databases](docs/method.md#the-real-databases)).
+- A home-heating case on BAFU 2025: a heat pump against a gas boiler in the Netherlands, as
+  bw2calc's `MultiLCA` and as a sweep over COP and renewable share, rebuilt per scenario or solved
+  with `redo_lci` on one factorization ([method](docs/method.md#the-home-heating-case)).
 - A [solver-choice story](https://simonvanlierde.com/brightway-benchmarks/stories/solver-choice/):
   what to install for a fast bw2calc on conda, pip, uv or Apple silicon, with the real-ecoinvent times
   behind it.

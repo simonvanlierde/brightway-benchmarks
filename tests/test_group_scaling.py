@@ -6,7 +6,8 @@ each removed a scan of every resource per group. The call counts of ``filter_by_
 number of resource fields each call reads. So the resources are dicts that count their reads.
 
 The tests need Brightway, which never runs on the host, so they skip when it is absent. They run
-in the box, and on the hosted runner in the ``scaling`` job of ``.github/workflows/python.yml``.
+on the hosted runner in the ``scaling`` job of ``.github/workflows/python.yml``, which imports both
+packages first so a broken install fails there instead of skipping.
 """
 
 # ruff: noqa: ANN401 - the Brightway objects are untyped here

@@ -83,8 +83,10 @@ jobs:
           version: "0.13.6"
           python-version: "3.12"
 
+      # The tests skip when Brightway is missing, so the import runs first: a broken install
+      # must fail this job, not pass it with every test skipped.
       - run: >-
           uv run --locked
           --with git+https://github.com/simonvanlierde/bw_processing@1a6f8982adc6ad9197a3b154a82bb747d6c0a374
           --with git+https://github.com/simonvanlierde/matrix_utils@7335e8a76ae6bd769175bbc650e221e038899afb
-          pytest tests/test_group_scaling.py
+          sh -c 'python -c "import bw_processing, matrix_utils.utils" && pytest tests/test_group_scaling.py'

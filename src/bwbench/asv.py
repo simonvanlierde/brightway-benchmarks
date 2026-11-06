@@ -46,7 +46,7 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         self.results = {}
         for b in group:
             self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))
-        self.usage = _usage()  # last, so the setup's own work is not counted
+        self.usage, self.energy = _usage(), _energy()  # last, so the setup's own work is not counted
 
     def teardown(self: Any, *args: Any) -> None:
         # The check runs here, outside the timed call; asv reports a raise as a failed benchmark.
@@ -96,12 +96,50 @@ def _usage() -> tuple[float, float, int]:
     return time.perf_counter(), ru.ru_utime + ru.ru_stime, ru.ru_nivcsw
 
 
+_energy_warned = False
+
+
+def _rapl() -> Path:
+    # scripts/box.sh mounts the counter at /run/rapl: Docker hides /sys/devices/virtual/powercap.
+    return Path(os.environ.get("BWBENCH_RAPL", "/sys/class/powercap/intel-rapl:0"))
+
+
+def _energy() -> int | None:
+    """The CPU package's energy counter (Intel RAPL) in µJ, when ``BWBENCH_ENERGY=1`` and it can be read."""
+    global _energy_warned  # noqa: PLW0603 - warn once per process, not once per sample
+    if os.environ.get("BWBENCH_ENERGY") != "1":
+        return None
+    try:
+        return int((_rapl() / "energy_uj").read_text())
+    except (OSError, ValueError) as e:
+        if not _energy_warned:
+            sys.stderr.write(f"bwbench: BWBENCH_ENERGY=1 but no energy is logged: {e}\n")
+            _energy_warned = True
+        return None
+
+
+def _joules(start: int, end: int) -> float | None:
+    """Joules between two counter readings, across at most one wrap of the counter.
+
+    The counter restarts at 0 past ``max_energy_range_uj``. On an i9-14900KF that is 262 kJ,
+    over 17 minutes at 250 W, and asv stops a sample at 900 s.
+    """
+    if end < start:
+        try:
+            end += int((_rapl() / "max_energy_range_uj").read_text())
+        except (OSError, ValueError):
+            return None  # a sample without energy, not a failed benchmark
+    return (end - start) / 1e6
+
+
 def _log_usage(obj: Any, args: tuple) -> None:
     """Append one JSON line per timed sample: its wall and CPU time and involuntary context switches.
 
     Only when ``BWBENCH_ROUNDLOG`` names the log file. Only time_ calls fill ``results``, so only
     time_ samples are logged. The span runs from the end of setup to teardown, so it includes
-    asv's timer. ``scripts/noise_summary.py`` reads the log.
+    asv's timer. With ``BWBENCH_ENERGY=1`` the line also holds ``energy_j``, the whole CPU
+    package's energy over that span. ``scripts/noise_summary.py`` and ``scripts/energy_summary.py``
+    read the log.
     """
     log = os.environ.get("BWBENCH_ROUNDLOG")
     results = getattr(obj, "results", {})
@@ -109,7 +147,11 @@ def _log_usage(obj: Any, args: tuple) -> None:
         return
     log = Path(log)
     cls = type(obj)
-    wall, cpu, nivcsw = (b - a for a, b in zip(obj.usage, _usage(), strict=True))
+    usage, end = _usage(), _energy()
+    wall, cpu, nivcsw = (b - a for a, b in zip(obj.usage, usage, strict=True))
+    start = getattr(obj, "energy", None)
+    joules = None if start is None or end is None else _joules(start, end)
+    energy = {} if joules is None else {"energy_j": joules}
     log.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.get("ASV_ENV_NAME") or Path(sys.prefix).name
     with log.open("a") as f:
@@ -121,7 +163,7 @@ def _log_usage(obj: Any, args: tuple) -> None:
                 "wall": wall,
                 "cpu": cpu,
                 "nivcsw": nivcsw,
-            }
+            } | energy
             f.write(json.dumps(entry) + "\n")
 
 

@@ -1,6 +1,7 @@
 """bwbench.profiling on a toy benchmark; no Brightway code runs here."""
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -86,7 +87,11 @@ def test_find_case_needs_exactly_one_benchmark_of_that_name(tmp_path: Path, monk
     (package / "bench_b.py").write_text(toy.replace("{name}", "twice"))
     (package / "helpers.py").write_text(toy.replace("{name}", "hidden"))
     monkeypatch.syspath_prepend(str(tmp_path))
-    assert profiling.find_case("toy", "only").name == "only"
-    for case in ("twice", "hidden", "missing"):
-        with pytest.raises(SystemExit):
-            profiling.find_case("toy", case)
+    try:
+        assert profiling.find_case("toy", "only").name == "only"
+        for case in ("twice", "hidden", "missing"):
+            with pytest.raises(SystemExit):
+                profiling.find_case("toy", case)
+    finally:  # the toy modules point at tmp_path, which goes away
+        for name in [m for m in sys.modules if m == "bench_toy" or m.startswith("bench_toy.")]:
+            del sys.modules[name]

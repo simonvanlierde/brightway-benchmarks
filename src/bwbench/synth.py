@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 # tests/test_synth.py pins a hash of system("smoke")'s arrays to it: update both together.
 GENERATOR_VERSION = "5"
 INPUTS_SHARE = 0.5  # random builder: upper bound on the sum of input amounts per column
-FACTORIZE_BUDGET = 900.0  # seconds of SuperLU a benchmark case may spend (asv timeout: 900 s, bw2calc cases 600 s)
+FACTORIZE_BUDGET = 900.0  # seconds of SuperLU a benchmark case may spend (asv timeouts: 600 to 1800 s per case)
 MAX_COLUMN_SUM = 0.9  # tiered builder: the reference's series needs column sums below 1
 # The builders that read a real system from a pinned archive, by profile builder name.
 ARCHIVES = {"useeio": useeio.system, "bafu": bafu.system}

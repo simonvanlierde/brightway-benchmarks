@@ -17,6 +17,8 @@ from typing import TYPE_CHECKING
 from bwbench import useeio
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from bwbench.synth import Profile, System
 
 # shortcut: pinned by hand, like useeio.URL. Move to sourceledger with it.
@@ -28,9 +30,13 @@ METHODS = tuple(
 )
 
 
-def system(p: Profile, seed: int) -> System:
-    """The BAFU 2025 system of profile ``p``, fetched into the cache on first use."""
+def archive() -> Path:
+    """The project archive in the cache, downloaded on first use."""
     from bwbench.synth import data_root  # noqa: PLC0415 - synth imports this module
 
-    archive = useeio.fetch(data_root() / "bafu-2025-v2.tar.gz", URL, SHA256)
-    return useeio.archive_system("bafu", p, seed, archive, METHODS)
+    return useeio.fetch(data_root() / "bafu-2025-v2.tar.gz", URL, SHA256)
+
+
+def system(p: Profile, seed: int) -> System:
+    """The BAFU 2025 system of profile ``p``, fetched into the cache on first use."""
+    return useeio.archive_system("bafu", p, seed, archive(), METHODS)

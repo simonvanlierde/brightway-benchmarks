@@ -79,9 +79,8 @@ dependencies:
   - libpython=3.12.16=ha57cdbe_0_cpython
   - libsqlite=3.54.1=h0737f62_101
   - libstdcxx=16.2.0=h934c35e_7
-  - libstdcxx-ng=16.2.0=hdf11a46_7
   - libtiff=4.7.2=hcc2c06a_1
-  - libuuid=2.42.4=hcfc3c73_0
+  - libuuid=2.42.4=hcfc3c73_1
   - libwebp-base=1.6.0=hd42ef1d_1
   - libxcb=1.17.0=hb83e432_2
   - libxcrypt=4.4.38=h280c20c_0
@@ -118,8 +117,8 @@ dependencies:
   - pybcj=1.0.8=py312h5cc1888_1
   - pycparser=3.12=pyh5ded981_1
   - pycryptodomex=3.23.0=py312h4c3975b_1
-  - pydantic=2.14.2=pyh5ded981_0
-  - pydantic-core=2.50.2=py312hc767a74_0
+  - pydantic=2.14.3=pyh5ded981_0
+  - pydantic-core=2.50.4=py312hc767a74_0
   - pydantic-settings=2.16.2=pyh5ded981_0
   - pyecospold=4.0.1=pyhd8ed1ab_0
   - pypardiso=0.4.7=pyhd8ed1ab_0
@@ -135,7 +134,7 @@ dependencies:
   - pytz=2026.6=pyh5ded981_0
   - pyxlsb=1.0.10=pyhd8ed1ab_0
   - pyzstd=0.20.0=pyhd8ed1ab_0
-  - qhull=2020.2=h434a139_5
+  - qhull=2020.2=haf43d43_6
   - randonneur=0.7.2=pyhd8ed1ab_0
   - randonneur_data=0.7.2=pyhd8ed1ab_0
   - rapidfuzz=3.14.6=py312h80505a6_3

@@ -51,7 +51,7 @@ ipywidgets==7.5.0
 isoduration==20.11.0
 jedi==0.20.1
 jinja2==3.1.6
-jsonpointer==3.8
+jsonpointer==3.9
 jsonschema==4.0.1
 jupyter-client==8.6.3
 jupyter-core==4.12.0
@@ -120,7 +120,7 @@ pyxlsb==1.0.1
 pyyaml==6.0.3
 pyzmq==27.3.0
 randonneur==0.7.2
-randonneur-data==0.7.2
+randonneur-data==0.8
 rapidfuzz==3.9.6
 rdflib==7.6.0
 requests==2.0.0

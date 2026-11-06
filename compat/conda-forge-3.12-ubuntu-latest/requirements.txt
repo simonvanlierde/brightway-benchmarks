@@ -66,9 +66,9 @@ py7zr==1.1.4
 pybcj==1.0.8
 pycparser==3.12
 pycryptodomex==3.23.0
-pydantic-core==2.50.2
+pydantic-core==2.50.4
 pydantic-settings==2.16.2
-pydantic==2.14.2
+pydantic==2.14.3
 pyecospold==4.0.1
 pygments==2.21.0
 pypardiso==0.4.7

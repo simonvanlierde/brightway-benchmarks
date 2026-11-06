@@ -322,9 +322,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f
 
 [[packages]]
 name = "jsonpointer"
-version = "3.8"
-sdist = { url = "https://files.pythonhosted.org/packages/c2/cf/5d665216bd9dea19dd26ea93ca525ef02936a9cccd0cd856f8408eb77f0b/jsonpointer-3.8.tar.gz", upload-time = 2026-11-02T21:52:18Z, size = 19212, hashes = { sha256 = "a627a255641390bfb4d51d4cfbb90648078ae855b45804ef7e19ea13a4cca355" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/76/61/20f3a497beac4c8f869b8161b468b31c0f05d9d73600da0313eb759bad8a/jsonpointer-3.8-py3-none-any.whl", upload-time = 2026-11-02T21:52:17Z, size = 10233, hashes = { sha256 = "d69af85adaea202111bbc931067ead68dc16bca4592c74e1a1953152e2a330ab" } }]
+version = "3.9"
+sdist = { url = "https://files.pythonhosted.org/packages/43/a1/33557aa08bb76a1d639db700b65b1aeb3ff10bece6da7bf034edf0262fc2/jsonpointer-3.9.tar.gz", upload-time = 2026-11-05T21:05:37Z, size = 19594, hashes = { sha256 = "b4c52dd58837669881f9677c0e83d73fa0b369feb67563ec4a8b1c13eb3c5a23" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/fa/ab/476598b87ea0b15c6ed8bdc75c162f52667cfc9df36a15a35f166a0e4cae/jsonpointer-3.9-py3-none-any.whl", upload-time = 2026-11-05T21:05:36Z, size = 10255, hashes = { sha256 = "a2768328a37c58749b58a3fffd36843e161eeef4c7064832911c865f80bcaded" } }]
 
 [[packages]]
 name = "jsonschema"
@@ -735,9 +735,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/f7/08/e0de5b374741e1b
 
 [[packages]]
 name = "randonneur-data"
-version = "0.7.2"
-sdist = { url = "https://files.pythonhosted.org/packages/e8/56/9cd709bc18aef80f0981df6abc71c36f7a5e716f5fb546d64585d670502b/randonneur_data-0.7.2.tar.gz", upload-time = 2025-11-21T13:23:48Z, size = 12055287, hashes = { sha256 = "59ba83e9d9a550d019f7ea99c9024a69572b23e376e5a401b6255256e547d22c" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/5f/06/7053851da688f138330c6d123c0aef2c0f8d1d3706449f7a263fec5534c2/randonneur_data-0.7.2-py3-none-any.whl", upload-time = 2025-11-21T13:23:43Z, size = 12047458, hashes = { sha256 = "64e7ec41b65e8a30acff1ef87b98ffa2c013c9170f55edbca901ccf3eeee40a9" } }]
+version = "0.8"
+sdist = { url = "https://files.pythonhosted.org/packages/72/30/1faf03671e3e04ab6235142a402e2bb3b3183d8b723d255390e0f2b830a0/randonneur_data-0.8.tar.gz", upload-time = 2026-11-05T13:34:33Z, size = 12331604, hashes = { sha256 = "33458191ad3f7ae6f1b45e68ff4b962288afc978273ab4a9894779dc0077398b" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/01/c6/ca0ffa56004caa0467a144ce21d557a5c9daf2505b220f65e676c06efaf0/randonneur_data-0.8-py3-none-any.whl", upload-time = 2026-11-05T13:34:26Z, size = 12331083, hashes = { sha256 = "4300173df476155003341d986a87ea8d418acc5ef7d002b262f4971427548f3a" } }]
 
 [[packages]]
 name = "rapidfuzz"

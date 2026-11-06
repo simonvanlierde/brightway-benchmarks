@@ -66,8 +66,13 @@ for d in $writable; do
     mkdir -p "$repo/$d"
     mounts+=(-v "$repo/$d":"/src/$d")
 done
-exec docker run --rm -i --init --name "tmp-bwbench-$$" --hostname "$(hostname -s)-box" --user "$(id -u):$(id -g)" \
+# An energy run skips oss-bench, so it takes the host's quiet gate itself (at once inside a queue
+# job, which already holds it): the package counter must not see other jobs.
+# BWBENCH_GATE swaps node-gate, for the test.
+gate=() g=${BWBENCH_GATE:-${HOME:-}/.local/bin/node-gate}
+[ -z "${energy[*]}" ] || [ ! -x "$g" ] || gate=("$g" quiet --)
+exec ${gate[@]+"${gate[@]}"} docker run --rm -i --init --name "tmp-bwbench-$$" --hostname "$(hostname -s)-box" --user "$(id -u):$(id -g)" \
     --cap-drop ALL --security-opt no-new-privileges ${noaslr[@]+"${noaslr[@]}"} --pids-limit 4096 \
-    ${energy[@]+"${energy[@]}"} ${BWBENCH_CPUSET:+--cpuset-cpus "$BWBENCH_CPUSET"} \
+    ${energy[@]+"${energy[@]}"} ${energy[@]+--cpuset-cpus "${BWBENCH_CPUSET:-16-23}"} \
     --memory "${BWBENCH_MEM:-2g}" --memory-swap "${BWBENCH_MEM:-2g}" --cpus "${BWBENCH_CPUS:-2}" \
     "${mounts[@]}" -w /src "$image" env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"

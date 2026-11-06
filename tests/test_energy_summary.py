@@ -15,7 +15,7 @@ def write_log(path: Path) -> None:
     lca = {"case": "bench_lca.SingleScore.time_first_score", "env": "env-a"}
     samples = [
         lca | {"params": "'smoke', 'umfpack'", "wall": 1.0, "energy_j": 30.0},
-        lca | {"params": "'smoke', 'umfpack'", "wall": 2.0, "energy_j": 50.0},
+        lca | {"params": "'smoke', 'umfpack'", "wall": 3.0, "energy_j": 50.0},
         lca | {"params": "'smoke', 'umfpack'", "wall": 1.0, "energy_j": 40.0},
         lca | {"params": "'smoke', 'superlu'", "wall": 4.0, "energy_j": 100.0},
         lca | {"params": "'smoke', 'superlu'", "wall": 4.0},  # logged without energy: left out
@@ -38,8 +38,8 @@ def test_median_joules_above_idle_and_watts_per_case(tmp_path: Path):
     ]
     _case, _env, _n, joules, above, watts = rows[1]
     assert joules == 40.0
-    assert above == 30.0  # 20, 30, 30 J above 10 W of idle
-    assert watts == pytest.approx(30.0)  # 30, 25, 40 W
+    assert above == 20.0  # 20, 20, 30 J above 10 W of idle, each over its own wall time
+    assert watts == pytest.approx(30.0)  # 30, 16.7, 40 W
 
 
 def test_prints_a_markdown_table_without_an_idle_baseline(tmp_path: Path):

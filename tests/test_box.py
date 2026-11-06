@@ -170,14 +170,18 @@ RAPL = "/sys/class/powercap/intel-rapl:0/energy_uj"
 
 @pytest.mark.skipif(not os.access(RAPL, os.R_OK), reason="needs a readable Intel RAPL counter")
 def test_box_shows_the_energy_counter_without_a_cpu_slot(box: tuple[Path, Path]):
-    """oss-bench takes no extra mounts, so an energy run goes straight to docker."""
+    """oss-bench takes no extra mounts, so an energy run goes to docker, through the quiet gate."""
     repo, log = box
     stub = repo / "stub" / "oss-bench"
     stub.write_text("#!/bin/sh\n# OSS_BENCH_RW\necho oss-bench >&2\n")
     stub.chmod(0o755)
-    out = run_box(repo, BWBENCH_ENERGY="1", BWBENCH_CPUSET="0-5")
+    gate = repo / "stub" / "node-gate"
+    gate.write_text('#!/bin/sh\necho "gate $1" >&2\nshift 2\nexec "$@"\n')
+    gate.chmod(0o755)
+    out = run_box(repo, BWBENCH_ENERGY="1", BWBENCH_CPUSET="0-5", BWBENCH_GATE=str(gate))
     assert out.returncode == 0, out.stderr
     assert "oss-bench" not in out.stderr
+    assert "gate quiet" in out.stderr, "the energy run did not take the quiet gate"
     args = log.read_text().split("\n")
     # Docker masks /sys/devices/virtual/powercap in the box, so the counter goes elsewhere.
     assert "type=bind,source=/sys/class/powercap/intel-rapl:0,target=/run/rapl,readonly" in args

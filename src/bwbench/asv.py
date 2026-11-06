@@ -118,14 +118,17 @@ def _energy() -> int | None:
         return None
 
 
-def _joules(start: int, end: int) -> float:
+def _joules(start: int, end: int) -> float | None:
     """Joules between two counter readings, across at most one wrap of the counter.
 
     The counter restarts at 0 past ``max_energy_range_uj``. On an i9-14900KF that is 262 kJ,
     over 17 minutes at 250 W, and asv stops a sample at 900 s.
     """
     if end < start:
-        end += int((_rapl() / "max_energy_range_uj").read_text())
+        try:
+            end += int((_rapl() / "max_energy_range_uj").read_text())
+        except (OSError, ValueError):
+            return None  # a sample without energy, not a failed benchmark
     return (end - start) / 1e6
 
 
@@ -147,7 +150,8 @@ def _log_usage(obj: Any, args: tuple) -> None:
     usage, end = _usage(), _energy()
     wall, cpu, nivcsw = (b - a for a, b in zip(obj.usage, usage, strict=True))
     start = getattr(obj, "energy", None)
-    energy = {} if start is None or end is None else {"energy_j": _joules(start, end)}
+    joules = None if start is None or end is None else _joules(start, end)
+    energy = {} if joules is None else {"energy_j": joules}
     log.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.get("ASV_ENV_NAME") or Path(sys.prefix).name
     with log.open("a") as f:

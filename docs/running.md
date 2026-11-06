@@ -84,7 +84,7 @@ The counter covers the whole CPU package, all cores and every process, so run on
 The joules per sample include what the idle CPU draws anyway. To get the energy the operation
 adds, measure the idle draw first (the counter's rise over a quiet minute, in µJ, divided by 60
 million) and pass it as `--idle-w`. The box cannot reach the counter through `oss-bench`, so an
-energy run has no CPU slot: `BWBENCH_CPUSET` pins it to CPUs you choose. The numbers stay
+energy run takes the host's quiet gate itself and runs on CPUs 16 to 23, or `BWBENCH_CPUSET`. The numbers stay
 local. They never go to `results/` or the site.
 
 ## Memory

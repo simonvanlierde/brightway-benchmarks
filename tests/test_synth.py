@@ -15,6 +15,25 @@ from bwbench.synth import MAX_COLUMN_SUM, PROFILES, as_bw2data, neumann, system
 SMALL = ["smoke", "stress-random"]
 
 
+@given(n=st.integers(min_value=1, max_value=500), cap=st.integers(min_value=1, max_value=200))
+def test_families_cover_every_product_without_exceeding_the_cap(n: int, cap: int):
+    p = synth.profile("smoke", family_max=cap)
+    fam, first = synth._families(p, np.random.default_rng(0), n)  # noqa: SLF001
+    assert len(fam) == n
+    sizes = np.bincount(fam)
+    assert np.all((sizes >= 1) & (sizes <= cap))
+    np.testing.assert_array_equal(first, np.r_[0, np.cumsum(sizes)[:-1]])
+
+
+def test_family_input_distribution_stays_fixed_when_members_are_shuffled():
+    p = synth.profile("ecoinvent")
+    fam, first = synth._families(p, np.random.default_rng(0), p.products)  # noqa: SLF001
+    a = synth._family_inputs(p, np.random.default_rng(0), fam)  # noqa: SLF001
+    b = synth._family_inputs(p, np.random.default_rng(1), fam)  # noqa: SLF001
+    np.testing.assert_array_equal(np.sort(a[first]), np.sort(b[first]))
+    assert not np.array_equal(a, b)
+
+
 def small(name: str, **kw: object) -> synth.System:
     # ty checks the unpacked dict's int against every keyword, `uncertain: bool` included.
     return system(name, **({"products": 300} if name == "stress-random" else {}), **kw)  # ty: ignore[invalid-argument-type]
@@ -300,10 +319,10 @@ def test_property_neumann_agrees_with_the_reference(s: synth.System, product: in
     assert synth.neumann_score(lca, s.scale) == pytest.approx(s.reference[product][0], rel=1e-9)
 
 
-# What system("smoke") builds under GENERATOR_VERSION "4". A builder change that moves the
+# What system("smoke") builds under GENERATOR_VERSION "5". A builder change that moves the
 # arrays fails here: bump GENERATOR_VERSION in synth.py and this pair together.
-SMOKE_VERSION = "4"
-SMOKE_SHA256 = "92e68c73c66a3db51a2baf067782ac4e3fdb292f0db777cbcbcfaf1199c9d71c"
+SMOKE_VERSION = "5"
+SMOKE_SHA256 = "4ce0affb541cde364ae03ab8b9c88c396fcb9b682743c07bdd9e095e43d2220e"
 
 
 def arrays_digest(s: synth.System) -> str:

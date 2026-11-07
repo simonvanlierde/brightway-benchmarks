@@ -13,7 +13,6 @@ from bwbench.ecospold import write_ecospold
 from bwbench.synth import system
 
 NS = {"es": "http://www.EcoInvent.org/EcoSpold02"}
-INTERMEDIATE_SHORTFALL = 5.6  # pinned: datasets with fewer exchanges than 12.78 get one comment each
 
 
 def fake_flows(n: int) -> list[str]:
@@ -134,7 +133,9 @@ def full_release(tmp_path_factory: pytest.TempPathFactory) -> dict:
         m.setattr(Path, "write_text", count)
         write_ecospold(s, tmp_path_factory.mktemp("full"), flows)
     n = s.profile.products
-    return {"chars": chars, "padding": padding, "comments": comments, "n": n}
+    intermediate = ecospold.HEAVY["comments"]["intermediateExchange"][0]
+    capacity = np.minimum(np.bincount(s.tech_cols, minlength=n), intermediate).mean()
+    return {"chars": chars, "padding": padding, "comments": comments, "n": n, "intermediate_capacity": capacity}
 
 
 def test_full_release_as_heavy_as_ecoinvent(full_release: dict):
@@ -144,9 +145,11 @@ def test_full_release_as_heavy_as_ecoinvent(full_release: dict):
 def test_full_release_comments_per_kind(full_release: dict):
     """The release's comment count per kind, at most one per exchange (ecoSpold2 allows one)."""
     got = {kind: c / full_release["n"] for kind, c in full_release["comments"].items()}
-    shortfall = {"intermediateExchange": INTERMEDIATE_SHORTFALL}
     for kind, (count, _) in ecospold.HEAVY["comments"].items():
-        assert got[kind] == pytest.approx(count - shortfall.get(kind, 0), abs=0.1), kind
+        if kind == "intermediateExchange":
+            assert got[kind] == pytest.approx(full_release["intermediate_capacity"], abs=0.1)
+        else:
+            assert got[kind] == pytest.approx(count, abs=0.1), kind
 
 
 def test_full_release_padding_is_tiny(full_release: dict):

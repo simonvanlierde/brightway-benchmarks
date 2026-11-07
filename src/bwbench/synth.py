@@ -39,7 +39,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 import numpy as np
-from scipy import sparse
+from scipy import sparse, special
 from scipy.sparse import csgraph
 from scipy.sparse import linalg as sla
 
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 # the asv `version` of benchmarks on generated data, so their old results are dropped.
 # That replaces asv's hash of the benchmark code: bump it when their timed code changes too.
 # tests/test_synth.py pins a hash of system("smoke")'s arrays to it: update both together.
-GENERATOR_VERSION = "4"
+GENERATOR_VERSION = "5"
 INPUTS_SHARE = 0.5  # random builder: upper bound on the sum of input amounts per column
 NEUMANN_TOL = 1e-17  # the series stops when the rest of it is below this, relative to the demand
 NEUMANN_MAX_TERMS = 5_000  # without a bound on the rest; radius 0.99 needs about 4,000
@@ -81,25 +81,26 @@ class Profile:
     # random builder
     inputs: int = 8  # upstream inputs per product, before repeated cells are dropped
     # tiered builder
-    inputs_median: float = 5.0  # inputs per product are lognormal, rounded
-    inputs_sigma: float = 1.34
+    # Keep fitted precision: crossing an integer input count changes the subsequent random draws.
+    inputs_median: float = 4.293068301720509  # rounded lognormal quantiles within family-size bands
+    inputs_sigma: float = 1.560981997653939
     inputs_max: int = 410  # caps the longest input lists
-    inputs_extra: float = 1.15  # more draws than inputs, for the repeated cells that are dropped
-    terminal: float = 0.12  # share of products nothing buys
-    hub_sigma: float = 2.75  # spread of supplier weights: higher, fewer and bigger hubs
-    hub_cap: int = 1100  # most draws one supplier is expected to get
-    back: float = 0.15  # share of drawn inputs from anywhere in the order: they close the loops
-    same_region: float = 0.23  # share of drawn inputs from the consumer's region
-    same_sector: float = 0.28  # the same for its sector
-    regions: int = 20
+    inputs_extra: float = 1.1568092697778913  # more draws than inputs, for the repeated cells that are dropped
+    terminal: float = 0.1524486748309  # share of products nothing buys
+    hub_sigma: float = 2.774336543482854  # spread of supplier weights: higher, fewer and bigger hubs
+    hub_cap: int = 556  # most draws one supplier is expected to get
+    back: float = 0.21584040362970142  # share of drawn inputs from anywhere in the order: they close the loops
+    same_region: float = 0.17242732136949018  # share of drawn inputs from the consumer's region
+    same_sector: float = 0.35546934561276256  # the same for its sector
+    regions: int = 28
     sectors: int = 40
     # Activity families: one activity offered in several regions, its members neighbours in the
     # order. Every member copies its family's first member's inputs; a supplier with a member in
     # the consumer's region is swapped for that member with chance family_local.
-    family_zipf: float = 2.0  # Zipf exponent of family sizes: lower, more and bigger families
+    family_zipf: float = 1.8935567175472885  # Zipf exponent of family sizes: lower, more and bigger families
     family_max: int = 200
-    family_local: float = 0.2
-    family_hub_sales: float = 0.3  # see _sell_locally
+    family_local: float = 0.3467999994573744
+    family_hub_sales: float = 0.1965347464979818  # see _sell_locally
     treatment: float = 0.126  # share of products that are waste treatments
     amount_sigma: float = 3.5  # lognormal spread of input amounts within a column, before units
     units: float = 0.3  # standard deviation of log10 of each product's unit
@@ -120,12 +121,8 @@ def _short_hash(key: object, length: int = 12) -> str:
     return hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()[:length]
 
 
-# Calibrated to the target file with measure(). Degrees, the giant loop, the negative share,
-# the radius and locality land within a few percent; tests/test_measure.py checks them.
-# Two gaps remain:
-# - LU fill is COLAMD 323 and MMD_AT_PLUS_A 99, against 175 and 76. Fill follows the size of
-#   the giant loop. At 64%, no hub, locality or nested-locality setting lowered it.
-# - The top of log10 |x| is narrower: q99 0.3 against 4.8. Wider units raise fill further.
+# tests/test_measure.py checks degrees, loops, signs, radius, locality and fill over seeds 0 to 3.
+# Input magnitudes still have a narrower upper tail than the calibration data.
 ECOINVENT = Profile(products=26_533, flows=4_000, target="ecoinvent-3.12-cutoff.json")
 
 # NOTE: only `ecoinvent` is calibrated (to its file in profiles/). The others scale it, or
@@ -411,11 +408,36 @@ def _draw(
 
 
 def _families(p: Profile, rng: np.random.Generator, n: int) -> tuple[NDArray, NDArray]:
-    """Each position's family, and each family's first position: runs of Zipf-distributed length."""
-    sizes = np.minimum(rng.zipf(p.family_zipf, n), p.family_max)  # n draws always reach n
-    sizes = sizes[: np.searchsorted(np.cumsum(sizes), n) + 1]
-    sizes[-1] -= sizes.sum() - n
+    """Stratified capped-Zipf family sizes, shuffled into the supply-chain order."""
+    values = np.arange(1, p.family_max + 1)
+    probabilities = values.astype(float) ** (-p.family_zipf) / special.zeta(p.family_zipf, 1)
+    probabilities[-1] = 1 - probabilities[:-1].sum()  # the cap includes the upper tail
+    count = max(1, round(n / (values @ probabilities)))
+    sizes = np.searchsorted(np.cumsum(probabilities), (np.arange(count) + 0.5) / count) + 1
+    remaining = n - sizes.sum()
+    if remaining > 0:
+        sizes = np.concatenate([sizes, np.minimum(p.family_max, np.arange(remaining, 0, -p.family_max))])
+    else:
+        sizes = sizes[: np.searchsorted(np.cumsum(sizes), n) + 1]
+        sizes[-1] -= sizes.sum() - n
+    sizes = rng.permutation(sizes)
     return np.repeat(np.arange(sizes.size), sizes), np.concatenate([[0], np.cumsum(sizes)[:-1]])
+
+
+def _family_inputs(p: Profile, rng: np.random.Generator, fam: NDArray) -> NDArray:
+    """Shuffle fixed lognormal quantiles within family-size bands to control variation between seeds.
+
+    These are finite empirical distributions: a band with few families has a shorter tail.
+    """
+    bands = np.floor(np.log2(np.bincount(fam))).astype(np.int64)
+    counts = np.empty(bands.size)
+    for band in np.unique(bands):
+        mask = bands == band
+        quantiles = rng.permutation((np.arange(mask.sum()) + 0.5) / mask.sum())
+        counts[mask] = np.minimum(
+            np.rint(np.exp(np.log(p.inputs_median) + p.inputs_sigma * special.ndtri(quantiles))), p.inputs_max
+        )
+    return counts[fam]
 
 
 def _copy_templates(
@@ -465,7 +487,8 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
     ids run the other way, so the reference products 0 to 29 have the deepest chains.
     """
     n = p.products
-    k = np.minimum(np.rint(rng.lognormal(np.log(p.inputs_median), p.inputs_sigma, n)), p.inputs_max)
+    fam, first = _families(p, rng, n)
+    k = _family_inputs(p, rng, fam)
     sells = rng.random(n) >= p.terminal
     sells[n - min(n, REFERENCE_PRODUCTS) :] = True
 
@@ -484,7 +507,6 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
         weight = np.minimum(weight, p.hub_cap * weight.sum() / max(cols.size, 1))
     pool = rng.random(cols.size)
     pool = np.where(pool < p.same_region, 1, np.where(pool < p.same_region + p.same_sector, 2, 0))
-    fam, first = _families(p, rng, n)
     rank = np.arange(n) - first[fam]  # members of a family get distinct regions, up to p.regions
     # Later members take regions 1, 2, ... in every family, so a member finds its local supplier;
     # first members (global, or RoW) spread over all regions.

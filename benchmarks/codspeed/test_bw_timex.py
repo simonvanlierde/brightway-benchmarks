@@ -1,6 +1,7 @@
 """pytest-codspeed entry for the bw_timex suite: `just codspeed bw_timex`."""
 
 # The package import pins the BLAS threads before numpy loads.
+from bench_bw_timex.bench_heating import *  # noqa: F403
 from bench_bw_timex.bench_timex import *  # noqa: F403
 
 import bwbench.pytest

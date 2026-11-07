@@ -3,6 +3,9 @@
 # also checks the UI fixture. Write for Brightway users: plain words, no internal issue numbers.
 
 [benchmarks]
+"bench_heating.HeatingTraversal.time_traverse_heating"     = "Supply-chain traversal of the BAFU heating comparison, with a calculation budget of two or one hundred."
+"bench_heating.HeatingTimeline.time_heating_lci"           = "Expand twenty years of home heating into a timeline on an unchanged BAFU background."
+"bench_heating.HeatingTimeline.track_static_score_error"   = "How far the time-expanded score is from an independent reference on the stored matrices."
 "bench_import.timeraw_import_bw2calc"                      = "Importing bw2calc in a fresh Python process."
 "bench_import.timeraw_import_bw2data"                      = "Importing bw2data in a fresh Python process."
 "bench_lca.SingleScore.time_first_score"                   = "One demand and one impact method from scratch: build the matrices, factorize, solve and characterize."
@@ -33,6 +36,9 @@
 
 # The short name the viewer shows for a benchmark; the original name stays in its detail view.
 [labels.benchmarks]
+"bench_heating.HeatingTraversal.time_traverse_heating"     = "Heating supply-chain traversal"
+"bench_heating.HeatingTimeline.time_heating_lci"           = "Heating timeline inventory"
+"bench_heating.HeatingTimeline.track_static_score_error"   = "Heating timeline score error"
 "bench_import.timeraw_import_bw2calc"                      = "Import bw2calc"
 "bench_import.timeraw_import_bw2data"                      = "Import bw2data"
 "bench_lca.SingleScore.time_first_score"                   = "First score"
@@ -63,6 +69,7 @@
 
 # The name the viewer shows for a parameter.
 [labels.params]
+option     = "Heating option"
 size       = "Synthetic database"
 cls        = "Calculation class"
 demands    = "Functional units"
@@ -82,7 +89,7 @@ scenarios  = "Scenarios"
 # One note per series under the chart, by the environment's solver label, for the solvers
 # bw2calc cannot pick: src/bwbench/solvers.py patches them in.
 [notes.environments]
-KLU = "KLU: pyklu's sparse solver, which splits the matrix into blocks before factorizing A. bw2calc has no KLU path, so the benchmarks patch it in as the solver (x86_64 only)."
+KLU             = "KLU: pyklu's sparse solver, which splits the matrix into blocks before factorizing A. bw2calc has no KLU path, so the benchmarks patch it in as the solver (x86_64 only)."
 "UMFPACK on Aᵀ" = "UMFPACK on Aᵀ: scikit-umfpack factorizing Aᵀ instead of A, which leaves less fill-in on LCA matrices. bw2calc 3.1.0 does this itself; for the other releases the benchmarks patch it in."
 
 # One line under a subject's name in the catalogue: what it times, or what sets it apart.
@@ -97,6 +104,7 @@ matrix_utils    = "Building matrices from datapackages."
 
 # A parameter's meaning, the same in every benchmark that has it.
 [params]
+option     = "Heat pump or condensing gas boiler, both providing the same useful heat."
 size       = "The synthetic system the case runs on."
 cls        = "The bw2calc class that does the calculation."
 demands    = "How many functional units are calculated together."
@@ -209,4 +217,4 @@ adjoint  = "https://docs.brightway.dev/en/latest/content/api/bw2calc/fast_scores
 # UMFPACK, and the codspeed job installs PyPardiso, which bw2calc picks first.
 [codspeed]
 params = { size = "smoke" }
-skip = ["bench_lca.NewDemandRefinement.time_redo_lci_refinement"]
+skip   = ["bench_lca.NewDemandRefinement.time_redo_lci_refinement"]

@@ -11,15 +11,17 @@
 - one ``20 years`` node per option, demanding ``heat_demand_kwh`` a year of heat for 20 years.
 
 Only BAFU's process names appear here: its values are read from the archive at run time
-(``bwbench.bafu``). Building and checking the arrays needs only numpy and scipy; the
-datapackage needs bw_processing, so it runs in the benchmark container.
+(``bwbench.bafu``). Foreground assembly and reference solves need only numpy and scipy.
+Reading the archive and writing datapackages need bw_processing, inside the benchmark container.
 """
 
 from __future__ import annotations
 
+import pickle
 import sqlite3
 import tarfile
 import tempfile
+from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
 
@@ -29,6 +31,8 @@ from scipy import sparse
 from bwbench.synth import neumann
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from numpy.typing import NDArray
 
     from bwbench.synth import System
@@ -49,13 +53,15 @@ NODES = ("grid NL", "heat pump", "burner", "gas boiler", "heat pump, 20 years", 
 GRID, HP, BURNER_NODE, BOILER_NODE, HP_YEARS, BOILER_YEARS = range(len(NODES))
 OPTIONS = {"heat pump": HP_YEARS, "gas boiler": BOILER_YEARS}
 YEARS = 20
-VERSION = "1"  # bump with any change to the foreground or the heating cases: it restarts their history
+VERSION = "3"  # bump with any change to the foreground or the heating cases: it restarts their history
 MJ_PER_KWH = 3.6
-# - cop 3.0: field trials put air-source heat pumps' seasonal performance factor near 3
-#   (Staffell et al. 2012, Energy Environ. Sci. 5, 9291).
-# - 10,000 kWh of heat a year: a Dutch household burns about 1,000 to 1,200 m³ of gas a year
-#   (CBS), at 9.8 kWh/m³ and a boiler efficiency near 90%.
-# - renewable_share 0: BAFU's Dutch grid as it is; 1 runs on Dutch photovoltaics alone.
+# These are illustrative benchmark assumptions, not measured Dutch averages.
+# Staffell et al. (2012), doi:10.1039/C2EE22653G, review performance across systems and climates;
+# a fixed seasonal COP of 3 represents one scenario, not their universal field-trial result.
+# CBS's January 2026 energy bill reports gas consumption, not useful space heat:
+# https://www.cbs.nl/nl-nl/longread/aanvullende-statistische-diensten/2026/de-energierekening-januari-2026
+# 10,000 kWh/year is a round useful-heat assumption; no gas-to-heat conversion is calibrated here.
+# renewable_share 0 uses BAFU's Dutch grid; 1 uses Dutch photovoltaics alone.
 DEFAULTS = {"cop": 3.0, "heat_demand_kwh": 10_000.0, "renewable_share": 0.0}
 
 
@@ -288,3 +294,121 @@ def datapackage(fg: Foreground) -> object:
         data_array=fg.bio_data,
     )
     return dp
+
+
+def bw2data(system: System, fg: Foreground) -> dict:
+    """Foreground records linked to ``system.bw2data(db="background", bio="bio")``.
+
+    Codes use foreground node indices; background products and flows keep ``p<i>`` and ``f<j>``.
+    Values stay in memory and must not be published.
+    """
+    records: dict = {
+        ("foreground", str(i)): {
+            "name": name,
+            "reference product": name,
+            "unit": "unit",
+            "location": "NL",
+            "exchanges": [],
+        }
+        for i, name in enumerate(NODES)
+    }
+    for r, c, amount, flip in zip(fg.tech_rows, fg.tech_cols, fg.tech_data, fg.tech_flip, strict=True):
+        key = ("foreground", str(r - fg.base)) if r >= fg.base else ("background", f"p{r}")
+        records["foreground", str(c - fg.base)]["exchanges"].append(
+            {"input": key, "amount": float(amount), "type": "technosphere" if flip else "production"}
+        )
+    for r, c, amount in zip(fg.bio_rows, fg.bio_cols, fg.bio_data, strict=True):
+        records["foreground", str(c - fg.base)]["exchanges"].append(
+            {"input": ("bio", f"f{r - system.flow_offset}"), "amount": float(amount), "type": "biosphere"}
+        )
+    return records
+
+
+def stage_scores(system: System, fg: Foreground, at: dict[str, int]) -> dict[str, list[list[float]]]:
+    """Each foreground stage's score per option and method, including its complete upstream chain.
+
+    The four disjoint stages sum to the total. These aggregate scores can be published;
+    the underlying inventory entries cannot.
+    """
+    outside = fg.tech_flip & (fg.tech_rows < fg.base)
+    electricity_inputs = outside & (fg.tech_cols == fg.id(GRID))
+    gas_inputs = outside & (fg.tech_rows == at[GAS_NL])
+    other_inputs = outside & ~electricity_inputs & ~gas_inputs
+    stages = {
+        "Electricity supply": electricity_inputs,
+        "Gas supply": gas_inputs,
+        "Other supply chains": other_inputs,
+        "Foreground emissions": np.zeros(fg.tech_data.size, dtype=bool),
+    }
+    demands = [{fg.id(node): 1.0} for node in OPTIONS.values()]
+    return {
+        name: reference(
+            system,
+            fg._replace(
+                tech_data=np.where(outside & ~keep, 0.0, fg.tech_data),
+                bio_data=fg.bio_data if name == "Foreground emissions" else np.zeros_like(fg.bio_data),
+            ),
+            demands,
+        )
+        for name, keep in stages.items()
+    }
+
+
+FlowMetadata = tuple[str, str, tuple[str, ...]]
+
+
+def expand_factors(flows: Mapping[int, FlowMetadata], factors: dict[int, float]) -> dict[int, float]:
+    """Add missing descendants of uniquely characterized parents; exact flow factors always win.
+
+    Names and units must match exactly. Categories must be a strict prefix; the deepest
+    parent wins. Ambiguous parents raise instead of silently choosing one.
+    """
+    expanded = factors.copy()
+    for target, (name, unit, categories) in flows.items():
+        if target in factors:
+            continue
+        for depth in range(len(categories) - 1, 0, -1):
+            parents = [source for source in factors if flows[source] == (name, unit, categories[:depth])]
+            if len(parents) > 1:
+                msg = f"ambiguous parent factors for flow {target} at {categories[:depth]}"
+                raise ValueError(msg)
+            if parents:
+                expanded[target] = factors[parents[0]]
+                break
+    return expanded
+
+
+def corrected_system(system: System) -> System:
+    """The heating case's BAFU system with parent-compartment factors expanded to emitted descendants.
+
+    The archive and the general BAFU benchmarks stay unchanged. This matches Brightway's
+    ``match_subcategories`` convention, extended to choose the most specific unique parent.
+    No external factor values or cross-substance aliases are introduced.
+    """
+    from bwbench import bafu, useeio  # noqa: PLC0415 - archive reading needs container dependencies
+
+    archive = bafu.archive()
+    _, bio, methods = useeio.read(archive, bafu.METHODS)
+    flow_ids = np.unique(bio[0]["row"])
+    needed = set(flow_ids) | {int(i) for ids, _ in methods for i in ids}
+    with tempfile.TemporaryDirectory() as tmp, tarfile.open(archive) as tar:
+        member = next(m for m in tar.getmembers() if m.name.endswith("/lci/databases.db"))
+        tar.extract(member, tmp, filter="data")
+        with sqlite3.connect(Path(tmp) / member.name) as con:
+            metadata = {}
+            for i, blob in con.execute("select id, data from activitydataset"):
+                if i in needed:
+                    # The archive's checksum is pinned and verified before any metadata is read.
+                    data = pickle.loads(blob)  # noqa: S301
+                    metadata[i] = (data["name"], data["unit"], tuple(data["categories"]))
+    mapped, values = [], []
+    for ids, factors in methods:
+        # Repeated vector entries contribute to one flow's factor, as in the original matrix.
+        source = {int(i): float(factors[ids == i].sum()) for i in np.unique(ids)}
+        expanded = expand_factors(metadata, source)
+        keep = np.isin(ids, flow_ids)
+        extra = [int(i) for i in flow_ids if i not in source and i in expanded]
+        combined = np.concatenate([ids[keep], np.array(extra, dtype=np.int64)])
+        mapped.append(np.searchsorted(flow_ids, combined).astype(np.int64) + system.flow_offset)
+        values.append(np.concatenate([factors[keep], [expanded[i] for i in extra]]).astype(np.float64))
+    return replace(system, name=f"{system.name}-heating{VERSION}", cf_flows=mapped, cf_data=values)

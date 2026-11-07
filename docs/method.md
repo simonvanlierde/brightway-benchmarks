@@ -105,18 +105,43 @@ BAFU's Swiss heat pump and gas boiler, with Dutch gas, and electricity from a Du
 mixes BAFU's Dutch grid with Dutch photovoltaics. The heat pump's electricity is replaced by
 1/COP, not added to BAFU's own. The defaults are a seasonal COP of 3.0, 10,000 kWh of heat a year
 and BAFU's Dutch grid as it is. The foreground is an in-memory bw_processing datapackage beside
-BAFU's, so the bw2calc suite needs no bw2data. Two cases time it:
+BAFU's, so the bw2calc suite needs no bw2data. Four cases time it:
 
+- `HeatingTimeline` (`bw_timex`): the complete per-heat inventory evenly distributed across twenty years, with an unchanged background.
+  It checks the static score against an independent Neumann series on the matrices bw2data actually stores.
+  Set `BWBENCH_TIMEX_SIZES=bafu` to include it.
+- `HeatingTraversal` (`bw_graph_tools`): a supply-chain calculation budget of either two or one hundred per option.
 - `HeatingMulti`: both options against the three EN 15804+A2 methods with `MultiLCA`.
 - `HeatingSweep`: both options' climate change score over a square grid of COP (2.5 to 4.5) and
   renewable share (0 to 1). `rebuild` makes a new foreground and LCA per scenario. `redo_lci`
   factorizes the part no scenario changes once, and moves each scenario's electricity into the
   demand, which gives the same scores because the system is linear.
 
-Their reference is the Neumann series on BAFU and the foreground together, with no factorization.
-PyPardiso and UMFPACK match it to within 1e-10. SuperLU's `redo_lci` sweep misses it by 1.05e-9 and
-fails the check: its demand puts up to 80,000 kWh on BAFU's Dutch grid directly, where BAFU's
-conditioning costs SuperLU its digits (a plain `spsolve` of that demand misses by 4.8e-9).
+The defaults are illustrative assumptions. [Staffell et al. (2012)](https://doi.org/10.1039/C2EE22653G)
+review heat pump performance across systems and climates; they do not establish a universal Dutch COP.
+[CBS's January 2026 report](https://www.cbs.nl/nl-nl/longread/aanvullende-statistische-diensten/2026/de-energierekening-januari-2026?onepage=true)
+reports gas consumption, not useful space heat, so it does not directly validate the heat-demand default.
+
+The heating cases expand the archive's parent-compartment factors to otherwise uncharacterized
+subcompartments. This follows Brightway's
+[`match_subcategories`](https://docs.brightway.dev/en/latest/_modules/bw2io/strategies/lcia.html#match_subcategories)
+convention. A flow must have exactly the same name and unit. Categories must descend from the
+factor's category tuple; sibling compartments never match. An exact factor, including zero,
+wins. Otherwise the most specific unique parent wins; ambiguous parents raise.
+All three methods use this rule across the foreground and background. No numerical factor
+is invented. The raw archive and the general BAFU benchmarks keep their original factors.
+
+This matters for combustion: the archive's climate factors characterize the parent air compartment,
+but the burner's fossil carbon dioxide, methane and nitrous oxide use its high-population
+subcompartment. Without expansion, neither the original burner nor the copied burner has these
+emissions characterized. The [heating story](../ui/src/pages/stories/home-heating.astro) publishes
+corrected stage-level aggregate scores, with the FOEN citation and no inventory amounts.
+These remain illustrative heating scenarios, not forecasts or household purchasing advice.
+
+The reference is an independent Neumann series with no factorization. The bw2calc and traversal
+cases use the expanded source factors and the foreground together. The bw_timex case uses the
+matrices bw2data actually stores, accounting for its processing precision. Every native score must
+match within `DIRECT_RTOL` (1e-9); an error outside that tolerance fails the case.
 
 ## How the results stay reproducible
 

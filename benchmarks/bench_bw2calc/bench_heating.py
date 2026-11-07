@@ -4,6 +4,7 @@
 in-memory datapackage beside BAFU's, so the suite needs no bw2data. The cases run only at
 ``BWBENCH_SIZES=bafu``, since the foreground names BAFU processes. Every score is checked
 against ``heating.reference``, a Neumann series on the same matrices with no Brightway code.
+Heating methods expand parent-compartment factors to missing descendants; the raw archive stays unchanged.
 """
 
 import functools
@@ -14,7 +15,7 @@ from bwbench import DIRECT_RTOL, bafu, check_table, first_time, heating, knob
 from bwbench.asv import classes
 from bwbench.bench import BenchSetup, NotApplicable, bench
 from bwbench.solvers import assert_reached
-from bwbench.synth import System, method_name, packages, profile_version, skip_unless_factorizable, system
+from bwbench.synth import System, method_name, profile_version, skip_unless_factorizable, system
 
 SIZES = knob("sizes", "smoke")
 
@@ -24,7 +25,7 @@ def background(size: str) -> tuple[System, dict[str, int]]:
     """BAFU as arrays, and the matrix index of each process the foreground names."""
     if size != "bafu":
         raise NotApplicable("the heating foreground names BAFU 2025 processes: it runs at BWBENCH_SIZES=bafu")
-    s = system(size)
+    s = heating.corrected_system(system(size))
     return s, heating.locate(bafu.archive(), heating.NAMES, s.ids)
 
 
@@ -66,7 +67,7 @@ def heating_scores(size: str) -> BenchSetup:
     """Both options against the three EN 15804 methods with MultiLCA, the foreground loaded beside BAFU."""
     s, at = background(size)
     skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=2)
-    inventory, methods, _, _ = packages(size)
+    inventory, methods, _, _ = s.packages()
     fg = heating.foreground(s, at, **heating.DEFAULTS)
     config = {"impact_categories": [method_name(i) for i in range(len(methods))]}
     demands = {name: {fg.id(node): 1} for name, node in heating.OPTIONS.items()}
@@ -105,7 +106,7 @@ def heating_sweep(size: str, scenarios: int, variant: str) -> BenchSetup:
     """
     s, at = background(size)
     skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=scenarios if variant == "rebuild" else 1)
-    inventory, methods, _, _ = packages(size)
+    inventory, methods, _, _ = s.packages()
     method = methods[0]
     grid = heating.scenarios(scenarios)
     options = list(heating.OPTIONS.values())

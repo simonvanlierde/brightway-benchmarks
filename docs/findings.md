@@ -36,6 +36,26 @@ score in 150 ms, with a relative error of 1.4e-9, on the synthetic matrix only.
 Graph: [bw2calc, one score](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.SingleScore.time_first_score).
 Rerun: [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py).
 
+### Energy per first score
+
+**PyPardiso and UMFPACK used about 180 J above idle per score, against 483 J for SuperLU.**
+
+A quiet run on 7 November 2026 measured CPU package energy with Intel RAPL, using bw2calc
+3.1.0, Python 3.12, one thread on the same efficiency-core slot, and generator v4's
+ecoinvent-sized profile. The fill caveat above applies. A five-minute baseline measured
+9.19 W; each sample subtracts that power times its own elapsed time.
+
+| Solver | Median package J / score | Median J above idle | Above-idle range, 3 samples |
+| --- | --- | --- | --- |
+| SuperLU (SciPy) | 738 | 483 | 480–490 |
+| PyPardiso | 273 | 180 | 177–184 |
+| UMFPACK, reference BLAS | 263 | 179 | 167–210 |
+
+The UMFPACK and PyPardiso energy ranges overlap. Three samples do not establish which uses
+less energy. Each reading covers one first score, with setup and verification outside the
+measured span. RAPL covers the CPU package, including other processes; it does not measure
+whole-machine power. [Measurement and idle subtraction](running.md#energy-per-operation).
+
 ### Keep the factorization for repeated solves
 
 **A second functional unit on a solved system takes milliseconds, against seconds for the

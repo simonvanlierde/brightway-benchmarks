@@ -73,6 +73,7 @@ read from the CPU's RAPL package counter, so your user needs read access to
 
 ```sh
 BWBENCH_ENERGY=1 BWBENCH_CPUSET=0-5 just noise bw2calc 3
+python3 scripts/idle_energy.py .asv/idle-energy.json
 python3 scripts/energy_summary.py .asv/noise/bw2calc/rounds.jsonl --idle-w 15
 ```
 
@@ -82,10 +83,12 @@ A bench run logs energy too when it names a log, as in
 
 The counter covers the whole CPU package, all cores and every process, so run on a quiet machine.
 The joules per sample include what the idle CPU draws anyway. To get the energy the operation
-adds, measure the idle draw first (the counter's rise over a quiet minute, in µJ, divided by 60
-million) and pass it as `--idle-w`. The box cannot reach the counter through `oss-bench`, so an
-energy run takes the host's quiet gate itself and runs on CPUs 16 to 23, or `BWBENCH_CPUSET`. The numbers stay
-local. They never go to `results/` or the site.
+adds, run `scripts/idle_energy.py` under the same quiet gate before the benchmark, with no other
+work running. It samples for five minutes, sums five-second counter deltas across wraps, and
+writes the measured `idle_w` to JSON. Pass that value as `--idle-w` (15 above is an example).
+The box cannot reach the counter through `oss-bench`, so an energy run takes the host's quiet
+gate itself and runs on CPUs 16 to 23, or `BWBENCH_CPUSET`. The round logs stay local; they
+never go to `results/` or the site's benchmark history.
 
 ## Memory
 

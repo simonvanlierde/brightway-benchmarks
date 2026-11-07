@@ -93,6 +93,13 @@ class Profile:
     same_sector: float = 0.28  # the same for its sector
     regions: int = 20
     sectors: int = 40
+    # Activity families: one activity offered in several regions, its members neighbours in the
+    # order. Every member copies its family's first member's inputs; a supplier with a member in
+    # the consumer's region is swapped for that member with chance family_local.
+    family_zipf: float = 2.0  # Zipf exponent of family sizes: lower, more and bigger families
+    family_max: int = 200
+    family_local: float = 0.2
+    family_hub_sales: float = 0.3  # see _sell_locally
     treatment: float = 0.126  # share of products that are waste treatments
     amount_sigma: float = 3.5  # lognormal spread of input amounts within a column, before units
     units: float = 0.3  # standard deviation of log10 of each product's unit
@@ -403,6 +410,54 @@ def _draw(
     return order[pick], hi > lo
 
 
+def _families(p: Profile, rng: np.random.Generator, n: int) -> tuple[NDArray, NDArray]:
+    """Each position's family, and each family's first position: runs of Zipf-distributed length."""
+    sizes = np.minimum(rng.zipf(p.family_zipf, n), p.family_max)  # n draws always reach n
+    sizes = sizes[: np.searchsorted(np.cumsum(sizes), n) + 1]
+    sizes[-1] -= sizes.sum() - n
+    return np.repeat(np.arange(sizes.size), sizes), np.concatenate([[0], np.cumsum(sizes)[:-1]])
+
+
+def _copy_templates(
+    rows: NDArray, cols: NDArray, fam: NDArray, first: NDArray, region: NDArray, p: Profile, rng: np.random.Generator
+) -> tuple[NDArray, NDArray]:
+    """Replace every family member's inputs with its first member's, made local (see ``Profile``)."""
+    n = fam.size
+    template = first[fam[cols]] == cols
+    rows, cols = rows[template], cols[template]
+    reps = np.bincount(fam)[fam[cols]]
+    supplier = np.repeat(rows, reps)
+    member = np.repeat(cols, reps) + np.arange(reps.sum()) - np.repeat(np.cumsum(reps) - reps, reps)
+    key = fam * p.regions + region
+    order = np.argsort(key, kind="stable")
+    want = fam[supplier] * p.regions + region[member]
+    at = np.minimum(np.searchsorted(key[order], want), n - 1)
+    local = (key[order][at] == want) & (rng.random(supplier.size) < p.family_local) & (member != first[fam[member]])
+    return np.where(local, order[at], first[fam[supplier]]), member
+
+
+def _sell_locally(
+    rows: NDArray, cols: NDArray, fam: NDArray, first: NDArray, rank: NDArray, p: Profile, rng: np.random.Generator
+) -> tuple[NDArray, NDArray]:
+    """Give each later family member that nobody buys from a buyer later in the order.
+
+    The buyer is a member of the same rank (its region's market) or, with chance
+    ``family_hub_sales``, that member's family's first member (the same market, global).
+    Without this, most members sell to nobody and none sits in a loop.
+    """
+    n = rank.size
+    idle = np.flatnonzero((np.bincount(rows, minlength=n) == 0) & (rank > 0))
+    order = np.lexsort((np.arange(n), rank))  # by rank, then position
+    starts = np.searchsorted(rank[order], np.arange(rank.max() + 2))
+    pos = np.empty(n, dtype=np.int64)
+    pos[order] = np.arange(n)
+    lo, hi = pos[idle] + 1, starts[rank[idle] + 1]
+    ok = lo < hi
+    buyer = order[lo[ok] + (rng.random(ok.sum()) * (hi[ok] - lo[ok])).astype(np.int64)]
+    buyer = np.where(rng.random(buyer.size) < p.family_hub_sales, first[fam[buyer]], buyer)
+    return np.concatenate([rows, idle[ok]]), np.concatenate([cols, buyer])
+
+
 def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
     """The supply-chain structure the module docstring describes, scaled to ``p.radius`` at most.
 
@@ -429,7 +484,12 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
         weight = np.minimum(weight, p.hub_cap * weight.sum() / max(cols.size, 1))
     pool = rng.random(cols.size)
     pool = np.where(pool < p.same_region, 1, np.where(pool < p.same_region + p.same_sector, 2, 0))
-    groups = (np.zeros(n, dtype=np.int64), rng.integers(0, p.regions, n), rng.integers(0, p.sectors, n))
+    fam, first = _families(p, rng, n)
+    rank = np.arange(n) - first[fam]  # members of a family get distinct regions, up to p.regions
+    # Later members take regions 1, 2, ... in every family, so a member finds its local supplier;
+    # first members (global, or RoW) spread over all regions.
+    region = np.where(rank > 0, rank % p.regions, rng.integers(0, p.regions, n))
+    groups = (np.zeros(n, dtype=np.int64), region, rng.integers(0, p.sectors, fam[-1] + 1)[fam])
     rows = np.empty(cols.size, dtype=np.int64)
     found = np.empty(cols.size, dtype=bool)
     for i, group in enumerate(groups):
@@ -439,6 +499,9 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
     rows, cols = rows[found], cols[found]
     rows = np.concatenate([suppliers, rows])
     cols = np.concatenate([consumers, cols])
+    rows, cols = _off_diagonal_once(rows, cols, n)
+    rows, cols = _copy_templates(rows, cols, fam, first, region, p, rng)
+    rows, cols = _sell_locally(rows, cols, fam, first, rank, p, rng)
     rows, cols = _off_diagonal_once(rows, cols, n)
 
     # Amounts free of units: lognormal, each column summing to 1, then all scaled to the radius.

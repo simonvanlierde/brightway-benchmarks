@@ -136,7 +136,7 @@ dependencies:
   - pyzstd=0.20.0=pyhd8ed1ab_0
   - qhull=2020.2=haf43d43_6
   - randonneur=0.7.2=pyhd8ed1ab_0
-  - randonneur_data=0.7.2=pyhd8ed1ab_0
+  - randonneur_data=0.8=pyh5ded981_0
   - rapidfuzz=3.14.6=py312h80505a6_3
   - rdflib=7.6.0=pyhcf101f3_0
   - readline=8.3=hd6e31c0_1

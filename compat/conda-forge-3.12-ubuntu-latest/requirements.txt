@@ -82,7 +82,7 @@ python-dotenv==1.2.4
 pytz==2026.6
 pyxlsb==1.0.10
 pyzstd==0.20.0
-randonneur-data==0.7.2
+randonneur-data==0.8
 randonneur==0.7.2
 rapidfuzz==3.14.6
 rdflib==7.6.0

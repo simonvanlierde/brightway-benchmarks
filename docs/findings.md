@@ -56,6 +56,10 @@ less energy. Each reading covers one first score, with setup and verification ou
 measured span. RAPL covers the CPU package, including other processes; it does not measure
 whole-machine power. [Measurement and idle subtraction](running.md#energy-per-operation).
 
+Rerun: [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py), with the
+[`idle sampler`](../scripts/idle_energy.py) and
+[`energy summary`](../scripts/energy_summary.py) as described in the measurement instructions.
+
 ### Keep the factorization for repeated solves
 
 **A second functional unit on a solved system takes milliseconds, against seconds for the

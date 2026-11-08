@@ -59,7 +59,7 @@ dependencies:
   - libbrotlidec=1.2.1=ha411449_0
   - libbrotlienc=1.2.1=h018ffa1_0
   - libcblas=3.11.0=12_h0358290_openblas
-  - libdeflate=1.25=hd45a770_1
+  - libdeflate=1.26=h351257e_0
   - libexpat=2.9.0=hd2095e1_0
   - libffi=3.7.0=h81df57d_1
   - libfreetype=2.14.3=ha770c72_2
@@ -79,7 +79,7 @@ dependencies:
   - libpython=3.12.16=ha57cdbe_0_cpython
   - libsqlite=3.54.1=h0737f62_101
   - libstdcxx=16.2.0=h934c35e_7
-  - libtiff=4.7.2=hcc2c06a_1
+  - libtiff=4.7.2=h6d37cbf_2
   - libuuid=2.42.4=hcfc3c73_1
   - libwebp-base=1.6.0=hd42ef1d_1
   - libxcb=1.17.0=hb83e432_2

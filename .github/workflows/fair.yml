@@ -27,12 +27,8 @@ jobs:
       - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
           version: "0.13.6"
-<<<<<<< before updating
-      # howfairis exits 1 below five checks, so the score is read from its output.
-=======
       # howfairis exits 1 below five checks, so the score is read from its output. Its
       # dependencies resolve to releases at least a week old, as in the project itself.
->>>>>>> after updating
       - run: |-
           uvx --exclude-newer "1 week" --from git+https://github.com/fair-software/howfairis@09f3bea4f13c80f52c59c326b5dd9f93354b40a2 howfairis https://github.com/simonvanlierde/brightway-benchmarks | tee out.txt || true
           cat out.txt >> "$GITHUB_STEP_SUMMARY"

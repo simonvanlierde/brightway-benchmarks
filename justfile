@@ -27,7 +27,6 @@ fmt:
 hooks:
     prek run -a
 
-<<<<<<< before updating
 # --- benchmarks --------------------------------------------------------------
 # Everything below runs in the benchmark box, a throwaway `tmp-bwbench-*` container
 # (docs/assurance-case.md). docs/running.md lists the BWBENCH_* variables.
@@ -193,8 +192,6 @@ codspeed subject *packages:
 profile subject case *args:
     scripts/box.sh scripts/profile.sh {{ subject }} {{ case }} {{ args }}
 
-# Protect the default branch (no deletion, no force-push, linear history, PRs squash-merged after the always-on checks pass and one approval) and the v* tags. Turn on private vulnerability reporting. Safe to rerun.
-=======
 # Rewrite codemeta.json to agree with CITATION.cff, then check. The writer
 # exits 1 whenever it changes a file, so the check that follows decides the result.
 citation:
@@ -228,14 +225,15 @@ release version:
         { print }
         END { if (!h) exit 1; if (!l) { print ""; print "[Unreleased]: " repo "/compare/v" v "...HEAD"; print "[" v "]: " link } }
     ' CHANGELOG.md >"$tmp" || { echo "CHANGELOG.md has no [Unreleased] section" >&2; exit 1; }
-    .github/scripts/release-notes.sh "$tag" "$tmp" >/dev/null || { echo "[Unreleased] has no entries to release" >&2; exit 1; }
+    # The same section the release workflow takes as notes; an empty one would publish none.
+    awk -v head="## [$version]" '/^## \[/ { if (on) exit; on = index($0, head) == 1; next } on && NF' "$tmp" | grep . >/dev/null ||
+        { echo "[Unreleased] has no entries to release" >&2; exit 1; }
     cp "$tmp" CHANGELOG.md
     git add CHANGELOG.md
     git commit -s -m "chore: release $version" -- CHANGELOG.md
     echo "Merge this commit to main, then run: just release $version"
 
 # Protect the default branch (no deletion, no force-push, linear history, PRs squash-merged after the always-on checks pass and one approval) and the v* tags. Turn on private vulnerability reporting, CodeQL default setup and Dependabot alerts. Safe to rerun.
->>>>>>> after updating
 repo-settings:
     #!/usr/bin/env bash
     set -euo pipefail

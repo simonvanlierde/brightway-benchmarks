@@ -7,15 +7,9 @@
 # `prek install` sets up each of these: the commit message is checked as you commit.
 default_install_hook_types: [pre-commit, commit-msg]
 
-<<<<<<< before updating
-# data/ holds inputs and profiles/ generated pages: the whitespace and end-of-file hooks
-# (and nbstripout, for data/) must not rewrite them.
-# Excluded per hook, so the secret scan and the large-file check still cover data/.
-=======
-# data/ and tests/fixtures/ hold inputs and test cases: the whitespace, end-of-file
-# and notebook hooks must not rewrite them. Excluded per hook, so the secret scan
-# and the large-file check still cover them.
->>>>>>> after updating
+# data/, profiles/ and tests/fixtures/ hold inputs, generated pages and test cases: the
+# whitespace, end-of-file and notebook hooks must not rewrite them. Excluded per hook, so
+# the secret scan and the large-file check still cover them.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
@@ -26,19 +20,11 @@ repos:
         # pnpm writes its own version into the lockfile as a second YAML document.
         exclude: (^|/)pnpm-lock\.yaml$
       - id: end-of-file-fixer
-<<<<<<< before updating
-        exclude: ^(data|profiles)/
+        exclude: ^(data|profiles|tests/fixtures)/
       - id: mixed-line-ending
-        exclude: ^(data|profiles)/
+        exclude: ^(data|profiles|tests/fixtures)/
       - id: trailing-whitespace
-        exclude: ^(data|profiles)/
-=======
-        exclude: ^(data|tests/fixtures)/
-      - id: mixed-line-ending
-        exclude: ^(data|tests/fixtures)/
-      - id: trailing-whitespace
-        exclude: ^(data|tests/fixtures)/
->>>>>>> after updating
+        exclude: ^(data|profiles|tests/fixtures)/
       # Not gated to python: .rumdl.toml ships to every stack.
       - id: check-toml
 
@@ -79,10 +65,7 @@ repos:
     rev: 21ca5323a9c87ee37a434e0ca908efc0a89daa07 # frozen: v0.21.0
     hooks:
       - id: yamlfmt
-<<<<<<< before updating
         # Its own exclude in .yamlfmt does not apply to the file names prek passes in.
-=======
->>>>>>> after updating
         exclude: (^|/)pnpm-lock\.yaml$
 
   - repo: https://github.com/adrienverge/yamllint

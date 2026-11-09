@@ -461,8 +461,8 @@ test("check qualifications precede the install command", async ({ page }) => {
   await page.goto("?platform=linux");
   const results = page.getByRole("list", { name: "Check results on Linux" });
   await expect(results.getByRole("listitem")).toHaveText([
-    "Smoke calculations · Latest releases · Python 3.13 Passed",
-    "Upstream test suites · Python 3.13 Failed",
+    "Smoke calculations · Latest releases · Python 3.12 Passed",
+    "Upstream test suites · Python 3.12 Failed",
   ]);
   const after = await results.evaluate(
     (el) =>
@@ -484,7 +484,7 @@ test("the install command copies", async ({ page, context, browserName }) => {
   await expect(page.locator(".install-set > .install-command pre")).toHaveText(text);
   await page.getByRole("button", { name: "Copy latest" }).click();
   const latest = await page.evaluate(() => navigator.clipboard.readText());
-  expect(latest).toContain("/compat/latest-3.13-windows-latest/requirements.txt");
+  expect(latest).toContain("/compat/latest-3.12-windows-latest/requirements.txt");
   expect(latest).not.toContain("2026-");
 });
 
@@ -552,7 +552,7 @@ test("a failed current check keeps its older passing files clearly dated", async
   await page.route("**/data/guidance.json", (route) => route.fulfill({ json: data }));
   await page.goto("?page=home&platform=linux");
   await expect(page.getByRole("list", { name: "Check results on Linux" }).getByRole("listitem").first()).toHaveText(
-    "Smoke calculations · Latest releases · Python 3.13 Failed",
+    "Smoke calculations · Latest releases · Python 3.12 Failed",
   );
   await expect(page.locator(".saved-warning")).toHaveText(
     "The latest run of Latest releases did not pass; this is the set that passed on Oct 30, 2026.",
@@ -637,7 +637,7 @@ test("each package manager has its own command, and the choice is remembered", a
   await expect(command).toContainText("conda env update -n brightway-tested -f https://");
   await expect(page).toHaveURL(/check=conda-forge-/);
   const status = page.getByRole("list", { name: "Check results on Linux" });
-  await expect(status).toContainText("conda-forge · Python 3.13 Passed");
+  await expect(status).toContainText("conda-forge · Python 3.12 Passed");
   await expect(status).not.toContainText("Upstream test suites");
   // That check's caveats come with its command, such as the packages conda-forge lacks.
   const conda = (await guidanceFixture()).checks.find((c) => c.id.startsWith("conda-forge-"));
@@ -648,7 +648,7 @@ test("each package manager has its own command, and the choice is remembered", a
   await page.reload();
   await expect(page.getByRole("combobox", { name: "Package manager" })).toHaveValue("pixi");
   await page.getByRole("combobox", { name: "Operating system" }).selectOption("windows");
-  await expect(page.getByText("No pixi set has passed on Windows on Python 3.13.", { exact: false })).toBeVisible();
+  await expect(page.getByText("No pixi set has passed on Windows on Python 3.12.", { exact: false })).toBeVisible();
 });
 
 test("the phone masthead scrolls the current page into view", async ({ page }) => {
@@ -706,7 +706,7 @@ test("new uv projects get a complete copyable setup for the selected Python and 
   await page.getByText("Starting a new project?", { exact: true }).click();
   const start = page.locator(".new-project");
   await expect(start.locator("pre")).toContainText(
-    "uv init --no-package --python 3.13 brightway-project\ncd brightway-project\nuv add",
+    "uv init --no-package --python 3.12 brightway-project\ncd brightway-project\nuv add",
   );
   await start.getByRole("button", { name: "Copy project setup" }).click();
   const copied = await page.evaluate(() => navigator.clipboard.readText());

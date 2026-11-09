@@ -12,7 +12,7 @@ const data = (): Guidance => ({
     {
       id: "latest",
       platform: "linux",
-      python: "3.13",
+      python: "3.12",
       label: "Latest",
       kind: "smoke",
       status: "failure",

@@ -31,6 +31,12 @@ def double(size: str, n: int):
     return lambda: 2 * n, 2 * n
 
 
+def setup(obj: object, method: str, *args: object) -> None:
+    """Do what asv does before a method: every ``setup`` it finds on the class, then on the method."""
+    assert not hasattr(obj, "setup"), "a class setup would run before every method, track_ included"
+    getattr(getattr(obj, method), "setup")(*args)  # noqa: B009
+
+
 def test_run_once_per_setup_and_check():
     prepared = double.prepare(size="smoke", n=3)
     assert prepared() == 6
@@ -87,10 +93,9 @@ def test_asv_class_keeps_names_and_hides_runner_details():
     assert cls.timeout == 60
     assert cls.version == synth.profile_version()
     obj = cls()
-    obj.setup("smoke", 2)
+    setup(obj, "time_double", "smoke", 2)
     obj.time_double("smoke", 2)
     obj.teardown("smoke", 2)
-    obj.setup("smoke", 2)
     assert obj.track_relative_error("smoke", 2) == 0
 
 
@@ -101,7 +106,7 @@ def test_asv_teardown_fails_a_wrong_result():
 
     (cls,) = asv.classes(module(wrong=wrong).__name__)
     obj = cls()
-    obj.setup(1)
+    setup(obj, "time_wrong", 1)
     obj.time_wrong(1)
     with pytest.raises(AssertionError):
         obj.teardown(1)
@@ -123,7 +128,7 @@ def test_asv_checks_once_per_parameter_set():
     (cls,) = asv.classes(module(counted=counted).__name__)
     obj = cls()
     for x in (1, 1, 2):  # asv sets up and tears down around every sample
-        obj.setup(x)
+        setup(obj, "time_counted", x)
         obj.time_counted(x)
         obj.teardown(x)
     assert checked == [1, 2]
@@ -275,13 +280,14 @@ def test_asv_track_and_teardown_paths():
     (cls,) = asv.classes(module(counted=counted).__name__)
     cls().teardown(1)  # after a setup that never ran: nothing to check or tear down
     obj = cls()
-    obj.setup(1)
-    assert obj.track_double(1) == 2.0
-    obj.setup(1)
+    assert obj.track_double(1) == 2.0  # no record: it prepares and runs the case itself
+    obj.teardown(1)
+    assert log == ["teardown"]
+    setup(obj, "time_counted", 1)
     obj.time_counted(1)
     with pytest.raises(AssertionError):
         obj.teardown(1)
-    assert log == ["teardown"]
+    assert log == ["teardown", "teardown"]
 
 
 def test_asv_refuses_two_benches_defining_one_method():
@@ -366,9 +372,9 @@ def test_asv_peakmem_method_only_when_asked(tmp_path: Path, monkeypatch: pytest.
     assert hasattr(mem, "peakmem_with_mem")
     assert not hasattr(plain, "peakmem_without")
     obj = mem()
-    obj.setup("smoke")
+    setup(obj, "peakmem_with_mem", "smoke")
     obj.peakmem_with_mem("smoke")
-    assert obj.results == {}  # asv reads the peak itself; there is nothing to check or log
+    assert obj.state.results == {}  # asv reads the peak itself; there is nothing to check or log
     obj.teardown("smoke")
     assert not log.exists()  # a memory sample is not a timed sample
 
@@ -381,10 +387,9 @@ def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pyt
     monkeypatch.setattr(asv, "_usage", lambda: next(usage))
     (cls,) = asv.classes(module(double=double).__name__)
     obj = cls()
-    obj.setup("smoke", 2)
+    setup(obj, "time_double", "smoke", 2)
     obj.time_double("smoke", 2)
     obj.teardown("smoke", 2)
-    obj.setup("smoke", 2)
     obj.track_relative_error("smoke", 2)  # not a timed sample, so not logged
     obj.teardown("smoke", 2)
     (line,) = log.read_text().splitlines()
@@ -416,19 +421,16 @@ def test_track_methods_reuse_the_timed_run(monkeypatch: pytest.MonkeyPatch, reco
 
     (cls,) = asv.classes(module(counted=counted).__name__)
     obj = cls()
-    obj.setup(1)
+    setup(obj, "time_counted", 1)
     obj.time_counted(1)
     obj.teardown(1)
-    obj.setup(1)
     assert obj.track_relative_error(1) == 0
     assert obj.track_half(1) == 1.0
     assert runs == [1], "the track_ methods ran the case again"
-    obj.setup(2)  # never timed: no record, so it runs as before
     assert obj.track_half(2) == 2.0
     assert runs == [1, 2]
     (path,) = record_file.iterdir()
     path.write_text(path.read_text() + '{"case": "cut sho')  # a line a killed process left
-    obj.setup(1)
     assert obj.track_half(1) == 1.0
     assert runs == [1, 2]
 
@@ -444,16 +446,15 @@ def test_a_failing_check_leaves_no_old_value(monkeypatch: pytest.MonkeyPatch, re
 
     (cls,) = asv.classes(module(flaky=flaky).__name__)
     obj = cls()
-    obj.setup(1)
+    setup(obj, "time_flaky", 1)
     obj.time_flaky(1)
     obj.teardown(1)
     answer[0] = 2.0
     bwbench._SEEN.clear()  # noqa: SLF001 - a new timed process
-    obj.setup(1)
+    setup(obj, "time_flaky", 1)
     obj.time_flaky(1)
     with pytest.raises(AssertionError):
         obj.teardown(1)
-    obj.setup(1)
     with pytest.raises(AssertionError):
         obj.track_relative_error(1)
 
@@ -468,10 +469,9 @@ def test_track_methods_run_the_case_outside_a_box_run(monkeypatch: pytest.Monkey
 
     (cls,) = asv.classes(module(counted=counted).__name__)
     obj = cls()
-    obj.setup(1)
+    setup(obj, "time_counted", 1)
     obj.time_counted(1)
     obj.teardown(1)
-    obj.setup(1)
     assert obj.track_relative_error(1) == 0
     assert runs == [1, 1]
     assert not record_file.exists()
@@ -492,7 +492,7 @@ def test_asv_logs_package_energy_across_a_counter_wrap(tmp_path: Path, monkeypat
     monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 262_142_328_850)))
     (cls,) = asv.classes(module(double=double).__name__)
     obj = cls()
-    obj.setup("smoke", 2)
+    setup(obj, "time_double", "smoke", 2)
     obj.time_double("smoke", 2)
     rapl(tmp_path / "rapl", 2_000_000)  # 1 J to the wrap, 2 J after it
     obj.teardown("smoke", 2)
@@ -511,7 +511,7 @@ def test_asv_logs_no_energy_and_warns_once_when_the_counter_is_unreadable(
     (cls,) = asv.classes(module(double=double).__name__)
     for _ in range(2):
         obj = cls()
-        obj.setup("smoke", 2)
+        setup(obj, "time_double", "smoke", 2)
         obj.time_double("smoke", 2)
         obj.teardown("smoke", 2)
     entries = [json.loads(line) for line in log.read_text().splitlines()]
@@ -540,7 +540,7 @@ def test_asv_logs_package_energy_across_a_whole_counter_cycle(tmp_path: Path, mo
 
     (cls,) = asv.classes(module(double=double).__name__)
     obj = cls()
-    obj.setup("smoke", 2)
+    setup(obj, "time_double", "smoke", 2)
     obj.time_double("smoke", 2)
     obj.teardown("smoke", 2)
     (line,) = log.read_text().splitlines()
@@ -560,7 +560,7 @@ def test_asv_logs_no_energy_when_the_counter_was_not_read_often_enough(
     monkeypatch.setattr(asv.time, "monotonic", lambda: next(clock))
     (cls,) = asv.classes(module(double=double).__name__)
     obj = cls()
-    obj.setup("smoke", 2)
+    setup(obj, "time_double", "smoke", 2)
     obj.time_double("smoke", 2)
     rapl(tmp_path / "rapl", 2_000_000)
     obj.teardown("smoke", 2)
@@ -575,9 +575,35 @@ def test_asv_logs_no_energy_when_a_later_counter_read_fails(tmp_path: Path, monk
     monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
     (cls,) = asv.classes(module(double=double).__name__)
     obj = cls()
-    obj.setup("smoke", 2)
+    setup(obj, "time_double", "smoke", 2)
     obj.time_double("smoke", 2)
     (tmp_path / "rapl" / "energy_uj").write_text("garbled\n")
     obj.teardown("smoke", 2)  # a sample without energy, not a failed benchmark
     (line,) = log.read_text().splitlines()
     assert "energy_j" not in json.loads(line)
+
+
+def test_only_timed_methods_set_up():
+    """Only time_ and peakmem_ prepare; a class setup would run before every method, track_ included."""
+    prepared = []
+
+    @bench({"x": [1]}, asv="Pair", peakmem=True, error="relative_error", rtol=1e-9)
+    def first(x: int):
+        prepared.append("first")
+        return lambda: x, x
+
+    @bench({"x": [1]}, asv="Pair")
+    def second(x: int):
+        prepared.append("second")
+        return lambda: x, UNCHECKED
+
+    (cls,) = asv.classes(module(first=first, second=second).__name__)
+    assert "setup" not in vars(cls)
+    assert not hasattr(vars(cls)["track_relative_error"], "setup")
+    obj = cls()
+    for method, expected in [("time_first", "first"), ("peakmem_first", "first"), ("time_second", "second")]:
+        prepared.clear()
+        setup(obj, method, 1)
+        assert prepared == [expected]  # not the other bench of the class
+        getattr(obj, method)(1)
+        obj.teardown(1)

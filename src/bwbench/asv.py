@@ -1,7 +1,12 @@
 """asv adapter: ``classes(__name__)`` at the end of a benchmark module adds one asv class per ``@bench``.
 
-Benchmarks with the same ``asv`` name become methods of one class; its setup prepares all of
-them before each method, so give them the same ``params``.
+Benchmarks with the same ``asv`` name become methods of one class, so give them the same
+``params``. asv runs every setup it finds for a method (module, class, then the method's own),
+so the class has none: each ``time_`` and ``peakmem_`` method carries its own setup, which
+prepares just its bench. The ``track_`` methods have none and read the timed run's record.
+asv-runner 0.2.5 ``benchmarks/_base.py`` (``Benchmark.__init__``, ``do_setup``) looks the
+method's ``setup`` up on the bound method, which reaches the function's attribute and calls it
+with the params only. It has no ``self``, so the state lives in one object shared by the class.
 """
 
 from __future__ import annotations
@@ -46,27 +51,29 @@ def _asv_class(name: str, group: list[Bench]) -> type:
     names = list(params)
     by_name = {b.name: b for b in group}
 
-    def setup(self: Any, *args: Any) -> None:
-        self.prepared = {}
-        self.results = {}
-        for b in group:
-            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))
-        self.usage, self.energy = _usage(), _energy()  # last, so the setup's own work is not counted
+    state = _State()
+
+    def prepare(name: str, args: tuple) -> None:
+        old = state.prepared.pop(name, None)
+        if old is not None:
+            old.teardown()
+        state.prepared[name] = by_name[name].prepare(**dict(zip(names, args, strict=True)))
 
     def teardown(self: Any, *args: Any) -> None:
         # The check runs here, outside the timed call; asv reports a raise as a failed benchmark.
-        prepared: dict[str, Prepared] = getattr(self, "prepared", {})
-        _log_usage(self, args)
+        prepared, results = state.prepared, state.results
+        _log_usage(state, type(self), args)
         try:
-            _verify_once(type(self), by_name, prepared, getattr(self, "results", {}), args)
+            _verify_once(type(self), by_name, prepared, results, args)
         finally:
             for p in prepared.values():
                 p.teardown()
+            state.reset()
 
     body: dict[str, Any] = {
         "params": [params[n] for n in names],
         "param_names": names,
-        "setup": setup,
+        "state": state,
         "teardown": teardown,
         "number": 1,  # one run per setup
         "warmup_time": 0,  # asv's warm-up calls the benchmark again without a new setup
@@ -80,17 +87,49 @@ def _asv_class(name: str, group: list[Bench]) -> type:
     methods: dict[str, Any] = {}
     for b in group:
         body.update(b.options)
-        new: dict[str, Any] = {f"time_{b.name}": _time(b.name)}
-        if b.peakmem:
-            new[f"peakmem_{b.name}"] = _peak(b.name)
-        new |= {f"track_{t}": _track(b.name, fn, f"track_{t}") for t, fn in b.track.items()}
-        if b.error:
-            new[f"track_{b.error}"] = _error(b.name, f"track_{b.error}")
+        new = _methods(state, prepare, b)
         if clash := methods.keys() & new.keys():
             msg = f"asv class {name}: two benchmarks define {sorted(clash)}"
             raise ValueError(msg)
         methods |= new
     return type(name, (), body | methods)
+
+
+def _methods(state: _State, prepare: Callable[[str, tuple], None], b: Bench) -> dict[str, Any]:
+    """The asv methods of one bench; the timed ones carry the setup, the ``track_`` ones read the record."""
+    timed: dict[str, Any] = {f"time_{b.name}": _time(state, b.name)}
+    if b.peakmem:
+        timed[f"peakmem_{b.name}"] = _peak(state, b.name)
+    for method in timed.values():
+        method.setup = _setup(state, prepare, b.name)
+    tracked: dict[str, Any] = {
+        f"track_{t}": _track(state, prepare, b.name, fn, f"track_{t}") for t, fn in b.track.items()
+    }
+    if b.error:
+        tracked[f"track_{b.error}"] = _error(state, prepare, b.name, f"track_{b.error}")
+    return timed | tracked
+
+
+class _State:
+    """What one process's setups leave for its method and teardown."""
+
+    def __init__(self) -> None:
+        self.reset()
+
+    def reset(self) -> None:
+        self.prepared: dict[str, Prepared] = {}
+        self.results: dict[str, Any] = {}
+        self.usage: tuple[float, float, int] | None = None
+        self.energy: _Meter | None = None
+
+
+def _setup(state: _State, prepare: Callable[[str, tuple], None], bench_name: str) -> Callable[..., None]:
+    def setup(*args: Any) -> None:
+        state.results = {}
+        prepare(bench_name, args)
+        state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted
+
+    return setup
 
 
 def _usage() -> tuple[float, float, int]:
@@ -171,7 +210,7 @@ def _energy() -> _Meter | None:
         return None
 
 
-def _log_usage(obj: Any, args: tuple) -> None:
+def _log_usage(state: _State, cls: type, args: tuple) -> None:
     """Append one JSON line per timed sample: its wall and CPU time and involuntary context switches.
 
     Only when ``BWBENCH_ROUNDLOG`` names the log file. Only time_ calls fill ``results``, so only
@@ -180,16 +219,15 @@ def _log_usage(obj: Any, args: tuple) -> None:
     package's energy over that span. ``scripts/noise_summary.py`` and ``scripts/energy_summary.py``
     read the log.
     """
-    meter = getattr(obj, "energy", None)
+    meter = state.energy
     joules = None if meter is None else meter.stop()  # always, so no meter thread outlives its sample
     log = os.environ.get("BWBENCH_ROUNDLOG")
-    results = getattr(obj, "results", {})
-    if not log or not results:
+    results = state.results
+    if not log or not results or state.usage is None:
         return
     log = Path(log)
-    cls = type(obj)
     usage = _usage()
-    wall, cpu, nivcsw = (b - a for a, b in zip(obj.usage, usage, strict=True))
+    wall, cpu, nivcsw = (b - a for a, b in zip(state.usage, usage, strict=True))
     energy = {} if joules is None else {"energy_j": joules}
     log.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.get("ASV_ENV_NAME") or Path(sys.prefix).name
@@ -286,38 +324,46 @@ def _recorded(cls: type, bench_name: str, args: tuple, method: str) -> tuple[boo
     return False, None
 
 
-def _time(bench_name: str) -> Callable[..., None]:
+def _time(state: _State, bench_name: str) -> Callable[..., None]:
     def time(self: Any, *args: Any) -> None:
-        self.results[bench_name] = self.prepared[bench_name]()
+        state.results[bench_name] = state.prepared[bench_name]()
 
     return time
 
 
-def _peak(bench_name: str) -> Callable[..., None]:
+def _peak(state: _State, bench_name: str) -> Callable[..., None]:
     """A ``peakmem_`` method: asv reads the process's peak resident memory, so nothing is kept."""
 
     def peak(self: Any, *args: Any) -> None:
-        self.prepared[bench_name]()
+        state.prepared[bench_name]()
 
     return peak
 
 
-def _track(bench_name: str, fn: Callable[[Any], float], method: str) -> Callable[..., float]:
+def _track(
+    state: _State, prepare: Callable[[str, tuple], None], bench_name: str, fn: Callable[[Any], float], method: str
+) -> Callable[..., float]:
     def track(self: Any, *args: Any) -> float:
         found, value = _recorded(type(self), bench_name, args, method)
-        return value if found else fn(self.prepared[bench_name]())
+        if found:
+            return value
+        prepare(bench_name, args)  # no record: run the case here, as the timed run would
+        return fn(state.prepared[bench_name]())
 
     return track
 
 
-def _error(bench_name: str, method: str) -> Callable[..., float | None]:
+def _error(
+    state: _State, prepare: Callable[[str, tuple], None], bench_name: str, method: str
+) -> Callable[..., float | None]:
     """A ``track_`` method recording the check's relative error."""
 
     def error(self: Any, *args: Any) -> float | None:
         found, value = _recorded(type(self), bench_name, args, method)
         if found:
             return value
-        prepared = self.prepared[bench_name]
+        prepare(bench_name, args)
+        prepared = state.prepared[bench_name]
         return prepared.verify(prepared())
 
     return error

@@ -348,3 +348,11 @@ def test_guidance_symlinks_preserve_outside_files(module: ModuleType, tmp_path: 
     with pytest.raises(ValueError, match="symlink"):
         module.export(status, data)
     assert victim.read_text() == "keep"
+
+
+def test_default_check_is_the_oldest_python_with_a_passing_latest_set(module: ModuleType, tmp_path: Path):
+    # A snapshot from before a Python bump: macOS ran only the old version, so it still needs a default.
+    cells = [cell(os="macos-latest") | {"python": v} for v in ("3.14", "3.12", "3.13")]
+    out = module.export(snapshot(tmp_path, cells), tmp_path / "data", "https://example.test/")
+    assert out["platforms"][0]["defaultCheck"] == "latest-3.12-macos-latest"
+    assert "_default" not in out["platforms"][0]

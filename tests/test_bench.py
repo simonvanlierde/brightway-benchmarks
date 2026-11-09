@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import types
 from collections.abc import Iterator
 from pathlib import Path
@@ -392,6 +393,7 @@ def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pyt
     assert entry["params"] == "'smoke', 2"
     assert entry["env"] == "env-x"
     assert (entry["wall"], entry["cpu"], entry["nivcsw"]) == (2.0, 1.5, 3)
+    assert "energy_j" not in entry  # BWBENCH_ENERGY is off
 
 
 @pytest.fixture
@@ -473,3 +475,109 @@ def test_track_methods_run_the_case_outside_a_box_run(monkeypatch: pytest.Monkey
     assert obj.track_relative_error(1) == 0
     assert runs == [1, 1]
     assert not record_file.exists()
+
+
+def rapl(folder: Path, energy_uj: int) -> Path:
+    """A stand-in for /sys/class/powercap/intel-rapl:0, whose counter wraps past 262143328850 µJ."""
+    folder.mkdir(exist_ok=True)
+    (folder / "energy_uj").write_text(f"{energy_uj}\n")
+    (folder / "max_energy_range_uj").write_text("262143328850\n")
+    return folder
+
+
+def test_asv_logs_package_energy_across_a_counter_wrap(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    log = tmp_path / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 262_142_328_850)))
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    obj.setup("smoke", 2)
+    obj.time_double("smoke", 2)
+    rapl(tmp_path / "rapl", 2_000_000)  # 1 J to the wrap, 2 J after it
+    obj.teardown("smoke", 2)
+    (line,) = log.read_text().splitlines()
+    assert json.loads(line)["energy_j"] == pytest.approx(3.0)
+
+
+def test_asv_logs_no_energy_and_warns_once_when_the_counter_is_unreadable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    log = tmp_path / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(tmp_path / "missing"))
+    monkeypatch.setattr(asv, "_energy_warned", False)
+    (cls,) = asv.classes(module(double=double).__name__)
+    for _ in range(2):
+        obj = cls()
+        obj.setup("smoke", 2)
+        obj.time_double("smoke", 2)
+        obj.teardown("smoke", 2)
+    entries = [json.loads(line) for line in log.read_text().splitlines()]
+    assert len(entries) == 2
+    assert not any("energy_j" in e for e in entries)
+    assert capsys.readouterr().err.count("no energy is logged") == 1
+
+
+def test_asv_logs_package_energy_across_a_whole_counter_cycle(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """300 kJ from 1000 J on a 262143.32885 J counter ends above the start: the endpoints alone show 37.9 kJ."""
+    log = tmp_path / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000_000)))
+    monkeypatch.setattr(asv, "_ENERGY_INTERVAL", 0.01, raising=False)
+
+    def run(n: int) -> int:
+        rapl(tmp_path / "rapl", 201_000_000_000)  # 200 kJ in, no wrap yet
+        time.sleep(0.2)  # the meter reads the counter here
+        rapl(tmp_path / "rapl", 38_856_671_150)  # 100 kJ more, across the wrap
+        return 2 * n
+
+    @bench({"size": ["smoke"], "n": [2]}, rtol=1e-9, error="relative_error", asv="Doubling", timeout=60)
+    def double(size: str, n: int):
+        return lambda: run(n), 2 * n
+
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    obj.setup("smoke", 2)
+    obj.time_double("smoke", 2)
+    obj.teardown("smoke", 2)
+    (line,) = log.read_text().splitlines()
+    assert json.loads(line)["energy_j"] == pytest.approx(300_000.0)
+
+
+@pytest.mark.parametrize(("gap", "joules"), [(59.0, 1.0), (61.0, None)])
+def test_asv_logs_no_energy_when_the_counter_was_not_read_often_enough(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, gap: float, joules: float | None
+):
+    """A gap over 60 s between readings could hide whole counter cycles, so the sample gets no energy."""
+    log = tmp_path / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
+    clock = itertools.chain([0.0], itertools.repeat(gap))  # every reading after the first comes gap s later
+    monkeypatch.setattr(asv.time, "monotonic", lambda: next(clock))
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    obj.setup("smoke", 2)
+    obj.time_double("smoke", 2)
+    rapl(tmp_path / "rapl", 2_000_000)
+    obj.teardown("smoke", 2)
+    (line,) = log.read_text().splitlines()
+    assert json.loads(line).get("energy_j") == joules
+
+
+def test_asv_logs_no_energy_when_a_later_counter_read_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    log = tmp_path / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    obj.setup("smoke", 2)
+    obj.time_double("smoke", 2)
+    (tmp_path / "rapl" / "energy_uj").write_text("garbled\n")
+    obj.teardown("smoke", 2)  # a sample without energy, not a failed benchmark
+    (line,) = log.read_text().splitlines()
+    assert "energy_j" not in json.loads(line)

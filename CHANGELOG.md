@@ -26,6 +26,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   behind it.
 - A [cuDSS finding](docs/findings.md#cudss-refactorizes-real-ecoinvent-in-37-ms-but-that-isnt-a-monte-carlo-draw-yet):
   GPU factorization times on real ecoinvent next to the CPU solvers, and what they don't cover.
+- `BWBENCH_ENERGY=1` logs each timed sample's CPU package energy on Intel CPUs, and
+  `scripts/energy_summary.py` gives the joules and watts per case. The numbers stay local
+  ([running](docs/running.md#energy-per-operation)).
 - `just profile` runs one benchmark case under pyinstrument, and findings link the profiles behind
   them ([running](docs/running.md#benchmarks)).
 - Guidance on [contributing a run](docs/running.md#contribute-a-run) from your own machine.

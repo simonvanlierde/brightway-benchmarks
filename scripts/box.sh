@@ -23,6 +23,19 @@ fi
 # this is a worktree, whose .git file points outside the mount.
 BWBENCH_COMMIT=${BWBENCH_COMMIT:-$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)}
 export BWBENCH_COMMIT
+# BWBENCH_ENERGY=1 shows the box the CPU package's energy counter (Intel RAPL), read-only. Docker
+# hides /sys/devices/virtual/powercap in every container, so it is mounted at /run/rapl instead.
+# On the host BWBENCH_RAPL names the counter's folder, for the test.
+energy=() cpus=${BWBENCH_CPUSET:-16-23}
+if [ "${BWBENCH_ENERGY:-}" = 1 ]; then
+    rapl=${BWBENCH_RAPL:-/sys/class/powercap/intel-rapl:0}
+    [ -r "$rapl/energy_uj" ] || {
+        echo "box.sh: BWBENCH_ENERGY=1 needs a readable $rapl/energy_uj (Intel RAPL)" >&2
+        exit 2
+    }
+    energy=(--mount "type=bind,source=$rapl,target=/run/rapl,readonly" --group-add "$(stat -c %g "$rapl/energy_uj")")
+    export BWBENCH_RAPL=/run/rapl
+fi
 knobs=()
 while IFS='=' read -r name value; do
     knobs+=("$name=$value")
@@ -33,7 +46,8 @@ done < <(env | grep '^BWBENCH_' || true)
 writable=".asv results site"
 
 # An oss-bench without OSS_BENCH_RW would mount the repo read-write, so use it only if it has it.
-if command -v oss-bench >/dev/null && grep -q OSS_BENCH_RW "$(command -v oss-bench)"; then
+# It takes no extra mounts, so an energy run goes to docker, on BWBENCH_CPUSET's CPUs if set.
+if [ "${BWBENCH_ENERGY:-}" != 1 ] && command -v oss-bench >/dev/null && grep -q OSS_BENCH_RW "$(command -v oss-bench)"; then
     # oss-bench drops capabilities and caps processes itself. OSS_BENCH_NOASLR swaps in its own
     # copy of the same profile (moby/profiles seccomp/v0.2.4 plus the personality rule).
     if [ "$target" = codspeed ]; then
@@ -53,7 +67,20 @@ for d in $writable; do
     mkdir -p "$repo/$d"
     mounts+=(-v "$repo/$d":"/src/$d")
 done
-exec docker run --rm -i --init --name "tmp-bwbench-$$" --hostname "$(hostname -s)-box" --user "$(id -u):$(id -g)" \
+# An energy run skips oss-bench, so it takes the host's quiet gate itself, on the CPUs the box
+# runs on (at once inside a queue job that already holds it there): the package counter must not
+# see other jobs. Without a gate there is no energy run. BWBENCH_GATE names another program that
+# takes `quiet -- cmd...` and honours NODE_GATE_CPUS, on a host without node-gate.
+gate=() g=${BWBENCH_GATE:-${HOME:-}/.local/bin/node-gate}
+if [ -n "${energy[*]}" ]; then
+    [ -x "$g" ] || {
+        echo "box.sh: BWBENCH_ENERGY=1 needs the quiet gate $g (or BWBENCH_GATE)" >&2
+        exit 2
+    }
+    gate=(env NODE_GATE_CPUS="$cpus" "$g" quiet --)
+fi
+exec ${gate[@]+"${gate[@]}"} docker run --rm -i --init --name "tmp-bwbench-$$" --hostname "$(hostname -s)-box" --user "$(id -u):$(id -g)" \
     --cap-drop ALL --security-opt no-new-privileges ${noaslr[@]+"${noaslr[@]}"} --pids-limit 4096 \
+    ${energy[@]+"${energy[@]}"} ${energy[@]+--cpuset-cpus "$cpus"} \
     --memory "${BWBENCH_MEM:-2g}" --memory-swap "${BWBENCH_MEM:-2g}" --cpus "${BWBENCH_CPUS:-2}" \
     "${mounts[@]}" -w /src "$image" env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"

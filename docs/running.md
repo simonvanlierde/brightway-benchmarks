@@ -72,6 +72,41 @@ build strings, the BLAS among them, to a `versions-*.txt` file.
 ([method.md](method.md#the-noise-floor)). Each sample's CPU time, wall time and context
 switches go to `rounds.jsonl`; `scripts/noise_summary.py` reads them.
 
+#### Energy per operation
+
+On an Intel CPU, `BWBENCH_ENERGY=1` adds each sample's energy in joules to `rounds.jsonl`. It is
+read from the CPU's RAPL package counter, so your user needs read access to
+`/sys/class/powercap/intel-rapl:0/energy_uj`.
+
+The counter covers the whole CPU package, all cores and every process, so the run needs a quiet
+machine, and the joules per sample include what the idle CPU draws anyway. To get the energy the
+operation adds, sample the idle draw first and then run the benchmark, both inside one quiet gate
+with no other work running:
+
+```sh
+node-gate quiet -- sh -c 'python3 scripts/idle_energy.py .asv/idle-energy.json &&
+    BWBENCH_ENERGY=1 just noise bw2calc 3'
+python3 scripts/energy_summary.py .asv/noise/bw2calc/rounds.jsonl \
+    --idle-w "$(jq .idle_w .asv/idle-energy.json)"
+```
+
+`scripts/idle_energy.py` samples for five minutes, sums five-second counter deltas across wraps,
+and writes the measured `idle_w` to JSON; the summary subtracts it from each sample. A timed
+sample's energy is summed the same way, from readings five seconds apart. When a reading fails or
+comes over 60 seconds after the last, the counter may have wrapped unseen, so that sample logs no
+energy.
+
+The box cannot reach the counter through `oss-bench`, so an energy run takes the host's quiet gate
+itself, `node-gate` from the author's dotfiles, on the CPUs it runs on: 16 to 23, or
+`BWBENCH_CPUSET` (give the outer gate the same CPUs with `NODE_GATE_CPUS`). Without the gate,
+`box.sh` refuses the run. On another host, `BWBENCH_GATE` names a program that takes
+`quiet -- cmd...` and keeps other work off `NODE_GATE_CPUS`.
+
+A bench run logs energy too when it names a log, as in
+`BWBENCH_ENERGY=1 BWBENCH_MACHINE=noise BWBENCH_ROUNDLOG=/src/.asv/energy.jsonl just bench bw2calc "3.1.0^!"`.
+`BWBENCH_MACHINE=noise` keeps its timings out of `results/`. The round logs stay local; they never
+go to `results/` or the site's benchmark history.
+
 ## Memory
 
 The box has 2 GB and no swap by default. A job over the limit is killed: under asv as a failed

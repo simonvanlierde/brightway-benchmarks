@@ -162,3 +162,43 @@ def test_box_passes_the_commit_in(box: tuple[Path, Path]):
     head = subprocess.run([*git, "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
     assert run_box(repo).returncode == 0
     assert f"BWBENCH_COMMIT={head}" in log.read_text().split("\n")
+
+
+def energy_box(repo: Path, gate: str | None = "ok", **env: str) -> subprocess.CompletedProcess:
+    """An energy run against a scratch RAPL counter, with a gate stub that logs the CPUs it protects."""
+    rapl = repo / "rapl"
+    rapl.mkdir(exist_ok=True)
+    (rapl / "energy_uj").write_text("1000\n")
+    stub = repo / "stub" / "oss-bench"
+    stub.write_text("#!/bin/sh\n# OSS_BENCH_RW\necho oss-bench >&2\n")
+    stub.chmod(0o755)
+    path = repo / "stub" / "node-gate"
+    if gate is not None:
+        path.write_text('#!/bin/sh\necho "gate $1 on ${NODE_GATE_CPUS-unset}" >&2\nshift 2\nexec "$@"\n')
+        path.chmod(0o755 if gate == "ok" else 0o644)
+    return run_box(repo, BWBENCH_ENERGY="1", BWBENCH_RAPL=str(rapl), BWBENCH_GATE=str(path), **env)
+
+
+@pytest.mark.parametrize(("cpuset", "cpus"), [(None, "16-23"), ("0-5", "0-5")])
+def test_box_energy_run_gates_the_cpus_it_runs_on(box: tuple[Path, Path], cpuset: str | None, cpus: str):
+    """oss-bench takes no extra mounts, so an energy run goes to docker, through the quiet gate."""
+    repo, log = box
+    out = energy_box(repo, **({"BWBENCH_CPUSET": cpuset} if cpuset else {}))
+    assert out.returncode == 0, out.stderr
+    assert "oss-bench" not in out.stderr
+    assert f"gate quiet on {cpus}" in out.stderr, "the quiet gate does not protect the CPUs the box runs on"
+    args = log.read_text().split("\n")
+    # Docker masks /sys/devices/virtual/powercap in the box, so the counter goes elsewhere.
+    assert f"type=bind,source={repo / 'rapl'},target=/run/rapl,readonly" in args
+    assert args[args.index("--group-add") + 1] == str((repo / "rapl" / "energy_uj").stat().st_gid)
+    assert args[args.index("--cpuset-cpus") + 1] == cpus
+    assert "BWBENCH_RAPL=/run/rapl" in args
+
+
+@pytest.mark.parametrize("gate", [None, "not executable"])
+def test_box_energy_run_refuses_to_run_without_the_quiet_gate(box: tuple[Path, Path], gate: str | None):
+    repo, log = box
+    out = energy_box(repo, gate=gate)
+    assert out.returncode == 2
+    assert "quiet gate" in out.stderr
+    assert "run" not in log.read_text().split("\n")

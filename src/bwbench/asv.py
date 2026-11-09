@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import sys
+import threading
 import time
 from importlib import metadata
 from pathlib import Path
@@ -50,7 +51,7 @@ def _asv_class(name: str, group: list[Bench]) -> type:
         self.results = {}
         for b in group:
             self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))
-        self.usage = _usage()  # last, so the setup's own work is not counted
+        self.usage, self.energy = _usage(), _energy()  # last, so the setup's own work is not counted
 
     def teardown(self: Any, *args: Any) -> None:
         # The check runs here, outside the timed call; asv reports a raise as a failed benchmark.
@@ -100,20 +101,96 @@ def _usage() -> tuple[float, float, int]:
     return time.perf_counter(), ru.ru_utime + ru.ru_stime, ru.ru_nivcsw
 
 
+_energy_warned = False
+
+
+def _rapl() -> Path:
+    # scripts/box.sh mounts the counter at /run/rapl: Docker hides /sys/devices/virtual/powercap.
+    return Path(os.environ.get("BWBENCH_RAPL", "/sys/class/powercap/intel-rapl:0"))
+
+
+# Seconds between counter readings, and the longest gap trusted not to hide a whole counter cycle.
+# The counter restarts at 0 past max_energy_range_uj (262 kJ on an i9-14900KF); 60 s matches
+# scripts/idle_energy.py.
+_ENERGY_INTERVAL = 5.0
+_ENERGY_MAX_GAP = 60.0
+
+
+class _Meter:
+    """Sums the CPU package's energy counter (Intel RAPL) in short deltas from a background thread.
+
+    Two readings alone cannot tell how many times the counter wrapped between them, and asv lets a
+    sample run for 1800 s. A gap between readings above ``_ENERGY_MAX_GAP``, or a failed read, voids
+    the sample's energy rather than undercounting it.
+    """
+
+    def __init__(self, rapl: Path) -> None:
+        self.counter = rapl / "energy_uj"
+        self.span = int((rapl / "max_energy_range_uj").read_text())
+        self.value, self.at = int(self.counter.read_text()), time.monotonic()
+        self.joules: float | None = 0.0
+        self.done = threading.Event()
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+    def _read(self) -> None:
+        try:
+            value, at = int(self.counter.read_text()), time.monotonic()
+        except (OSError, ValueError):
+            self.joules = None
+            return
+        if at - self.at > _ENERGY_MAX_GAP:
+            self.joules = None
+        if self.joules is not None:
+            self.joules += (value - self.value) % self.span / 1e6
+        self.value, self.at = value, at
+
+    def _run(self) -> None:
+        while not self.done.wait(_ENERGY_INTERVAL):
+            self._read()
+
+    def stop(self) -> float | None:
+        """Joules since the meter started, or None when they cannot be trusted."""
+        self.done.set()
+        self.thread.join()
+        self._read()
+        return self.joules
+
+
+def _energy() -> _Meter | None:
+    """A running energy meter when ``BWBENCH_ENERGY=1`` and the counter can be read."""
+    global _energy_warned  # noqa: PLW0603 - warn once per process, not once per sample
+    if os.environ.get("BWBENCH_ENERGY") != "1":
+        return None
+    try:
+        return _Meter(_rapl())
+    except (OSError, ValueError) as e:
+        if not _energy_warned:
+            sys.stderr.write(f"bwbench: BWBENCH_ENERGY=1 but no energy is logged: {e}\n")
+            _energy_warned = True
+        return None
+
+
 def _log_usage(obj: Any, args: tuple) -> None:
     """Append one JSON line per timed sample: its wall and CPU time and involuntary context switches.
 
     Only when ``BWBENCH_ROUNDLOG`` names the log file. Only time_ calls fill ``results``, so only
     time_ samples are logged. The span runs from the end of setup to teardown, so it includes
-    asv's timer. ``scripts/noise_summary.py`` reads the log.
+    asv's timer. With ``BWBENCH_ENERGY=1`` the line also holds ``energy_j``, the whole CPU
+    package's energy over that span. ``scripts/noise_summary.py`` and ``scripts/energy_summary.py``
+    read the log.
     """
+    meter = getattr(obj, "energy", None)
+    joules = None if meter is None else meter.stop()  # always, so no meter thread outlives its sample
     log = os.environ.get("BWBENCH_ROUNDLOG")
     results = getattr(obj, "results", {})
     if not log or not results:
         return
     log = Path(log)
     cls = type(obj)
-    wall, cpu, nivcsw = (b - a for a, b in zip(obj.usage, _usage(), strict=True))
+    usage = _usage()
+    wall, cpu, nivcsw = (b - a for a, b in zip(obj.usage, usage, strict=True))
+    energy = {} if joules is None else {"energy_j": joules}
     log.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.get("ASV_ENV_NAME") or Path(sys.prefix).name
     with log.open("a") as f:
@@ -125,7 +202,7 @@ def _log_usage(obj: Any, args: tuple) -> None:
                 "wall": wall,
                 "cpu": cpu,
                 "nivcsw": nivcsw,
-            }
+            } | energy
             f.write(json.dumps(entry) + "\n")
 
 

@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 import types
 from pathlib import Path
 from typing import Any
@@ -433,4 +434,48 @@ def test_asv_logs_no_energy_and_warns_once_when_the_counter_is_unreadable(
     entries = [json.loads(line) for line in log.read_text().splitlines()]
     assert len(entries) == 2
     assert not any("energy_j" in e for e in entries)
-    assert capsys.readouterr().err.count("energy_uj") == 1
+    assert capsys.readouterr().err.count("no energy is logged") == 1
+
+
+def test_asv_logs_package_energy_across_a_whole_counter_cycle(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """300 kJ from 1000 J on a 262143.32885 J counter ends above the start: the endpoints alone show 37.9 kJ."""
+    log = tmp_path / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000_000)))
+    monkeypatch.setattr(asv, "_ENERGY_INTERVAL", 0.01, raising=False)
+
+    def run(n: int) -> int:
+        rapl(tmp_path / "rapl", 201_000_000_000)  # 200 kJ in, no wrap yet
+        time.sleep(0.2)  # the meter reads the counter here
+        rapl(tmp_path / "rapl", 38_856_671_150)  # 100 kJ more, across the wrap
+        return 2 * n
+
+    @bench({"size": ["smoke"], "n": [2]}, rtol=1e-9, error="relative_error", asv="Doubling", timeout=60)
+    def double(size: str, n: int):
+        return lambda: run(n), 2 * n
+
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    obj.setup("smoke", 2)
+    obj.time_double("smoke", 2)
+    obj.teardown("smoke", 2)
+    (line,) = log.read_text().splitlines()
+    assert json.loads(line)["energy_j"] == pytest.approx(300_000.0)
+
+
+def test_asv_logs_no_energy_when_the_counter_was_not_read_often_enough(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """A gap between readings could hide whole counter cycles, so the sample gets no energy."""
+    log = tmp_path / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
+    monkeypatch.setattr(asv, "_ENERGY_MAX_GAP", 0.0, raising=False)
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    obj.setup("smoke", 2)
+    obj.time_double("smoke", 2)
+    rapl(tmp_path / "rapl", 2_000_000)
+    obj.teardown("smoke", 2)
+    (line,) = log.read_text().splitlines()
+    assert "energy_j" not in json.loads(line)

@@ -1,5 +1,4 @@
 import json
-import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -165,26 +164,41 @@ def test_box_passes_the_commit_in(box: tuple[Path, Path]):
     assert f"BWBENCH_COMMIT={head}" in log.read_text().split("\n")
 
 
-RAPL = "/sys/class/powercap/intel-rapl:0/energy_uj"
-
-
-@pytest.mark.skipif(not os.access(RAPL, os.R_OK), reason="needs a readable Intel RAPL counter")
-def test_box_shows_the_energy_counter_without_a_cpu_slot(box: tuple[Path, Path]):
-    """oss-bench takes no extra mounts, so an energy run goes to docker, through the quiet gate."""
-    repo, log = box
+def energy_box(repo: Path, gate: str | None = "ok", **env: str) -> subprocess.CompletedProcess:
+    """An energy run against a scratch RAPL counter, with a gate stub that logs the CPUs it protects."""
+    rapl = repo / "rapl"
+    rapl.mkdir(exist_ok=True)
+    (rapl / "energy_uj").write_text("1000\n")
     stub = repo / "stub" / "oss-bench"
     stub.write_text("#!/bin/sh\n# OSS_BENCH_RW\necho oss-bench >&2\n")
     stub.chmod(0o755)
-    gate = repo / "stub" / "node-gate"
-    gate.write_text('#!/bin/sh\necho "gate $1" >&2\nshift 2\nexec "$@"\n')
-    gate.chmod(0o755)
-    out = run_box(repo, BWBENCH_ENERGY="1", BWBENCH_CPUSET="0-5", BWBENCH_GATE=str(gate))
+    path = repo / "stub" / "node-gate"
+    if gate is not None:
+        path.write_text('#!/bin/sh\necho "gate $1 on ${NODE_GATE_CPUS:-16-23}" >&2\nshift 2\nexec "$@"\n')
+        path.chmod(0o755 if gate == "ok" else 0o644)
+    return run_box(repo, BWBENCH_ENERGY="1", BWBENCH_RAPL=str(rapl), BWBENCH_GATE=str(path), **env)
+
+
+@pytest.mark.parametrize(("cpuset", "cpus"), [(None, "16-23"), ("0-5", "0-5")])
+def test_box_energy_run_gates_the_cpus_it_runs_on(box: tuple[Path, Path], cpuset: str | None, cpus: str):
+    """oss-bench takes no extra mounts, so an energy run goes to docker, through the quiet gate."""
+    repo, log = box
+    out = energy_box(repo, **({"BWBENCH_CPUSET": cpuset} if cpuset else {}))
     assert out.returncode == 0, out.stderr
     assert "oss-bench" not in out.stderr
-    assert "gate quiet" in out.stderr, "the energy run did not take the quiet gate"
+    assert f"gate quiet on {cpus}" in out.stderr, "the quiet gate does not protect the CPUs the box runs on"
     args = log.read_text().split("\n")
     # Docker masks /sys/devices/virtual/powercap in the box, so the counter goes elsewhere.
-    assert "type=bind,source=/sys/class/powercap/intel-rapl:0,target=/run/rapl,readonly" in args
-    assert args[args.index("--group-add") + 1] == str(Path(RAPL).stat().st_gid)
-    assert args[args.index("--cpuset-cpus") + 1] == "0-5"
+    assert f"type=bind,source={repo / 'rapl'},target=/run/rapl,readonly" in args
+    assert args[args.index("--group-add") + 1] == str((repo / "rapl" / "energy_uj").stat().st_gid)
+    assert args[args.index("--cpuset-cpus") + 1] == cpus
     assert "BWBENCH_RAPL=/run/rapl" in args
+
+
+@pytest.mark.parametrize("gate", [None, "not executable"])
+def test_box_energy_run_refuses_to_run_without_the_quiet_gate(box: tuple[Path, Path], gate: str | None):
+    repo, log = box
+    out = energy_box(repo, gate=gate)
+    assert out.returncode == 2
+    assert "quiet gate" in out.stderr
+    assert "run" not in log.read_text().split("\n")

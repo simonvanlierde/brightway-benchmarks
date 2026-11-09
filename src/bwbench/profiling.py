@@ -40,7 +40,7 @@ def parse_params(args: list[str]) -> dict[str, str]:
 
 
 def typed(bench: Bench, params: dict[str, str]) -> dict[str, object]:
-    """PARAMS with each value cast to the type of the case's declared values (``demands=3`` is an int).
+    """PARAMS with each value cast to the type of the case's declared values (``demands=10`` is an int).
 
     Values are not checked against the declared ones: those come from the knobs' smoke defaults, and a
     profile usually wants a full size such as ``ecoinvent``.

@@ -54,6 +54,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - A run at one database size no longer wipes the other sizes' results.
+- Setup marks the selected check cell with a fill and a bottom bar, so a keyboard user can tell it from
+  the focused cell, which keeps the outline.
+- The viewer footer links the home-heating case beside the solver story.
 
 ## [0.2.0] - 2026-11-01
 

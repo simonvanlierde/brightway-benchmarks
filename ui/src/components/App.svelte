@@ -44,7 +44,14 @@ let {
   build,
   about = "/about/",
   story = "/stories/solver-choice/",
-}: { base: string; build?: { label: string; url: string }; about?: string; story?: string } = $props();
+  heating = "/stories/home-heating/",
+}: {
+  base: string;
+  build?: { label: string; url: string };
+  about?: string;
+  story?: string;
+  heating?: string;
+} = $props();
 
 // Fetched with the first chart, so the start page does not load Plot.
 let chartModule: Promise<typeof import("./HistoryChart.svelte")> | undefined;
@@ -571,6 +578,7 @@ $effect(() => {
     {#each index?.project.links ?? [] as link (link.url)}<a href={link.url}>{link.name}</a>{/each}
     {#if index?.project.url}<a href={index.project.url}>GitHub</a>{/if}
     <a href={story}>Solver story</a>
+    <a href={heating}>Heating case</a>
     <a href={about}>About &amp; privacy</a>
     {#if build}<a class="build-version" href={build.url} aria-label="Build {build.label}">{build.label}</a>{/if}
   </nav>

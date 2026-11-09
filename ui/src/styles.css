@@ -1300,9 +1300,11 @@ table.check-grid td > span {
 table.check-grid td a:hover {
   background: var(--accent-wash);
 }
+/* Selected is a fill and a bottom bar, so the focus outline still marks the focused cell. */
 table.check-grid td a[aria-current="true"] {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+  background: var(--accent-wash);
+  box-shadow: inset 0 -3px 0 var(--accent);
+  font-weight: 800;
 }
 
 /* Findings: a claim each, linked to the chart that shows it. */

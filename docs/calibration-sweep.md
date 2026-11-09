@@ -36,7 +36,7 @@ Inside the container, with the source mounted read-only at `/src` and a writable
 folder at `/out`, run:
 
 ```sh
-PYTHONPATH=src uv run --no-project --python 3.12 \
+PYTHONPATH=src uv run --no-project --python 3.13 \
   --with numpy==2.5.3 --with scipy==1.18.1 --with pymetis==2025.2.2 \
   python scripts/calibration_sweep.py --output /out/calibration-sweep.json
 ```

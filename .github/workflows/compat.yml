@@ -26,10 +26,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The benchmark harness needs Python 3.12 or later. All native PyPI checks run on
+        # The benchmark harness needs Python 3.13 or later. All native PyPI checks run on
         # each platform; conda-forge uses the Linux-only container and manifest.
         column: [latest, suites, floors, pre, conda-forge]
-        python: ["3.12", "3.13", "3.14"]
+        python: ["3.13", "3.14"]
         os: [ubuntu-latest, macos-latest, windows-latest]
         exclude:
           - {column: conda-forge, os: macos-latest}

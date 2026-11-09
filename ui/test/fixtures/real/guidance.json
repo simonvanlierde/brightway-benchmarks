@@ -10,24 +10,24 @@
     {
       "id": "linux",
       "label": "Linux",
-      "defaultCheck": "latest-3.12-ubuntu-latest"
+      "defaultCheck": "latest-3.13-ubuntu-latest"
     },
     {
       "id": "macos",
       "label": "macOS",
-      "defaultCheck": "latest-3.12-macos-latest"
+      "defaultCheck": "latest-3.13-macos-latest"
     },
     {
       "id": "windows",
       "label": "Windows",
-      "defaultCheck": "latest-3.12-windows-latest"
+      "defaultCheck": "latest-3.13-windows-latest"
     }
   ],
   "checks": [
     {
-      "id": "latest-3.12-macos-latest",
+      "id": "latest-3.13-macos-latest",
       "platform": "macos",
-      "python": "3.12",
+      "python": "3.13",
       "label": "Latest releases",
       "description": "Install the latest stable releases from PyPI and run each benchmark case once on a small database.",
       "kind": "smoke",
@@ -65,34 +65,34 @@
         "files": [
           {
             "label": "requirements.txt",
-            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-macos-latest/2026-10-31/requirements.txt",
-            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-macos-latest/requirements.txt"
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-macos-latest/2026-10-31/requirements.txt",
+            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-macos-latest/requirements.txt"
           },
           {
             "label": "pylock.toml",
-            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-macos-latest/2026-10-31/pylock.toml",
-            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-macos-latest/pylock.toml"
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-macos-latest/2026-10-31/pylock.toml",
+            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-macos-latest/pylock.toml"
           }
         ],
         "installs": [
           {
             "manager": "uv",
-            "command": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-macos-latest/2026-10-31/requirements.txt",
-            "latest": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-macos-latest/requirements.txt"
+            "command": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-macos-latest/2026-10-31/requirements.txt",
+            "latest": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-macos-latest/requirements.txt"
           },
           {
             "manager": "pip",
-            "command": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-macos-latest/2026-10-31/requirements.txt",
-            "latest": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-macos-latest/requirements.txt"
+            "command": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-macos-latest/2026-10-31/requirements.txt",
+            "latest": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-macos-latest/requirements.txt"
           }
         ],
         "pinned": "2026-10-31"
       }
     },
     {
-      "id": "latest-3.12-ubuntu-latest",
+      "id": "latest-3.13-ubuntu-latest",
       "platform": "linux",
-      "python": "3.12",
+      "python": "3.13",
       "label": "Latest releases",
       "description": "Install the latest stable releases from PyPI and run each benchmark case once on a small database.",
       "kind": "smoke",
@@ -128,34 +128,34 @@
         "files": [
           {
             "label": "requirements.txt",
-            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-ubuntu-latest/2026-10-31/requirements.txt",
-            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-ubuntu-latest/requirements.txt"
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-ubuntu-latest/2026-10-31/requirements.txt",
+            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-ubuntu-latest/requirements.txt"
           },
           {
             "label": "pylock.toml",
-            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-ubuntu-latest/2026-10-31/pylock.toml",
-            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-ubuntu-latest/pylock.toml"
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-ubuntu-latest/2026-10-31/pylock.toml",
+            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-ubuntu-latest/pylock.toml"
           }
         ],
         "installs": [
           {
             "manager": "uv",
-            "command": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-ubuntu-latest/2026-10-31/requirements.txt",
-            "latest": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-ubuntu-latest/requirements.txt"
+            "command": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-ubuntu-latest/2026-10-31/requirements.txt",
+            "latest": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-ubuntu-latest/requirements.txt"
           },
           {
             "manager": "pip",
-            "command": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-ubuntu-latest/2026-10-31/requirements.txt",
-            "latest": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-ubuntu-latest/requirements.txt"
+            "command": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-ubuntu-latest/2026-10-31/requirements.txt",
+            "latest": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-ubuntu-latest/requirements.txt"
           }
         ],
         "pinned": "2026-10-31"
       }
     },
     {
-      "id": "latest-3.12-windows-latest",
+      "id": "latest-3.13-windows-latest",
       "platform": "windows",
-      "python": "3.12",
+      "python": "3.13",
       "label": "Latest releases",
       "description": "Install the latest stable releases from PyPI and run each benchmark case once on a small database.",
       "kind": "smoke",
@@ -191,25 +191,25 @@
         "files": [
           {
             "label": "requirements.txt",
-            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-windows-latest/2026-10-31/requirements.txt",
-            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-windows-latest/requirements.txt"
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-windows-latest/2026-10-31/requirements.txt",
+            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-windows-latest/requirements.txt"
           },
           {
             "label": "pylock.toml",
-            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-windows-latest/2026-10-31/pylock.toml",
-            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-windows-latest/pylock.toml"
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-windows-latest/2026-10-31/pylock.toml",
+            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-windows-latest/pylock.toml"
           }
         ],
         "installs": [
           {
             "manager": "uv",
-            "command": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-windows-latest/2026-10-31/requirements.txt",
-            "latest": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-windows-latest/requirements.txt"
+            "command": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-windows-latest/2026-10-31/requirements.txt",
+            "latest": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-windows-latest/requirements.txt"
           },
           {
             "manager": "pip",
-            "command": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-windows-latest/2026-10-31/requirements.txt",
-            "latest": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.12-windows-latest/requirements.txt"
+            "command": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-windows-latest/2026-10-31/requirements.txt",
+            "latest": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-windows-latest/requirements.txt"
           }
         ],
         "pinned": "2026-10-31"
@@ -342,9 +342,9 @@
       }
     },
     {
-      "id": "floors-3.12-ubuntu-latest",
+      "id": "floors-3.13-ubuntu-latest",
       "platform": "linux",
-      "python": "3.12",
+      "python": "3.13",
       "label": "Dependency floors",
       "description": "Keep Brightway at its latest releases, use the lowest allowed versions of its direct dependencies, and run the small-database calculations.",
       "kind": "diagnostic",
@@ -380,25 +380,25 @@
         "files": [
           {
             "label": "requirements.txt",
-            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.12-ubuntu-latest/2026-10-31/requirements.txt",
-            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.12-ubuntu-latest/requirements.txt"
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.13-ubuntu-latest/2026-10-31/requirements.txt",
+            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.13-ubuntu-latest/requirements.txt"
           },
           {
             "label": "pylock.toml",
-            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.12-ubuntu-latest/2026-10-31/pylock.toml",
-            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.12-ubuntu-latest/pylock.toml"
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.13-ubuntu-latest/2026-10-31/pylock.toml",
+            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.13-ubuntu-latest/pylock.toml"
           }
         ],
         "installs": [
           {
             "manager": "uv",
-            "command": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.12-ubuntu-latest/2026-10-31/requirements.txt",
-            "latest": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.12-ubuntu-latest/requirements.txt"
+            "command": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.13-ubuntu-latest/2026-10-31/requirements.txt",
+            "latest": "uv add brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.13-ubuntu-latest/requirements.txt"
           },
           {
             "manager": "pip",
-            "command": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.12-ubuntu-latest/2026-10-31/requirements.txt",
-            "latest": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.12-ubuntu-latest/requirements.txt"
+            "command": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.13-ubuntu-latest/2026-10-31/requirements.txt",
+            "latest": "pip install brightway25 bw_graph_tools bw_timex -c https://simonvanlierde.com/brightway-benchmarks/compat/floors-3.13-ubuntu-latest/requirements.txt"
           }
         ],
         "pinned": "2026-10-31"
@@ -468,9 +468,9 @@
       }
     },
     {
-      "id": "conda-forge-3.12-ubuntu-latest",
+      "id": "conda-forge-3.13-ubuntu-latest",
       "platform": "linux",
-      "python": "3.12",
+      "python": "3.13",
       "label": "conda-forge",
       "description": "Install the available Brightway packages from conda-forge and run the small-database calculations.",
       "kind": "diagnostic",
@@ -504,44 +504,44 @@
         "files": [
           {
             "label": "environment.yml",
-            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/2026-10-31/environment.yml",
-            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/environment.yml"
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/2026-10-31/environment.yml",
+            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/environment.yml"
           },
           {
             "label": "pixi.toml",
-            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/2026-10-31/pixi.toml",
-            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/pixi.toml"
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/2026-10-31/pixi.toml",
+            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/pixi.toml"
           },
           {
             "label": "pixi.lock",
-            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/2026-10-31/pixi.lock",
-            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/pixi.lock"
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/2026-10-31/pixi.lock",
+            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/pixi.lock"
           },
           {
             "label": "requirements.txt",
-            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/2026-10-31/requirements.txt",
-            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/requirements.txt"
+            "url": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/2026-10-31/requirements.txt",
+            "latest": "https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/requirements.txt"
           }
         ],
         "installs": [
           {
             "manager": "conda",
-            "command": "conda env update -n brightway-tested -f https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/2026-10-31/environment.yml --prune",
-            "latest": "conda env update -n brightway-tested -f https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/environment.yml --prune"
+            "command": "conda env update -n brightway-tested -f https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/2026-10-31/environment.yml --prune",
+            "latest": "conda env update -n brightway-tested -f https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/environment.yml --prune"
           },
           {
             "manager": "pixi",
-            "command": "curl -fL -O https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/2026-10-31/pixi.toml -O https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/2026-10-31/pixi.lock && pixi install --frozen",
-            "latest": "curl -fL -O https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/pixi.toml -O https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.12-ubuntu-latest/pixi.lock && pixi install --frozen"
+            "command": "curl -fL -O https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/2026-10-31/pixi.toml -O https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/2026-10-31/pixi.lock && pixi install --frozen",
+            "latest": "curl -fL -O https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/pixi.toml -O https://simonvanlierde.com/brightway-benchmarks/compat/conda-forge-3.13-ubuntu-latest/pixi.lock && pixi install --frozen"
           }
         ],
         "pinned": "2026-10-31"
       }
     },
     {
-      "id": "suites-3.12-ubuntu-latest",
+      "id": "suites-3.13-ubuntu-latest",
       "platform": "linux",
-      "python": "3.12",
+      "python": "3.13",
       "label": "Upstream test suites",
       "description": "Run upstream package test suites against the latest installed releases; this is broader than the small-database calculation checks.",
       "kind": "suites",

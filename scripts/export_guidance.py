@@ -235,7 +235,7 @@ def export(status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE) ->
             )
         if green := cell.get("green"):
             check["lastPassed"] = _passing_set(green, column, public_base)
-            if column == "latest" and cell["python"] == "3.12" and check["lastPassed"]["installs"]:
+            if column == "latest" and cell["python"] == "3.13" and check["lastPassed"]["installs"]:
                 entry["defaultCheck"] = check["id"]
         out["checks"].append(check)
     out["platforms"] = [platforms[key] for key in ("linux", "macos", "windows") if key in platforms]

@@ -9,7 +9,7 @@
   ],
   "environment_type": "uv",
   "pythons": [
-    "3.12"
+    "3.13"
   ],
   "benchmark_dir": "../benchmarks/bench_matrix_utils",
   "env_dir": "../.asv/env/matrix_utils",

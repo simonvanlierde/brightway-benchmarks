@@ -8,7 +8,7 @@
   ],
   "environment_type": "uv",
   "pythons": [
-    "3.12"
+    "3.13"
   ],
   "benchmark_dir": "../benchmarks/bench_bw_graph_tools",
   "env_dir": "../.asv/env/bw_graph_tools",
@@ -40,7 +40,7 @@
   ],
   "include": [
     {
-      "python": "3.12",
+      "python": "3.13",
       "environment_type": "uv",
       "req": {
         "numpy": "2.5.3",

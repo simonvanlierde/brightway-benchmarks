@@ -24,8 +24,8 @@ publish_to_pypi: false
 python_api: true
 python_dir: .
 python_layout: src
-python_min: '3.12'
-python_version: '3.12'
+python_min: '3.13'
+python_version: '3.13'
 site: none
 stacks:
 - python

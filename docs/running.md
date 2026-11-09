@@ -126,7 +126,7 @@ the viewer and `just release-changes` compare release tags only.
 
 ## Compat
 
-`just compat PYTHON [COLUMN]`, as in `just compat 3.12 floors`, asks whether the newest
+`just compat PYTHON [COLUMN]`, as in `just compat 3.13 floors`, asks whether the newest
 releases work together. It installs the latest brightway25, bw_graph_tools and bw_timex into a
 fresh environment and runs every case once at the `smoke` size, untimed.
 
@@ -143,17 +143,17 @@ fresh environment and runs every case once at the `smoke` size, untimed.
 bw_timex pulls in PyPardiso on Linux x86_64, so there bw2calc solves with PyPardiso.
 
 Each run writes to `.asv/compat/PYTHON-COLUMN/`: `requirements.txt`, and `pylock.toml` with
-each wheel's hash for that job's operating system. `pylock.toml` says `requires-python >=3.12`,
-so an older patch release such as Ubuntu 24.04's 3.12.3 can use it. `conda-forge` also writes
+each wheel's hash for that job's operating system. `pylock.toml` says `requires-python >=3.13`,
+so an older patch release such as 3.13.0 can use it. `conda-forge` also writes
 `environment.yml` (every conda package of the user environment at its locked version; pytest
 lives in a separate pixi `test` environment), `pixi.toml` and `pixi.lock`. `suites` writes
 `suites.txt` with each package's result and `suites/PACKAGE.log`.
 
 ### The nightly runs
 
-The `compat` workflow runs 39 jobs each night: `latest`, `suites`, `floors` and `pre`
-on Linux, macOS and Windows with Python 3.12, 3.13 and 3.14, plus `conda-forge` on Linux
-with all three Python versions. Conda checks on macOS and Windows are unsupported because
+The `compat` workflow runs 26 jobs each night: `latest`, `suites`, `floors` and `pre`
+on Linux, macOS and Windows with Python 3.13 and 3.14, plus `conda-forge` on Linux
+with both Python versions. Conda checks on macOS and Windows are unsupported because
 they use a Linux container and manifest. Only `latest` turns the run red; other failures remain
 visible in the published results. On macOS and Windows the checks run directly on the runner.
 On macOS the PyPardiso and UMFPACK cases skip because neither installs from PyPI there.

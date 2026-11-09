@@ -143,6 +143,9 @@ match within `DIRECT_RTOL` (1e-9); an error outside that tolerance fails the cas
   that package's own change. bw2calc 3.0.0 and later also get threadpoolctl.
 - Each history starts at the oldest release that runs on that set: bw2data at 4.6 (peewee 4),
   bw_timex at 1.1.0. Every release of the other packages runs.
+- Timings from the generator v5 rerun on run on Python 3.13; earlier times, including every
+  published v4 history, ran on Python 3.12. Every release of every package installs and imports
+  on 3.13 over the same pinned stacks.
 - Each run records what was installed (`pylock.toml`) and an RO-Crate naming the code and
   settings.
 - A change to the synthetic generator bumps `GENERATOR_VERSION`, which changes every

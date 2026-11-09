@@ -1,7 +1,7 @@
 r"""Factorize and solve real ecoinvent's A with each direct solver bw2calc can use, one thread.
 
     docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/src:ro -v RELEASE_FOLDER:/ecoinvent:ro \
-        -w /src IMAGE scripts/in-box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 \
+        -w /src IMAGE scripts/in-box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.13 \
         --with bw2calc==3.1.0 --with threadpoolctl==3.7.0 --with pypardiso==0.4.7 \
         --with scikit-umfpack==0.4.2 --with pyklu==0.2.0 python scripts/solver_factorize.py [--pardiso] [--cudss]'
 

@@ -4,7 +4,7 @@ The input is not untrusted: asv writes these result files on our own machine. Th
 exists for the OpenSSF Scorecard Fuzzing check, which looks for ``import atheris``. It is not
 a pytest test (the name does not match ``test_*.py``).
 
-Run: ``uv run --no-project --python 3.12 --with atheris==3.1.0 python tests/fuzz_release_report.py
+Run: ``uv run --no-project --python 3.13 --with atheris==3.1.0 python tests/fuzz_release_report.py
 -max_total_time=60``
 """
 

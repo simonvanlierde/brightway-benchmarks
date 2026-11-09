@@ -144,12 +144,16 @@ def redo_lci(size: str, cls: str) -> BenchSetup:
     the first demand's supply; its first solve is a direct one. From 3.0 it solves a new
     demand on an unchanged matrix directly, with the factorization of that first solve.
     """
-    skip_unless_factorizable(size, pardiso=bc.PYPARDISO)  # lci(factorize=True), for every class
+    # Only LCA's redo_lci reads the factorization (bw2calc 2.0.2 to 3.1.0: the others never use
+    # `self.solver`), so only it factorizes ahead. IterativeLCA's first solve is one factorization
+    # anyway (a direct solve, or 3.x's reference); JacobiGMRESLCA makes none.
+    factorize = cls == "LCA"
+    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=0 if cls == "JacobiGMRESLCA" else 1)
     skip_known_crash(cls, calls_next=False)
     inventory, methods, refs, _ = packages(size)
     rtol = rtol_for(cls)
     lca = lca_class(cls)(demand={0: 1}, data_objs=[inventory, methods[0]])
-    lca.lci(factorize=True)
+    lca.lci(factorize=factorize)
     lca.lcia()
 
     def run() -> None:

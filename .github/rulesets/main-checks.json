@@ -23,6 +23,7 @@
       "parameters": {
         "strict_required_status_checks_policy": false,
         "required_status_checks": [
+<<<<<<< before updating
           {
             "context": "git hooks",
             "integration_id": 15368
@@ -47,6 +48,13 @@
             "context": "ui: lint, types, tests, build",
             "integration_id": 15368
           }
+=======
+          { "context": "git hooks", "integration_id": 15368 },
+          { "context": "pull request title", "integration_id": 15368 },
+          { "context": "DCO sign-off", "integration_id": 15368 },
+          { "context": "dependency review", "integration_id": 15368 },
+          { "context": "python: lint, types, tests (3.12)", "integration_id": 15368 }
+>>>>>>> after updating
         ]
       }
     }

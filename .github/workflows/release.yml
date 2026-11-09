@@ -1,11 +1,21 @@
 name: release
 
+<<<<<<< before updating
 # A pushed vX.Y.Z tag makes the GitHub release: the source archive, its SHA256SUMS and a
 # build provenance attestation of both, with the version's CHANGELOG section as notes. The
 # attestation's Sigstore bundle is attached as `.intoto.jsonl`, which is what OpenSSF
 # Scorecard's Signed-Releases check looks for. Publishing the release makes Zenodo archive
 # it (CITATION.cff). Nothing goes to PyPI. Do not create the release by hand. No
 # workflow_dispatch: a manual run could release from any branch.
+=======
+# A pushed version tag becomes a GitHub release whose notes are that version's
+# CHANGELOG.md section. Releases are immutable, so the notes must be right the first
+# time: a tag with no section fails before anything is published. Make the section
+# before you tag. If notes validation fails before publication, fix CHANGELOG.md,
+# delete the tag (a tags-ruleset bypass is needed) with
+# `git tag -d vX.Y.Z && git push origin :refs/tags/vX.Y.Z`, and tag again. After
+# publication, release a new patch version.
+>>>>>>> after updating
 on:
   push:
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
@@ -32,6 +42,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0 # the history of main, for the next step
 
+<<<<<<< before updating
       # A tag pushed on a branch would release code that was never reviewed into main.
       - name: The tagged commit is on main
         run: |
@@ -39,6 +50,28 @@ jobs:
             { echo "The tagged commit $(git rev-parse --short HEAD) is not on main: tag a commit of main"; exit 1; }
 
       - name: The tag matches pyproject.toml and CHANGELOG.md
+=======
+      # .github/scripts/tag-release.sh signs the tag. A lightweight or unverified one publishes
+      # nothing.
+      - name: refuse a tag GitHub cannot verify
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          read -r type sha < <(gh api "repos/$REPO/git/ref/tags/$TAG" --jq '.object.type + " " + .object.sha')
+          if [ "$type" != tag ]; then
+            echo "$TAG is a lightweight tag; make it with .github/scripts/tag-release.sh" >&2
+            exit 1
+          fi
+          if [ "$(gh api "repos/$REPO/git/tags/$sha" --jq '.verification.verified')" != true ]; then
+            echo "GitHub cannot verify the signature on $TAG" >&2
+            exit 1
+          fi
+
+      - name: create the release
+>>>>>>> after updating
         env:
           TAG: ${{ github.ref_name }}
         run: |

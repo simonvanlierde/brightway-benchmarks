@@ -215,6 +215,9 @@ release version:
         .github/scripts/tag-release.sh "$version"
         exit 0
     fi
+    # The release workflow refuses a tag that differs from pyproject.toml, after the tag exists.
+    grep "^version = \"$version\"$" pyproject.toml >/dev/null ||
+        { echo "set version = \"$version\" in pyproject.toml (and uv.lock) first" >&2; exit 1; }
     prev=$(sed -n 's/^## \[\([0-9][0-9.]*\)\].*/\1/p' CHANGELOG.md | head -1)
     if [ -n "$prev" ]; then link=$repo/compare/v$prev...$tag; else link=$repo/releases/tag/$tag; fi
     tmp=$(mktemp)

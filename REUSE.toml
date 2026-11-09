@@ -15,3 +15,9 @@ SPDX-License-Identifier = "BSD-3-Clause"
 path = ".github/CODE_OF_CONDUCT.md"
 SPDX-FileCopyrightText = "Organization for Ethical Source"
 SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+# Docker's default seccomp profile (moby/profiles) plus one rule; see `just seccomp-profile`.
+[[annotations]]
+path = "docker/seccomp-noaslr.json"
+SPDX-FileCopyrightText = "Docker, Inc. and the moby/profiles contributors"
+SPDX-License-Identifier = "Apache-2.0"

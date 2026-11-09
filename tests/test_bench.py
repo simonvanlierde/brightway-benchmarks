@@ -464,18 +464,37 @@ def test_asv_logs_package_energy_across_a_whole_counter_cycle(tmp_path: Path, mo
     assert json.loads(line)["energy_j"] == pytest.approx(300_000.0)
 
 
-def test_asv_logs_no_energy_when_the_counter_was_not_read_often_enough(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    """A gap between readings could hide whole counter cycles, so the sample gets no energy."""
+@pytest.mark.parametrize(("gap", "joules"), [(59.0, 1.0), (61.0, None)])
+def test_asv_logs_no_energy_when_the_counter_was_not_read_often_enough(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, gap: float, joules: float | None
+):
+    """A gap over 60 s between readings could hide whole counter cycles, so the sample gets no energy."""
     log = tmp_path / "rounds.jsonl"
     monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
     monkeypatch.setenv("BWBENCH_ENERGY", "1")
     monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
-    monkeypatch.setattr(asv, "_ENERGY_MAX_GAP", 0.0, raising=False)
+    clock = iter([0.0, gap])
+    monkeypatch.setattr(asv.time, "monotonic", lambda: next(clock))
     (cls,) = asv.classes(module(double=double).__name__)
     obj = cls()
     obj.setup("smoke", 2)
     obj.time_double("smoke", 2)
     rapl(tmp_path / "rapl", 2_000_000)
     obj.teardown("smoke", 2)
+    (line,) = log.read_text().splitlines()
+    assert json.loads(line).get("energy_j") == joules
+
+
+def test_asv_logs_no_energy_when_a_later_counter_read_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    log = tmp_path / "rounds.jsonl"
+    monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    obj.setup("smoke", 2)
+    obj.time_double("smoke", 2)
+    (tmp_path / "rapl" / "energy_uj").write_text("garbled\n")
+    obj.teardown("smoke", 2)  # a sample without energy, not a failed benchmark
     (line,) = log.read_text().splitlines()
     assert "energy_j" not in json.loads(line)

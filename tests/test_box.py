@@ -174,7 +174,7 @@ def energy_box(repo: Path, gate: str | None = "ok", **env: str) -> subprocess.Co
     stub.chmod(0o755)
     path = repo / "stub" / "node-gate"
     if gate is not None:
-        path.write_text('#!/bin/sh\necho "gate $1 on ${NODE_GATE_CPUS:-16-23}" >&2\nshift 2\nexec "$@"\n')
+        path.write_text('#!/bin/sh\necho "gate $1 on ${NODE_GATE_CPUS-unset}" >&2\nshift 2\nexec "$@"\n')
         path.chmod(0o755 if gate == "ok" else 0o644)
     return run_box(repo, BWBENCH_ENERGY="1", BWBENCH_RAPL=str(rapl), BWBENCH_GATE=str(path), **env)
 

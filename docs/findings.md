@@ -4,8 +4,10 @@ Unless a finding says otherwise, the numbers come from the
 [benchmark history](https://simonvanlierde.com/brightway-benchmarks/), measured in October 2026
 on the ecoinvent-sized synthetic database, one thread, on an efficiency core of an Intel
 i9-14900KF. Every release runs on the same fixed dependencies, so a step in a history is that
-package's own change ([method](method.md)). Direct-solver times on the synthetic database
-overstate real ecoinvent: a SuperLU score takes 27.7 s against a 3.66 s factorization of the real
+package's own change ([method](method.md)). These synthetic histories use generator v4;
+generator v5 passes the fill guards, but its histories still need the full rerun.
+Direct-solver times measured on v4 overstate real ecoinvent: a SuperLU score takes 27.7 s
+against a 3.66 s factorization of the real
 matrix, and UMFPACK on reference BLAS 9.05 s against 1.79 s, because the profile's factors fill
 about three times as much ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
 

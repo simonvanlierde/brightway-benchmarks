@@ -9,9 +9,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### For readers of the history pages
 
-- Every benchmark's history starts again from the rerun after the generator change in this
-  release. Earlier times stay in the results branch's git history
+- Every benchmark's history starts again from the rerun after the change to generator version 5 in
+  this release. Earlier times stay in the results branch's git history
   ([method](docs/method.md#how-the-results-stay-reproducible)).
+- The synthetic ecoinvent profile shares supplier lists across activity families and passes its
+  structural and solver-fill checks over four seeds ([calibration](docs/generator-calibration.md)).
 
 ### Added
 
@@ -47,7 +49,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The generator's experimental input-sharing controls, which were off in every registered profile
   and did not bring the fill down
-  ([what did not lower the fill](docs/method.md#what-did-not-lower-the-fill)).
+  ([calibration choices](docs/generator-calibration.md#keeping-fill-explicit)).
 
 ### Fixed
 

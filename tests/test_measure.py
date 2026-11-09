@@ -104,10 +104,6 @@ def test_ecoinvent_profile_matches_its_target():
     assert np.mean(negative) == pytest.approx(want.negative_input_share, abs=NEGATIVE_MEAN)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="#54: the profile is a random graph with ecoinvent's degrees, so it fills about 3.5 times as much",
-)
 def test_ecoinvent_profile_fills_like_its_target():
     """Fill against ecoinvent 3.12 cut-off: METIS on A + A^T over seeds 0 to 3, and SuperLU's COLAMD on A^T.
 

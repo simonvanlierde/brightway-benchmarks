@@ -36,16 +36,16 @@ Only aggregate statistics of the ecoinvent database (ecoinvent Association) went
 `ecoinvent` profile, no dataset or figure of one. They are in
 [`src/bwbench/profiles/`](../src/bwbench/profiles).
 
-The profile is harder on a direct solver than real ecoinvent. It has ecoinvent's degrees but
-wires them at random, while in ecoinvent the regional variants of one activity share their
-inputs and each ISIC division buys from its own set of suppliers. So its factors fill more:
-SuperLU with COLAMD on Aᵀ, the factorization bw2calc 3.1 runs, holds 85 times as many entries
-as the matrix against 26 for ecoinvent (323 against 175 on A), and METIS on A + Aᵀ 110 against
-31. Direct-solver times overstate real ecoinvent by 6 to 11 times on Aᵀ
-([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
-`test_ecoinvent_profile_fills_like_its_target` holds the fill target as an expected failure
-until a profile meets it. With a
-licence of your own, [`scripts/solver_factorize.py`](../scripts/solver_factorize.py) times each
+Generator v5 groups regional variants into activity families that share supplier lists.
+Family sizes and input counts use fixed quantiles, shuffled within size bands, so one large
+family cannot dominate a seed. The calibrated profile passes the structural and fill guards
+over seeds 0 to 3: mean METIS fill is 37.9, and SuperLU's COLAMD fill on Aᵀ is 27.9.
+[Calibration choices and research](generator-calibration.md) explain the construction and its
+limits. Input magnitudes still have a narrower upper tail than the real database.
+
+The published synthetic histories in [findings.md](findings.md) use generator v4. Those times
+retain its fill caveat until the v5 histories have been rerun. With a licence of your own,
+[`scripts/solver_factorize.py`](../scripts/solver_factorize.py) times each
 direct solver on the real matrix, and with `--cudss` NVIDIA's cuDSS on a GPU. That option
 refactorizes unchanged values. `--cudss-updates` instead applies three deterministic row-scaled
 value updates at fixed sparsity, checking every solution against SuperLU and its backward
@@ -59,17 +59,10 @@ exchange links, and prints each step's time and peak memory. The files are as he
 ecoinvent 3.12's (137 KB a dataset) without changing the system's matrices: elementary exchanges,
 properties, uncertainties and parameters come at the release's means per dataset, and comments at
 its count and length per kind, since bw2io keeps their text in memory. ecoSpold2 allows one comment
-per exchange, so datasets with few intermediate exchanges get fewer (7.2 a dataset against 12.8).
-Review text, which bw2io skips, makes up the rest. At `ecoinvent` size the import peaks at 3.97 GB,
+per exchange, so datasets with few intermediate exchanges get fewer (7.1 a dataset against 12.8).
+Review text, which bw2io skips, makes up the rest. With generator v4, the `ecoinvent` import peaked at 3.97 GB,
 against 4.5 GB for the real release. `just bw2io-import RELEASE_FOLDER all` does the same on a
 licensed release, read-only.
-
-### What did not lower the fill
-
-Copying input lists to regional variants, drawing long lists from market pools, and hidden
-supplier communities were tried as generator controls and removed: none brings the top separator
-of A + Aᵀ below 0.25, against ecoinvent's 0.11
-([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
 
 ## The real databases
 

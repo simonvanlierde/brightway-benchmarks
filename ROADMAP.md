@@ -7,14 +7,11 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
 
 ## Planned
 
-- **A more faithful `ecoinvent` profile.** Its LU fill is too high (110 against 31 for METIS on
-  A + Aᵀ), so direct-solver times on it overstate real ecoinvent
-  ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)). ecoinvent's low fill
-  comes from regional variants of one activity sharing their inputs, and divisions buying from
-  their own suppliers. Hidden supplier communities and
-  [copied input lists](docs/method.md#what-did-not-lower-the-fill) don't reproduce it.
-  The next step is a generator that builds activities and their regional variants, not single
-  products. `tests/test_measure.py` holds the fill target.
+- **Rerun the histories with generator v5.** Activity families now bring mean METIS fill to
+  37.9 against ecoinvent's 30.9, passing the calibration guards over four seeds
+  ([calibration](docs/generator-calibration.md)). The published histories still use v4, whose
+  higher fill overstates direct-solver times. Rerun every minor line and update the findings
+  and solver story ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
 - **Our own results UI,** replacing asv's pages: what changed in each release against the
   measured noise, each benchmark's history, and comparisons across solvers and environments
   ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).

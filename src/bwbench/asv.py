@@ -2,8 +2,9 @@
 
 Benchmarks with the same ``asv`` name become methods of one class, so give them the same
 ``params``. asv runs every setup it finds for a method (module, class, then the method's own),
-so the class has none: each ``time_`` and ``peakmem_`` method carries its own setup, which
-prepares just its bench. The ``track_`` methods have none and read the timed run's record.
+so the class has none: each method carries its own setup, which prepares just its bench. A
+``track_`` method's setup prepares its case only when the timed run left no value to read, and
+raises a skipped case's NotImplementedError there, where asv reads it as a skip.
 asv-runner 0.2.5 ``benchmarks/_base.py`` (``Benchmark.__init__``, ``do_setup``) looks the
 method's ``setup`` up on the bound method, which reaches the function's attribute and calls it
 with the params only. It has no ``self``, so the state lives in one object shared by the class.
@@ -92,26 +93,29 @@ def _asv_class(name: str, group: list[Bench]) -> type:
             msg = f"asv class {name}: two benchmarks define {sorted(clash)}"
             raise ValueError(msg)
         methods |= new
-    return type(name, (), body | methods)
+    state.cls = type(name, (), body | methods)
+    return state.cls
 
 
 def _methods(state: _State, prepare: Callable[[str, tuple], None], b: Bench) -> dict[str, Any]:
-    """The asv methods of one bench; the timed ones carry the setup, the ``track_`` ones read the record."""
+    """The asv methods of one bench; each has a setup, the ``track_`` ones prepare only without a record."""
     timed: dict[str, Any] = {f"time_{b.name}": _time(state, b.name)}
     if b.peakmem:
         timed[f"peakmem_{b.name}"] = _peak(state, b.name)
     for method in timed.values():
         method.setup = _setup(state, prepare, b.name)
-    tracked: dict[str, Any] = {
-        f"track_{t}": _track(state, prepare, b.name, fn, f"track_{t}") for t, fn in b.track.items()
-    }
+    tracked: dict[str, Any] = {f"track_{t}": _track(state, b.name, fn, f"track_{t}") for t, fn in b.track.items()}
     if b.error:
-        tracked[f"track_{b.error}"] = _error(state, prepare, b.name, f"track_{b.error}")
+        tracked[f"track_{b.error}"] = _error(state, b.name, f"track_{b.error}")
+    for method, fn in tracked.items():
+        fn.setup = _track_setup(state, prepare, b.name, method)
     return timed | tracked
 
 
 class _State:
     """What one process's setups leave for its method and teardown."""
+
+    cls: type  # the asv class, set once it exists
 
     def __init__(self) -> None:
         self.reset()
@@ -128,6 +132,21 @@ def _setup(state: _State, prepare: Callable[[str, tuple], None], bench_name: str
         state.results = {}
         prepare(bench_name, args)
         state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted
+
+    return setup
+
+
+def _track_setup(
+    state: _State, prepare: Callable[[str, tuple], None], bench_name: str, method: str
+) -> Callable[..., None]:
+    """Prepare the case only when the timed run left no value to read.
+
+    A skipped case raises NotImplementedError here, the only place asv reads it as a skip.
+    """
+
+    def setup(*args: Any) -> None:
+        if not _recorded(state.cls, bench_name, args, method)[0]:
+            prepare(bench_name, args)
 
     return setup
 
@@ -340,29 +359,21 @@ def _peak(state: _State, bench_name: str) -> Callable[..., None]:
     return peak
 
 
-def _track(
-    state: _State, prepare: Callable[[str, tuple], None], bench_name: str, fn: Callable[[Any], float], method: str
-) -> Callable[..., float]:
+def _track(state: _State, bench_name: str, fn: Callable[[Any], float], method: str) -> Callable[..., float]:
     def track(self: Any, *args: Any) -> float:
         found, value = _recorded(type(self), bench_name, args, method)
-        if found:
-            return value
-        prepare(bench_name, args)  # no record: run the case here, as the timed run would
-        return fn(state.prepared[bench_name]())
+        return value if found else fn(state.prepared[bench_name]())
 
     return track
 
 
-def _error(
-    state: _State, prepare: Callable[[str, tuple], None], bench_name: str, method: str
-) -> Callable[..., float | None]:
+def _error(state: _State, bench_name: str, method: str) -> Callable[..., float | None]:
     """A ``track_`` method recording the check's relative error."""
 
     def error(self: Any, *args: Any) -> float | None:
         found, value = _recorded(type(self), bench_name, args, method)
         if found:
             return value
-        prepare(bench_name, args)
         prepared = state.prepared[bench_name]
         return prepared.verify(prepared())
 

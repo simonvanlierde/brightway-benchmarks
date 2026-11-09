@@ -96,6 +96,7 @@ def test_asv_class_keeps_names_and_hides_runner_details():
     setup(obj, "time_double", "smoke", 2)
     obj.time_double("smoke", 2)
     obj.teardown("smoke", 2)
+    setup(obj, "track_relative_error", "smoke", 2)
     assert obj.track_relative_error("smoke", 2) == 0
 
 
@@ -280,6 +281,7 @@ def test_asv_track_and_teardown_paths():
     (cls,) = asv.classes(module(counted=counted).__name__)
     cls().teardown(1)  # after a setup that never ran: nothing to check or tear down
     obj = cls()
+    setup(obj, "track_double", 1)
     assert obj.track_double(1) == 2.0  # no record: it prepares and runs the case itself
     obj.teardown(1)
     assert log == ["teardown"]
@@ -390,6 +392,7 @@ def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pyt
     setup(obj, "time_double", "smoke", 2)
     obj.time_double("smoke", 2)
     obj.teardown("smoke", 2)
+    setup(obj, "track_relative_error", "smoke", 2)
     obj.track_relative_error("smoke", 2)  # not a timed sample, so not logged
     obj.teardown("smoke", 2)
     (line,) = log.read_text().splitlines()
@@ -424,13 +427,17 @@ def test_track_methods_reuse_the_timed_run(monkeypatch: pytest.MonkeyPatch, reco
     setup(obj, "time_counted", 1)
     obj.time_counted(1)
     obj.teardown(1)
+    setup(obj, "track_relative_error", 1)
     assert obj.track_relative_error(1) == 0
+    setup(obj, "track_half", 1)
     assert obj.track_half(1) == 1.0
     assert runs == [1], "the track_ methods ran the case again"
+    setup(obj, "track_half", 2)
     assert obj.track_half(2) == 2.0
     assert runs == [1, 2]
     (path,) = record_file.iterdir()
     path.write_text(path.read_text() + '{"case": "cut sho')  # a line a killed process left
+    setup(obj, "track_half", 1)
     assert obj.track_half(1) == 1.0
     assert runs == [1, 2]
 
@@ -455,6 +462,7 @@ def test_a_failing_check_leaves_no_old_value(monkeypatch: pytest.MonkeyPatch, re
     obj.time_flaky(1)
     with pytest.raises(AssertionError):
         obj.teardown(1)
+    setup(obj, "track_relative_error", 1)
     with pytest.raises(AssertionError):
         obj.track_relative_error(1)
 
@@ -472,6 +480,7 @@ def test_track_methods_run_the_case_outside_a_box_run(monkeypatch: pytest.Monkey
     setup(obj, "time_counted", 1)
     obj.time_counted(1)
     obj.teardown(1)
+    setup(obj, "track_relative_error", 1)
     assert obj.track_relative_error(1) == 0
     assert runs == [1, 1]
     assert not record_file.exists()
@@ -599,11 +608,51 @@ def test_only_timed_methods_set_up():
 
     (cls,) = asv.classes(module(first=first, second=second).__name__)
     assert "setup" not in vars(cls)
-    assert not hasattr(vars(cls)["track_relative_error"], "setup")
+    assert hasattr(vars(cls)["track_relative_error"], "setup")
     obj = cls()
+    setup(obj, "track_relative_error", 1)
+    assert prepared == ["first"]  # no record: the track_ method prepares its case in setup
+    obj.teardown(1)
     for method, expected in [("time_first", "first"), ("peakmem_first", "first"), ("time_second", "second")]:
         prepared.clear()
         setup(obj, method, 1)
         assert prepared == [expected]  # not the other bench of the class
         getattr(obj, method)(1)
         obj.teardown(1)
+
+
+def test_a_skipped_case_skips_its_track_methods(monkeypatch: pytest.MonkeyPatch, record_file: Path):
+    """Only a setup may raise the NotImplementedError that asv reads as a skip, track_ methods included."""
+    monkeypatch.setenv("BWBENCH_COMMIT", "abc123")
+
+    @bench({"x": [1, 2]}, rtol=1e-9, error="relative_error", track={"half": lambda r: r / 2})
+    def skipped(x: int):
+        if x == 2:
+            raise NotApplicable
+        return (lambda: 1.0), 1.0
+
+    (cls,) = asv.classes(module(skipped=skipped).__name__)
+    obj = cls()
+    for method in ("time_skipped", "track_relative_error", "track_half"):
+        with pytest.raises(NotImplementedError):
+            setup(obj, method, 2)
+
+
+def test_a_recorded_track_value_prepares_nothing(monkeypatch: pytest.MonkeyPatch, record_file: Path):
+    monkeypatch.setenv("BWBENCH_COMMIT", "abc123")
+    prepared = []
+
+    @bench({"x": [1]}, rtol=1e-9, error="relative_error")
+    def counted(x: int):
+        prepared.append(x)
+        return (lambda: 1.0), 1.0
+
+    (cls,) = asv.classes(module(counted=counted).__name__)
+    obj = cls()
+    setup(obj, "time_counted", 1)
+    obj.time_counted(1)
+    obj.teardown(1)
+    prepared.clear()
+    setup(obj, "track_relative_error", 1)
+    assert obj.track_relative_error(1) == 0
+    assert prepared == []

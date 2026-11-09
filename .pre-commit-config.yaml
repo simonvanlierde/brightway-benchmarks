@@ -67,7 +67,7 @@ repos:
   # and shellcheck over every `run:` when shellcheck is on PATH. jactionlint is a
   # maintained fork of actionlint that adds release, cache and concurrency checks.
   - repo: https://github.com/jdx/jactionlint
-    rev: a65ab044e916760429068fe5794b8306abdfcbb9 # frozen: v2.3.0
+    rev: baa8d685e2b27ff5821558c9eeabb2051c1da61b # frozen: v2.4.0
     hooks:
       - id: jactionlint
 
@@ -84,7 +84,7 @@ repos:
       - id: nbstripout
         exclude: ^data/
   - repo: https://github.com/rvben/rumdl-pre-commit
-    rev: eaeb8abc646954face3eb41726f085385410f761 # frozen: v0.3.1
+    rev: b0cff962ee693b9e612c097d22e71e0cba127447 # frozen: v0.3.2
     hooks:
       - id: rumdl
         args: [--fix]

@@ -223,13 +223,16 @@ def redo_lci_refinement(size: str, refinement: str) -> BenchSetup:
     return run, against_reference
 
 
-@bench({"size": SIZES, "demands": [1, 3, 10, 30], "variant": ["MultiLCA", "forward", "adjoint"]}, asv="MultiScores")
+@bench({"size": SIZES, "demands": [1, 10, 30], "variant": ["MultiLCA", "forward", "adjoint"]}, asv="MultiScores")
 def scores(size: str, demands: int, variant: str) -> BenchSetup:
     """Many demands against three methods, with MultiLCA and FastScoresOnlyMultiLCA.
 
     ``direction`` is the forward/adjoint switch of bw2calc PR #165. Its ``"auto"`` rule
     picks adjoint when there are more demands than impact categories (3 here), so the
-    demand counts straddle that threshold.
+    demand counts straddle that threshold; the variants here pick the direction explicitly, so
+    the counts show where adjoint starts to pay. 3 is left out: at the ecoinvent size each count
+    costs about the same (MultiLCA 27.6 s at 1 demand, 28.6 s at 30, the factorization dominates),
+    so it was a quarter of this case's time, and 1 and 10 bracket the crossover.
     """
     skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=2)
     inventory, methods, refs, _ = packages(size)

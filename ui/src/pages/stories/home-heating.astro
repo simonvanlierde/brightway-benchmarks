@@ -1,0 +1,48 @@
+---
+import StaticPage from "../../layouts/StaticPage.astro";
+
+const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
+const rows = [
+  ["Electricity supply", "18,800", "136"],
+  ["Gas supply", "0", "12,100"],
+  ["Other supply chains", "2,200", "220"],
+  ["Foreground emissions", "2,150", "37,000"],
+];
+---
+
+<StaticPage mainClass="heating-story"
+  title="Checking a home-heating calculation: Brightway benchmarks"
+  description="A heat pump and a gas boiler exercise scenario sweeps, supply-chain traversal and time-explicit calculations over BAFU 2025."
+  canonical="https://simonvanlierde.com/brightway-benchmarks/stories/home-heating/">
+  <h1>Checking a home-heating calculation</h1>
+  <p>In this illustrative Dutch heating scenario, the heat pump's twenty-year climate score is 23.2 tonnes of CO₂ equivalent, against 49.4 tonnes for a gas boiler. The stage breakdown shows what drives that difference. The same small heating model also tests scenario sweeps, supply-chain traversal and time-explicit calculations in Brightway.</p>
+  <h2>What the model assumes</h2>
+  <p>Both options provide 10,000 kWh of useful heat a year over twenty years, an input we chose for this benchmark. The model copies BAFU's Swiss air-water heat pump and condensing gas boiler, replaces their electricity with the Dutch grid and uses Dutch gas. A scenario can replace a share of grid electricity with Dutch photovoltaics. Other inputs and emissions stay as BAFU records them. This describes a benchmark scenario, not a measured Dutch home.</p>
+  <p>The seasonal coefficient of performance (COP), useful heat divided by electricity consumed, is fixed at 3.0 by default. <a href="https://doi.org/10.1039/C2EE22653G">Staffell et al. (2012)</a> review performance across installations and climates; they do not establish 3.0 as a universal Dutch average. The annual useful-heat demand is a round benchmark assumption. <a href="https://www.cbs.nl/nl-nl/longread/aanvullende-statistische-diensten/2026/de-energierekening-januari-2026?onepage=true">CBS's January 2026 report</a> measures and projects household gas consumption, not delivered space heat, so it does not directly support that default.</p>
+  <h2>Matching factors to emissions</h2>
+  <p>The archive's climate factors refer to the parent air compartment, while the gas burner emits into its “high population” subcompartment. Matching only flow identifiers would miss those direct greenhouse gases. The heating cases therefore expand parent factors to missing descendants, using Brightway's <a href="https://docs.brightway.dev/en/latest/_modules/bw2io/strategies/lcia.html#match_subcategories">subcategory matching convention</a>.</p>
+  <p>Names and units must match exactly, and categories must descend from the factor's compartment. An existing factor always wins, including an explicit zero. Otherwise the most specific unique parent supplies the factor; ambiguity fails the calculation. This rule applies throughout the heating supply chain and all three impact methods. It adds coverage without inventing numerical factors. The raw BAFU archive and the other BAFU benchmarks stay unchanged.</p>
+  <p>Each row includes the entire background supply chain reached through that stage. “Other supply chains” includes the remaining inputs to the copied heating processes. “Foreground emissions” contains their direct emissions. The stages form a partition: their unrounded scores sum to the complete option's score.</p>
+  <table>
+    <caption>Twenty-year climate change scores, EN 15804+A2 with parent-compartment coverage, kg CO₂ equivalent. Rounded aggregate scores only.</caption>
+    <thead><tr><th scope="col">Stage</th><th scope="col">Heat pump</th><th scope="col">Gas boiler</th></tr></thead>
+    <tbody>{rows.map(([stage, pump, gas]) => <tr><th scope="row">{stage}</th><td>{pump}</td><td>{gas}</td></tr>)}</tbody>
+    <tfoot><tr><th scope="row">Total</th><td>23,200</td><td>49,400</td></tr></tfoot>
+  </table>
+  <p>Rounding means the displayed stages may not sum to the displayed total. The ranking changes with the impact category: the gas boiler has the lower acidification score in this scenario. These are illustrative comparisons under the stated matching rule, with an unchanged background over twenty years.</p>
+  <h2>The calculations this model exercises</h2>
+  <p><code>MultiLCA</code> calculates both options against three impact methods. A scenario sweep changes efficiency and electricity supply, comparing a fresh factorization with reuse through <code>redo_lci</code>. A separate Neumann-series calculation checks the linear solve outside the timed call. It does not validate the inventory or impact factors.</p>
+  <p>The <code>bw_graph_tools</code> case traces each option's supply chain, stopping at either its calculation budget or a contribution below 0.1% of the score. The budget is either two or one hundred calculations, so it does not attribute the complete score. The <code>bw_timex</code> case spreads the complete per-heat inventory, including allocated equipment, evenly over twenty years. Its background stays unchanged, so it tests timeline expansion without forecasting future energy supply.</p>
+  <p>Source: <a href={`${repository}/blob/main/src/bwbench/heating.py`}>the model and stage calculation</a> and <a href={`${repository}/blob/main/docs/method.md#the-home-heating-case`}>the benchmark method</a>. Inventory source: “Life Cycle Inventory database of the Swiss Federal Administration, BAFU:2025”, Federal Office for the Environment (FOEN). <a href="https://www.bafu.admin.ch/en/life-cycle-assessment">FOEN's life-cycle assessment information</a>. The modifications are ours; FOEN does not endorse this model. Inventory amounts are not published.</p>
+</StaticPage>
+
+<style>
+  :global(.heating-story) { max-width: 52rem; margin: 0 auto; padding: 40px 24px 64px; }
+  h1 { font-size: clamp(1.8rem, 4vw, 2.4rem); }
+  h2 { font-size: 1.25rem; margin-top: 32px; }
+  p { max-width: 70ch; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 24px 0; }
+  caption { text-align: left; margin-bottom: 12px; }
+  th, td { padding: 8px; text-align: right; border-bottom: 1px solid var(--line); }
+  th:first-child { text-align: left; }
+</style>

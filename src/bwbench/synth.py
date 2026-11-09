@@ -186,6 +186,7 @@ class System:
     uncertain: bool = False
     region: NDArray[np.int64] | None = None  # tiered builder: each product's region and sector
     sector: NDArray[np.int64] | None = None
+    ids: NDArray[np.int64] | None = None  # a real system: each product's process id in its archive
 
     @property
     def flow_offset(self) -> int:

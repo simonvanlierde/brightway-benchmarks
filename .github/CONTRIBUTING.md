@@ -73,7 +73,7 @@ source license and wheels for Linux, macOS and Windows. Add it with `uv add`, so
 `uv.lock` pins the whole tree, and CI installs from it with `uv sync --locked`.
 
 Renovate ([`renovate.json5`](../renovate.json5)) proposes updates on Mondays, after a
-release has been public for 7 days (30 days for a major one). `uv audit` checks every
+release has been public for 7 days. `uv audit` checks every
 locked dependency for known vulnerabilities on each pull request, and the `dependency
 review` job in `checks` blocks a pull request that adds a vulnerable one.
 
@@ -100,14 +100,14 @@ A release is one pull request and one tag:
    in sync without changing dependency pins, and move the `[Unreleased]` entries in CHANGELOG.md
    under a new `## [X.Y.Z] - date` heading, with its compare link. Update the UI changelog when
    it has changes, and check that CITATION.cff and codemeta.json still describe the README and
-   current viewer.
+   current viewer. `just release X.Y.Z` makes that CHANGELOG commit once `version` is set.
 2. Review the full diff from the previous release tag. Run `just check`, the UI checks, unit and
    browser tests, `pnpm size` after its build, and `uv build`. Test the oldest and newest supported
    Python versions. Run the full mutation suite if the project defines one; a single-PR review
    does not replace the release review.
-3. After the pull request is merged and its checks pass, make a signed tag on the merge commit
-   on `main` and push it:
-   `git tag -s vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`.
+3. After the pull request is merged and its checks pass, run `just release X.Y.Z` again on an
+   up-to-date `main`. It signs the tag on the merge commit and pushes it; the `release` workflow
+   refuses a tag GitHub cannot verify.
 4. After the release workflow succeeds, dispatch `site.yml` on `main` so the viewer’s build
    label picks up the tag. Verify the release downloads and deployed metadata.
 
@@ -123,13 +123,16 @@ hand. Zenodo archives each published release from `CITATION.cff`. To check a dow
 Every commit in a pull request carries a `Signed-off-by:` line, which says you wrote the
 change or have the right to submit it under the BSD 3-Clause license: the
 [Developer Certificate of Origin 1.1](https://developercertificate.org/). `git commit -s`
-adds the line. To add it to commits you already made, run
-`git rebase --signoff upstream/main` (the branch you started from) and force-push the
-branch.
+adds the line, and the commit-msg hook refuses a commit without it.
 
-The `dco` workflow checks every pull request from a fork and fails on a commit without the
-line. Pull requests from a branch in this repository skip it: pushing that branch already
-needed write access.
+To add it to commits you already made, run `git fetch origin`, then
+`git rebase --signoff origin/main`. That works in a clone of this repository, where `origin`
+is the only remote. If you work from a fork, use the remote that points at this repository
+(often `upstream`) in place of `origin`. If you have not pushed the branch yet, that is all.
+If you pushed it already, update it with `git push --force-with-lease`, which refuses to
+overwrite work you have not seen. Do not use a plain `git push --force`.
+
+The `dco` workflow checks every pull request from a fork and fails on a commit without the line. Pull requests from a branch in this repository skip it: pushing that branch already needed write access.
 
 ## How it fits together
 

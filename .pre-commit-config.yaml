@@ -7,9 +7,9 @@
 # `prek install` sets up each of these: the commit message is checked as you commit.
 default_install_hook_types: [pre-commit, commit-msg]
 
-# data/ holds inputs and profiles/ generated pages: the whitespace and end-of-file hooks
-# (and nbstripout, for data/) must not rewrite them.
-# Excluded per hook, so the secret scan and the large-file check still cover data/.
+# data/, profiles/ and tests/fixtures/ hold inputs, generated pages and test cases: the
+# whitespace, end-of-file and notebook hooks must not rewrite them. Excluded per hook, so
+# the secret scan and the large-file check still cover them.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
@@ -20,11 +20,11 @@ repos:
         # pnpm writes its own version into the lockfile as a second YAML document.
         exclude: (^|/)pnpm-lock\.yaml$
       - id: end-of-file-fixer
-        exclude: ^(data|profiles)/
+        exclude: ^(data|profiles|tests/fixtures)/
       - id: mixed-line-ending
-        exclude: ^(data|profiles)/
+        exclude: ^(data|profiles|tests/fixtures)/
       - id: trailing-whitespace
-        exclude: ^(data|profiles)/
+        exclude: ^(data|profiles|tests/fixtures)/
       # Not gated to python: .rumdl.toml ships to every stack.
       - id: check-toml
 
@@ -35,6 +35,30 @@ repos:
       - id: committed
         # git writes a merge commit's message itself, so skip the check during a merge.
         entry: sh -c 'test -f "$(git rev-parse --git-path MERGE_HEAD)" || exec committed "$@"' --
+
+  # Refuse an unsigned commit before the dco workflow sees it: that checks fork pull requests,
+  # and every pull request with openssf_badge=silver. Merge commits are skipped, as there.
+  - repo: local
+    hooks:
+      - id: dco-signoff
+        name: commit message has a Signed-off-by line (git commit -s)
+        entry: sh -c 'test -f "$(git rev-parse --git-path MERGE_HEAD)" || grep -qE "^Signed-off-by:[ ].+ <[^>]+>[[:space:]]*$" "$1"' --
+        language: system
+        stages: [commit-msg]
+
+  # Every file has a copyright and license, from REUSE.toml or its own header.
+  - repo: https://github.com/fsfe/reuse-tool
+    rev: a1bb792acda6fd0724936b4ebbdbc8eceb9c0459 # frozen: v6.2.0
+    hooks:
+      - id: reuse
+
+  # Not gated to ts: .vscode/ and .github/rulesets/ JSON ship to every stack.
+  # .json files are read as JSON5, so comments and trailing commas in tsconfig
+  # and VS Code settings pass; syntax errors and duplicate keys fail.
+  - repo: https://github.com/simonvanlierde/jsonvet
+    rev: 022d320d5b971eccb28cfa6ce205152cbb382e53 # frozen: v3.2.0
+    hooks:
+      - id: jsonvet
 
   # Formats first, so yamllint below sees the formatted file.
   - repo: https://github.com/google/yamlfmt
@@ -67,7 +91,7 @@ repos:
   # and shellcheck over every `run:` when shellcheck is on PATH. jactionlint is a
   # maintained fork of actionlint that adds release, cache and concurrency checks.
   - repo: https://github.com/jdx/jactionlint
-    rev: a65ab044e916760429068fe5794b8306abdfcbb9 # frozen: v2.3.0
+    rev: baa8d685e2b27ff5821558c9eeabb2051c1da61b # frozen: v2.4.0
     hooks:
       - id: jactionlint
 
@@ -78,13 +102,21 @@ repos:
     hooks:
       - id: check-citation-file-format
 
+  # CITATION.cff is the source: codemeta.json, any .zenodo.json and the package manifests
+  # must agree with it. `just citation` runs the manual-stage writer to fix them.
+  - repo: https://github.com/simonvanlierde/citesync
+    rev: a3c5a9794449e78a33583e456af41bb24ebd240e # frozen: v0.1.0
+    hooks:
+      - id: citesync
+      - id: citesync-write
+
   - repo: https://github.com/kynan/nbstripout
     rev: 34071b78c181af3bf5af955c1426466e096fc3db # frozen: 0.9.1
     hooks:
       - id: nbstripout
-        exclude: ^data/
+        exclude: ^(data|tests/fixtures)/
   - repo: https://github.com/rvben/rumdl-pre-commit
-    rev: eaeb8abc646954face3eb41726f085385410f761 # frozen: v0.3.1
+    rev: b0cff962ee693b9e612c097d22e71e0cba127447 # frozen: v0.3.2
     hooks:
       - id: rumdl
         args: [--fix]
@@ -117,7 +149,8 @@ repos:
     hooks:
       # Runs from the project's venv, not the ruff-pre-commit mirror, so it uses the
       # same ruff as CI. --force-exclude keeps ruff's excludes when the hook passes
-      # explicit filenames.
+      # explicit filenames. A local hook running from the project's venv (`uv run ...`)
+      # must join the SKIP list in .github/workflows/checks.yml, whose hooks job has no uv.
       - id: ruff-check
         name: ruff check
         entry: uv run --frozen ruff check --fix --force-exclude

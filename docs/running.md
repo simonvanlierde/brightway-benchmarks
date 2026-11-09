@@ -33,8 +33,10 @@ publishes `profiles/` beside the viewer. Profiles stay out of `results/`, which 
 
 Cases run on the 200-product `smoke` database unless `BWBENCH_SIZES` names others, as in
 `BWBENCH_SIZES=ecoinvent just bench bw2calc`. A full-size bw2calc run takes about 24 minutes,
-or 6 with `BWBENCH_SOLVERS=pypardiso`, and `BWBENCH_ROUNDS=1` halves it. `just bench` skips what
-already succeeded, so a stopped run resumes.
+or 6 with `BWBENCH_SOLVERS=pypardiso`, and `BWBENCH_ROUNDS=1` halves it. One round makes
+bw2calc's results about four times noisier from run to run (median 2.1% against 0.6% at ecoinvent,
+bafu and useeio size), so keep 2 for bw2calc; bw_processing and bw_timex stay under 0.4% either
+way. `just bench` skips what already succeeded, so a stopped run resumes.
 
 After a generator version bump resets the history, `just bench-lines bw2calc` reruns only the
 newest release of each minor line (2.0.x, 2.1.x, ...) and the untagged releases: 9 of bw2calc's 15. The history

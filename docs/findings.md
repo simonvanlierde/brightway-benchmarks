@@ -228,6 +228,26 @@ made ([brightway2-calc#157](https://github.com/brightway-lca/brightway2-calc/iss
 ([brightway2-calc#161](https://github.com/brightway-lca/brightway2-calc/pull/161#issuecomment-6140609983)).
 [`skip_known_crash`](../benchmarks/bench_bw2calc/bench_lca.py) lists both.
 
+### A score error reads against the matrix's condition number
+
+**Every size logs a condition estimate next to its times, so a solver that misses the reference
+can be read against how hard the matrix is.** A direct solver's relative error is about the
+condition number times 1e-16, and the checks allow 1e-9.
+
+| Matrix | Condition estimate (1-norm) | Largest score error over 30 products |
+| --- | --- | --- |
+| USEEIO | 6.2 | 1.5e-15 SuperLU, 1.1e-15 UMFPACK |
+| ecoinvent-shaped synthetic | 2.5e3 | 4.3e-15 SuperLU, 1.7e-15 UMFPACK |
+| BAFU 2025 | 9.4e21 | 6.5e-7 SuperLU (fails the check), 1.9e-15 UMFPACK |
+
+BAFU's estimate is far past 1e16, so a direct solve has no digits to promise, and SuperLU lands
+8 orders of magnitude from UMFPACK's refined solve at 1e-15. The estimate is SciPy's
+`onenormest` on the SuperLU inverse times the 1-norm of A, with a fixed seed, so every bw2calc
+release logs the same value for a size.
+
+Graph: [bw2calc, condition estimate](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.Conditioning.track_condition_estimate).
+Rerun: [`bench_lca.Conditioning`](../benchmarks/bench_bw2calc/bench_lca.py).
+
 ## bw2data
 
 ### bw2data 4.7 lost the faster database write

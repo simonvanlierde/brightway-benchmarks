@@ -20,9 +20,9 @@ from scipy.sparse.linalg import cgs
 
 from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, first_time, knob
 from bwbench.asv import classes
-from bwbench.bench import BenchSetup, NotApplicable, bench
+from bwbench.bench import UNCHECKED, BenchSetup, NotApplicable, bench
 from bwbench.solvers import assert_reached
-from bwbench.synth import method_name, neumann_score, packages, skip_unless_factorizable
+from bwbench.synth import method_name, neumann_score, packages, skip_unless_factorizable, system
 
 CLASSES = ["LCA", "IterativeLCA", "JacobiGMRESLCA"]
 SIZES = knob("sizes", "smoke")
@@ -161,6 +161,24 @@ def redo_lci(size: str, cls: str) -> BenchSetup:
         return check(score, refs[1][0], rtol, f"second-demand score ({solver()})")
 
     return run, against_reference
+
+
+@bench(
+    {"size": SIZES},
+    track={"condition_estimate": float},
+    asv="Conditioning",
+    fresh_solver=False,
+    timeout=1800,
+    repeat=1,
+)
+def condition_estimate(size: str) -> BenchSetup:
+    """The 1-norm condition number of the technosphere matrix, so a score error reads against it.
+
+    It needs only SciPy, so every bw2calc release logs the same number for a size, and the timed
+    call is the estimate itself: one LU factorization and a few solves.
+    """
+    skip_unless_factorizable(size, pardiso=False)  # SuperLU factorizes, whatever bw2calc uses
+    return system(size).condition_estimate, UNCHECKED
 
 
 def umfpack_context(lca: bc.LCA) -> object:

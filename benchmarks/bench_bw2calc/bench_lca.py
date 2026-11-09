@@ -174,8 +174,8 @@ def redo_lci(size: str, cls: str) -> BenchSetup:
 def condition_estimate(size: str) -> BenchSetup:
     """The 1-norm condition number of the technosphere matrix, so a score error reads against it.
 
-    It needs only SciPy, so every bw2calc release logs the same number for a size, and the timed
-    call is the estimate itself: one LU factorization and a few solves.
+    It needs only SciPy, so it does not depend on the bw2calc release, and the timed call is the
+    estimate itself: one LU factorization and a few solves.
     """
     skip_unless_factorizable(size, pardiso=False)  # SuperLU factorizes, whatever bw2calc uses
     return system(size).condition_estimate, UNCHECKED

@@ -24,10 +24,10 @@ if "numpy" in sys.modules and any(os.environ.get(v) != THREADS for v in PINNED):
 for _var in PINNED:
     os.environ[_var] = THREADS
 
-# Relative tolerances. Without its units, every generated matrix has columns summing to at
-# most 0.9, so a condition number of at most 19, and a real defect lands orders of magnitude
-# above each of these. The units of the tiered profiles make solvers pivot, which costs
-# digits; the checks then report it, as they would on real data.
+# Relative tolerances. The generated matrices have 1-norm condition numbers in the hundreds
+# (smoke) to thousands (ecoinvent-shaped), so a direct solve keeps about 12 digits and a real
+# defect lands orders of magnitude above these. The units of the tiered profiles make solvers
+# pivot, which costs digits; the checks then report it, as they would on real data.
 DIRECT_RTOL = 1e-9  # direct solvers in float64 (measured: about 2e-16 to 4e-16)
 ITERATIVE_RTOL = 1e-6  # bw2calc's iterative classes stop at a relative residual near 1e-8
 # bw2data's processed arrays hold amounts as float32 (bw_processing #112): against the float64

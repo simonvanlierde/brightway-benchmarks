@@ -1,6 +1,7 @@
 """System.condition_estimate: the 1-norm condition number the real-size runs log next to their times."""
 
 import numpy as np
+import pytest
 
 from bwbench.synth import system
 
@@ -14,4 +15,4 @@ def test_condition_estimate_matches_the_exact_value_and_leaves_the_global_rng_al
     after = np.random.get_state()  # noqa: NPY002
     assert np.array_equal(after[1], before[1])
     assert first == s.condition_estimate()  # deterministic
-    assert 0.3 * exact <= first <= exact * (1 + 1e-9)  # onenormest is a lower bound, usually exact
+    assert first == pytest.approx(exact, rel=1e-9)  # a lower bound in general, exact at this size

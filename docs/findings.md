@@ -242,8 +242,9 @@ condition number times 1e-16, and the checks allow 1e-9.
 
 BAFU's estimate is far past 1e16, so a direct solve has no digits to promise, and SuperLU lands
 8 orders of magnitude from UMFPACK's refined solve at 1e-15. The estimate is SciPy's
-`onenormest` on the SuperLU inverse times the 1-norm of A, with a fixed seed, so every bw2calc
-release logs the same value for a size.
+`onenormest` on the SuperLU inverse times the 1-norm of A, with a fixed seed, so a given SciPy
+build gives the same value for a size. Near 1e22 the number comes from rounding in the LU
+factors, so read BAFU's as an order of magnitude: another BLAS or compiler can move it.
 
 Graph: [bw2calc, condition estimate](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.Conditioning.track_condition_estimate).
 Rerun: [`bench_lca.Conditioning`](../benchmarks/bench_bw2calc/bench_lca.py).

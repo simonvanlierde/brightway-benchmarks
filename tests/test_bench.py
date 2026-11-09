@@ -473,7 +473,7 @@ def test_asv_logs_no_energy_when_the_counter_was_not_read_often_enough(
     monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
     monkeypatch.setenv("BWBENCH_ENERGY", "1")
     monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
-    clock = iter([0.0, gap])
+    clock = itertools.chain([0.0], itertools.repeat(gap))  # every reading after the first comes gap s later
     monkeypatch.setattr(asv.time, "monotonic", lambda: next(clock))
     (cls,) = asv.classes(module(double=double).__name__)
     obj = cls()

@@ -34,6 +34,7 @@ def test_remap_numbers_products_and_flows_from_zero():
     # Process 7 is index 0 and makes product 30; process 50 is index 1 and makes product 90.
     assert a["tech_rows"].tolist() == [0, 1, 1, 1]
     assert a["tech_cols"].tolist() == [0, 1, 0, 0]
+    assert a["ids"].tolist() == [7, 50]  # each index's process id, for finding a process by name
     assert a["bio_rows"].tolist() == [2 + 1, 2 + 0]  # flows 500 and 700 become 2 and 3
     assert a["bio_cols"].tolist() == [1, 0]
     assert cf_flows[0].tolist() == [2, 3]

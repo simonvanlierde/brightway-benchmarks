@@ -7,18 +7,20 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed
+### For readers of the history pages
 
-- **Breaking:** the synthetic generator is at version 4, so every benchmark's history starts again
-  from the rerun that follows it. Earlier times stay in the results branch's git history
+- Every benchmark's history starts again from the rerun after the generator change in this
+  release. Earlier times stay in the results branch's git history
   ([method](docs/method.md#how-the-results-stay-reproducible)).
-- A run at one database size keeps the other sizes' results instead of replacing them.
 
 ### Added
 
 - BAFU 2025, the Swiss Federal Administration's LCI database, as a real size beside USEEIO
   (`BWBENCH_SIZES=bafu`). It is downloaded once and never copied into this repository
   ([real databases](docs/method.md#the-real-databases)).
+- A home-heating case on BAFU 2025: a heat pump against a gas boiler in the Netherlands, as
+  bw2calc's `MultiLCA` and as a sweep over COP and renewable share, rebuilt per scenario or solved
+  with `redo_lci` on one factorization ([method](docs/method.md#the-home-heating-case)).
 - A [solver-choice story](https://simonvanlierde.com/brightway-benchmarks/stories/solver-choice/):
   what to install for a fast bw2calc on conda, pip, uv or Apple silicon, with the real-ecoinvent times
   behind it.
@@ -30,17 +32,26 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `just profile` runs one benchmark case under pyinstrument, and findings link the profiles behind
   them ([running](docs/running.md#benchmarks)).
 - Guidance on [contributing a run](docs/running.md#contribute-a-run) from your own machine.
-- bw_processing and matrix_utils time 10,000 resource groups in full-size runs.
-- Measurements of what bounds LU fill (METIS fill of A + Aᵀ, the top separator), so the synthetic
-  profile can be checked against real databases
+- Full-size runs time bw_processing and matrix_utils at 10,000 resource groups; the first numbers
+  come with the rerun.
+- The synthetic ecoinvent profile's sparse-LU fill can now be compared with real databases'
   ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
 - The viewer links each subject to its Brightway docs and each benchmark to its CodSpeed page.
 
+### Changed
+
+- Benchmarks and Setup use readable names, open with what the site checks, and show a plain
+  message when data fails to load.
+
 ### Removed
 
-- The experimental input-sharing controls in the generator (`copies`, `bundles`, `copy_long`,
-  `markets`, `market_by`, `same_region_by_length`). None was on in a registered profile, and none
-  brought the fill down ([what did not lower the fill](docs/method.md#what-did-not-lower-the-fill)).
+- The generator's experimental input-sharing controls, which were off in every registered profile
+  and did not bring the fill down
+  ([what did not lower the fill](docs/method.md#what-did-not-lower-the-fill)).
+
+### Fixed
+
+- A run at one database size no longer wipes the other sizes' results.
 
 ## [0.2.0] - 2026-11-01
 

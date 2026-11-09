@@ -206,6 +206,9 @@ release version:
     [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "not a version: $version" >&2; exit 1; }
     tag=v$version
     repo=https://github.com/simonvanlierde/brightway-benchmarks
+    # The release workflow refuses a tag that differs from pyproject.toml, after the tag exists.
+    grep "^version = \"$version\"$" pyproject.toml >/dev/null ||
+        { echo "set version = \"$version\" in pyproject.toml (and uv.lock) first" >&2; exit 1; }
     # citesync fails while the manifests and citation files disagree. Run it before any file changes.
     prek run citesync --all-files
     git fetch --quiet origin main
@@ -215,9 +218,6 @@ release version:
         .github/scripts/tag-release.sh "$version"
         exit 0
     fi
-    # The release workflow refuses a tag that differs from pyproject.toml, after the tag exists.
-    grep "^version = \"$version\"$" pyproject.toml >/dev/null ||
-        { echo "set version = \"$version\" in pyproject.toml (and uv.lock) first" >&2; exit 1; }
     prev=$(sed -n 's/^## \[\([0-9][0-9.]*\)\].*/\1/p' CHANGELOG.md | head -1)
     if [ -n "$prev" ]; then link=$repo/compare/v$prev...$tag; else link=$repo/releases/tag/$tag; fi
     tmp=$(mktemp)

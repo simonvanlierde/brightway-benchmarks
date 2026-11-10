@@ -11,6 +11,7 @@ import {
   loadReport,
   type Report,
 } from "../lib/contract";
+import { envNotes, solverLinks } from "../lib/environments";
 import {
   axisLabels,
   benchLabel,
@@ -32,8 +33,9 @@ import {
   verdict,
   writeView,
 } from "../lib/history";
+import { STATIC_PAGES, staticHref, VIEWER_PAGES } from "../lib/pages";
 import Findings from "./Findings.svelte";
-import LogoMark from "./LogoMark.svelte";
+import Masthead from "./Masthead.svelte";
 import ReleaseChanges from "./ReleaseChanges.svelte";
 import SetupHome from "./SetupHome.svelte";
 
@@ -42,16 +44,14 @@ type Axis = BenchmarkIndex["benchmarks"][number]["params"][number];
 let {
   base,
   build,
-  about = "/about/",
-  story = "/stories/solver-choice/",
-  heating = "/stories/home-heating/",
+  home = "/",
 }: {
   base: string;
   build?: { label: string; url: string };
-  about?: string;
-  story?: string;
-  heating?: string;
+  /** The site's root, where the static pages live. */
+  home?: string;
 } = $props();
+const story = $derived(staticHref(home, "solver-choice"));
 
 // Fetched with the first chart, so the start page does not load Plot.
 let chartModule: Promise<typeof import("./HistoryChart.svelte")> | undefined;
@@ -69,10 +69,6 @@ let reportError = $state<string>();
 let missing = $state(0); // reports that did not load; the chart draws the rest
 const cache = new Map<string, Promise<BenchmarkReport>>();
 // The rail is a disclosure on a phone and always open beside the view on a wide screen.
-const PAGES = [
-  ["home", "Setup"],
-  ["explorer", "Benchmarks"],
-] as const;
 const WIDE = "(min-width: 60rem)";
 let wide = $state(matchMedia(WIDE).matches);
 
@@ -119,7 +115,7 @@ $effect(() => {
 });
 
 /** Show NEXT, and keep it in the URL; a new benchmark is a new history entry, a new setting is not. */
-function go(next: View, focusPage = true) {
+function go({ q: _handedOver, ...next }: View, focusPage = true) {
   const moved = pageOf(next) !== pageOf(view);
   const push = next.bench !== view.bench || moved || next.platform !== view.platform || next.check !== view.check;
   view = next;
@@ -206,31 +202,8 @@ const shown = $derived<Line[]>(
   index && bench && measureId && reports ? linesOf(index, bench, params, measureId, reports) : [],
 );
 const changes = $derived(index && measureId && machine ? changesFor(index, shown, measureId, machine.id) : []);
-// What a shown environment runs, where the data explains it (an experimental solver, say): one entry each.
-const envNotes = $derived.by(() => {
-  const envs = new Map(index?.environments.map((e) => [e.id, e]));
-  const out = new Map<string, { name: string; text: string; url: string | undefined }>();
-  for (const l of shown) {
-    const env = envs.get(l.env);
-    if (!env?.description || out.has(env.description)) continue;
-    const name = env.label ?? env.name;
-    const text = env.description.startsWith(`${name}: `) ? env.description.slice(name.length + 2) : env.description;
-    out.set(env.description, { name, text, url: env.url ?? undefined });
-  }
-  return [...out.values()];
-});
-// Each other linked solver once: "UMFPACK" and "UMFPACK, MKL" share a page.
-const solverLinks = $derived.by(() => {
-  const envs = new Map(index?.environments.map((e) => [e.id, e]));
-  const noted = new Set(envNotes.map((n) => n.url));
-  const out = new Map<string, string>();
-  for (const l of shown) {
-    const env = envs.get(l.env);
-    if (env?.url && !noted.has(env.url) && !out.has(env.url))
-      out.set(env.url, (env.label ?? env.name).split(/,| on | · /)[0] ?? env.name);
-  }
-  return [...out].map(([url, label]) => ({ url, label }));
-});
+const notes = $derived(envNotes(index, shown));
+const solvers = $derived(solverLinks(index, shown, notes));
 // Commits on the chart that are not releases: release changes skip them.
 const unreleased = $derived(
   new Set(shown.flatMap((l) => l.points.filter((p) => !p.released).map((p) => p.commit))).size,
@@ -260,7 +233,7 @@ const HINTS: Record<ContractError["kind"], string> = {
 const unit = $derived(measure?.unit ?? "");
 let tableOpen = $state(false);
 // Opened from a static page's search, which hands its words over as ?q=.
-const handedOver = new URLSearchParams(location.search).get("q") ?? "";
+const handedOver = readView(location.search).q ?? "";
 let search = $state(handedOver);
 // On a phone the search sits behind an icon in the masthead.
 let searchOpen = $state(handedOver.length > 0);
@@ -332,27 +305,19 @@ $effect(() => {
 {/snippet}
 
 <a class="skip" href="#main">Skip to the results</a>
-<header class="top">
-  <div class="top-inner">
-    <h1><a href={location.pathname} onclick={(e) => follow(e, { params: [] })}><LogoMark size={24} /><span class="brand-name">{index?.project.name === "brightway-benchmarks" ? "Brightway Benchmarks" : (index?.project.name ?? "Brightway Benchmarks")}</span></a></h1>
-    <nav class="primary-nav" aria-label="Main" bind:this={masthead}>
-      {#each PAGES as [id, text] (id)}
-        <a href={writeView({page:id,params:[]})} aria-current={page === id ? "page" : undefined} onclick={(e) => follow(e, {page:id,params:[]})}>{text}</a>
-      {/each}
-    </nav>
-    <button type="button" class="search-toggle" aria-label="Show the benchmark search" aria-expanded={searchOpen} aria-controls="masthead-search" onclick={toggleSearch}>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-    </button>
-    <form class="masthead-search" id="masthead-search" class:open={searchOpen} role="search" onsubmit={openFirst}>
-      <label for="benchmark-search">Find a benchmark</label>
-      <input id="benchmark-search" type="search" value={search} oninput={(e) => searchFor(e.currentTarget.value)} placeholder="Name or package" />
-    </form>
-    <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme">
-      <svg data-theme-icon="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z"/></svg>
-      <svg data-theme-icon="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
-    </button>
-  </div>
-</header>
+<Masthead
+  name={index?.project.name === "brightway-benchmarks" ? "Brightway Benchmarks" : (index?.project.name ?? "Brightway Benchmarks")}
+  home={location.pathname}
+  links={VIEWER_PAGES.map(({ id, text }) => ({
+    href: writeView({ page: id, params: [] }),
+    text,
+    current: page === id,
+    onclick: (e) => follow(e, { page: id, params: [] }),
+  }))}
+  bind:nav={masthead}
+  onbrand={(e) => follow(e, { params: [] })}
+  search={{ value: search, open: searchOpen, toggle: toggleSearch, input: searchFor, submit: openFirst }}
+/>
 
 <div class="frame" class:fullwidth={page !== "explorer"}>
   {#if error}
@@ -508,14 +473,14 @@ $effect(() => {
                 not by date{measure?.bounds ? `; the band is ${measure.bounds}` : ""}. A ring marks a change beyond its noise (red worse,
                 teal better); a dashed line marks a level shift across the whole series.
               </p>
-              {#if envNotes.length}
+              {#if notes.length}
                 <dl class="env-notes">
-                  {#each envNotes as note (`${note.name}|${note.text}`)}
+                  {#each notes as note (`${note.name}|${note.text}`)}
                     <div><dt>{#if note.url}<a href={note.url}>{note.name}</a>{:else}{note.name}{/if}</dt><dd>{note.text}</dd></div>
                   {/each}
                 </dl>
               {/if}
-              {#if solverLinks.length}<p class="env-links">{envNotes.length ? "Also" : "About"} the environments: {#each solverLinks as l, k (l.url)}{#if k}{" · "}{/if}<a href={l.url}>{l.label}</a>{/each}.</p>{/if}
+              {#if solvers.length}<p class="env-links">{notes.length ? "Also" : "About"} the environments: {#each solvers as l, k (l.url)}{#if k}{" · "}{/if}<a href={l.url}>{l.label}</a>{/each}.</p>{/if}
             </figcaption>
           </figure>
 
@@ -617,9 +582,7 @@ $effect(() => {
   <nav aria-label="Project">
     {#each index?.project.links ?? [] as link (link.url)}<a href={link.url}>{link.name}</a>{/each}
     {#if index?.project.url}<a href={index.project.url}>GitHub</a>{/if}
-    <a href={story}>Solver story</a>
-    <a href={heating}>Heating case</a>
-    <a href={about}>About &amp; privacy</a>
+    {#each STATIC_PAGES as p (p.id)}<a href={staticHref(home, p.id)}>{p.footer}</a>{/each}
     {#if build}<a class="build-version" href={build.url} aria-label="Build {build.label}">{build.label}</a>{/if}
   </nav>
 </footer>

@@ -2,6 +2,7 @@
 import { execFileSync } from "node:child_process";
 import App from "../components/App.svelte";
 import "../styles.css";
+import { staticHref } from "../lib/pages";
 import Head from "./_Head.astro";
 
 const base = import.meta.env.PUBLIC_DATA_URL ?? "data/";
@@ -22,9 +23,6 @@ const build = {
   url: released ? `${repository}/releases/tag/${tag}` : sha ? `${repository}/commit/${sha}` : repository,
 };
 const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
-const aboutHref = `${home}about/`;
-const storyHref = `${home}stories/solver-choice/`;
-const heatingHref = `${home}stories/home-heating/`;
 ---
 
 <html lang="en">
@@ -36,12 +34,12 @@ const heatingHref = `${home}stories/home-heating/`;
     />
   </head>
   <body>
-    <App client:only="svelte" base={base} build={build} about={aboutHref} story={storyHref} heating={heatingHref} />
+    <App client:only="svelte" base={base} build={build} {home} />
     <noscript>
       <main class="view">
         <h1>Brightway benchmarks</h1>
         <p>Tested installation sets and performance histories for the Brightway life cycle assessment stack.</p>
-        <p>Enable JavaScript to select setups and explore charts, or read <a href={aboutHref}>about the benchmarks</a> and the <a href={`${repository}/blob/main/docs/method.md`}>measurement method</a>.</p>
+        <p>Enable JavaScript to select setups and explore charts, or read <a href={staticHref(home, "about")}>about the benchmarks</a> and the <a href={`${repository}/blob/main/docs/method.md`}>measurement method</a>.</p>
       </main>
     </noscript>
   </body>

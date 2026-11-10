@@ -44,17 +44,30 @@ test("the phone search toggle closes while the field has text", async ({ page })
   await expect(page.locator(".masthead-search")).toBeHidden();
 });
 
-test("the package filter stays inside the viewport with a large root font", async ({ page }) => {
+test("the package select fits at 200%", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 800 });
-  await page.addInitScript(() => {
-    document.documentElement.style.fontSize = "200%";
-  });
   await page.goto("?page=explorer");
-  const filter = page.locator(".package-filter");
-  if (await filter.count()) {
-    const box = await filter.first().boundingBox();
-    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(375);
-  }
+  const select = page.locator("#package-filter");
+  await expect(select).toBeVisible();
+  // After the load: an init script runs before the parser makes <html>, and its style is lost.
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = "200%";
+    // A wide font, as on a runner without the system UI font: narrower fonts hid the overflow.
+    document.documentElement.style.fontFamily = '"DejaVu Sans", Verdana, sans-serif';
+  });
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe("32px");
+  const box = await select.boundingBox();
+  expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(375);
+  const [scroll, client] = await page.evaluate(() => [
+    document.documentElement.scrollWidth,
+    document.documentElement.clientWidth,
+  ]);
+  expect(scroll).toBeLessThanOrEqual(client);
+  // The tables scroll inside their own box, so the page check above does not see them.
+  const clipped = await page
+    .locator(".scroll")
+    .evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth).length);
+  expect(clipped).toBe(0);
 });
 
 test("a static page's nav fits at 320px", async ({ page }) => {

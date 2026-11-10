@@ -11,8 +11,15 @@ interface Props {
   image?: string;
   imageAlt?: string;
   mainClass: string;
+  /** This page, as the nav and the footer name it. */
+  current: "about" | "solver-choice" | "home-heating";
 }
-const { mainClass, ...head } = Astro.props;
+const { mainClass, current, ...head } = Astro.props;
+const PAGES = {
+  about: ["About", "about/"],
+  "solver-choice": ["Solver story", "stories/solver-choice/"],
+  "home-heating": ["Heating case", "stories/home-heating/"],
+} as const;
 const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
 const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
 ---
@@ -25,38 +32,68 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
     <a class="skip" href="#main">Skip to the content</a>
     <header class="top">
       <div class="top-inner">
-        <a class="static-brand" href={home}><LogoMark size={24} /><span>Brightway Benchmarks</span></a>
+        <a class="static-brand" href={home}><LogoMark size={24} /><span class="brand-name">Brightway Benchmarks</span></a>
         <nav class="primary-nav" aria-label="Main">
           <a href={home}>Setup</a>
           <a href={`${home}?page=explorer`}>Benchmarks</a>
+          <a href={`${home}${PAGES[current][1]}`} aria-current="page">{PAGES[current][0]}</a>
         </nav>
+        <a class="search-toggle" href="#masthead-search" aria-label="Show the benchmark search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+        </a>
+        <!-- No script here: the search opens the Benchmarks page with its words in the catalogue filter. -->
+        <form class="masthead-search" id="masthead-search" role="search" action={home} method="get">
+          <input type="hidden" name="page" value="explorer" />
+          <label for="benchmark-search">Find a benchmark</label>
+          <input id="benchmark-search" type="search" name="q" placeholder="Name or package" />
+        </form>
         <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme">
           <svg data-theme-icon="sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></svg>
           <svg data-theme-icon="moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/></svg>
         </button>
       </div>
     </header>
-    <main class={mainClass} id="main" tabindex="-1">
+    <main class={`static-page ${mainClass}`} id="main" tabindex="-1">
       <slot />
+      <p class="back"><a href={home}>Back to Setup</a>, where the tested install sets are.</p>
     </main>
     <footer class="site-footer">
       <nav aria-label="Project">
         <a href={`${repository}/blob/main/docs/method.md`}>Method</a>
         <a href="https://doi.org/10.5281/zenodo.23727602">Cite</a>
         <a href={repository}>GitHub</a>
-        <a href={`${home}stories/solver-choice/`}>Solver story</a>
-        <a href={`${home}stories/home-heating/`}>Heating case</a>
-        <a href={`${home}about/`}>About &amp; privacy</a>
+        <a href={`${home}stories/solver-choice/`} aria-current={current === "solver-choice" ? "page" : undefined}>Solver story</a>
+        <a href={`${home}stories/home-heating/`} aria-current={current === "home-heating" ? "page" : undefined}>Heating case</a>
+        <a href={`${home}about/`} aria-current={current === "about" ? "page" : undefined}>About &amp; privacy</a>
       </nav>
     </footer>
   </body>
 </html>
 
 <style>
+  /* One measure for every static page, centred in the frame; its tables run the same width. */
+  :global(.static-page) {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 40px 24px 64px;
+  }
+  :global(.static-page) :where(p, ul, ol, dl) {
+    max-width: none;
+  }
+  :global(.static-page) .back {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
   .top-inner > .theme-toggle {
+    margin-left: 0;
+  }
+  .top-inner > .masthead-search {
     margin-left: auto;
   }
   .static-brand {
+    grid-column: 1;
+    grid-row: 1;
     color: var(--ink);
     display: flex;
     align-items: center;

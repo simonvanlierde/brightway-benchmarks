@@ -22,6 +22,7 @@ const realFindings = `${repository}/blob/main/docs/findings.md#umfpacks-speed-de
 
 <StaticPage
   mainClass="story"
+  current="solver-choice"
   title="Your solver can make the same LCA five times slower: Brightway benchmarks"
   description="On the real ecoinvent 3.12 matrix, the solver work behind one Brightway score takes 3.66 s with SciPy's SuperLU, 1.48 s with PyPardiso or 0.66 s with scikit-umfpack from conda-forge."
   canonical="https://simonvanlierde.com/brightway-benchmarks/stories/solver-choice/"
@@ -50,10 +51,10 @@ const realFindings = `${repository}/blob/main/docs/findings.md#umfpacks-speed-de
         href={realFindings}
         linkText="The numbers in the findings"
         rows={[
-          { label: "scikit-umfpack from conda-forge (UMFPACK, on OpenBLAS)", seconds: 0.66, tone: "fast" },
-          { label: "PyPardiso (PARDISO, on MKL)", seconds: 1.48, tone: "mid" },
-          { label: "scikit-umfpack from PyPI (UMFPACK, on reference BLAS)", seconds: 1.78, tone: "mid" },
-          { label: "Nothing extra (SciPy's SuperLU)", seconds: 3.66, tone: "base" },
+          { label: "scikit-umfpack from conda-forge (UMFPACK, on OpenBLAS)", value: 0.66, tone: "fast" },
+          { label: "PyPardiso (PARDISO, on MKL)", value: 1.48, tone: "mid" },
+          { label: "scikit-umfpack from PyPI (UMFPACK, on reference BLAS)", value: 1.78, tone: "mid" },
+          { label: "Nothing extra (SciPy's SuperLU)", value: 3.66, tone: "base" },
         ]}
       />
 
@@ -65,9 +66,9 @@ const realFindings = `${repository}/blob/main/docs/findings.md#umfpacks-speed-de
         caption="Time to the first score"
         href={oneScore}
         rows={[
-          { label: "scikit-umfpack from conda-forge (UMFPACK, on OpenBLAS)", seconds: 2.63, tone: "fast" },
-          { label: "PyPardiso (PARDISO, on MKL)", seconds: 10.0, tone: "mid" },
-          { label: "Nothing extra (SciPy's SuperLU)", seconds: 27.7, tone: "base" },
+          { label: "scikit-umfpack from conda-forge (UMFPACK, on OpenBLAS)", value: 2.63, tone: "fast" },
+          { label: "PyPardiso (PARDISO, on MKL)", value: 10.0, tone: "mid" },
+          { label: "Nothing extra (SciPy's SuperLU)", value: 27.7, tone: "base" },
         ]}
       />
       <p>With nothing extra installed, bw2calc uses SciPy's SuperLU, the slowest bar. With PyPardiso installed, bw2calc uses it even when scikit-umfpack is there too. So the fastest bar needs scikit-umfpack and no PyPardiso.</p>
@@ -79,8 +80,8 @@ const realFindings = `${repository}/blob/main/docs/findings.md#umfpacks-speed-de
         caption="MultiLCA, 30 products"
         href={thirty("MultiLCA")}
         rows={[
-          { label: "PyPardiso (PARDISO, on MKL)", seconds: 10.6, tone: "fast" },
-          { label: "Nothing extra, or scikit-umfpack (SciPy's SuperLU)", seconds: 28.7, tone: "base" },
+          { label: "PyPardiso (PARDISO, on MKL)", value: 10.6, tone: "fast" },
+          { label: "Nothing extra, or scikit-umfpack (SciPy's SuperLU)", value: 28.7, tone: "base" },
         ]}
       />
       <p>Here scikit-umfpack makes no difference. Without PyPardiso, <code>MultiLCA</code> passes all 30 demands to SciPy's <code>spsolve</code> at once, as one matrix with 30 columns. <code>spsolve</code> hands the work to UMFPACK only for a single right-hand side, one demand vector (<a href={`${scipySource}#L233`}>SciPy's source</a>). For more, it uses SuperLU. PyPardiso solves all 30 itself and is 2.7 times faster.</p>
@@ -109,11 +110,6 @@ const realFindings = `${repository}/blob/main/docs/findings.md#umfpacks-speed-de
 
 
 <style>
-  :global(.story) {
-    max-width: 52rem;
-    margin: 0 auto;
-    padding: 40px 24px 64px;
-  }
   :global(.story) h1 {
     font-size: clamp(1.8rem, 4vw, 2.4rem);
     letter-spacing: -0.03em;
@@ -124,7 +120,6 @@ const realFindings = `${repository}/blob/main/docs/findings.md#umfpacks-speed-de
   }
   :global(.story) p {
     margin: 12px 0;
-    max-width: 70ch;
   }
   :global(.story) .lede {
     color: var(--ink-2);
@@ -144,7 +139,6 @@ const realFindings = `${repository}/blob/main/docs/findings.md#umfpacks-speed-de
   .install li,
   .setup li {
     margin: 10px 0;
-    max-width: 70ch;
   }
   .install code,
   .setup code {

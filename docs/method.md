@@ -182,3 +182,23 @@ cache. asv's median doesn't move.
 **A GitHub-hosted runner hides changes under about 15%.** On `ubuntu-latest` (the
 `noise-hosted` workflow), the same smoke cases spread 1 to 14%, median 4.0%. It would catch a
 several-fold step such as bw2calc 3.0.0's, but not a small one.
+
+## Changes on the history pages
+
+The exporter ([`scripts/export_ui.py`](../scripts/export_ui.py)) finds the changes the viewer
+marks, two ways:
+
+- Between two releases in a row, a move counts when it is larger than 3 times the larger of the
+  two values' spreads, and at least 2%. Within one run the spread misses the run-to-run noise
+  above, hence the floor and the factor. Each history draws this allowance as the band around a
+  line, and its data table lists it per value.
+- [Apache Otava](https://github.com/apache/otava) (E-divisive means) looks for a shift in a whole
+  series' level, commits that are not releases included, at its default p-value of 0.001. A
+  shift under 2% is dropped. It runs in the exporter, from
+  [`scripts/change_points.py`](../scripts/change_points.py), in an environment of its own.
+
+In the results exported on 30 October 2026, the median case's spread is 0.2 to 1.1% in every
+suite, so the 2% floor sets most bands; a few noisy cases get bands of up to 8% (conda builds of
+bw2calc) or 16% (bw_processing). Most release-to-release steps stay inside the band: 94% for
+bw2calc, 73 to 100% for the other suites, and 5 of 10 for bw_timex, whose releases changed its
+speed.

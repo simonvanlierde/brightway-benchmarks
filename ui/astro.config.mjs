@@ -14,9 +14,6 @@ export default defineConfig({
   security: {
     csp: {
       directives: ["default-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'"],
-      // NOTE: ajv builds each schema validator with Function() in the browser (src/lib/contract.ts).
-      // Compile them at build time with ajv's standalone mode, then drop 'unsafe-eval'.
-      scriptDirective: { resources: ["'self'", "'unsafe-eval'"] },
       // Observable Plot adds two fixed <style> elements to every chart it draws. Their hashes
       // change with the Plot version; e2e/csp.spec.ts prints the new ones when they do.
       styleDirective: {

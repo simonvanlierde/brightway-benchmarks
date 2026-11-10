@@ -9,7 +9,8 @@
       "!test/fixtures/real",
       "!test-results",
       "!playwright-report",
-      "!pnpm-lock.yaml"
+      "!pnpm-lock.yaml",
+      "!src/lib/validators.gen.js"
     ]
   },
   "formatter": { "indentStyle": "space", "lineWidth": 120 },

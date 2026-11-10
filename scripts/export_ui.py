@@ -37,6 +37,7 @@ from urllib.parse import quote
 from export_guidance import PUBLIC_BASE
 from output_path import output_path
 from release_changes import NOISE_FLOOR, NOISE_TIMES, SHA, STACK, current_stack, noise_threshold, pick, releases
+from release_changes import spread as release_spread
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
 CODSPEED = "https://app.codspeed.io/simonvanlierde/brightway-benchmarks"
@@ -122,10 +123,8 @@ def metrics(data: dict, kinds: dict[str, str]) -> list[tuple[str, tuple[str, ...
 
 
 def spread(metric: dict) -> float | None:
-    """The middle half of the samples over the value, where the metric has its quartiles."""
-    if "lower_value" not in metric or metric["value"] <= 0:
-        return None
-    return (metric["upper_value"] - metric["lower_value"]) / metric["value"]
+    """release_changes.spread on a metric's bounds."""
+    return release_spread(metric["value"], metric.get("lower_value"), metric.get("upper_value"))
 
 
 def iso(ms: int) -> str:

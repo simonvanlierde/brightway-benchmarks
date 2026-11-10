@@ -14,7 +14,8 @@ SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 
 # Logs each call with the config it saw, after sleeping $SLEEP seconds if set. `uv venv DIR` makes a
 # python that prints $INSIDE (the inside steps' JSON) and, on stderr, its Brightway directory if that
-# exists, and logs its arguments to $LOG.py; installing bw_timex fails with a reason uv wraps over
+# exists, and logs its arguments to $LOG.py, or fails if $NO_VENV is set; installing $FAILS
+# (default bw_timex) fails with a reason uv wraps over
 # two lines. `uv pip compile` (the package alone) refuses $UNDECLARED with uv's requires-python
 # message, and everything with a network error if $OFFLINE is set.
 UV = """#!/bin/sh
@@ -23,7 +24,7 @@ echo "$* config=${UV_NO_CONFIG-on} cutoff=${UV_EXCLUDE_NEWER-unset}" >>"$LOG"
 case "$1 $2" in
 "pip install")
     for a; do :; done
-    [ "$a" != bw_timex ] && exit 0
+    [ "$a" != "${FAILS-bw_timex}" ] && exit 0
     printf 'x No solution found:\\n  Because Python 3.9 does not satisfy\\n  Python>=3.11\\n' >&2
     exit 1
     ;;
@@ -35,6 +36,7 @@ case "$1 $2" in
     exit 1
     ;;
 venv*)
+    [ -z "${NO_VENV-}" ] || { printf 'error: No interpreter found\n  for Python 3.99\n' >&2; exit 2; }
     for a; do venv=$a; done
     mkdir -p "$venv/bin"
     printf '#!/bin/sh\\nprintf "%%s" "$INSIDE"\\necho "$*" >"$LOG.py"\\n' >"$venv/bin/python"
@@ -161,3 +163,25 @@ def test_inside_leaves_out_an_undeclared_package_and_the_score_without_brightway
     monkeypatch.setattr(probe, "score", lambda: 14.0)
     assert [s["step"] for s in probe.inside(["bw_timex"])] == ["import json", "score"]
     assert probe.inside(["brightway25", "bw_timex"]) == []
+
+
+def test_a_failed_first_install_leaves_the_later_steps_on_record(
+    probe: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("INSIDE", json.dumps([{"step": "score", "ok": False, "error": "ModuleNotFoundError"}]))
+    monkeypatch.setenv("FAILS", "brightway25")
+    steps = [(s["step"], s["ok"]) for s in probe.probe("3.13", tmp_path)]
+    assert steps == [
+        ("install brightway25", False),
+        ("install bw_graph_tools", True),
+        ("install bw_timex", True),
+        ("score", False),
+    ]
+
+
+def test_a_python_uv_cannot_find_is_one_failed_step(probe: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("NO_VENV", "1")
+    out = tmp_path / "out"
+    assert probe.main("3.99", out) == 1
+    steps = json.loads((out / "probe.json").read_text())["steps"]
+    assert steps == [{"step": "venv", "ok": False, "error": "error: No interpreter found for Python 3.99"}]

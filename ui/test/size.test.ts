@@ -1,9 +1,16 @@
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it } from "vitest";
+
+// The budgets live only in the script; the tests size their pages from it.
+const script = new URL("../scripts/size.mjs", import.meta.url);
+const budget = (name: string) =>
+  Number(new RegExp(`${name}_BUDGET_KB = (\\d+)`).exec(readFileSync(script, "utf8"))?.[1]);
+const VIEWER = budget("VIEWER");
+const STATIC = budget("STATIC");
 
 const temporary: string[] = [];
 afterEach(() => {
@@ -16,7 +23,7 @@ function fixture() {
   mkdirSync(join(dir, "scripts"));
   mkdirSync(join(dir, "dist/_astro"), { recursive: true });
   mkdirSync(join(dir, "dist/about"));
-  copyFileSync(new URL("../scripts/size.mjs", import.meta.url), join(dir, "scripts/size.mjs"));
+  copyFileSync(script, join(dir, "scripts/size.mjs"));
   return dir;
 }
 
@@ -31,7 +38,7 @@ it("budgets the viewer and a static About page separately", () => {
     '<link rel="stylesheet" href="/brightway-benchmarks/ui/_astro/viewer.css"><script src="/_astro/app.js"></script>',
   );
   writeFileSync(join(dir, "dist/_astro/viewer.css"), "body { color: navy; }");
-  writeFileSync(join(dir, "dist/_astro/app.js"), `const data = "${content(170)}";`);
+  writeFileSync(join(dir, "dist/_astro/app.js"), `const data = "${content(VIEWER - 12)}";`);
   writeFileSync(join(dir, "dist/about/index.html"), `<main>${content(10)}</main>`);
   const result = run(dir);
   expect(result.status, result.stdout + result.stderr).toBe(0);
@@ -42,21 +49,21 @@ it("budgets the viewer and a static About page separately", () => {
 it("includes lazy JavaScript chunks in the viewer budget", () => {
   const dir = fixture();
   writeFileSync(join(dir, "dist/index.html"), '<script src="/_astro/app.js"></script>');
-  writeFileSync(join(dir, "dist/_astro/app.js"), `const data = "${content(100)}";`);
-  writeFileSync(join(dir, "dist/_astro/lazy-chart.js"), `const data = "${content(100)}";`);
+  writeFileSync(join(dir, "dist/_astro/app.js"), `const data = "${content(Math.ceil(VIEWER * 0.6))}";`);
+  writeFileSync(join(dir, "dist/_astro/lazy-chart.js"), `const data = "${content(Math.ceil(VIEWER * 0.6))}";`);
   writeFileSync(join(dir, "dist/about/index.html"), "<main>About</main>");
   const result = run(dir);
   expect(result.status, result.stdout + result.stderr).toBe(1);
-  expect(result.stdout).toMatch(/index.html \d+\.\d KB gzipped, budget 182 KB/);
+  expect(result.stdout).toMatch(new RegExp(`index.html \\d+\\.\\d KB gzipped, budget ${VIEWER} KB`));
 });
 
 it("fails when a static page itself exceeds the budget", () => {
   const dir = fixture();
   writeFileSync(join(dir, "dist/index.html"), "<main>Viewer</main>");
-  writeFileSync(join(dir, "dist/about/index.html"), `<main>${content(21)}</main>`);
+  writeFileSync(join(dir, "dist/about/index.html"), `<main>${content(STATIC + 1)}</main>`);
   const result = run(dir);
   expect(result.status, result.stdout + result.stderr).toBe(1);
-  expect(result.stdout).toMatch(/about\/index.html \d+\.\d KB gzipped, budget 20 KB/);
+  expect(result.stdout).toMatch(new RegExp(`about/index.html \\d+\\.\\d KB gzipped, budget ${STATIC} KB`));
 });
 
 it("counts a linked stylesheet toward a static page's budget", () => {
@@ -66,22 +73,22 @@ it("counts a linked stylesheet toward a static page's budget", () => {
     join(dir, "dist/about/index.html"),
     '<link rel="stylesheet" href="/_astro/about.css"><main>About</main>',
   );
-  writeFileSync(join(dir, "dist/_astro/about.css"), `body::after { content: "${content(21)}"; }`);
+  writeFileSync(join(dir, "dist/_astro/about.css"), `body::after { content: "${content(STATIC + 1)}"; }`);
   const result = run(dir);
   expect(result.status, result.stdout + result.stderr).toBe(1);
-  expect(result.stdout).toMatch(/about\/index.html \d+\.\d KB gzipped, budget 20 KB/);
+  expect(result.stdout).toMatch(new RegExp(`about/index.html \\d+\\.\\d KB gzipped, budget ${STATIC} KB`));
 });
 
 it("keeps an inline theme script within the static-page budget", () => {
   const dir = fixture();
   writeFileSync(join(dir, "dist/index.html"), '<astro-island component-url="/_astro/app.js"></astro-island>');
-  writeFileSync(join(dir, "dist/_astro/app.js"), `const data = "${content(170)}";`);
+  writeFileSync(join(dir, "dist/_astro/app.js"), `const data = "${content(VIEWER - 12)}";`);
   writeFileSync(
     join(dir, "dist/about/index.html"),
     '<script>document.documentElement.dataset.theme = "light";</script><main>About</main>',
   );
   const result = run(dir);
   expect(result.status, result.stdout + result.stderr).toBe(0);
-  expect(result.stdout).toMatch(/about\/index.html .*budget 20 KB/);
-  expect(result.stdout).toMatch(/index.html 17\d\.\d KB gzipped, budget 182 KB/);
+  expect(result.stdout).toMatch(new RegExp(`about/index.html .*budget ${STATIC} KB`));
+  expect(result.stdout).toMatch(new RegExp(`index.html \\d+\\.\\d KB gzipped, budget ${VIEWER} KB`));
 });

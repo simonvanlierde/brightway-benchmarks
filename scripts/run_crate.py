@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from bwbench.synth import PROFILES  # noqa: E402
+from bwbench.shapes import PROFILES  # noqa: E402
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
 LICENSE = "https://spdx.org/licenses/BSD-3-Clause"

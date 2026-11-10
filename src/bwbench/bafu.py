@@ -15,11 +15,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from bwbench import useeio
+from bwbench.shapes import data_root
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from bwbench.synth import Profile, System
+    from bwbench.matrices import System
+    from bwbench.shapes import Profile
 
 # shortcut: pinned by hand, like useeio.URL. Move to sourceledger with it.
 URL = "https://files.brightway.dev/bafu-2025-v2.tar.gz"
@@ -32,8 +34,6 @@ METHODS = tuple(
 
 def archive() -> Path:
     """The project archive in the cache, downloaded on first use."""
-    from bwbench.synth import data_root  # noqa: PLC0415 - synth imports this module
-
     return useeio.fetch(data_root() / "bafu-2025-v2.tar.gz", URL, SHA256)
 
 

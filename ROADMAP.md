@@ -16,7 +16,8 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
   measured noise, each benchmark's history, and comparisons across solvers and environments
   ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).
 - **The synthetic inputs as a dataset** on Zenodo, one version per generator version, so the
-  matrices and ecoSpold2 files can be used without running the generator.
+  matrices and ecoSpold2 files can be used without running the generator. `just dataset` builds
+  it ([running](docs/running.md#publish-the-synthetic-inputs)); nothing is deposited yet.
 - **More solver columns for bw2calc:** NVIDIA cuDSS behind a GPU opt-in, kept out of the default
   run (`scripts/solver_factorize.py --cudss` already times it on real ecoinvent), and Apple's
   Accelerate LU on macOS.

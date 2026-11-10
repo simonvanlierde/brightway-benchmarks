@@ -20,7 +20,8 @@ import numpy as np  # noqa: E402
 
 from bwbench.asv import classes  # noqa: E402
 from bwbench.bench import BenchSetup, bench  # noqa: E402
-from bwbench.synth import System, method_name, neumann_score, system  # noqa: E402
+from bwbench.matrices import System, method_name, neumann_score  # noqa: E402
+from bwbench.synth import system  # noqa: E402
 
 WRITE_SIZES = knob("write_sizes", "smoke")
 

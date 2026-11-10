@@ -3,6 +3,7 @@
 import hashlib
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -59,3 +60,9 @@ def test_identical_files_of_two_subjects_keep_their_own_runs(tmp_path: Path):
     graph = {e["@id"]: e for e in module.crate(tmp_path)["@graph"]}
     assert "bw2calc/m/machine.json" in [r["@id"] for r in graph[f"#run-{'a' * 40}"]["result"]]
     assert "bw2data/m/machine.json" in [r["@id"] for r in graph[f"#run-{'b' * 40}"]["result"]]
+
+
+def test_crate_needs_neither_numpy_nor_scipy():
+    """asv.sh runs it with a bare interpreter after every run."""
+    code = f"import runpy, sys; runpy.run_path({str(SCRIPT)!r}); print(sorted({{'numpy', 'scipy'}} & set(sys.modules)))"
+    assert subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True).stdout == "[]\n"

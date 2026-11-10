@@ -72,6 +72,19 @@ def release(tmp_path: Path, files: dict[str, str]) -> Path:
     return tmp_path / "3.12-cutoff"
 
 
+def text_nodes(node: object):
+    """Every key and every leaf of a JSON tree."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            yield k
+            yield from text_nodes(v)
+    elif isinstance(node, list):
+        for v in node:
+            yield from text_nodes(v)
+    else:
+        yield node
+
+
 def leaves(node: object):
     if isinstance(node, dict):
         for v in node.values():
@@ -156,9 +169,10 @@ def test_measure_stats_builds_the_technosphere(tmp_path: Path, script: ModuleTyp
     assert "ecoinvent Association" in result["credit"]
 
     # Licence boundary: no id or location reaches the output, and the statistics are numbers.
-    text = out.read_text()
+    # Only keys and strings can carry an id: a float's digits may contain "1234" by chance.
+    strings = [x for x in text_nodes(json.loads(out.read_text())) if isinstance(x, str)]
     for secret in ("SECRET", "ZZLOC", "YYLOC", "1234", "5678"):
-        assert secret not in text
+        assert not any(secret in x for x in strings), secret
     assert all(v is None or isinstance(v, int | float) for v in leaves(stats))
 
     # A structure-only rerun recomputes the structure and keeps only the fill, with its date.

@@ -9,15 +9,17 @@ from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from scipy import sparse
 
-from bwbench import synth
-from bwbench.synth import MAX_COLUMN_SUM, PROFILES, as_bw2data, neumann, system
+from bwbench import shapes, synth
+from bwbench.matrices import System, as_bw2data, neumann, neumann_score
+from bwbench.shapes import PROFILES, PROFILES_DIR, data_root, profile
+from bwbench.synth import MAX_COLUMN_SUM, system
 
 SMALL = ["smoke", "stress-random"]
 
 
 @given(n=st.integers(min_value=1, max_value=500), cap=st.integers(min_value=1, max_value=200))
 def test_families_cover_every_product_without_exceeding_the_cap(n: int, cap: int):
-    p = synth.profile("smoke", family_max=cap)
+    p = profile("smoke", family_max=cap)
     fam, first = synth._families(p, np.random.default_rng(0), n)  # noqa: SLF001
     assert len(fam) == n
     sizes = np.bincount(fam)
@@ -26,7 +28,7 @@ def test_families_cover_every_product_without_exceeding_the_cap(n: int, cap: int
 
 
 def test_family_input_distribution_stays_fixed_when_members_are_shuffled():
-    p = synth.profile("ecoinvent")
+    p = profile("ecoinvent")
     fam, first = synth._families(p, np.random.default_rng(0), p.products)  # noqa: SLF001
     a = synth._family_inputs(p, np.random.default_rng(0), fam)  # noqa: SLF001
     b = synth._family_inputs(p, np.random.default_rng(1), fam)  # noqa: SLF001
@@ -34,7 +36,7 @@ def test_family_input_distribution_stays_fixed_when_members_are_shuffled():
     assert not np.array_equal(a, b)
 
 
-def small(name: str, **kw: object) -> synth.System:
+def small(name: str, **kw: object) -> System:
     # ty checks the unpacked dict's int against every keyword, `uncertain: bool` included.
     return system(name, **({"products": 300} if name == "stress-random" else {}), **kw)  # ty: ignore[invalid-argument-type]
 
@@ -140,7 +142,7 @@ def test_neumann_converges_past_a_column_sum_of_one():
 
 def test_cache_folder_follows_everything_that_shapes_the_files(monkeypatch: pytest.MonkeyPatch):
     def key(seed: int = 0, *, uncertain: bool = False, bwp_version: str = "1.6", **kw: object) -> Path:
-        p = synth.profile("ecoinvent", **kw)
+        p = profile("ecoinvent", **kw)
         return synth.cache_folder("ecoinvent", p, seed=seed, uncertain=uncertain, bwp_version=bwp_version)
 
     base = key()
@@ -151,22 +153,22 @@ def test_cache_folder_follows_everything_that_shapes_the_files(monkeypatch: pyte
 
 
 def test_new_measurements_in_the_calibration_file_keep_the_digest(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
-    p = synth.profile("ecoinvent")
+    p = profile("ecoinvent")
     assert p.target
     target = tmp_path / p.target
-    target.write_bytes((synth.PROFILES_DIR / p.target).read_bytes())
-    monkeypatch.setattr(synth, "PROFILES_DIR", tmp_path)
+    target.write_bytes((PROFILES_DIR / p.target).read_bytes())
+    monkeypatch.setattr(shapes, "PROFILES_DIR", tmp_path)
     before, version = p.digest(), synth.profile_version()
     target.write_text(target.read_text().replace('"stats": {', '"stats": {"new_statistic": 1, ', 1))
     assert p.digest() == before
     assert synth.profile_version() == version
-    assert synth.profile("ecoinvent", back=0.2).digest() != before  # a recalibration does change it
+    assert profile("ecoinvent", back=0.2).digest() != before  # a recalibration does change it
 
 
 def test_datapackages_regenerate_when_the_profile_changes(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     written = []
 
-    def fake_write(s: synth.System, folder: Path, **_: object) -> Path:
+    def fake_write(s: System, folder: Path, **_: object) -> Path:
         folder.mkdir(parents=True)
         (folder / "reference.json").write_text("{}")
         written.append(s.profile.products)
@@ -175,10 +177,10 @@ def test_datapackages_regenerate_when_the_profile_changes(monkeypatch: pytest.Mo
     monkeypatch.setattr(synth, "write_datapackages", fake_write)
     monkeypatch.setattr(synth, "version", lambda _: "1.6")
     monkeypatch.setattr(synth, "data_root", lambda: tmp_path)
-    first = system("smoke").datapackages()
-    assert system("smoke").datapackages() == first
+    first = synth.datapackages(system("smoke"))
+    assert synth.datapackages(system("smoke")) == first
     assert len(written) == 1
-    assert system("smoke", products=201).datapackages() != first
+    assert synth.datapackages(system("smoke", products=201)) != first
     assert written == [200, 201]
     assert not list(tmp_path.glob("*.tmp-*"))
 
@@ -186,13 +188,13 @@ def test_datapackages_regenerate_when_the_profile_changes(monkeypatch: pytest.Mo
 def test_profile_version_follows_every_profile_not_the_selection(monkeypatch: pytest.MonkeyPatch):
     base = synth.profile_version()
     assert synth.profile_version() == base
-    monkeypatch.setitem(PROFILES, "ecoinvent", synth.profile("ecoinvent", back=0.2))
+    monkeypatch.setitem(PROFILES, "ecoinvent", profile("ecoinvent", back=0.2))
     assert synth.profile_version() != base
 
 
 def test_an_edited_profile_never_returns_a_stale_system(monkeypatch: pytest.MonkeyPatch):
     assert system("smoke").profile.products == 200
-    monkeypatch.setitem(PROFILES, "smoke", synth.profile("smoke", products=150))
+    monkeypatch.setitem(PROFILES, "smoke", profile("smoke", products=150))
     assert system("smoke").profile.products == 150
 
 
@@ -215,7 +217,7 @@ def test_neumann_score_matches_the_reference():
         biosphere_matrix=s.biosphere(),
         characterization_matrix=sparse.diags(cf),
     )
-    assert synth.neumann_score(lca, s.scale) == pytest.approx(s.reference[0][0], rel=1e-12)
+    assert neumann_score(lca, s.scale) == pytest.approx(s.reference[0][0], rel=1e-12)
 
 
 def test_skip_unless_factorizable():
@@ -238,16 +240,16 @@ def test_stale_tmp_folders_are_swept(monkeypatch: pytest.MonkeyPatch, tmp_path: 
     old.mkdir(parents=True)
     fresh.mkdir()
     os.utime(old, (0, 0))
-    s.datapackages()
+    synth.datapackages(s)
     assert not old.exists()
     assert fresh.exists()  # may still be another run's
 
 
 @pytest.mark.parametrize("field", ["products", "radius", "back", "units", "target"])
 def test_every_profile_field_changes_the_digest(field: str):
-    p = synth.profile("ecoinvent")
+    p = profile("ecoinvent")
     changed = {"products": 100, "radius": 0.5, "back": 0.3, "units": 1.0, "target": None}[field]
-    assert synth.profile("ecoinvent", **{field: changed}).digest() != p.digest()
+    assert profile("ecoinvent", **{field: changed}).digest() != p.digest()
 
 
 # Properties of the tiered builder over the size and shape knobs, not two fixed seeds.
@@ -256,7 +258,7 @@ PROPERTY = settings(max_examples=200, deadline=None, suppress_health_check=[Heal
 
 
 @st.composite
-def tiered(draw: st.DrawFn) -> synth.System:
+def tiered(draw: st.DrawFn) -> System:
     return system(
         "smoke",
         seed=draw(st.integers(0, 2**32 - 1)),
@@ -269,7 +271,7 @@ def tiered(draw: st.DrawFn) -> synth.System:
 
 @PROPERTY
 @given(tiered())
-def test_property_unit_diagonal_and_no_repeated_cells(s: synth.System):
+def test_property_unit_diagonal_and_no_repeated_cells(s: System):
     assert np.allclose(s.technosphere().diagonal(), 1.0)
     cells = s.tech_rows * s.profile.products + s.tech_cols
     assert np.unique(cells).size == cells.size
@@ -277,7 +279,7 @@ def test_property_unit_diagonal_and_no_repeated_cells(s: synth.System):
 
 @PROPERTY
 @given(tiered())
-def test_property_columns_sum_at_most_the_maximum_without_units(s: synth.System):
+def test_property_columns_sum_at_most_the_maximum_without_units(s: System):
     x = sparse.identity(s.profile.products) - s.technosphere()
     x0 = sparse.diags(1 / s.scale) @ x @ sparse.diags(s.scale)
     assert x0.min() >= 0
@@ -293,7 +295,7 @@ def test_loopless_system_gets_its_radius_from_a_dense_solve():
 
 @PROPERTY
 @given(tiered())
-def test_property_reference_scores_equal_a_dense_solve(s: synth.System):
+def test_property_reference_scores_equal_a_dense_solve(s: System):
     n = s.profile.products
     k = min(n, 30)
     supply = np.linalg.solve(s.technosphere().toarray(), np.eye(n, k))
@@ -305,7 +307,7 @@ def test_property_reference_scores_equal_a_dense_solve(s: synth.System):
 
 @PROPERTY
 @given(tiered(), st.integers(0, 19))
-def test_property_neumann_agrees_with_the_reference(s: synth.System, product: int):
+def test_property_neumann_agrees_with_the_reference(s: System, product: int):
     demand = np.zeros(s.profile.products)
     demand[product] = 1.0
     cf = np.zeros(s.profile.flows)
@@ -316,7 +318,7 @@ def test_property_neumann_agrees_with_the_reference(s: synth.System, product: in
         biosphere_matrix=s.biosphere(),
         characterization_matrix=sparse.diags(cf),
     )
-    assert synth.neumann_score(lca, s.scale) == pytest.approx(s.reference[product][0], rel=1e-9)
+    assert neumann_score(lca, s.scale) == pytest.approx(s.reference[product][0], rel=1e-9)
 
 
 # What system("smoke") builds under GENERATOR_VERSION "5". A builder change that moves the
@@ -325,7 +327,7 @@ SMOKE_VERSION = "5"
 SMOKE_SHA256 = "4ce0affb541cde364ae03ab8b9c88c396fcb9b682743c07bdd9e095e43d2220e"
 
 
-def arrays_digest(s: synth.System) -> str:
+def arrays_digest(s: System) -> str:
     """sha256 of the arrays, floats to 10 significant digits so a last-bit libm difference does not count."""
     h = hashlib.sha256()
     for ints in (s.tech_rows, s.tech_cols, s.tech_flip, s.bio_rows, s.bio_cols, *s.cf_flows):
@@ -346,6 +348,6 @@ def test_smoke_arrays_match_the_generator_version():
 def test_datapackages_follow_xdg_cache_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """The box gives every run a new home and keeps the cache under .asv/ with XDG_CACHE_HOME."""
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
-    assert synth.data_root() == tmp_path / "bwbench"
+    assert data_root() == tmp_path / "bwbench"
     monkeypatch.delenv("XDG_CACHE_HOME")
-    assert synth.data_root() == Path.home() / ".cache" / "bwbench"
+    assert data_root() == Path.home() / ".cache" / "bwbench"

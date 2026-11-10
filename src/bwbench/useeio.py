@@ -21,10 +21,13 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from bwbench.matrices import System
+from bwbench.shapes import data_root
+
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-    from bwbench.synth import Profile, System
+    from bwbench.shapes import Profile
 
 # shortcut: pinned by hand. Move to sourceledger `format = "file"` once sourceledger 0.4.0 exists.
 URL = "https://files.brightway.dev/USEEIO-1.1.tar.gz"
@@ -153,16 +156,12 @@ def read(archive: Path, methods: tuple[str, ...]) -> tuple[tuple, tuple, list[tu
 
 def system(p: Profile, seed: int) -> System:
     """The USEEIO 1.1 system of profile ``p``, fetched into the cache on first use."""
-    from bwbench.synth import data_root  # noqa: PLC0415 - synth imports this module
-
     methods = tuple(f"Impact_Potential_{code}" for code in METHODS)
     return archive_system("useeio", p, seed, fetch(data_root() / "useeio-1.1.tar.gz"), methods)
 
 
 def archive_system(name: str, p: Profile, seed: int, archive: Path, methods: tuple[str, ...]) -> System:
     """The system ``name`` of profile ``p`` from a project archive's processed datapackages."""
-    from bwbench.synth import System  # noqa: PLC0415 - synth imports this module
-
     tech, bio, cfs = read(archive, methods)
     arrays, cf_flows, cf_data = remap(tech[0], tech[1], tech[2], bio[0], bio[1], cfs)
     n = int(arrays["tech_rows"].max()) + 1

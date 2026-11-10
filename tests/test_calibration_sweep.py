@@ -16,6 +16,8 @@ from hypothesis import strategies as st
 from scipy import sparse
 
 from bwbench import synth
+from bwbench.shapes import PROFILES_DIR
+from bwbench.stats import OVERLAP_BANDS, Stats
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 
@@ -30,11 +32,11 @@ def sweep(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture
 def target():
-    data = json.loads((synth.PROFILES_DIR / "ecoinvent-3.12-cutoff.json").read_text())
-    return synth.Stats(**data["stats"])
+    data = json.loads((PROFILES_DIR / "ecoinvent-3.12-cutoff.json").read_text())
+    return Stats(**data["stats"])
 
 
-def row(case: str, seed: int, target: synth.Stats) -> dict:
+def row(case: str, seed: int, target: Stats) -> dict:
     overrides = {"baseline": {}, "denser": {"back": 0.2}}[case]
     return json.loads(
         json.dumps(
@@ -50,7 +52,7 @@ def row(case: str, seed: int, target: synth.Stats) -> dict:
     )
 
 
-def test_complete_passing_cases_are_the_only_success(sweep: ModuleType, target: synth.Stats, tmp_path: Path):
+def test_complete_passing_cases_are_the_only_success(sweep: ModuleType, target: Stats, tmp_path: Path):
     output = tmp_path / "report.json"
     seen = []
 
@@ -68,7 +70,7 @@ def test_complete_passing_cases_are_the_only_success(sweep: ModuleType, target: 
     assert report["cases"]["denser"] == {"back": 0.2}
 
 
-def test_worker_crash_cannot_be_a_success(sweep: ModuleType, target: synth.Stats, tmp_path: Path):
+def test_worker_crash_cannot_be_a_success(sweep: ModuleType, target: Stats, tmp_path: Path):
     def worker(case: str, seed: int):
         if seed == 1:
             msg = "worker terminated abruptly"
@@ -82,7 +84,7 @@ def test_worker_crash_cannot_be_a_success(sweep: ModuleType, target: synth.Stats
     assert len(report["results"]) == 3
 
 
-def test_scc_failure_is_reported_with_its_threshold(sweep: ModuleType, target: synth.Stats, tmp_path: Path):
+def test_scc_failure_is_reported_with_its_threshold(sweep: ModuleType, target: Stats, tmp_path: Path):
     changed = replace(target, loops=target.loops | {"largest": round(target.products * 0.5)})
     report = sweep.run_sweep(["denser"], [0], lambda c, s: row(c, s, changed), target, tmp_path / "report.json")
     assert report["complete"] is True
@@ -93,9 +95,7 @@ def test_scc_failure_is_reported_with_its_threshold(sweep: ModuleType, target: s
 
 
 @pytest.mark.parametrize("damage", ["wrong seed", "missing stats", "missing transpose", "nonfinite"])
-def test_incomplete_or_nonfinite_worker_output_fails(
-    sweep: ModuleType, target: synth.Stats, tmp_path: Path, damage: str
-):
+def test_incomplete_or_nonfinite_worker_output_fails(sweep: ModuleType, target: Stats, tmp_path: Path, damage: str):
     def worker(case: str, seed: int):
         data = row(case, seed, target)
         if damage == "wrong seed":
@@ -165,7 +165,7 @@ def test_input_overlap_uses_columns_not_supplier_rows(sweep: ModuleType):
 
 @pytest.mark.parametrize(("cases", "seeds"), [([], [0]), (["baseline"], []), (["baseline"], [0, 0])])
 def test_empty_or_duplicate_requests_cannot_succeed(
-    sweep: ModuleType, target: synth.Stats, tmp_path: Path, cases: list[str], seeds: list[int]
+    sweep: ModuleType, target: Stats, tmp_path: Path, cases: list[str], seeds: list[int]
 ):
     with pytest.raises(ValueError, match="nonempty, unique"):
         sweep.run_sweep(cases, seeds, lambda c, s: row(c, s, target), target, tmp_path / "report.json")
@@ -178,17 +178,17 @@ def test_overlap_agrees_with_explicit_pairs(sweep: ModuleType, values: list[list
     columns = [set(a.indices[a.indptr[j] : a.indptr[j + 1]]) for j in range(5)]
     all_pairs = sum(len(c) ** 2 for c in columns)
     expected = {}
-    for low, high in synth.OVERLAP_BANDS:
+    for low, high in OVERLAP_BANDS:
         selected = [c for c in columns if low <= len(c) <= high]
         count = sum(len(c) ** 2 for c in selected)
         if count:
             pairs = {(i, j) for c in selected for i in c for j in c}
-            label = f"{low}+" if high == synth.OVERLAP_BANDS[-1][1] else f"{low}-{high}"
+            label = f"{low}+" if high == OVERLAP_BANDS[-1][1] else f"{low}-{high}"
             expected[label] = {"overlap": len(pairs) / count, "pairs_share": count / all_pairs}
     assert sweep.input_overlap(a) == expected
 
 
-def test_relative_guard_uses_target_not_the_larger_observation(sweep: ModuleType, target: synth.Stats):
+def test_relative_guard_uses_target_not_the_larger_observation(sweep: ModuleType, target: Stats):
     got = replace(target, entries=327557)
     assert any(error.startswith("entries:") for error in sweep.calibration_failures(got, target))
     target = replace(target, entries=10000)
@@ -211,9 +211,7 @@ def test_relative_guard_uses_target_not_the_larger_observation(sweep: ModuleType
         "nonfinite overlap",
     ],
 )
-def test_missing_or_wrong_provenance_never_completes(
-    sweep: ModuleType, target: synth.Stats, tmp_path: Path, damage: str
-):
+def test_missing_or_wrong_provenance_never_completes(sweep: ModuleType, target: Stats, tmp_path: Path, damage: str):
     data = row("denser", 0, target)
     match damage:
         case "missing overrides":
@@ -238,7 +236,7 @@ def test_missing_or_wrong_provenance_never_completes(
     assert "error" in report["results"][0]
 
 
-def test_empty_overlap_is_missing_measurement_when_inputs_exist(sweep: ModuleType, target: synth.Stats, tmp_path: Path):
+def test_empty_overlap_is_missing_measurement_when_inputs_exist(sweep: ModuleType, target: Stats, tmp_path: Path):
     data = row("baseline", 0, target)
     data["input_overlap_by_band"] = {}
     report = sweep.run_sweep(["baseline"], [0], lambda _c, _s: data, target, tmp_path / "report.json")

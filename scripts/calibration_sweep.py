@@ -21,6 +21,8 @@ from scipy import sparse
 from scipy.sparse import linalg as sla
 
 from bwbench import synth
+from bwbench.shapes import PROFILES_DIR
+from bwbench.stats import OVERLAP_BANDS, Stats, measure
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -29,7 +31,7 @@ CASES = {"baseline": {}}  # profile overrides per case: add one to compare a gen
 SEEDS = (0, 1, 2, 3)
 
 
-def calibration_failures(got: synth.Stats, want: synth.Stats) -> list[str]:
+def calibration_failures(got: Stats, want: Stats) -> list[str]:
     """Apply the ecoinvent calibration test's per-seed tolerances to one seed."""
     checks = [
         ("products", got.products, want.products, 0.0, 0.0),
@@ -71,7 +73,7 @@ def measure_case(case: str, seed: int, products: int | None = None) -> dict[str,
         msg = "the calibration sweep requires region and sector labels"
         raise ValueError(msg)
     a = system.technosphere().tocsc()
-    stats = synth.measure(a, [str(x) for x in system.region], [str(x) for x in system.sector], repeats=0)
+    stats = measure(a, [str(x) for x in system.region], [str(x) for x in system.sector], repeats=0)
     a = (a @ sparse.diags(1.0 / a.diagonal())).tocsc()
     fills, seconds = {}, {}
     for label, matrix in (("COLAMD", a), ("COLAMD (A^T)", a.T.tocsc())):
@@ -97,19 +99,19 @@ def input_overlap(a: sparse.csc_matrix) -> dict[str, dict[str, float]]:
     squares = (pattern.indptr[1:] - pattern.indptr[:-1]).astype(float) ** 2
     counts = pattern.indptr[1:] - pattern.indptr[:-1]
     result = {}
-    for low, high in synth.OVERLAP_BANDS:
+    for low, high in OVERLAP_BANDS:
         selected = (counts >= low) & (counts <= high)
         pairs = float(squares[selected].sum())
         if pairs:
             band = pattern[:, selected]
             joined = band @ band.T
-            label = f"{low}+" if high == synth.OVERLAP_BANDS[-1][1] else f"{low}-{high}"
+            label = f"{low}+" if high == OVERLAP_BANDS[-1][1] else f"{low}-{high}"
             result[label] = {"overlap": float(joined.nnz / pairs), "pairs_share": pairs / float(squares.sum())}
             del joined
     return result
 
 
-def checked_stats(row: dict[str, Any], case: str, seed: int, products: int | None = None) -> synth.Stats:
+def checked_stats(row: dict[str, Any], case: str, seed: int, products: int | None = None) -> Stats:
     """Reject wrong identities and missing or nonfinite measurements before counting a result."""
     if (row["case"], row["seed"]) != (case, seed):
         msg = f"worker returned another case or seed for {case}/{seed}"
@@ -120,7 +122,7 @@ def checked_stats(row: dict[str, Any], case: str, seed: int, products: int | Non
         if json.dumps(row[name], sort_keys=True) != json.dumps(expected, sort_keys=True):
             msg = f"worker {name} does not match the requested {case} configuration"
             raise ValueError(msg)
-    stats = synth.Stats(**row["stats"])
+    stats = Stats(**row["stats"])
     checked_overlap(row["input_overlap_by_band"], entries=stats.entries)
     if stats.products != expected_profile["products"]:
         msg = "measured product count does not match the requested profile"
@@ -141,7 +143,7 @@ def checked_overlap(bands: dict[str, dict[str, float]], *, entries: int) -> None
     if entries > 0 and not bands:
         msg = "input overlap is missing although the matrix has inputs"
         raise ValueError(msg)
-    labels = {f"{low}+" if high == synth.OVERLAP_BANDS[-1][1] else f"{low}-{high}" for low, high in synth.OVERLAP_BANDS}
+    labels = {f"{low}+" if high == OVERLAP_BANDS[-1][1] else f"{low}-{high}" for low, high in OVERLAP_BANDS}
     if not isinstance(bands, dict) or bands.keys() - labels:
         msg = "input overlap has an invalid degree band"
         raise ValueError(msg)
@@ -168,7 +170,7 @@ def run_sweep(
     cases: Sequence[str],
     seeds: Sequence[int],
     worker: Callable[[str, int], dict[str, Any]],
-    target: synth.Stats,
+    target: Stats,
     output: Path,
     products: int | None = None,
 ) -> dict[str, Any]:
@@ -230,7 +232,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.worker:
         print(json.dumps(measure_case(args.worker, args.seed, args.products), allow_nan=False))
         return 0
-    target_data = json.loads((synth.PROFILES_DIR / "ecoinvent-3.12-cutoff.json").read_text(encoding="utf-8"))
+    target_data = json.loads((PROFILES_DIR / "ecoinvent-3.12-cutoff.json").read_text(encoding="utf-8"))
 
     def worker(case: str, seed: int) -> dict[str, Any]:
         command = [sys.executable, __file__, "--worker", case, "--seed", str(seed)]
@@ -239,7 +241,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         result = subprocess.run(command, capture_output=True, text=True, check=True)  # noqa: S603
         return json.loads(result.stdout)
 
-    report = run_sweep(args.cases, args.seeds, worker, synth.Stats(**target_data["stats"]), args.output, args.products)
+    report = run_sweep(args.cases, args.seeds, worker, Stats(**target_data["stats"]), args.output, args.products)
     print(f"{len(report['results'])} results; complete={report['complete']}; passed={report['passed']}")
     return 0 if report["passed"] else 1
 

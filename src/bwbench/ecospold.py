@@ -23,13 +23,13 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from bwbench.synth import PROFILES_DIR
+from bwbench.shapes import PROFILES_DIR
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
 
-    from bwbench.synth import System
+    from bwbench.matrices import System
 
 NAMESPACE = uuid.UUID("5b0c0d47-6f0e-4b5e-9d0c-3e1f7a1b2c3d")  # any fixed UUID: the same ids on every run
 # Means of ecoinvent 3.12's files. The extra content adds weight but changes no matrix amount.

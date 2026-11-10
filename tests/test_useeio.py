@@ -10,6 +10,7 @@ import pytest
 from scipy import sparse
 
 from bwbench import bafu, synth, useeio
+from bwbench.shapes import PROFILES, profile
 
 IDX = [("row", "<i4"), ("col", "<i4")]
 
@@ -95,7 +96,7 @@ def test_fetch_replaces_a_file_that_does_not_match(tmp_path: Path):
 @pytest.mark.parametrize("name", synth.ARCHIVES)
 def test_the_profile_stays_out_of_the_asv_version(name: str, monkeypatch: pytest.MonkeyPatch):
     base = synth.profile_version()
-    monkeypatch.delitem(synth.PROFILES, name)
+    monkeypatch.delitem(PROFILES, name)
     assert synth.profile_version() == base
 
 
@@ -107,10 +108,10 @@ def test_an_archive_has_no_monte_carlo(name: str):
 
 def test_bafu_reads_its_pinned_archive_with_its_methods(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     calls = {}
-    monkeypatch.setattr(synth, "data_root", lambda: tmp_path)
+    monkeypatch.setattr(bafu, "data_root", lambda: tmp_path)
     monkeypatch.setattr(useeio, "fetch", lambda *args: calls.setdefault("fetch", args) and "archive")
     monkeypatch.setattr(useeio, "archive_system", lambda *args: calls.setdefault("system", args))
-    p = synth.profile("bafu")
+    p = profile("bafu")
     bafu.system(p, 0)
     assert calls["fetch"] == (tmp_path / "bafu-2025-v2.tar.gz", bafu.URL, bafu.SHA256)
     assert calls["system"] == ("bafu", p, 0, "archive", bafu.METHODS)
@@ -140,8 +141,8 @@ def test_archive_becomes_a_system_with_the_same_scores(loader: str, monkeypatch:
         monkeypatch.setitem(sys.modules, "fsspec", SimpleNamespace(filesystem=lambda _protocol, *, fo: Path(fo)))
     archive = Path(__file__).parent / "fixtures" / "useeio-tiny.tar.gz"
     monkeypatch.setattr(useeio, "fetch", lambda _dest: archive)
-    monkeypatch.setattr(synth, "data_root", lambda: tmp_path)
-    result = useeio.system(synth.profile("useeio", products=3, flows=2), seed=0)
+    monkeypatch.setattr(useeio, "data_root", lambda: tmp_path)
+    result = useeio.system(profile("useeio", products=3, flows=2), seed=0)
 
     # Product ids 30, 60, 120 belong to processes 7, 50, 90; flow 999 has no emissions.
     a = np.array([[2.0, 0.0, -0.5], [-0.25, 1.0, 0.0], [0.0, -0.125, 1.0]])

@@ -33,6 +33,20 @@ the required output was one passing configuration.
 adaptively fit weights on a fixed graph. Their method supports staged calibration, but does
 not establish LCI supplier overlap or sparse-factorization fill.
 
+## Spreading supplier degree raises fill
+
+Over seeds 0 to 3, v5 passes every per-seed guard, but two sit near a bound: consumers per
+supplier q90 is 12 against 16 (the guard allows 11.2), and mean METIS fill is 37.9 against a
+cap of 38.7. Two changes to the degree model reach the consumer target, and both raise fill.
+In the first, later family members replace a share of their copied inputs with their own
+draws. Mapped like copies, a share of 0.1 to 0.5 leaves q90 at 12 to 12.5 and raises METIS
+to 42 to 51. Kept as drawn, q90 reaches 14 to 18, but METIS rises to 89 to 149. In the
+second, a copy bound for a supplier family's global member goes instead, at some chance, to
+the family's member for the consumer's continent. With 2 to 8 continents, q90 is 14 to 26
+and METIS is 42 to 81. When the chance is 1, the largest loop shrinks from 0.62 to between
+0.12 and 0.27 of the products, and a larger `back` does not bring it back. Every supplier
+edge that does not follow the family template adds fill, so v5 stays the default.
+
 ## Keeping fill explicit
 
 [Small recursive separators help control sparse-factorization fill](https://simons.berkeley.edu/sites/default/files/docs/787/gilbertslides.pdf).

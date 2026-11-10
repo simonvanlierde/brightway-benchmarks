@@ -253,6 +253,25 @@ yours go under a machine name of their own.
    pull request from your fork's `results` into this repository's `results`. Say in it which
    CPU, memory and OS the machine has, and paste the `just noise` spread.
 
+## Publish the synthetic inputs
+
+`just dataset` writes the synthetic systems at the current generator version to
+`.asv/dataset-v<version>/`, for a Zenodo deposit: per generated profile, at seed 0, a zip of its
+bw_processing datapackages with the reference scores, and a zip of its ecoSpold2 release. Beside
+them are a dataset card (`README.md`), `metadata.json` (every profile's fields) and `SHA256SUMS`
+(the checksum of each file). `just dataset smoke ecoinvent` writes only those profiles. An
+existing folder is never overwritten, and a failed run leaves none: it builds in a `.partial`
+folder and renames it at the end. The whole set needs about 12 GB of memory and 34 GB of disk in
+`.asv/` for `regional`; name smaller profiles to skip it.
+
+It refuses what may not ship and, when anything is refused, lists it in
+`.asv/dataset-v<version>-review/excluded.json`, outside the archive: the BAFU and USEEIO profiles, which are read from real archives, not
+generated. The ecoSpold2 files use flow UUIDs derived from the generator's own namespace, not
+biosphere3's, and each file is scanned before it is zipped: a UUID that is not name-based
+(version 5) or one of the two unit ids, or "ecoinvent" outside the format's namespace, stops the
+build. Uploading stays a manual step: create a new version of the record, check the DataCite
+fields, then publish.
+
 ## Environment variables
 
 `scripts/box.sh` passes every `BWBENCH_*` variable into the box.

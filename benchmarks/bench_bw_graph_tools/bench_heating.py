@@ -8,7 +8,8 @@ from bw_graph_tools import GraphTraversalSettings, NewNodeEachVisitGraphTraversa
 from bwbench import DIRECT_RTOL, bafu, check, first_time, heating, knob
 from bwbench.asv import classes
 from bwbench.bench import UNCHECKED, BenchSetup, NotApplicable, bench
-from bwbench.synth import System, profile_version, system
+from bwbench.matrices import System, load
+from bwbench.synth import datapackages, profile_version, system
 
 
 @functools.cache
@@ -31,7 +32,7 @@ def traverse_heating(size: str, option: str, max_calc: int) -> BenchSetup:
     s, at = background()
     fg = heating.foreground(s, at, **heating.DEFAULTS)
     demand = {fg.id(heating.OPTIONS[option]): 1.0}
-    inventory, methods, _, _ = s.packages()
+    inventory, methods, _, _ = load(datapackages(s))
     lca = bc.LCA(demand, data_objs=[inventory, heating.datapackage(fg), methods[0]])
     lca.lci()
     lca.lcia()

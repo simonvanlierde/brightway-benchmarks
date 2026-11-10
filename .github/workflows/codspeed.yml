@@ -14,10 +14,13 @@ on:
   push:
     branches: [main]
   # Pull requests only when what a suite runs can change; every push to main runs, since
-  # CodSpeed compares a pull request with its base commit's results.
+  # CodSpeed compares a pull request with its base commit's results. The two TOML files in
+  # benchmarks/ are metadata for the UI that no suite reads, so the negated patterns skip them.
   pull_request:
     paths:
       - benchmarks/**
+      - '!benchmarks/findings.toml'
+      - '!benchmarks/descriptions.toml'
       - src/**
       - asv/**
       - scripts/codspeed-venv.sh

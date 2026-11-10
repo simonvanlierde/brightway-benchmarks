@@ -80,6 +80,13 @@ def noise_threshold(*spreads: float | None) -> float:
     return max(NOISE_FLOOR, NOISE_TIMES * max((s or 0.0 for s in spreads), default=0.0))
 
 
+def spread(value: float | None, lower: float | None, upper: float | None) -> float | None:
+    """The middle half of the samples over VALUE, where the quartiles are finite and hold it."""
+    if value is None or lower is None or upper is None or not (math.isfinite(lower) and math.isfinite(upper)):
+        return None
+    return (upper - lower) / value if 0 <= lower <= value <= upper and value > 0 else None
+
+
 def spreads(row: list, columns: list[str]) -> list[float | None]:
     """Each parameter set's interquartile range over its value, from one case's row in an asv file."""
     cell = dict(zip(columns, row, strict=False))
@@ -89,8 +96,7 @@ def spreads(row: list, columns: list[str]) -> list[float | None]:
     out: list[float | None] = []
     for i, v in enumerate(values):
         a, b = (q25[i], q75[i]) if i < min(len(q25), len(q75)) else (None, None)
-        ok = v and a is not None and b is not None and math.isfinite(a) and math.isfinite(b) and 0 <= a <= b
-        out.append((b - a) / v if ok else None)
+        out.append(spread(v, a, b))
     return out
 
 

@@ -176,3 +176,9 @@ def test_the_noise_rule_has_a_floor(module: ModuleType):
     assert module.noise_threshold(None, None) == 0.02
     assert module.noise_threshold(0.001, None) == 0.02
     assert module.noise_threshold(0.01, 0.05) == pytest.approx(0.15)
+
+
+def test_a_spread_needs_quartiles_that_hold_the_value(module: ModuleType):
+    columns = ["result", "params", "stats_q_25", "stats_q_75"]
+    row = [[1.0, 1.0, 0.0, 1.0], [], [0.9, 1.2, 0.0, 0.9], [1.1, 1.4, 0.0, float("nan")]]
+    assert module.spreads(row, columns) == [pytest.approx(0.2), None, None, None]

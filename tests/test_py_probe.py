@@ -14,7 +14,9 @@ SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 
 # Logs each call with the config it saw, after sleeping $SLEEP seconds if set. `uv venv DIR` makes a
 # python that prints $INSIDE (the inside steps' JSON) and, on stderr, its Brightway directory if that
-# exists; installing bw_timex fails with a reason uv wraps over two lines.
+# exists, and logs its arguments to $LOG.py; installing bw_timex fails with a reason uv wraps over
+# two lines. `uv pip compile` (the package alone) refuses $UNDECLARED with uv's requires-python
+# message, and everything with a network error if $OFFLINE is set.
 UV = """#!/bin/sh
 echo "$* config=${UV_NO_CONFIG-on} cutoff=${UV_EXCLUDE_NEWER-unset}" >>"$LOG"
 [ -z "${SLEEP-}" ] || exec sleep "$SLEEP"
@@ -26,10 +28,16 @@ case "$1 $2" in
     exit 1
     ;;
 "pip freeze") echo "bw2data==4.8" ;;
+"pip compile")
+    [ -z "${OFFLINE-}" ] || { echo "error: Failed to fetch: error sending request" >&2; exit 1; }
+    [ "$(cat)" != "${UNDECLARED-}" ] && exit 0
+    printf 'x No solution found:\n  Because the current Python version (3.9.25) does not satisfy\n  Python>=3.11\n' >&2
+    exit 1
+    ;;
 venv*)
     for a; do venv=$a; done
     mkdir -p "$venv/bin"
-    printf '#!/bin/sh\\nprintf "%%s" "$INSIDE"\\n' >"$venv/bin/python"
+    printf '#!/bin/sh\\nprintf "%%s" "$INSIDE"\\necho "$*" >"$LOG.py"\\n' >"$venv/bin/python"
     echo '[ -d "$BRIGHTWAY2_DIR" ] && echo "BRIGHTWAY2_DIR=$BRIGHTWAY2_DIR" >&2' >>"$venv/bin/python"
     chmod +x "$venv/bin/python"
     ;;
@@ -93,9 +101,9 @@ def test_inside_output_that_is_not_json_is_a_failed_step(
 
 
 def test_inside_records_import_errors_and_a_wrong_score(probe: ModuleType, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(probe, "MODULES", ("json", "no_such_module_here"))
+    monkeypatch.setattr(probe, "PACKAGES", {"one": ("json",), "two": ("no_such_module_here",)})
     monkeypatch.setattr(probe, "score", lambda: 13.0)
-    steps = probe.inside()
+    steps = probe.inside([])
     assert steps[0] == {"step": "import json", "ok": True}
     assert steps[1]["error"].startswith("ModuleNotFoundError")
     assert steps[2] == {"step": "score", "ok": False, "error": "score 13.0, expected 14.0"}
@@ -121,3 +129,35 @@ def test_inside_keeps_stdout_for_the_json(tmp_path: Path):
     assert {"step": "import bw2data", "ok": True} in steps
     assert steps[-1]["step"] == "score"
     assert "Writing activities" in done.stderr
+
+
+def test_a_package_that_does_not_declare_the_python_is_left_out(
+    probe: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("INSIDE", json.dumps([{"step": "score", "ok": True}]))
+    monkeypatch.setenv("UNDECLARED", "bw_timex")
+    out = tmp_path / "out"
+    assert probe.main("3.9", out) == 0
+    steps = json.loads((out / "probe.json").read_text())["steps"]
+    assert {"step": "install bw_timex", "ok": True, "declared": False} in steps
+    # The inner run is told to leave bw_timex's imports out.
+    assert (tmp_path / "log.py").read_text().split()[-2:] == ["--inside", "bw_timex"]
+
+
+def test_a_failed_check_of_the_declared_range_keeps_the_failure(
+    probe: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setenv("INSIDE", "[]")
+    monkeypatch.setenv("OFFLINE", "1")
+    steps = {s["step"]: s for s in probe.probe("3.9", tmp_path)}
+    assert not steps["install bw_timex"]["ok"]
+    assert "declared" not in steps["install bw_timex"]
+
+
+def test_inside_leaves_out_an_undeclared_package_and_the_score_without_brightway25(
+    probe: ModuleType, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(probe, "PACKAGES", {"brightway25": ("json",), "bw_timex": ("no_such_module_here",)})
+    monkeypatch.setattr(probe, "score", lambda: 14.0)
+    assert [s["step"] for s in probe.inside(["bw_timex"])] == ["import json", "score"]
+    assert probe.inside(["brightway25", "bw_timex"]) == []

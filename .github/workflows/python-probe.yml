@@ -53,7 +53,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           jq -r '"### Python \(.python) on \(.os)\n",
-            (.steps[] | "- \(if .ok then "ok" else "**FAIL**" end) \(.step)\(if .error then ": \(.error)" else "" end)")' \
+            (.steps[] | "- \(if .ok | not then "**FAIL**" elif .declared == false then "skip (not declared)" else "ok" end) \(.step)\(if .error then ": \(.error)" else "" end)")' \
             "$OUT/probe.json" >>"$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

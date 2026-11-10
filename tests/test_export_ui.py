@@ -591,6 +591,11 @@ def test_each_measure_carries_the_noise_rule_the_viewer_draws(export_ui: ModuleT
             assert max(rule["floor"], rule["spreads"] * (s or 0)) == export_ui.noise_threshold(s)
 
 
+def test_the_real_fixture_carries_the_exporters_noise_rule(export_ui: ModuleType):
+    index = json.loads((ROOT / "ui" / "test" / "fixtures" / "real" / "index.json").read_text())
+    assert [m.get("noise") for m in index["measures"]] == [export_ui.NOISE] * len(index["measures"])
+
+
 def test_the_noise_band_holds_most_release_steps_on_the_real_data(export_ui: ModuleType):
     data = ROOT / "ui" / "test" / "fixtures" / "real"
     index = json.loads((data / "index.json").read_text())

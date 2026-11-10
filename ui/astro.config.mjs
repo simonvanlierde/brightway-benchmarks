@@ -13,7 +13,7 @@ export default defineConfig({
   // the site's own /ui/data/, and nothing loads from another origin.
   security: {
     csp: {
-      directives: ["default-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'none'"],
+      directives: ["default-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'"],
       // NOTE: ajv builds each schema validator with Function() in the browser (src/lib/contract.ts).
       // Compile them at build time with ajv's standalone mode, then drop 'unsafe-eval'.
       scriptDirective: { resources: ["'self'", "'unsafe-eval'"] },

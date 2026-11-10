@@ -47,3 +47,13 @@ for (const url of PAGES) {
     expect(problems).toEqual([]);
   });
 }
+
+test("the search form on a static page submits under the policy", async ({ page }) => {
+  const problems = await watch(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/about/");
+  await page.getByLabel("Find a benchmark").fill("multi");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/\?page=explorer&q=multi$/);
+  expect(problems).toEqual([]);
+});

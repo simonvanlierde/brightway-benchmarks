@@ -6,6 +6,7 @@ name: python-probe
 
 on:
   schedule:
+    # The matrix's include expression repeats this string: keep the two equal.
     - cron: "23 4 * * 0,2-6" # 04:23 UTC except Mondays
     - cron: "23 4 * * 1" # Mondays 04:23 UTC, with the end-of-life lines
   workflow_dispatch:

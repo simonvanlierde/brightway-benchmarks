@@ -196,7 +196,12 @@ asks the plainer question for any Python: in a fresh environment, do brightway25
 and bw_timex install (each on its own), do bw2data, bw2calc, bw2io, bw_processing, matrix_utils,
 bw_graph_tools and bw_timex import, and does one score on a two-process system come out right? It
 writes each step to `OUT/probe.json`, the installed set to `OUT/requirements.txt`, and exits 1 if
-a step failed. It needs only uv and Python 3.13 to run.
+a step failed. Like the `latest` column, it installs today's releases and ignores the repository's
+exclude-newer cutoff. It needs only uv:
+
+```sh
+uv run --no-project --python 3.13 scripts/py_probe.py 3.12 .asv/probe/3.12
+```
 
 The `python-probe` workflow runs it each day for Python 3.11 to 3.15 on Linux, macOS and Windows,
 and each Monday also for 3.9 and 3.10 on Linux, which are past end of life but some packages still

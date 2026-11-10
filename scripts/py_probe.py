@@ -28,6 +28,8 @@ PACKAGES = ("brightway25", "bw_graph_tools", "bw_timex")
 MODULES = ("bw2data", "bw2calc", "bw2io", "bw_processing", "matrix_utils", "bw_graph_tools", "bw_timex")
 # Process a takes 2 kg of b; a emits 1 kg CO2 and b 3 kg, at 2 points per kg: (1 + 2 * 3) * 2.
 SCORE = 14.0
+# Seconds for one uv call or the inner run, so a stalled download leaves a failed step on record.
+TIMEOUT = 600
 
 
 def last_line(text: str) -> str:
@@ -38,7 +40,7 @@ def last_line(text: str) -> str:
 
 def score() -> float:
     """The score of a on the two-process system, in a throwaway Brightway directory."""
-    import bw2calc as bc  # noqa: PLC0415 - imported after BRIGHTWAY_DIR is set
+    import bw2calc as bc  # noqa: PLC0415 - imported after BRIGHTWAY2_DIR is set
     import bw2data as bd  # noqa: PLC0415  # ty: ignore[unresolved-import] - installed in the probed venv only
 
     bd.projects.set_current("probe")
@@ -94,9 +96,21 @@ def inside() -> list[dict]:
     return steps
 
 
-def run(*args: str) -> subprocess.CompletedProcess:
-    """ARGS's result, output captured."""
-    return subprocess.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)  # noqa: S603 - uv and the venv's python
+def run(*args: str, env: dict | None = None) -> subprocess.CompletedProcess:
+    """ARGS's result, output captured; a timeout is exit code -1 with the reason on stderr."""
+    try:
+        return subprocess.run(  # noqa: S603 - uv and the venv's python
+            args,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            env=env,
+            timeout=TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(args, -1, "", f"timed out after {TIMEOUT} s")
 
 
 def probe(python: str, out: Path) -> list[dict]:
@@ -116,17 +130,10 @@ def probe(python: str, out: Path) -> list[dict]:
             if done.returncode:
                 steps[-1]["error"] = " ".join(done.stderr.split())  # uv wraps its reason over several lines
         (out / "requirements.txt").write_text(run("uv", "pip", "freeze", "--python", str(py)).stdout)
-        env = {**os.environ, "BRIGHTWAY_DIR": str(venv / "bw")}
+        (venv / "bw").mkdir()  # bw2data refuses a BRIGHTWAY2_DIR that does not exist
+        env = {**os.environ, "BRIGHTWAY2_DIR": str(venv / "bw")}
         # -I drops PYTHONUTF8, so on Windows the inner Python would write cp1252 without -X utf8.
-        inner = subprocess.run(  # noqa: S603
-            [str(py), "-I", "-X", "utf8", __file__, "--inside"],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=False,
-            env=env,
-        )
+        inner = run(str(py), "-I", "-X", "utf8", __file__, "--inside", env=env)
         try:
             steps += json.loads(inner.stdout)
         except ValueError:

@@ -154,14 +154,15 @@ results-commit:
 solver-lci solver size="smoke" bw2calc="3.1.0":
     BWBENCH_MEM="${BWBENCH_MEM:-12g}" scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.13 --with bw2calc=={{ bw2calc }} --with threadpoolctl==3.7.0 --with pypardiso==0.4.7 --with scikit-umfpack==0.4.2 --with pyklu==0.2.0 python scripts/solver_lci.py {{ solver }} {{ size }}'
 
-# Every generated profile, or the PROFILES given, as matrices and ecoSpold2 files with a card and
-# checksums, in .asv/dataset-v<GENERATOR_VERSION>/ (docs/running.md#publish-the-synthetic-inputs).
-# 12 GB: `regional` is 250k products; its unzipped ecoSpold2 files take about 34 GB in .asv/ meanwhile.
-# The synthetic inputs as a dataset for Zenodo. Nothing is uploaded.
+# Every generated profile, or the PROFILES given, goes to .asv/dataset-v<GENERATOR_VERSION>/
+# (docs/running.md#publish-the-synthetic-inputs). 12 GB of memory by default and about 34 GB of disk
+# in .asv/ for `regional` (250k products); name smaller profiles to skip it.
+# The synthetic inputs as a Zenodo dataset: matrices, ecoSpold2 files, card and checksums. Uploads nothing.
 dataset *profiles:
     #!/usr/bin/env bash
     set -euo pipefail
     v=$(sed -n 's/^GENERATOR_VERSION = "\(.*\)"$/\1/p' src/bwbench/synth.py)
+    [ -n "$v" ] || { echo "no GENERATOR_VERSION in src/bwbench/synth.py" >&2; exit 1; }
     BWBENCH_MEM="${BWBENCH_MEM:-12g}" exec scripts/box.sh sh -c "PYTHONPATH=src uv run -q --no-project --python 3.13 --with numpy==2.5.3 --with scipy==1.18.1 --with bw_processing==1.6 python scripts/dataset.py .asv/dataset-v$v {{ profiles }}"
 
 # RELEASE: a licensed release folder (holding datasets/ and MasterData/), mounted read-only, with

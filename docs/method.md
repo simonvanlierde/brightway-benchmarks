@@ -12,7 +12,9 @@ Results are in [findings.md](findings.md), how to run the benchmarks in
 - bw2data: writing a database, up to ecoinvent's size; `import bw2data`.
 - bw_processing and matrix_utils: building datapackages and matrices from many resource groups.
 - bw_graph_tools: supply-chain graph traversal.
-- bw_timex: the time-explicit LCI as the timeline grows.
+- bw_timex: the time-explicit LCI as the timeline grows. Each sample is a first `TimexLCA.lci()`
+  in its session: bw_timex's in-session caches are cleared before it, and only the foreground is
+  written again, the background once per process.
 
 Each score is checked against a reference that uses no Brightway code, so a fast but wrong
 release fails. Monte Carlo draws are checked only for finite values, and bw_timex against

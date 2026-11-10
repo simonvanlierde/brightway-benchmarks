@@ -14,6 +14,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   ([method](docs/method.md#how-the-results-stay-reproducible)).
 - The synthetic ecoinvent profile shares supplier lists across activity families and passes its
   structural and solver-fill checks over four seeds ([calibration](docs/generator-calibration.md)).
+- bw_timex's timeline cases (`TimelineLCI`, `HeatingTimeline`) time every sample as a first
+  `TimexLCA.lci()` of its session, with bw_timex's in-session caches cleared before it. Before,
+  each sample after a process's first could take the functional unit's solve from that cache.
 
 ### Added
 
@@ -45,6 +48,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The bw_timex cases write their background databases once per process, not before every
+  sample: about 25 s a sample at the ecoinvent size.
 - Benchmarks and Setup use readable names, open with what the site checks, and show a plain
   message when data fails to load.
 

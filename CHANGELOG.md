@@ -56,6 +56,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The heating cases cache their expanded factors and process indices beside the BAFU archive, so
   after a run's first heating process each one reads the archive once, not three times (about
   6 s a process).
+- The box image is tagged per Dockerfile stage and rebuilt once on the first run after this change.
 - `scripts/asv.sh`, `scripts/stack.sh`, `scripts/codspeed-venv.sh` and `just site` read the asv
   configs through one tested script, `scripts/asv_conf.py`, instead of inline Python.
 - Each `asv/<package>.stack.txt` names the cutoff it was resolved at, and `just stack` refuses to

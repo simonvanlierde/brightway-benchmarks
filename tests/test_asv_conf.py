@@ -81,3 +81,33 @@ def test_every_subject_config_reads(monkeypatch: pytest.MonkeyPatch):
         assert s.replace("_", "-") in module.drop(s)
         assert module.pins(s)
         assert module.load(s)["repo"].startswith("https://")
+
+
+@pytest.mark.usefixtures("repo")
+@pytest.mark.parametrize(
+    ("machine", "results"), [("smoke", ".asv/smoke/s"), ("noise", ".asv/noise/s"), ("stack", ".asv/stack/s")]
+)
+def test_conf_keeps_the_results_of_a_scratch_machine_under_asv(machine: str, results: str):
+    assert load().conf("s", machine, "superlu", "x86_64")[0]["results_dir"] == f"../{results}"
+    assert "results_dir" not in load().conf("s", "bench", "superlu", "x86_64")[0]
+
+
+@pytest.mark.usefixtures("repo")
+def test_drop_leaves_out_bw2data_for_bw2calc():
+    (Path("asv") / "bw2calc.json").write_text(json.dumps(CONF))
+    assert "bw2data" in load().drop("bw2calc")
+    assert "bw2data" not in load().drop("s")
+
+
+@pytest.mark.usefixtures("repo")
+def test_stack_in_takes_a_git_pin_whole():
+    conf = {**CONF, "matrix": {"req": {"bw_processing": ["git+https://example.org/bwp@abc"]}}}
+    Path("asv/s.json").write_text(json.dumps(conf))
+    assert load().stack_in("s") == ["s==1.2.0", "git+https://example.org/bwp@abc"]
+
+
+@pytest.mark.usefixtures("repo")
+@pytest.mark.parametrize("solver", ["pypardiso", "klu"])
+def test_conf_refuses_an_x86_only_solver_on_another_arch(solver: str):
+    with pytest.raises(SystemExit, match=f"{solver} has wheels for x86_64 only"):
+        load().conf("s", "m", f"superlu,{solver}", "aarch64")

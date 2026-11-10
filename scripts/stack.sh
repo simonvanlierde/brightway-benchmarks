@@ -7,13 +7,13 @@
 # the subject's. The list is a full resolution and installs with --no-deps, so pip adds
 # nothing to it. Packages the config varies on purpose (the solvers, the bw_processing build)
 # stay out of the list. Writes .asv/stack/SUBJECT.txt; `just stack` copies it to asv/. Its first
-# line names the cutoff it was resolved at; tests/test_asv_config.py checks it against in-box.sh's.
+# line names the cutoff it was resolved at; tests/test_asv_data.py checks it against in-box.sh's.
 set -eu
 subject=$1
 cutoff=$(sed -n 's/^cutoff=//p' scripts/in-box.sh)
 # in-box.sh lets a caller's UV_EXCLUDE_NEWER win, which would resolve at another date than the line says.
 [ "${UV_EXCLUDE_NEWER:-}" = "$cutoff" ] || {
-    echo "stack.sh: UV_EXCLUDE_NEWER is '${UV_EXCLUDE_NEWER:-}', not in-box.sh's cutoff $cutoff" >&2
+    echo "stack.sh: UV_EXCLUDE_NEWER is '${UV_EXCLUDE_NEWER:-}', not in-box.sh's cutoff $cutoff: unset UV_EXCLUDE_NEWER" >&2
     exit 1
 }
 mkdir -p .asv/stack

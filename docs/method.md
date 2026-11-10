@@ -87,10 +87,11 @@ categories (climate change, acidification, freshwater ecotoxicity). It is the ar
 ([`src/bwbench/bafu.py`](../src/bwbench/bafu.py)). At under half of ecoinvent's size, it times a
 real LCI database's factorization. Its licence allows use in LCA studies but not distribution, so
 the harness downloads it at run time and the repository, the results and the Zenodo dataset hold
-only timings and aggregate statistics. What the heating cases derive from it (their expanded
-factors and the indices of the processes they name) is cached beside the archive and nowhere else. Its matrix is badly conditioned (a condition number near
+only timings and aggregate statistics. Its matrix is badly conditioned (a condition number near
 1e22), and its reference scores agree with a refined direct solve to about 2e-15. It has no Monte
 Carlo case, although the archive carries uncertainty.
+What the heating cases derive from it (their expanded factors and the indices of the processes
+they name) is cached beside the archive and nowhere else.
 
 ### The home-heating case
 
@@ -142,8 +143,9 @@ match within `DIRECT_RTOL` (1e-9); an error outside that tolerance fails the cas
 ## How the results stay reproducible
 
 - [asv](https://asv.readthedocs.io) runs every release of a package on one fixed set of
-  dependencies, from before 2026-10-20, in `asv/<package>.stack.txt`. So a step in a graph is
-  that package's own change. bw2calc 3.0.0 and later also get threadpoolctl.
+  dependencies, at the cutoff in the first line of each stack file, in `asv/<package>.stack.txt`.
+  So a step in a graph is that package's own change. bw2calc 3.0.0 and later also get
+  threadpoolctl.
 - Each history starts at the oldest release that runs on that set: bw2data at 4.6 (peewee 4),
   bw_timex at 1.1.0. Every release of the other packages runs.
 - Timings from the generator v5 rerun onwards run on Python 3.13. Earlier times, including every

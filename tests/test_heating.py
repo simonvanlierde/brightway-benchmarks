@@ -151,11 +151,6 @@ def test_locate_maps_product_names_to_matrix_indices(tmp_path: Path, monkeypatch
         heating.locate(archive, ("b {NL}",), ids)
     with pytest.raises(ValueError, match=r"c \{CH\}"):
         heating.locate(archive, ("c {CH}",), ids)
-    archive.with_name("elsewhere").write_bytes(archive.read_bytes())
-    archive.write_bytes(b"")  # another archive: the map cached for the old one must not answer
-    with pytest.raises(tarfile.ReadError):
-        heating.locate(archive, ("a {CH}",), ids)
-    archive.write_bytes(archive.with_name("elsewhere").read_bytes())
     monkeypatch.setattr(tarfile, "open", lambda *_, **__: pytest.fail("read the archive again"))
     assert heating.locate(archive, ("a {CH}",), ids) == {"a {CH}": 2}
 
@@ -261,6 +256,25 @@ def test_factor_expansion_is_idempotent_and_preserves_explicit_factors(factors: 
     assert expanded == heating.expand_factors(flows, expanded)
     assert all(expanded[i] == factor for i, factor in original.items())
     assert factors == original
+
+
+@pytest.mark.parametrize("change", ["methods", "version", "flow_offset", "names"])
+def test_derived_misses_the_cache_when_an_input_of_it_changes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str
+):
+    archive = tmp_path / "a.tar.gz"
+    before = heating._derived(archive, "x.json", ("n",), 3)  # noqa: SLF001
+    assert heating._derived(archive, "x.json", ("n",), 3) == before  # noqa: SLF001
+    key: tuple = (("n",), 3)
+    if change == "methods":
+        monkeypatch.setattr(bafu, "METHODS", (*bafu.METHODS, "another"))
+    elif change == "version":
+        monkeypatch.setattr(heating, "VERSION", heating.VERSION + "1")
+    elif change == "flow_offset":
+        key = (("n",), 4)  # System.flow_offset, for corrected_system
+    else:
+        key = (("m",), 3)
+    assert heating._derived(archive, "x.json", *key) != before  # noqa: SLF001
 
 
 @pytest.mark.parametrize("parent_emitted", [True, False])

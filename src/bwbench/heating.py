@@ -56,7 +56,9 @@ NODES = ("grid NL", "heat pump", "burner", "gas boiler", "heat pump, 20 years", 
 GRID, HP, BURNER_NODE, BOILER_NODE, HP_YEARS, BOILER_YEARS = range(len(NODES))
 OPTIONS = {"heat pump": HP_YEARS, "gas boiler": BOILER_YEARS}
 YEARS = 20
-VERSION = "3"  # bump with any change to the foreground or the heating cases: it restarts their history
+# Bump with any change to the foreground, the heating cases, corrected_system or locate: it restarts
+# their history and misses the factors and indices cached beside the archive.
+VERSION = "3"
 MJ_PER_KWH = 3.6
 # These are illustrative benchmark assumptions, not measured Dutch averages.
 # Staffell et al. (2012), doi:10.1039/C2EE22653G, review performance across systems and climates;
@@ -125,12 +127,12 @@ def _derived(archive: Path, what: str, *key: object) -> Path:
     """Where ``what``, derived from ``archive`` and ``key``, is cached: beside the archive.
 
     BAFU's values may not leave the machine, so what is derived from them stays where the
-    archive is. The name holds a hash of the archive's SHA-256, ``VERSION`` and ``key``, so a
-    new archive or a new heating version misses the old file.
+    archive is. The name holds a hash of BAFU's pinned SHA-256, its methods, ``VERSION`` and
+    ``key``, so a new archive, new methods or a new heating version misses the old file.
     """
-    from bwbench import useeio  # noqa: PLC0415 - as in corrected_system
+    from bwbench import bafu  # noqa: PLC0415 - as in corrected_system
 
-    h = hashlib.sha256(f"{useeio.sha256_of(archive)} {VERSION}".encode())
+    h = hashlib.sha256(f"{bafu.SHA256} {VERSION} {bafu.METHODS!r}".encode())
     for k in key:
         h.update(k.tobytes() if isinstance(k, np.ndarray) else repr(k).encode())
     return archive.with_name(f"{archive.name}.{what.replace('.', f'-{h.hexdigest()[:16]}.')}")

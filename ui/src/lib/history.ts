@@ -131,6 +131,12 @@ export interface Line {
   points: Point[];
 }
 
+/** The middle half of the samples over the value, as the exporter's spread(); 0 where that is not a number. */
+function spread(m: { value: number; lower_value?: number; upper_value?: number }): number {
+  const s = ((m.upper_value ?? Number.NaN) - (m.lower_value ?? Number.NaN)) / m.value;
+  return m.value > 0 && Number.isFinite(s) ? s : 0;
+}
+
 /** One line per environment for BENCH at PARAMS in MEASURE, from the reports by commit. */
 export function lines(
   index: BenchmarkIndex,
@@ -164,12 +170,7 @@ export function lines(
           value: metric.value,
           ...(metric.lower_value === undefined ? {} : { lower: metric.lower_value }),
           ...(metric.upper_value === undefined ? {} : { upper: metric.upper_value }),
-          ...(rule && {
-            noise: Math.max(
-              rule.floor,
-              (rule.spreads * ((metric.upper_value ?? 0) - (metric.lower_value ?? 0))) / metric.value,
-            ),
-          }),
+          ...(rule && { noise: Math.max(rule.floor, rule.spreads * spread(metric)) }),
         },
       ];
     }),

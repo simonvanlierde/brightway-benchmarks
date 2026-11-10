@@ -328,6 +328,22 @@ describe("links already posted", () => {
 });
 
 describe("the noise band", () => {
+  it("falls back to the floor without a usable spread", () => {
+    const index = {
+      measures: [{ id: "latency", name: "Time", unit: "ns", noise: { floor: 0.02, spreads: 3 } }],
+      environments: [{ id: "e", group: "g", name: "e" }],
+      cases: [{ id: "k", benchmark: "b", environment: "e", params: [] }],
+      commits: ["c1", "c2", "c3"].map((id) => ({ id, group: "g", date: "2026-01-01T00:00:00Z" })),
+    } as unknown as BenchmarkIndex;
+    const reports = new Map<string, BenchmarkReport>([
+      ["c1", { k: { latency: { value: 0, lower_value: 0, upper_value: 0 } } }],
+      ["c2", { k: { latency: { value: 2 } } }],
+      ["c3", { k: { latency: { value: 2, lower_value: 1, upper_value: Number.NaN } } }],
+    ]);
+    const bench = { id: "b", group: "g", params: [] } as unknown as Parameters<typeof lines>[1];
+    expect(lines(index, bench, [], "latency", reports)[0]?.points.map((p) => p.noise)).toEqual([0.02, 0.02, 0.02]);
+  });
+
   it("is the rule the exporter's release changes use", async () => {
     const real = new URL("fixtures/real/", import.meta.url);
     const read = async <T>(path: string): Promise<T> => JSON.parse(await readFile(new URL(path, real), "utf8"));

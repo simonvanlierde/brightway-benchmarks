@@ -189,6 +189,19 @@ passing date and run even when that set has not changed. A dated folder never ch
 stays after GitHub deletes the run's artifacts at 90 days. `compat/status.json` summarizes how
 each job ended. `just site` copies the branch into `site/compat`; the site workflow publishes it.
 
+### Which Pythons work
+
+The compat jobs need Python 3.13 or later, as the harness does. `scripts/py_probe.py PYTHON OUT`
+asks the plainer question for any Python: in a fresh environment, do brightway25, bw_graph_tools
+and bw_timex install (each on its own), do bw2data, bw2calc, bw2io, bw_processing, matrix_utils,
+bw_graph_tools and bw_timex import, and does one score on a two-process system come out right? It
+writes each step to `OUT/probe.json`, the installed set to `OUT/requirements.txt`, and exits 1 if
+a step failed. It needs only uv and Python 3.13 to run.
+
+The `python-probe` workflow runs it each day for Python 3.11 to 3.15 on Linux, macOS and Windows,
+and each Monday also for 3.9 and 3.10 on Linux, which are past end of life but some packages still
+declare. Each job's summary lists its steps, and its artifact holds both files.
+
 ### Install a set that works
 
 The site's [Setup page](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility)

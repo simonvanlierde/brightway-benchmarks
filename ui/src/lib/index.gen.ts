@@ -64,6 +64,13 @@ export interface BenchmarkIndex {
      * What a metric's lower and upper values are, in words to show, such as "the middle half of the samples".
      */
     bounds?: string;
+    /**
+     * How far a value may move as noise, as the release changes count it: spreads times its spread ((upper - lower) / value), at least floor. A value without bounds gets floor.
+     */
+    noise?: {
+      floor: number;
+      spreads: number;
+    };
   }[];
   /**
    * Results from two machines are never pooled.

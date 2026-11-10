@@ -73,7 +73,8 @@ the pinned versions, so a pin bump starts a new series.
 
 An environment's optional `label` is the name to show, such as the solver it runs; the full name
 stays under the data table. A measure's optional `bounds` says what a metric's lower and upper
-values are, and the chart's caption repeats it.
+values are, and the chart's caption repeats it. Its optional `noise` is the exporter's rule for
+how far a value may move as noise, and the chart draws it as the band around each line.
 
 The index's optional `changes` are worked out before the data is written, not in the browser:
 the UI only draws them. This repository's exporter finds them with a noise threshold between

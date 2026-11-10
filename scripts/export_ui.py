@@ -36,7 +36,7 @@ from urllib.parse import quote
 
 from export_guidance import PUBLIC_BASE
 from output_path import output_path
-from release_changes import NOISE_FLOOR, SHA, STACK, current_stack, noise_threshold, pick, releases
+from release_changes import NOISE_FLOOR, NOISE_TIMES, SHA, STACK, current_stack, noise_threshold, pick, releases
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
 CODSPEED = "https://app.codspeed.io/simonvanlierde/brightway-benchmarks"
@@ -53,6 +53,7 @@ MEASURES = {  # asv type -> (measure id, scale to the unit)
     "time": ("latency", 1e9),
     "peakmemory": ("peak-memory", 1),
 }
+NOISE = {"floor": NOISE_FLOOR, "spreads": NOISE_TIMES}  # noise_threshold's rule, for the viewer's band
 MEASURE_INFO = [  # asv gives a time's median and a peak memory's highest resident size
     {
         "id": "latency",
@@ -61,8 +62,9 @@ MEASURE_INFO = [  # asv gives a time's median and a peak memory's highest reside
         "better": "lower",
         "statistic": "median",
         "bounds": "the middle half of the samples",
+        "noise": NOISE,
     },
-    {"id": "peak-memory", "name": "Peak memory", "unit": "B", "better": "lower", "statistic": "max"},
+    {"id": "peak-memory", "name": "Peak memory", "unit": "B", "better": "lower", "statistic": "max", "noise": NOISE},
 ]
 REPORT_FORMAT = "bmf/v0"
 CHANGE_POINTS = Path(__file__).with_name("change_points.py")

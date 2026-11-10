@@ -2,10 +2,12 @@
 
 import hashlib
 import importlib
+import itertools
 import json
 import math
 import re
 import shutil
+import statistics
 import subprocess
 from pathlib import Path
 from types import ModuleType
@@ -579,6 +581,42 @@ def test_a_release_change_counts_only_beyond_the_case_noise(export_ui: ModuleTyp
     # A 5% move is within three spreads of 3%; 1.05 to 1.2 is beyond them.
     assert found["noisy", "b", "c"]["threshold"] == pytest.approx(0.09)
     assert set(found) == {("quiet", "a", "b"), ("noisy", "b", "c")}  # memory moved 1%, under the floor
+
+
+def test_each_measure_carries_the_noise_rule_the_viewer_draws(export_ui: ModuleType):
+    # The viewer draws value * (1 ± max(floor, spreads * spread)) as the noise band.
+    for m in export_ui.MEASURE_INFO:
+        rule = m["noise"]
+        for s in (None, 0.001, 0.05):
+            assert max(rule["floor"], rule["spreads"] * (s or 0)) == export_ui.noise_threshold(s)
+
+
+def test_the_noise_band_holds_most_release_steps_on_the_real_data(export_ui: ModuleType):
+    data = ROOT / "ui" / "test" / "fixtures" / "real"
+    index = json.loads((data / "index.json").read_text())
+    order = {c["id"]: i for i, c in enumerate(index["commits"]) if "release" in c}
+    series: dict[tuple[str, str], list[tuple[int, dict]]] = {}
+    for r in index["reports"]:
+        if r["commit"] in order:
+            for case, metrics in json.loads((data / r["path"]).read_text()).items():
+                if "latency" in metrics:
+                    series.setdefault((r["group"], case), []).append((order[r["commit"]], metrics["latency"]))
+    spreads: dict[str, list[float]] = {}
+    inside: dict[str, list[bool]] = {}
+    for (group, _), points in series.items():
+        points.sort(key=lambda p: p[0])
+        spreads.setdefault(group, []).extend(s for _, m in points if (s := export_ui.spread(m)) is not None)
+        for (_, a), (_, b) in itertools.pairwise(points):
+            allowed = export_ui.noise_threshold(export_ui.spread(a), export_ui.spread(b))
+            inside.setdefault(group, []).append(abs(b["value"] / a["value"] - 1) <= allowed)
+    assert len(inside) == len(index["groups"])
+    for group, steps in inside.items():
+        # Within one run, the middle half of the samples spans 0.2 to 1.1% in each suite's median
+        # case, so the 2% floor sets most of the band. bw_timex holds 5 of its 10 steps: it changed.
+        assert statistics.median(spreads[group]) < 0.02, group
+        assert sum(steps) / len(steps) >= 0.5, group
+    every = [s for steps in inside.values() for s in steps]
+    assert sum(every) / len(every) > 0.85
 
 
 def test_changes_land_in_the_index_with_their_commits(

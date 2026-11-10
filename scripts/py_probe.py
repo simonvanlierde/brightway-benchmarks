@@ -131,7 +131,7 @@ def probe(python: str, out: Path) -> list[dict]:
     try:
         made = run("uv", "venv", "--quiet", "--python", python, str(venv / "v"))
         if made.returncode:
-            return [{"step": "venv", "ok": False, "error": last_line(made.stderr)}]
+            return [{"step": "venv", "ok": False, "error": " ".join(made.stderr.split())}]
         py = venv / "v" / "bin" / "python"
         if not py.exists():
             py = venv / "v" / "Scripts" / "python.exe"  # a Windows venv

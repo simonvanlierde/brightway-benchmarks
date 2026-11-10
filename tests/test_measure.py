@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 from itertools import combinations
 
 import numpy as np
@@ -7,7 +9,7 @@ import pytest
 from scipy import sparse
 from scipy.sparse import linalg as sla
 
-from bwbench import stats, synth
+from bwbench import stats
 from bwbench.shapes import PROFILES_DIR
 from bwbench.stats import Stats, cholesky_counts, fill_bounds, measure, tree_height
 from bwbench.synth import system
@@ -238,11 +240,11 @@ def test_copied_inputs_counts_only_products_with_inputs():
 
 
 def test_spectral_radius_branches(monkeypatch: pytest.MonkeyPatch):
-    assert synth.spectral_radius(sparse.csc_matrix((5, 5))) == 0.0
+    assert stats.spectral_radius(sparse.csc_matrix((5, 5))) == 0.0
     # n < 3 is dense: eigenvalues 0.5 +- 2i.
     small = sparse.csc_matrix(np.array([[0.5, 2.0], [-2.0, 0.5]]))
-    assert synth.spectral_radius(small) == pytest.approx(np.sqrt(4.25))
-    assert synth.spectral_radius(sparse.csc_matrix(np.diag([1.0, -2.0, 3.0]))) == pytest.approx(3.0)
+    assert stats.spectral_radius(small) == pytest.approx(np.sqrt(4.25))
+    assert stats.spectral_radius(sparse.csc_matrix(np.diag([1.0, -2.0, 3.0]))) == pytest.approx(3.0)
 
     def no_convergence(*_args: object, **_kwargs: object):
         msg = "stuck"
@@ -250,10 +252,10 @@ def test_spectral_radius_branches(monkeypatch: pytest.MonkeyPatch):
 
     monkeypatch.setattr(sla, "eigs", no_convergence)
     three = sparse.csc_matrix(np.diag([1.0, 2.0, 3.0]))
-    assert synth.spectral_radius(three) == pytest.approx(3.0)  # small enough for the dense fallback
-    monkeypatch.setattr(synth, "DENSE_RADIUS_MAX_PRODUCTS", 2)
-    assert synth.spectral_radius(three) is None
-    assert synth.spectral_radius(small) == pytest.approx(np.sqrt(4.25))  # the dense branch never calls eigs
+    assert stats.spectral_radius(three) == pytest.approx(3.0)  # small enough for the dense fallback
+    monkeypatch.setattr(stats, "DENSE_RADIUS_MAX_PRODUCTS", 2)
+    assert stats.spectral_radius(three) is None
+    assert stats.spectral_radius(small) == pytest.approx(np.sqrt(4.25))  # the dense branch never calls eigs
 
 
 def test_cholesky_counts_of_arrow_matrices():
@@ -391,3 +393,8 @@ def test_metis_bound_holds_for_lu_without_pivoting():
         b = a[perm][:, perm].tocsc()
         lu = sla.splu(b, permc_spec="NATURAL", diag_pivot_thresh=0.0)
         assert (lu.L.nnz + lu.U.nnz - n) / b.nnz <= fill_bounds(a, {})["METIS"]["bound"]
+
+
+def test_stats_does_not_load_the_generator():
+    code = "import sys, bwbench.stats; sys.exit('bwbench.synth' in sys.modules)"
+    assert subprocess.run([sys.executable, "-c", code], check=False).returncode == 0

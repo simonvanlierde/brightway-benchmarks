@@ -34,11 +34,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy import sparse, special
-from scipy.sparse import linalg as sla
 
 from bwbench import bafu, useeio
 from bwbench.matrices import REFERENCE_PRODUCTS, Packages, System, load, write_datapackages
 from bwbench.shapes import PROFILES, Profile, data_root, profile, short_hash
+from bwbench.stats import spectral_radius
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -356,25 +356,6 @@ def _tiered(p: Profile, rng: np.random.Generator) -> tuple[NDArray, ...]:
     order = np.argsort(ids)
     region, sector = groups[1][order], groups[2][order]
     return ids[rows], ids[cols], scale[rows] * amounts / scale[cols], scale[order], region, sector
-
-
-DENSE_RADIUS_MAX_PRODUCTS = 1000  # largest system solved densely when ARPACK fails (0.36 s at 1000)
-
-
-def spectral_radius(m: sparse.csc_matrix | sparse.csr_matrix) -> float | None:
-    """Largest ``|eigenvalue|`` of ``m``; None if ARPACK did not converge and ``m`` is too big for a dense solve."""
-    n = m.shape[0]
-    if m.nnz == 0:
-        return 0.0
-    if n >= 3:  # eigs needs k < n - 1
-        try:
-            eig = sla.eigs(m, k=1, which="LM", return_eigenvectors=False, tol=1e-8, maxiter=n * 10, v0=np.ones(n))
-            return float(np.abs(eig).max())
-        except sla.ArpackNoConvergence:
-            # A system with no loops is nilpotent: every eigenvalue is 0 and ARPACK cannot find one.
-            if n > DENSE_RADIUS_MAX_PRODUCTS:
-                return None
-    return float(np.abs(np.linalg.eigvals(m.toarray())).max())
 
 
 def many_groups(n: int) -> object:

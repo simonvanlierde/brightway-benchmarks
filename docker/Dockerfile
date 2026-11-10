@@ -1,7 +1,7 @@
-# The benchmark box: uv's Python 3.12 image plus what scikit-umfpack needs to build
+# The benchmark box: uv's Python 3.13 image plus what scikit-umfpack needs to build
 # (it has no Linux wheels). git comes with the base image; asv clones with it.
-# Pinned by digest (looked up 2026-10-13), so a rebuilt image has the same base. Move it on purpose.
-FROM ghcr.io/astral-sh/uv:python3.12-trixie@sha256:6fbe5da29909abd8ae455ebef9c18ae5d008788997bbf2a6d60ace0890f3905a AS box
+# Pinned by digest (looked up 2026-11-09), so a rebuilt image has the same base. Move it on purpose.
+FROM ghcr.io/astral-sh/uv:python3.13-trixie@sha256:6299696d13e91e9d58e910fca4e503e89f217229a2c4c840a11b367dc24816f4 AS box
 RUN apt-get update \
  && apt-get install -y --no-install-recommends swig libsuitesparse-dev pkg-config \
  && rm -rf /var/lib/apt/lists/*
@@ -22,7 +22,7 @@ RUN apt-get update \
  && (codspeed setup || true) \
  && valgrind --version
 
-# The conda-forge compat column (`just compat 3.12 conda-forge`): pixi on Ubuntu, nothing from
+# The conda-forge compat column (`just compat 3.13 conda-forge`): pixi on Ubuntu, nothing from
 # PyPI. Pinned by digest (looked up 2026-10-29).
 FROM ghcr.io/prefix-dev/pixi:0.82.0@sha256:e6cca082e52de275f4e6fb4e6648522f30e4ed334fed37378cde393e07405200 AS conda
 

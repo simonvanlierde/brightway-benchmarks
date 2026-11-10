@@ -64,7 +64,7 @@ jobs:
           echo '```' >>"$GITHUB_STEP_SUMMARY"
           trap 'echo "\`\`\`" >>"$GITHUB_STEP_SUMMARY"' EXIT # close the block even on failure
           if [[ $SOLVER == umfpack* ]]; then brew list --versions suite-sparse | tee -a "$GITHUB_STEP_SUMMARY"; fi
-          PYTHONPATH=src uv run -q --no-project --python 3.12 \
+          PYTHONPATH=src uv run -q --no-project --python 3.13 \
             --exclude-newer-package bw2calc=2026-10-19 --with "bw2calc==$BW2CALC" --with threadpoolctl==3.7.0 \
             --with numpy==2.5.3 --with scipy==1.18.1 "${extra[@]}" \
             python scripts/solver_lci.py "$SOLVER" "$SIZE" | tee -a "$GITHUB_STEP_SUMMARY"

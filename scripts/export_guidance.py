@@ -235,9 +235,13 @@ def export(status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE) ->
             )
         if green := cell.get("green"):
             check["lastPassed"] = _passing_set(green, column, public_base)
-            if column == "latest" and cell["python"] == "3.12" and check["lastPassed"]["installs"]:
-                entry["defaultCheck"] = check["id"]
+            # The default is the oldest Python with a passing latest set, the floor most users share.
+            version = tuple(int(part) for part in cell["python"].split("."))
+            if column == "latest" and check["lastPassed"]["installs"] and version < entry.get("_default", (99,)):
+                entry["_default"], entry["defaultCheck"] = version, check["id"]
         out["checks"].append(check)
+    for entry in platforms.values():
+        entry.pop("_default", None)
     out["platforms"] = [platforms[key] for key in ("linux", "macos", "windows") if key in platforms]
     if comparison := solver_comparison(data_dir):
         out["solverComparison"] = comparison

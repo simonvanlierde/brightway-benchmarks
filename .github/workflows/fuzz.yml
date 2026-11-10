@@ -34,4 +34,4 @@ jobs:
           enable-cache: false
           version: "0.13.6"
 
-      - run: uv run --no-project --python 3.12 --with atheris==3.1.0 python tests/fuzz_release_report.py -max_total_time=60
+      - run: uv run --no-project --python 3.13 --with atheris==3.1.0 python tests/fuzz_release_report.py -max_total_time=60

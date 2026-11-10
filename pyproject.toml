@@ -3,7 +3,7 @@ name = "brightway-benchmarks"
 version = "0.2.0"
 description = "Continuous benchmarks and tested installation sets for the Brightway LCA stack"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 authors = [{ name = "Simon van Lierde", email = "code@duinlab.nl" }]
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]

@@ -28,8 +28,8 @@ env:
 jobs:
   check:
     # protect-main requires this exact name, and GitHub appends matrix values to a name
-    # that doesn't use them: 3.12 keeps the bare name, any other version gets its own.
-    name: lint, types, tests${{ matrix.python != '3.12' && format(' ({0})', matrix.python) || '' }}
+    # that doesn't use them: 3.13 keeps the bare name, any other version gets its own.
+    name: lint, types, tests${{ matrix.python != '3.13' && format(' ({0})', matrix.python) || '' }}
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.12"]
+        python: ["3.13"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -81,7 +81,7 @@ jobs:
         with:
           enable-cache: false
           version: "0.13.6"
-          python-version: "3.12"
+          python-version: "3.13"
 
       # The tests skip when Brightway is missing, so the import runs first: a broken install
       # must fail this job, not pass it with every test skipped.

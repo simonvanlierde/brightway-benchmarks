@@ -25,4 +25,4 @@ py-test *args:
 
 # The tests on every Python version python.yml tests, each in a throwaway environment.
 py-matrix:
-    for v in 3.12; do uv run --isolated --locked --python "$v" pytest || exit 1; done
+    for v in 3.13; do uv run --isolated --locked --python "$v" pytest || exit 1; done

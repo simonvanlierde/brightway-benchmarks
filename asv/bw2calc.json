@@ -8,7 +8,7 @@
   ],
   "environment_type": "uv",
   "pythons": [
-    "3.12"
+    "3.13"
   ],
   "benchmark_dir": "../benchmarks/bench_bw2calc",
   "env_dir": "../.asv/env/bw2calc",
@@ -17,7 +17,7 @@
   "build_cache_size": 4,
   "include": [
     {
-      "python": "3.12",
+      "python": "3.13",
       "environment_type": "uv",
       "req": {
         "numpy": "2.5.3",
@@ -27,7 +27,7 @@
       }
     },
     {
-      "python": "3.12",
+      "python": "3.13",
       "environment_type": "uv",
       "req": {
         "numpy": "2.5.3",
@@ -37,7 +37,7 @@
       }
     },
     {
-      "python": "3.12",
+      "python": "3.13",
       "environment_type": "uv",
       "req": {
         "numpy": "2.5.3",
@@ -50,7 +50,7 @@
       }
     },
     {
-      "python": "3.12",
+      "python": "3.13",
       "environment_type": "uv",
       "req": {
         "numpy": "2.5.3",

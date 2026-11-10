@@ -32,7 +32,7 @@ for name in {subject, *varied, *unused} - {"numpy", "scipy", "pip+asv_runner"}:
     print(name.removeprefix("pip+").replace("_", "-").lower())
 PY
 # --universal keeps platform markers, so pip skips x86-only packages (MKL) on ARM.
-uv pip compile --quiet --no-header --no-annotate --python-version 3.12 --universal \
+uv pip compile --quiet --no-header --no-annotate --python-version 3.13 --universal \
     .asv/stack/"$subject".in |
     grep -viE "^($(paste -sd'|' .asv/stack/"$subject".drop))==" >.asv/stack/"$subject".txt
 echo "stack.sh: $(wc -l <.asv/stack/"$subject".txt) packages for $subject" >&2

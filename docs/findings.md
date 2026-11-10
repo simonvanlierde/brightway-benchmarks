@@ -369,4 +369,4 @@ stayed at 2.4.0 there until 3.1.0 landed on 2026-10-18. bw_graph_tools and bw_ti
 on conda-forge yet. Check the `conda-forge` rows of the
 [compatibility view](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility)
 before you install from there.
-Rerun: `just compat 3.12 conda-forge`.
+Rerun: `just compat 3.13 conda-forge`.

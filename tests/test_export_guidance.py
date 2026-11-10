@@ -26,14 +26,14 @@ def cell(
 ) -> dict:
     return {
         "column": column,
-        "python": "3.12",
+        "python": "3.13",
         "os": os,
         "today": outcome,
         "green": {
             "date": "2026-10-30",
             "run": "https://example.test/runs/6",
-            "dir": f"compat/{column}-3.12-{os}/2026-10-28",
-            "latest": f"compat/{column}-3.12-{os}",
+            "dir": f"compat/{column}-3.13-{os}/2026-10-28",
+            "latest": f"compat/{column}-3.13-{os}",
             "files": ["requirements.txt", "pylock.toml"] if files is None else files,
             "versions": {"brightway25": "1.1.1", "bw2calc": "3.1.0"},
         },
@@ -55,7 +55,7 @@ def test_failed_latest_keeps_last_passing_set_and_its_date(module: ModuleType, t
     check = out["checks"][0]
     assert check["status"] == "failure"
     assert check["lastPassed"]["date"] == "2026-10-30"
-    folder = "https://example.test/bench/compat/latest-3.12-ubuntu-latest/"
+    folder = "https://example.test/bench/compat/latest-3.13-ubuntu-latest/"
     assert check["lastPassed"]["pinned"] == "2026-10-28"
     assert check["lastPassed"]["files"][0] == {
         "label": "requirements.txt",
@@ -84,7 +84,7 @@ def test_scope_and_installation_follow_the_actual_check(module: ModuleType, tmp_
     assert "solver" in " ".join(mac["caveats"]).lower()
     labels = [file["label"] for file in conda["lastPassed"]["files"]]
     assert labels == ["environment.yml", "pixi.toml", "pixi.lock", "requirements.txt"]
-    folder = "https://example.test/compat/conda-forge-3.12-ubuntu-latest/2026-10-28/"
+    folder = "https://example.test/compat/conda-forge-3.13-ubuntu-latest/2026-10-28/"
     assert [(i["manager"], i["command"]) for i in conda["lastPassed"]["installs"]] == [
         ("conda", f"conda env update -n brightway-tested -f {folder}environment.yml --prune"),
         ("pixi", f"curl -fL -O {folder}pixi.toml -O {folder}pixi.lock && pixi install --frozen"),
@@ -109,7 +109,7 @@ def test_a_set_without_a_dated_folder_is_named_where_it_is(module: ModuleType, t
     assert "pinned" not in passed
     assert passed["files"][0] == {
         "label": "requirements.txt",
-        "url": "https://example.test/compat/latest-3.12-ubuntu-latest/requirements.txt",
+        "url": "https://example.test/compat/latest-3.13-ubuntu-latest/requirements.txt",
     }
     assert "latest" not in passed["installs"][0]
 
@@ -348,3 +348,11 @@ def test_guidance_symlinks_preserve_outside_files(module: ModuleType, tmp_path: 
     with pytest.raises(ValueError, match="symlink"):
         module.export(status, data)
     assert victim.read_text() == "keep"
+
+
+def test_default_check_is_the_oldest_python_with_a_passing_latest_set(module: ModuleType, tmp_path: Path):
+    # A snapshot from before a Python bump: macOS ran only the old version, so it still needs a default.
+    cells = [cell(os="macos-latest") | {"python": v} for v in ("3.14", "3.12", "3.13")]
+    out = module.export(snapshot(tmp_path, cells), tmp_path / "data", "https://example.test/")
+    assert out["platforms"][0]["defaultCheck"] == "latest-3.12-macos-latest"
+    assert "_default" not in out["platforms"][0]

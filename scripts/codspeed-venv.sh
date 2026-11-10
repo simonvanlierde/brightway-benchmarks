@@ -20,7 +20,7 @@ for p in "$@"; do
         ;;
     esac
 done
-uv venv -q "$venv" --python 3.12
+uv venv -q "$venv" --python 3.13
 py=$venv/bin/python
 reqs=$(python3 -c '
 import json, sys

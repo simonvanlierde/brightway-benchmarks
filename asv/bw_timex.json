@@ -8,7 +8,7 @@
   ],
   "environment_type": "uv",
   "pythons": [
-    "3.12"
+    "3.13"
   ],
   "benchmark_dir": "../benchmarks/bench_bw_timex",
   "env_dir": "../.asv/env/bw_timex",

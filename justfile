@@ -103,7 +103,7 @@ release-changes subject:
 # Today's PyPI releases of the Brightway set on PYTHON, then every case once at smoke size.
 # COLUMN: latest, floors, pre, conda-forge or suites (docs/running.md, "Compat").
 # 6g: every suite shares one pytest process here, not one process per case as under asv.
-compat python="3.12" column="latest":
+compat python="3.13" column="latest":
     BWBENCH_TARGET={{ if column == "conda-forge" { "conda" } else { "box" } }} BWBENCH_MEM=${BWBENCH_MEM:-6g} scripts/box.sh scripts/compat.sh {{ python }} {{ column }}
 
 # Build the static site in site/, around the viewer the site workflow adds: the compat archive (the
@@ -152,7 +152,7 @@ results-commit:
 # bw2calc's own lci() with one sparse solver: superlu, umfpack, pypardiso, umfpack-T or klu.
 # 12 GB by default on plain docker: SuperLU on A at the ecoinvent size needs several.
 solver-lci solver size="smoke" bw2calc="3.1.0":
-    BWBENCH_MEM="${BWBENCH_MEM:-12g}" scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --with bw2calc=={{ bw2calc }} --with threadpoolctl==3.7.0 --with pypardiso==0.4.7 --with scikit-umfpack==0.4.2 --with pyklu==0.2.0 python scripts/solver_lci.py {{ solver }} {{ size }}'
+    BWBENCH_MEM="${BWBENCH_MEM:-12g}" scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.13 --with bw2calc=={{ bw2calc }} --with threadpoolctl==3.7.0 --with pypardiso==0.4.7 --with scikit-umfpack==0.4.2 --with pyklu==0.2.0 python scripts/solver_lci.py {{ solver }} {{ size }}'
 
 # RELEASE: a licensed release folder (holding datasets/ and MasterData/), mounted read-only, with
 # dataset counts or `all` as SIZES (3000,all); or `synthetic`, with profiles as SIZES (smoke,ecoinvent).
@@ -161,7 +161,7 @@ solver-lci solver size="smoke" bw2calc="3.1.0":
 bw2io-import release sizes:
     #!/usr/bin/env bash
     set -euo pipefail
-    run='PYTHONPATH=src uv run -q --no-project --python 3.12 --with bw2io==0.9.17 --with bw2data==4.8 python scripts/bw2io_import.py'
+    run='PYTHONPATH=src uv run -q --no-project --python 3.13 --with bw2io==0.9.17 --with bw2data==4.8 python scripts/bw2io_import.py'
     export BWBENCH_MEM="${BWBENCH_MEM:-8g}"
     if [ {{ quote(release) }} = synthetic ]; then
       exec scripts/box.sh sh -c "$run synthetic {{ quote(sizes) }}"
@@ -177,7 +177,7 @@ bw2io-import release sizes:
 # A SQLite project against sentier-brightway's Parquet registry (the format of bw2data #290, which
 # stays outside bw2data). size: smoke | ecoinvent; solver: superlu | pypardiso.
 registry-vs-sqlite size="smoke" solver="superlu":
-    scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.12 --with "sentier-brightway @ git+https://github.com/sentier-dev/sentier-brightway@adacaf9" --with bw2data==4.8 --with bw2calc==3.1.0 --with threadpoolctl==3.7.0 {{ if solver == "pypardiso" { "--with pypardiso==0.4.7" } else if solver == "superlu" { "" } else { error("solver: superlu or pypardiso") } }} --with duckdb==1.5.6 python scripts/registry_vs_sqlite.py {{ size }}'
+    scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.13 --with "sentier-brightway @ git+https://github.com/sentier-dev/sentier-brightway@adacaf9" --with bw2data==4.8 --with bw2calc==3.1.0 --with threadpoolctl==3.7.0 {{ if solver == "pypardiso" { "--with pypardiso==0.4.7" } else if solver == "superlu" { "" } else { error("solver: superlu or pypardiso") } }} --with duckdb==1.5.6 python scripts/registry_vs_sqlite.py {{ size }}'
 
 # Docker's default seccomp profile (moby/profiles at TAG; v0.2.4 is Docker 29.9's) plus one rule
 # allowing personality(ADDR_NO_RANDOMIZE), so `setarch -R` can turn address randomization off.

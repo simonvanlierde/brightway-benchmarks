@@ -110,28 +110,23 @@ floors)
     # Pin those and the test harness at latest. Everything they depend on directly goes in
     # unpinned, so lowest-direct takes it to the floor their bounds allow. The rest gets the
     # newest version that fits, since a third-party package's own floors (python-dateutil's
-    # six>=1.5, which predates Python 3.12) say nothing about Brightway.
+    # six>=1.5, which predates Python 3.13) say nothing about Brightway.
     # Declared floors found too low, raised so the run reaches the next one. Each line is the
     # oldest release that passes, bisected against this column or the package's own tests, with
-    # the package that leaves it unbounded. Drop a line once that release raises it. Lines with a
-    # python_version marker apply from that Python on, where the oldest NumPy with wheels is 2.x;
-    # the unmarked line for the same package still sets the floor on 3.12.
+    # the package that leaves it unbounded. Drop a line once that release raises it.
     cat >"$out/raised.txt" <<'EOF'
 astunparse>=1.6.3      # bw2parameters (brightway2-parameters#15): 1.1.0 pulls six 1.6.1
 asteval>=0.9.27        # bw2parameters: eval(raise_errors=) from 0.9.24, which has no 3.12 wheel until 0.9.27
-pint>=0.18             # bw2data: 0.17 lacks pint.util._subs_re_list, 0.14 imports pkg_resources
-fsspec>=2023.3.0       # bw_processing: zip compression is ignored up to 2023.1.0
 structlog>=22.2.0      # bw2data: logger calls with positional arguments fail up to 22.1.0
 voluptuous>=0.12.0     # bw2data: collections.Mapping in 0.11.5
 tqdm>=4.21.0           # bw2data: edges_to_dataframe fails up to 4.20.0
-xarray>=0.21.0         # bw2calc: 0.20.0 calls Index.get_loc(method=), gone in pandas 2
 threadpoolctl>=3.0.0   # bw2calc: ThreadpoolController
 ipython>=7.6.0         # bw_timex: asyncio.coroutine up to 7.5.0
 ipywidgets>=7.5.0      # bw_timex: collections.Mapping up to 7.4.2
 seaborn>=0.12.0        # bw_timex: matplotlib.cm.register_cmap in 0.11.2
-pint>=0.24.4; python_version >= "3.13"       # bw2data: np.cumproduct up to 0.23, frozen dataclass error up to 0.24.3
-fsspec>=2024.10.0; python_version >= "3.13"  # bw_processing: zip calls Path.__enter__, gone in Python 3.13, up to 2024.9.0
-xarray>=2023.9.0; python_version >= "3.13"   # bw2calc: np.unicode_ up to 2023.8.0
+pint>=0.24.4         # bw2data: np.cumproduct up to 0.23, frozen dataclass error up to 0.24.3
+fsspec>=2024.10.0    # bw_processing: zip calls Path.__enter__, gone in Python 3.13, up to 2024.9.0
+xarray>=2023.9.0     # bw2calc: np.unicode_ up to 2023.8.0
 EOF
     # --no-build: only versions with a wheel for this Python, as a user's install would pick.
     awk -F ' *# via ' -v pin="^($bw|pytest)" -v via="(^|, )($bw)" '
@@ -140,7 +135,7 @@ EOF
         compile --no-annotate --resolution lowest-direct --no-build -c "$out/raised.txt" -o "$out/requirements.txt"
     ;;
 esac
-# --python-version: the lock would otherwise require this runner's patch release (>=3.12.15).
+# --python-version: the lock would otherwise require this runner's patch release.
 compile --no-annotate --python-version "$python" -o "$out/pylock.toml" <"$out/requirements.txt"
 uv pip install --quiet --python "$py" -r "$out/requirements.txt"
 [ "$column" != suites ] || exec sh scripts/compat-suites.sh "$py" "$out"

@@ -48,6 +48,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The synthetic ecoinvent profile's sparse-LU fill can now be compared with real databases'
   ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
 - The viewer links each subject to its Brightway docs and each benchmark to its CodSpeed page.
+- `just dataset` builds the synthetic systems as a dataset for Zenodo: per profile, its matrices
+  and ecoSpold2 files, with a dataset card, metadata and SHA-256 sums. It refuses the real
+  databases and scans every ecoSpold2 file for licensed identifiers
+  ([running](docs/running.md#publish-the-synthetic-inputs)).
 
 ### Changed
 

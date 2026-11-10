@@ -7,6 +7,8 @@ import numpy as np
 import pytest
 from scipy import sparse
 
+from bwbench.bench import NotApplicable
+
 SCRIPT = Path(__file__).resolve().parents[1] / "benchmarks" / "bench_bw2calc" / "bench_lca.py"
 FACTORIZE: list[tuple[str, bool]] = []
 
@@ -76,3 +78,21 @@ def test_redo_lci_factorizes_only_where_the_timed_solve_uses_it(
         bench_lca.redo_lci.prepare(size="smoke", cls=cls)
     assert FACTORIZE == [("LCA", True), ("IterativeLCA", False), ("JacobiGMRESLCA", False)]
     assert budget == [1, 1, 0]  # the factorizations the setup makes: the skip budget follows
+
+
+def test_multilca_runs_at_one_demand_count_only(bench_lca: types.ModuleType, monkeypatch: pytest.MonkeyPatch):
+    """MultiLCA has no forward/adjoint switch, so its 1 and 10 demand counts would repeat one factorization."""
+
+    class ReachedError(Exception):
+        pass
+
+    def reached(*_: object, **__: object) -> None:
+        raise ReachedError
+
+    monkeypatch.setattr(bench_lca, "skip_unless_factorizable", reached)
+    for demands in (1, 10):
+        with pytest.raises(NotApplicable, match="MultiLCA runs at 30"):
+            bench_lca.scores.prepare(size="smoke", demands=demands, variant="MultiLCA")
+    for demands, variant in [(30, "MultiLCA"), (1, "forward"), (1, "adjoint")]:
+        with pytest.raises(ReachedError):
+            bench_lca.scores.prepare(size="smoke", demands=demands, variant=variant)

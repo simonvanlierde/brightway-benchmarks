@@ -52,6 +52,8 @@ test("the package select fits at 200%", async ({ page }) => {
   // After the load: an init script runs before the parser makes <html>, and its style is lost.
   await page.evaluate(() => {
     document.documentElement.style.fontSize = "200%";
+    // A wide font, as on a runner without the system UI font: narrower fonts hid the overflow.
+    document.documentElement.style.fontFamily = '"DejaVu Sans", Verdana, sans-serif';
   });
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe("32px");
   const box = await select.boundingBox();
@@ -61,6 +63,11 @@ test("the package select fits at 200%", async ({ page }) => {
     document.documentElement.clientWidth,
   ]);
   expect(scroll).toBeLessThanOrEqual(client);
+  // The tables scroll inside their own box, so the page check above does not see them.
+  const clipped = await page
+    .locator(".scroll")
+    .evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth).length);
+  expect(clipped).toBe(0);
 });
 
 test("a static page's nav fits at 320px", async ({ page }) => {

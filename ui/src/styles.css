@@ -1075,9 +1075,9 @@ details.data[open] summary {
   .responsive-table th {
     grid-column: 1 / -1;
   }
-  /* A change's history sits right beside its value, not across the row. */
+  /* A change's history sits right beside its value, not across the row. The History column keeps the sparkline's 96px so a long value wraps instead of squeezing it. */
   .latest-table tr {
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: auto minmax(96px, 1fr);
     align-items: center;
     gap: 4px 16px;
     padding: 12px 0;
@@ -1092,7 +1092,7 @@ details.data[open] summary {
   }
 
   .view > header h2 {
-    font-size: 1.8rem;
+    font-size: min(1.8rem, 11vw);
   }
   .latest-table tbody th {
     width: auto;
@@ -1100,6 +1100,7 @@ details.data[open] summary {
   .responsive-table .num {
     text-align: left;
     grid-column: 1;
+    white-space: normal;
   }
   .top .primary-nav {
     gap: 20px;

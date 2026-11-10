@@ -87,7 +87,8 @@ categories (climate change, acidification, freshwater ecotoxicity). It is the ar
 ([`src/bwbench/bafu.py`](../src/bwbench/bafu.py)). At under half of ecoinvent's size, it times a
 real LCI database's factorization. Its licence allows use in LCA studies but not distribution, so
 the harness downloads it at run time and the repository, the results and the Zenodo dataset hold
-only timings and aggregate statistics. Its matrix is badly conditioned (a condition number near
+only timings and aggregate statistics. What the heating cases derive from it (their expanded
+factors and the indices of the processes they name) is cached beside the archive and nowhere else. Its matrix is badly conditioned (a condition number near
 1e22), and its reference scores agree with a refined direct solve to about 2e-15. It has no Monte
 Carlo case, although the archive carries uncertainty.
 

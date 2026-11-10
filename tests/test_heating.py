@@ -136,7 +136,7 @@ def test_scenarios_span_the_grid():
         heating.scenarios(5)
 
 
-def test_locate_maps_product_names_to_matrix_indices(tmp_path: Path):
+def test_locate_maps_product_names_to_matrix_indices(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     db = tmp_path / "p" / "lci" / "databases.db"
     db.parent.mkdir(parents=True)
     with sqlite3.connect(db) as con:
@@ -151,6 +151,13 @@ def test_locate_maps_product_names_to_matrix_indices(tmp_path: Path):
         heating.locate(archive, ("b {NL}",), ids)
     with pytest.raises(ValueError, match=r"c \{CH\}"):
         heating.locate(archive, ("c {CH}",), ids)
+    archive.with_name("elsewhere").write_bytes(archive.read_bytes())
+    archive.write_bytes(b"")  # another archive: the map cached for the old one must not answer
+    with pytest.raises(tarfile.ReadError):
+        heating.locate(archive, ("a {CH}",), ids)
+    archive.write_bytes(archive.with_name("elsewhere").read_bytes())
+    monkeypatch.setattr(tarfile, "open", lambda *_, **__: pytest.fail("read the archive again"))
+    assert heating.locate(archive, ("a {CH}",), ids) == {"a {CH}": 2}
 
 
 def test_bw2data_preserves_foreground_entries():
@@ -293,3 +300,9 @@ def test_corrected_system_preserves_raw_data_and_uses_a_separate_cache(
     assert corrected.tech_data is original.tech_data
     assert corrected.bio_data is original.bio_data
     assert corrected.name != original.name
+    # A second process reads the factors cached beside the archive, not the archive.
+    monkeypatch.setattr(useeio, "read", lambda *_: pytest.fail("read the archive again"))
+    again = heating.corrected_system(original)
+    for a, b in zip(again.cf_flows + again.cf_data, corrected.cf_flows + corrected.cf_data, strict=True):
+        np.testing.assert_array_equal(a, b)
+    assert again.name == corrected.name

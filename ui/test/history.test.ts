@@ -45,6 +45,7 @@ describe("the view in the URL", () => {
       machine: "m",
       group: "g",
       direction: "worse",
+      q: "multi lca & é",
     };
     expect(readView(writeView(view))).toEqual(view);
   });

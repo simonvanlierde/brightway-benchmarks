@@ -17,6 +17,8 @@ export interface View {
   platform?: string;
   python?: string;
   check?: string;
+  /** The benchmark search a static page hands over; the viewer reads it once and drops it on the first move. */
+  q?: string;
 }
 
 export function readView(search: string, hash = ""): View {
@@ -32,6 +34,7 @@ export function readView(search: string, hash = ""): View {
     "platform",
     "python",
     "check",
+    "q",
   ] as const) {
     const value = q.get(key);
     if (value) view[key] = value;
@@ -50,7 +53,7 @@ export function writeView(view: View): string {
   if (view.machine) q.set("machine", view.machine);
   if (view.group) q.set("group", view.group);
   if (view.direction && view.direction !== "all") q.set("direction", view.direction);
-  for (const key of ["page", "platform", "python", "check"] as const) {
+  for (const key of ["page", "platform", "python", "check", "q"] as const) {
     if (view[key]) q.set(key, view[key]);
   }
   const text = q.toString();

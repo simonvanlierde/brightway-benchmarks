@@ -115,7 +115,7 @@ $effect(() => {
 });
 
 /** Show NEXT, and keep it in the URL; a new benchmark is a new history entry, a new setting is not. */
-function go(next: View, focusPage = true) {
+function go({ q: _handedOver, ...next }: View, focusPage = true) {
   const moved = pageOf(next) !== pageOf(view);
   const push = next.bench !== view.bench || moved || next.platform !== view.platform || next.check !== view.check;
   view = next;
@@ -233,7 +233,7 @@ const HINTS: Record<ContractError["kind"], string> = {
 const unit = $derived(measure?.unit ?? "");
 let tableOpen = $state(false);
 // Opened from a static page's search, which hands its words over as ?q=.
-const handedOver = new URLSearchParams(location.search).get("q") ?? "";
+const handedOver = readView(location.search).q ?? "";
 let search = $state(handedOver);
 // On a phone the search sits behind an icon in the masthead.
 let searchOpen = $state(handedOver.length > 0);

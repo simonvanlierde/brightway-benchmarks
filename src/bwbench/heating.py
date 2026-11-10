@@ -17,6 +17,9 @@ Reading the archive and writing datapackages need bw_processing, inside the benc
 
 from __future__ import annotations
 
+import hashlib
+import io
+import json
 import pickle
 import sqlite3
 import tarfile
@@ -53,7 +56,9 @@ NODES = ("grid NL", "heat pump", "burner", "gas boiler", "heat pump, 20 years", 
 GRID, HP, BURNER_NODE, BOILER_NODE, HP_YEARS, BOILER_YEARS = range(len(NODES))
 OPTIONS = {"heat pump": HP_YEARS, "gas boiler": BOILER_YEARS}
 YEARS = 20
-VERSION = "3"  # bump with any change to the foreground or the heating cases: it restarts their history
+# Bump with any change to the foreground, the heating cases, corrected_system or locate: it restarts
+# their history and misses the factors and indices cached beside the archive.
+VERSION = "3"
 MJ_PER_KWH = 3.6
 # These are illustrative benchmark assumptions, not measured Dutch averages.
 # Staffell et al. (2012), doi:10.1039/C2EE22653G, review performance across systems and climates;
@@ -89,8 +94,11 @@ def locate(archive: Path, names: tuple[str, ...], ids: NDArray[np.int64]) -> dic
     """The matrix index of each product in ``names``, read from the project archive's SQLite database.
 
     ``ids`` is the archive's process id of each matrix index (``System.ids``). Raises
-    ``ValueError`` for a name that is missing or not unique.
+    ``ValueError`` for a name that is missing or not unique. The map is cached beside the archive.
     """
+    cached = _derived(archive, "locate.json", names, ids)
+    if cached.exists():
+        return json.loads(cached.read_text())
     with tempfile.TemporaryDirectory() as tmp, tarfile.open(archive) as tar:
         member = next(m for m in tar.getmembers() if m.name.endswith("/lci/databases.db"))
         tar.extract(member, tmp, filter="data")
@@ -111,7 +119,36 @@ def locate(archive: Path, names: tuple[str, ...], ids: NDArray[np.int64]) -> dic
             msg = f"{name!r} is not in the matrix"
             raise ValueError(msg)
         at[name] = i
+    _keep(cached, json.dumps(at).encode())
     return at
+
+
+def _derived(archive: Path, what: str, *key: object) -> Path:
+    """Where ``what``, derived from ``archive`` and ``key``, is cached: beside the archive.
+
+    BAFU's values may not leave the machine, so what is derived from them stays where the
+    archive is. The name holds a hash of BAFU's pinned SHA-256, its methods, ``VERSION`` and
+    ``key``, so a new archive, new methods or a new heating version misses the old file.
+    """
+    from bwbench import bafu  # noqa: PLC0415 - as in corrected_system
+
+    h = hashlib.sha256(f"{bafu.SHA256} {VERSION} {bafu.METHODS!r}".encode())
+    for k in key:
+        h.update(k.tobytes() if isinstance(k, np.ndarray) else repr(k).encode())
+    return archive.with_name(f"{archive.name}.{what.replace('.', f'-{h.hexdigest()[:16]}.')}")
+
+
+def _keep(path: Path, data: bytes) -> None:
+    """Write ``data`` to ``path`` through a rename, so no reader sees half a file. A read-only folder keeps nothing."""
+    part = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=path.name, suffix=".part", delete=False) as f:
+            part = Path(f.name)
+            f.write(data)
+        part.replace(path)
+    except OSError:
+        if part is not None:
+            part.unlink(missing_ok=True)
 
 
 def _inputs(col: int, pairs: list[tuple[int, float]]) -> tuple:
@@ -383,11 +420,18 @@ def corrected_system(system: System) -> System:
 
     The archive and the general BAFU benchmarks stay unchanged. This matches Brightway's
     ``match_subcategories`` convention, extended to choose the most specific unique parent.
-    No external factor values or cross-substance aliases are introduced.
+    No external factor values or cross-substance aliases are introduced. The factors are cached
+    beside the archive (``_derived``), so only the first process of a run reads it again.
     """
     from bwbench import bafu, useeio  # noqa: PLC0415 - archive reading needs container dependencies
 
     archive = bafu.archive()
+    cached = _derived(archive, "factors.npz", system.flow_offset)
+    if cached.exists():
+        with np.load(cached) as z:
+            n = len(z.files) // 2
+            mapped, values = [z[f"flows{i}"] for i in range(n)], [z[f"data{i}"] for i in range(n)]
+        return replace(system, name=f"{system.name}-heating{VERSION}", cf_flows=mapped, cf_data=values)
     _, bio, methods = useeio.read(archive, bafu.METHODS)
     flow_ids = np.unique(bio[0]["row"])
     needed = set(flow_ids) | {int(i) for ids, _ in methods for i in ids}
@@ -411,4 +455,7 @@ def corrected_system(system: System) -> System:
         combined = np.concatenate([ids[keep], np.array(extra, dtype=np.int64)])
         mapped.append(np.searchsorted(flow_ids, combined).astype(np.int64) + system.flow_offset)
         values.append(np.concatenate([factors[keep], [expanded[i] for i in extra]]).astype(np.float64))
+    out = io.BytesIO()
+    np.savez(out, **{f"flows{i}": a for i, a in enumerate(mapped)}, **{f"data{i}": a for i, a in enumerate(values)})
+    _keep(cached, out.getvalue())
     return replace(system, name=f"{system.name}-heating{VERSION}", cf_flows=mapped, cf_data=values)

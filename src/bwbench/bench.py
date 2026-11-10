@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 
 class NotApplicable(NotImplementedError):  # noqa: N818
-    """The case does not apply to this environment's solver; a skip even where BWBENCH_STRICT is set."""
+    """The case does not apply to this environment's solver or parameters; a skip even where BWBENCH_STRICT is set."""
 
 
 UNCHECKED = object()  # an ``expect`` that says on purpose that the result is not checked

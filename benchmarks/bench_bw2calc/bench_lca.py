@@ -198,14 +198,9 @@ def umfpack_context(lca: bc.LCA) -> object:
     return found
 
 
-def refinement_steps(steps: float) -> float:
-    """The steps of iterative refinement UMFPACK took in the timed solve."""
-    return steps
-
-
 @bench(
     {"size": SIZES, "refinement": ["on", "off"]},
-    track={"refinement_steps": refinement_steps},
+    track={"refinement_steps": float},
     error="relative_error",
     asv="NewDemandRefinement",
     fresh_solver=False,
@@ -245,6 +240,26 @@ def redo_lci_refinement(size: str, refinement: str) -> BenchSetup:
     return run, against_reference
 
 
+MULTILCA_DEMANDS = 30
+
+
+def fast_scores(direction: str) -> tuple[type, dict]:
+    """``FastScoresOnlyMultiLCA`` and its keyword arguments for ``direction``; asv skips what this release lacks."""
+    lca_cls = lca_class("FastScoresOnlyMultiLCA")
+    skip_known_crash("FastScoresOnlyMultiLCA", calls_next=True)
+    if not (bc.PYPARDISO or getattr(bc, "UMFPACK", False)):
+        raise NotImplementedError("FastScoresOnlyMultiLCA needs PARDISO or UMFPACK")
+    kwargs = {}
+    if "direction" in inspect.signature(lca_cls.__init__).parameters:
+        kwargs["direction"] = direction
+    elif direction == "adjoint":
+        raise NotImplementedError(f"bw2calc {bc.__version__} has no adjoint direction")
+    if direction == "adjoint" and solver() == "umfpack-T":
+        # The adjoint hands factorized() Aᵀ, so UMFPACK on its transpose would factorize A.
+        raise NotImplementedError("umfpack-T would factorize A, not Aᵀ, in the adjoint direction")
+    return lca_cls, kwargs
+
+
 @bench({"size": SIZES, "demands": [1, 10, 30], "variant": ["MultiLCA", "forward", "adjoint"]}, asv="MultiScores")
 def scores(size: str, demands: int, variant: str) -> BenchSetup:
     """Many demands against three methods, with MultiLCA and FastScoresOnlyMultiLCA.
@@ -254,27 +269,16 @@ def scores(size: str, demands: int, variant: str) -> BenchSetup:
     demand counts straddle that threshold; the variants here pick the direction explicitly, so
     the counts show where adjoint starts to pay. 3 is left out: at the ecoinvent size each count
     costs about the same (MultiLCA 27.6 s at 1 demand, 28.6 s at 30, the factorization dominates),
-    so it was a quarter of this case's time, and 1 and 10 bracket the crossover.
+    so it was a quarter of this case's time, and 1 and 10 bracket the crossover. MultiLCA has no
+    direction to switch, so it runs at 30 demands only.
     """
+    if variant == "MultiLCA" and demands != MULTILCA_DEMANDS:
+        raise NotApplicable(f"MultiLCA runs at {MULTILCA_DEMANDS} demands only: it has no direction to switch")
     skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=2)
     inventory, methods, refs, _ = packages(size)
     config = {"impact_categories": [method_name(i) for i in range(len(methods))]}
     wanted = {f"d{i}": {i: 1} for i in range(demands)}
-    kwargs = {}
-    if variant == "MultiLCA":
-        lca_cls = bc.MultiLCA
-    else:
-        lca_cls = lca_class("FastScoresOnlyMultiLCA")
-        skip_known_crash("FastScoresOnlyMultiLCA", calls_next=True)
-        if not (bc.PYPARDISO or getattr(bc, "UMFPACK", False)):
-            raise NotImplementedError("FastScoresOnlyMultiLCA needs PARDISO or UMFPACK")
-        if "direction" in inspect.signature(lca_cls.__init__).parameters:
-            kwargs["direction"] = variant
-        elif variant == "adjoint":
-            raise NotImplementedError(f"bw2calc {bc.__version__} has no adjoint direction")
-        if variant == "adjoint" and solver() == "umfpack-T":
-            # The adjoint hands factorized() Aᵀ, so UMFPACK on its transpose would factorize A.
-            raise NotImplementedError("umfpack-T would factorize A, not Aᵀ, in the adjoint direction")
+    lca_cls, kwargs = (bc.MultiLCA, {}) if variant == "MultiLCA" else fast_scores(variant)
 
     def run() -> object:
         lca = lca_cls(demands=wanted, method_config=config, data_objs=[inventory, *methods], **kwargs)

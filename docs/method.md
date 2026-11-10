@@ -12,7 +12,9 @@ Results are in [findings.md](findings.md), how to run the benchmarks in
 - bw2data: writing a database, up to ecoinvent's size; `import bw2data`.
 - bw_processing and matrix_utils: building datapackages and matrices from many resource groups.
 - bw_graph_tools: supply-chain graph traversal.
-- bw_timex: the time-explicit LCI as the timeline grows.
+- bw_timex: the time-explicit LCI as the timeline grows. Each sample is a first `TimexLCA.lci()`
+  in its session: bw_timex's in-session caches are cleared before it, and only the foreground is
+  written again, the background once per process.
 
 Each score is checked against a reference that uses no Brightway code, so a fast but wrong
 release fails. Monte Carlo draws are checked only for finite values, and bw_timex against
@@ -88,6 +90,8 @@ the harness downloads it at run time and the repository, the results and the Zen
 only timings and aggregate statistics. Its matrix is badly conditioned (a condition number near
 1e22), and its reference scores agree with a refined direct solve to about 2e-15. It has no Monte
 Carlo case, although the archive carries uncertainty.
+What the heating cases derive from it (their expanded factors and the indices of the processes
+they name) is cached beside the archive and nowhere else.
 
 ### The home-heating case
 
@@ -139,8 +143,9 @@ match within `DIRECT_RTOL` (1e-9); an error outside that tolerance fails the cas
 ## How the results stay reproducible
 
 - [asv](https://asv.readthedocs.io) runs every release of a package on one fixed set of
-  dependencies, from before 2026-10-20, in `asv/<package>.stack.txt`. So a step in a graph is
-  that package's own change. bw2calc 3.0.0 and later also get threadpoolctl.
+  dependencies, at the cutoff in the first line of each stack file, in `asv/<package>.stack.txt`.
+  So a step in a graph is that package's own change. bw2calc 3.0.0 and later also get
+  threadpoolctl.
 - Each history starts at the oldest release that runs on that set: bw2data at 4.6 (peewee 4),
   bw_timex at 1.1.0. Every release of the other packages runs.
 - Timings from the generator v5 rerun onwards run on Python 3.13. Earlier times, including every

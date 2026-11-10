@@ -6,13 +6,27 @@
 # elsewhere it is a plain `docker run`. BWBENCH_* variables are passed through.
 set -euo pipefail
 repo=$(cd "$(dirname "$0")/.." && pwd)
-# Tagged by the Dockerfile's checksum, so an edited Dockerfile gets a fresh build.
-# BWBENCH_TARGET picks the Dockerfile stage: box (the default), codspeed or conda.
+# BWBENCH_TARGET picks the Dockerfile stage: box (the default), codspeed or conda. Its tag is the
+# checksum of that stage's instructions and those of the stages it builds on, comments left out,
+# so an edit to the codspeed or conda stage leaves the box image, and the queue jobs pinned to it, alone.
 target=${BWBENCH_TARGET:-box}
-image=bwbench-$target:$(cksum <"$repo/docker/Dockerfile" | cut -d' ' -f1)
+stage() {
+    local base
+    base=$(awk -v s="$1" 'toupper($1) == "FROM" && $NF == s && toupper($(NF - 1)) == "AS" { print $2; exit }' "$repo/docker/Dockerfile")
+    if [ -n "$base" ] && [ "$base" != "$1" ] && grep -qiE "^FROM .* AS $base\$" "$repo/docker/Dockerfile"; then
+        stage "$base"
+    fi
+    awk -v s="$1" 'toupper($1) == "FROM" { on = ($NF == s && toupper($(NF - 1)) == "AS") } on && NF && $1 !~ /^#/' "$repo/docker/Dockerfile"
+}
+image=bwbench-$target:$(stage "$target" | cksum | cut -d' ' -f1)
 if ! docker image inspect "$image" >/dev/null 2>&1; then
     echo "box.sh: building the $target image $image (a few minutes, once)" >&2
     docker build -q --target "$target" -t "$image" "$repo/docker" >/dev/null
+fi
+# `box.sh --image` only builds the image if it is missing and prints its name, for a plain docker run.
+if [ "${1:-}" = --image ]; then
+    echo "$image"
+    exit 0
 fi
 # CodSpeed's runner turns address randomization (ASLR) off with `setarch -R`, which Docker's
 # default seccomp profile refuses. The codspeed box runs under docker/seccomp-noaslr.json

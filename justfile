@@ -119,7 +119,7 @@ site:
     for conf in asv/*.json; do
       s=$(basename "$conf" .json)
       # `just ui-data` reads release tags from asv's mirror; commits and tags are enough.
-      repo=$(python3 -c 'import json, sys; print(json.loads("".join(l for l in open(sys.argv[1]) if not l.lstrip().startswith("//")))["repo"])' "$conf")
+      repo=$(python3 scripts/asv_conf.py repo "$s")
       [ -d ".asv/$s" ] || git clone --quiet --bare --filter=tree:0 "$repo" ".asv/$s"
       # Old links into asv's pages: SUBJECT/index.html#NAME opens NAME's history in the viewer.
       mkdir -p "site/$s"
@@ -167,12 +167,12 @@ bw2io-import release sizes:
       exec scripts/box.sh sh -c "$run synthetic {{ quote(sizes) }}"
     fi
     # box.sh mounts only this repo, so a licensed release needs a plain docker run of its image.
-    scripts/box.sh true  # builds the image if it is missing
+    image=$(scripts/box.sh --image)
     exec docker run --rm -i --init --name "tmp-bwbench-$$" --user "$(id -u):$(id -g)" --cap-drop ALL \
       --security-opt no-new-privileges --pids-limit 4096 --memory "$BWBENCH_MEM" --memory-swap "$BWBENCH_MEM" \
       --cpus "${BWBENCH_CPUS:-2}" \
       -v "$PWD":/src:ro -v "$PWD/.asv":/src/.asv -v "$(realpath {{ quote(release) }})":/ecoinvent:ro -w /src \
-      "bwbench-box:$(cksum <docker/Dockerfile | cut -d' ' -f1)" scripts/in-box.sh sh -c "$run /ecoinvent {{ quote(sizes) }}"
+      "$image" scripts/in-box.sh sh -c "$run /ecoinvent {{ quote(sizes) }}"
 
 # A SQLite project against sentier-brightway's Parquet registry (the format of bw2data #290, which
 # stays outside bw2data). size: smoke | ecoinvent; solver: superlu | pypardiso.

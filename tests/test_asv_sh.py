@@ -28,7 +28,8 @@ CONF = {
 def repo(tmp_path: Path) -> Path:
     """A scratch repo with asv.sh, two subject configs and uvx and uv stubs that do nothing."""
     (tmp_path / "scripts").mkdir()
-    shutil.copy(REPO / "scripts" / "asv.sh", tmp_path / "scripts")
+    for script in ("asv.sh", "asv_conf.py"):
+        shutil.copy(REPO / "scripts" / script, tmp_path / "scripts")
     (tmp_path / "asv").mkdir()
     (tmp_path / ".asv").mkdir()
     (tmp_path / "asv" / "solvers.json").write_text(json.dumps(CONF))

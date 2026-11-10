@@ -14,6 +14,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   ([method](docs/method.md#how-the-results-stay-reproducible)).
 - The synthetic ecoinvent profile shares supplier lists across activity families and passes its
   structural and solver-fill checks over four seeds ([calibration](docs/generator-calibration.md)).
+- bw_timex's timeline cases (`TimelineLCI`, `HeatingTimeline`) time every sample as a first
+  `TimexLCA.lci()` of its session, with bw_timex's in-session caches cleared before it. Before,
+  each sample after a process's first could take the functional unit's solve from that cache.
+- `MultiScores` runs `MultiLCA` at 30 demands only, as the stories read it: it has no direction
+  to switch, and at 1 and 10 demands it timed the same factorization. The forward and adjoint
+  variants keep 1, 10 and 30.
 
 ### Added
 
@@ -45,6 +51,19 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The bw_timex cases write their background databases once per process, not before every
+  sample: about 25 s a sample at the ecoinvent size.
+- The heating cases cache their expanded factors and process indices beside the BAFU archive, so
+  after a run's first heating process each one reads the archive once, not three times (about
+  6 s a process).
+- The box image is tagged per Dockerfile stage and rebuilt once on the first run after this change.
+- `scripts/asv.sh`, `scripts/stack.sh`, `scripts/codspeed-venv.sh` and `just site` read the asv
+  configs through one tested script, `scripts/asv_conf.py`, instead of inline Python.
+- Each `asv/<package>.stack.txt` names the cutoff it was resolved at, and `just stack` refuses to
+  resolve at any other than `scripts/in-box.sh`'s. The new first line renames the benchmark
+  environments once.
+- The box image's tag covers its own Dockerfile stage only, so an edit to the CodSpeed or conda
+  stage no longer rebuilds it. `scripts/box.sh --image` prints the tag.
 - Benchmarks and Setup use readable names, open with what the site checks, and show a plain
   message when data fails to load.
 

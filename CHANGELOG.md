@@ -56,14 +56,17 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The heating cases cache their expanded factors and process indices beside the BAFU archive, so
   after a run's first heating process each one reads the archive once, not three times (about
   6 s a process).
-- The box image is tagged per Dockerfile stage and rebuilt once on the first run after this change.
 - `scripts/asv.sh`, `scripts/stack.sh`, `scripts/codspeed-venv.sh` and `just site` read the asv
   configs through one tested script, `scripts/asv_conf.py`, instead of inline Python.
 - Each `asv/<package>.stack.txt` names the cutoff it was resolved at, and `just stack` refuses to
   resolve at any other than `scripts/in-box.sh`'s. The new first line renames the benchmark
   environments once.
 - The box image's tag covers its own Dockerfile stage only, so an edit to the CodSpeed or conda
-  stage no longer rebuilds it. `scripts/box.sh --image` prints the tag.
+  stage no longer rebuilds it. The first run after this change rebuilds it once under the new tag.
+  `scripts/box.sh --image` prints the tag.
+- `bwbench.synth` holds only the generator. The profiles are in `bwbench.shapes`, the system
+  container and its reference scores in `bwbench.matrices`, and the calibration statistics in
+  `bwbench.stats`. `scripts/run_crate.py` now runs without numpy or scipy.
 - Benchmarks and Setup use readable names, open with what the site checks, and show a plain
   message when data fails to load.
 - Viewer, from a design review:

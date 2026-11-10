@@ -7,8 +7,10 @@ import pytest
 from scipy import sparse
 from scipy.sparse import linalg as sla
 
-from bwbench import synth
-from bwbench.synth import PROFILES_DIR, Stats, measure, system
+from bwbench import stats, synth
+from bwbench.shapes import PROFILES_DIR
+from bwbench.stats import Stats, cholesky_counts, fill_bounds, measure, tree_height
+from bwbench.synth import system
 
 
 def test_measure_refuses_a_product_without_net_production():
@@ -113,7 +115,7 @@ def test_ecoinvent_profile_fills_like_its_target():
     """
     pytest.importorskip("pymetis")
     want = _ecoinvent_target()
-    metis = [synth.fill_bounds(system("ecoinvent", seed=seed).technosphere(), {})["METIS"]["bound"] for seed in SEEDS]
+    metis = [fill_bounds(system("ecoinvent", seed=seed).technosphere(), {})["METIS"]["bound"] for seed in SEEDS]
     assert np.mean(metis) == pytest.approx(want["fill_bounds"]["METIS"]["bound"], rel=0.25)
     a = system("ecoinvent").technosphere()
     at = (a @ sparse.diags(1.0 / a.diagonal())).T.tocsc()
@@ -182,7 +184,7 @@ def test_hub_jaccard_stays_finite_with_empty_rows():
 
 
 def test_overlap_bands_include_both_ends_and_label_the_last_one_open(monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(synth, "OVERLAP_BANDS", ((2, 3), (4, 1 << 62)))
+    monkeypatch.setattr(stats, "OVERLAP_BANDS", ((2, 3), (4, 1 << 62)))
     # Rows 0, 1 and 2 hold 4, 3 and 2 entries (their diagonal included); row 3 holds 1.
     a = sparse.lil_matrix(np.eye(4))
     a[0, 1:4] = -0.1
@@ -258,21 +260,21 @@ def test_cholesky_counts_of_arrow_matrices():
     n = 6
     dense_first = np.eye(n)
     dense_first[0, :] = dense_first[:, 0] = 1  # eliminating 0 first fills the whole matrix
-    counts, parent = synth.cholesky_counts(sparse.csc_matrix(dense_first), ata=False)
+    counts, parent = cholesky_counts(sparse.csc_matrix(dense_first), ata=False)
     assert counts.tolist() == [6, 5, 4, 3, 2, 1]
-    assert synth.tree_height(parent) == n - 1  # a path
+    assert tree_height(parent) == n - 1  # a path
     dense_last = dense_first[::-1, ::-1]  # the hub eliminated last: no fill
-    counts, parent = synth.cholesky_counts(sparse.csc_matrix(dense_last), ata=False)
+    counts, parent = cholesky_counts(sparse.csc_matrix(dense_last), ata=False)
     assert counts.tolist() == [2, 2, 2, 2, 2, 1]
-    assert synth.tree_height(parent) == 1  # a star
+    assert tree_height(parent) == 1  # a star
 
 
 def test_cholesky_counts_of_ata_without_forming_it():
     # One dense row makes A^T A dense; a diagonal A gives a diagonal A^T A.
     a = np.eye(4)
     a[2, :] = 1
-    assert synth.cholesky_counts(sparse.csc_matrix(a), ata=True)[0].tolist() == [4, 3, 2, 1]
-    assert synth.cholesky_counts(sparse.csc_matrix(np.eye(4)), ata=True)[0].tolist() == [1, 1, 1, 1]
+    assert cholesky_counts(sparse.csc_matrix(a), ata=True)[0].tolist() == [4, 3, 2, 1]
+    assert cholesky_counts(sparse.csc_matrix(np.eye(4)), ata=True)[0].tolist() == [1, 1, 1, 1]
 
 
 def eliminate(pattern: np.ndarray) -> tuple[list[int], list[int]]:
@@ -298,14 +300,14 @@ def test_cholesky_counts_match_symbolic_elimination():
     for _ in range(50):
         a = (rng.random((12, 10)) < 0.2) | np.eye(12, 10, dtype=bool)
         ata = (a.T.astype(int) @ a.astype(int)) > 0
-        assert synth.cholesky_counts(sparse.csc_matrix(a.astype(float)), ata=True)[0].tolist() == eliminate(ata)[0]
+        assert cholesky_counts(sparse.csc_matrix(a.astype(float)), ata=True)[0].tolist() == eliminate(ata)[0]
         s = ata[:, ::-1][::-1]  # a symmetric pattern in another order
-        assert synth.cholesky_counts(sparse.csc_matrix(s.astype(float)), ata=False)[0].tolist() == eliminate(s)[0]
+        assert cholesky_counts(sparse.csc_matrix(s.astype(float)), ata=False)[0].tolist() == eliminate(s)[0]
 
 
 def test_cholesky_counts_leave_the_input_alone():
     a = sparse.csc_matrix((np.ones(3), np.array([2, 0, 1]), np.array([0, 3, 3, 3])), shape=(3, 3))  # unsorted
-    synth.cholesky_counts(a, ata=True)
+    cholesky_counts(a, ata=True)
     assert a.indices.tolist() == [2, 0, 1]
 
 
@@ -347,7 +349,7 @@ def test_colamd_fill_bounds_follow_each_ordering_and_matrix():
     a = (rng.random((n, n)) < 0.2) | np.eye(n, dtype=bool)
     p, q = rng.permutation(n), rng.permutation(n)
     assert (p[p] != np.arange(n)).any()  # not its own inverse, so argsort(perm) matters
-    b = synth.fill_bounds(sparse.csc_matrix(a.astype(float)), {"COLAMD": p, "COLAMD (A^T)": q})
+    b = fill_bounds(sparse.csc_matrix(a.astype(float)), {"COLAMD": p, "COLAMD (A^T)": q})
     for key, m in (("COLAMD", a[:, np.argsort(p)]), ("COLAMD (A^T)", a.T[:, np.argsort(q)])):
         ata = (m.T.astype(int) @ m.astype(int)) > 0
         assert b[key] == bound_of(ata, a.sum()), key
@@ -360,7 +362,7 @@ def test_metis_fill_bounds_match_symbolic_elimination():
     assert (a != a.T).any()  # A alone would give another pattern than A + A^T
     sym = a | a.T
     graph, perm = metis_order(sym)
-    b = synth.fill_bounds(sparse.csc_matrix(a.astype(float)), {})
+    b = fill_bounds(sparse.csc_matrix(a.astype(float)), {})
     assert b.keys() == {"METIS", "separator"}
     assert b["METIS"] == bound_of(sym[np.ix_(perm, perm)], a.sum())
     # The separator: the fewest vertices that cover every edge METIS's bisection cuts.
@@ -373,11 +375,11 @@ def test_metis_fill_bounds_match_symbolic_elimination():
 
 
 def test_separator_of_a_diagonal_and_of_two_cliques():
-    b = synth.fill_bounds(sparse.csc_matrix(np.eye(5)), {})
+    b = fill_bounds(sparse.csc_matrix(np.eye(5)), {})
     assert b == {"METIS": {"bound": 1.0, "height": 0.0, "front": 0.2}, "separator": {"top": 0.0}}
     cliques = np.kron(np.eye(2), np.ones((4, 4)))
     cliques[3, 4] = 1  # one edge between them: one vertex separates them
-    assert synth.fill_bounds(sparse.csc_matrix(cliques), {})["separator"] == {"top": pytest.approx(1 / 8)}
+    assert fill_bounds(sparse.csc_matrix(cliques), {})["separator"] == {"top": pytest.approx(1 / 8)}
 
 
 def test_metis_bound_holds_for_lu_without_pivoting():
@@ -388,4 +390,4 @@ def test_metis_bound_holds_for_lu_without_pivoting():
         _, perm = metis_order((a != 0).toarray() | (a != 0).toarray().T)
         b = a[perm][:, perm].tocsc()
         lu = sla.splu(b, permc_spec="NATURAL", diag_pivot_thresh=0.0)
-        assert (lu.L.nnz + lu.U.nnz - n) / b.nnz <= synth.fill_bounds(a, {})["METIS"]["bound"]
+        assert (lu.L.nnz + lu.U.nnz - n) / b.nnz <= fill_bounds(a, {})["METIS"]["bound"]

@@ -12,7 +12,7 @@ run, except its COLAMD keys, which need the factorizations: ``--structure-only``
 those from the output file too. pymetis, in the dev group, computes the METIS keys.
 
 Reads the linked ecospold2 datasets (one file per activity and reference product) and
-writes only what ``bwbench.synth.measure`` returns: counts and distributions, never a
+writes only what ``bwbench.stats.measure`` returns: counts and distributions, never a
 dataset, a name or an amount. Publishing these aggregates is allowed under the ecoinvent
 EULA (checked with the licence holder, 2026-10-13). The datasets themselves stay on the
 machine that holds the licence.
@@ -33,7 +33,7 @@ from pathlib import Path
 import numpy as np
 from scipy import sparse
 
-from bwbench.synth import measure
+from bwbench.stats import measure
 
 # ecoinvent's licence (EULA 6.3) asks for this credit wherever Calculated Data appears.
 CREDIT = (

@@ -343,7 +343,7 @@ Rerun: [`bench_datapackage.Groups`](../benchmarks/bench_bw_processing/bench_data
   1e-7**
   ([bw_processing#112](https://github.com/brightway-lca/bw_processing/issues/112)). bw2data's score
   check uses a reference with the same float32 amounts. See
-  [`System.float32_reference`](../src/bwbench/synth.py).
+  [`System.float32_reference`](../src/bwbench/matrices.py).
 
 ## Across packages
 

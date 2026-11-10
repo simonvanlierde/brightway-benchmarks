@@ -31,14 +31,14 @@ from typing import TYPE_CHECKING, NamedTuple
 import numpy as np
 from scipy import sparse
 
-from bwbench.synth import neumann
+from bwbench.matrices import neumann
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from numpy.typing import NDArray
 
-    from bwbench.synth import System
+    from bwbench.matrices import System
 
 # BAFU 2025 products, by their name and location as the archive's `product` column holds them.
 HEAT_PUMP = "Heat, at heat pump, air-water, 7kW, CH electricity, in new building {CH}"

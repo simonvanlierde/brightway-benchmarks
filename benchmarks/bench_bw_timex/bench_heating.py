@@ -20,7 +20,8 @@ from scipy import sparse  # noqa: E402
 
 from bwbench.asv import classes  # noqa: E402
 from bwbench.bench import BenchSetup, NotApplicable, bench  # noqa: E402
-from bwbench.synth import System, method_name, neumann_score, profile_version, system  # noqa: E402
+from bwbench.matrices import System, method_name, neumann_score  # noqa: E402
+from bwbench.synth import profile_version, system  # noqa: E402
 
 
 @functools.cache

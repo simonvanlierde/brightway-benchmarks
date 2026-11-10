@@ -21,8 +21,9 @@ from scipy.sparse.linalg import cgs
 from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, first_time, knob
 from bwbench.asv import classes
 from bwbench.bench import UNCHECKED, BenchSetup, NotApplicable, bench
+from bwbench.matrices import method_name, neumann_score
 from bwbench.solvers import assert_reached
-from bwbench.synth import method_name, neumann_score, packages, skip_unless_factorizable, system
+from bwbench.synth import packages, skip_unless_factorizable, system
 
 CLASSES = ["LCA", "IterativeLCA", "JacobiGMRESLCA"]
 SIZES = knob("sizes", "smoke")

@@ -14,8 +14,9 @@ import bw2calc as bc
 from bwbench import DIRECT_RTOL, bafu, check_table, first_time, heating, knob
 from bwbench.asv import classes
 from bwbench.bench import BenchSetup, NotApplicable, bench
+from bwbench.matrices import System, load, method_name
 from bwbench.solvers import assert_reached
-from bwbench.synth import System, method_name, profile_version, skip_unless_factorizable, system
+from bwbench.synth import datapackages, profile_version, skip_unless_factorizable, system
 
 SIZES = knob("sizes", "smoke")
 
@@ -67,7 +68,7 @@ def heating_scores(size: str) -> BenchSetup:
     """Both options against the three EN 15804 methods with MultiLCA, the foreground loaded beside BAFU."""
     s, at = background(size)
     skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=2)
-    inventory, methods, _, _ = s.packages()
+    inventory, methods, _, _ = load(datapackages(s))
     fg = heating.foreground(s, at, **heating.DEFAULTS)
     config = {"impact_categories": [method_name(i) for i in range(len(methods))]}
     demands = {name: {fg.id(node): 1} for name, node in heating.OPTIONS.items()}
@@ -106,7 +107,7 @@ def heating_sweep(size: str, scenarios: int, variant: str) -> BenchSetup:
     """
     s, at = background(size)
     skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=scenarios if variant == "rebuild" else 1)
-    inventory, methods, _, _ = s.packages()
+    inventory, methods, _, _ = load(datapackages(s))
     method = methods[0]
     grid = heating.scenarios(scenarios)
     options = list(heating.OPTIONS.values())

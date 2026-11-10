@@ -24,7 +24,8 @@ from bw_timex import TimexLCA, clear_background_lci_cache  # noqa: E402
 
 from bwbench.asv import classes  # noqa: E402
 from bwbench.bench import BenchSetup, bench  # noqa: E402
-from bwbench.synth import method_name, system  # noqa: E402
+from bwbench.matrices import method_name  # noqa: E402
+from bwbench.synth import system  # noqa: E402
 
 DATES = {"bg_2020": datetime(2020, 1, 1), "bg_2030": datetime(2030, 1, 1), "foreground": "dynamic"}
 BACKGROUND = ("bio", "bg_2020", "bg_2030")

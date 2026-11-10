@@ -9,7 +9,9 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from bwbench import bafu, heating, synth, useeio
+from bwbench import bafu, heating, useeio
+from bwbench.matrices import System
+from bwbench.shapes import Profile
 
 # A toy background with every product the foreground names, by index.
 PRODUCTS = (
@@ -39,14 +41,14 @@ INPUTS = [
 ]
 
 
-def toy() -> synth.System:
+def toy() -> System:
     diag = np.arange(N)
     rows, cols, amounts = (np.array(v) for v in zip(*INPUTS, strict=True))
     bio_cols = np.concatenate([diag, [AT[heating.BURNER]]])
     bio_rows = np.concatenate([np.full(N, N), [N + 1]])  # every product emits flow 0; the burner also flow 1
-    return synth.System(
+    return System(
         "toy",
-        synth.Profile(products=N, flows=FLOWS, builder="toy", methods=2),
+        Profile(products=N, flows=FLOWS, builder="toy", methods=2),
         0,
         np.concatenate([diag, rows]),
         np.concatenate([diag, cols]),
@@ -61,7 +63,7 @@ def toy() -> synth.System:
     )
 
 
-def dense_scores(system: synth.System, fg: heating.Foreground, demand: dict[int, float]) -> list[float]:
+def dense_scores(system: System, fg: heating.Foreground, demand: dict[int, float]) -> list[float]:
     """The scores of ``demand`` by a dense solve of background and foreground together."""
     k = len(heating.NODES)
     at = lambda ids: np.where(ids >= fg.base, ids - fg.base + N, ids)  # noqa: E731

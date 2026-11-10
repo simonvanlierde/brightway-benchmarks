@@ -90,7 +90,7 @@ if [ "$cmd" = run ]; then
     } >"$out/bwbench-run-$(date -u +%Y%m%dT%H%M%SZ)-$(echo "$commit" | cut -c1-12).txt"
     # What ran, as one RO-Crate over every subject. It sits above the subjects' asv folders,
     # where asv looks for no results.
-    uv run --quiet --no-project --with numpy==2.5.3 --with scipy==1.18.1 python scripts/run_crate.py "$(dirname "$results")" ||
+    uv run --quiet --no-project python scripts/run_crate.py "$(dirname "$results")" ||
         status=1
 fi
 rm -f "$start"

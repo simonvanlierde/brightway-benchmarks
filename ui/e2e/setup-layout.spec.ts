@@ -5,7 +5,8 @@ test("the header stays focused and desktop install selectors share a row", async
   await page.goto("?platform=linux");
   await page.locator(".install-set > .install-command").waitFor();
   await expect(page.locator(".top").getByRole("link", { name: /^Checked / })).toHaveCount(0);
-  await expect(page.locator(".checks-date a")).toHaveText(/^Checked \w{3} \d{1,2}, \d{4}$/);
+  await expect(page.locator(".checks-date")).toHaveText(/^Checked \w{3} \d{1,2}, \d{4} · open the run$/);
+  await expect(page.locator(".checks-date a")).toHaveText("open the run");
   await expect(page.locator(".top .build-version, .top .github-link")).toHaveCount(0);
   const os = await page.getByRole("combobox", { name: "Operating system" }).boundingBox();
   const python = await page.getByRole("combobox", { name: "Python version" }).boundingBox();

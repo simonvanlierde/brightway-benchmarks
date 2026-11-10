@@ -47,7 +47,7 @@ it("includes lazy JavaScript chunks in the viewer budget", () => {
   writeFileSync(join(dir, "dist/about/index.html"), "<main>About</main>");
   const result = run(dir);
   expect(result.status, result.stdout + result.stderr).toBe(1);
-  expect(result.stdout).toMatch(/index.html \d+\.\d KB gzipped, budget 180 KB/);
+  expect(result.stdout).toMatch(/index.html \d+\.\d KB gzipped, budget 182 KB/);
 });
 
 it("fails when a static page itself exceeds the budget", () => {
@@ -83,5 +83,5 @@ it("keeps an inline theme script within the static-page budget", () => {
   const result = run(dir);
   expect(result.status, result.stdout + result.stderr).toBe(0);
   expect(result.stdout).toMatch(/about\/index.html .*budget 20 KB/);
-  expect(result.stdout).toMatch(/index.html 17\d\.\d KB gzipped, budget 180 KB/);
+  expect(result.stdout).toMatch(/index.html 17\d\.\d KB gzipped, budget 182 KB/);
 });

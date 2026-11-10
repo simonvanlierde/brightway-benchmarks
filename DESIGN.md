@@ -15,14 +15,14 @@ colors:
   worse: "#a13236"
   better: "#006c65"
   shift: "#42547d"
-  s1: "#315bba"
-  s2: "#526d91"
-  s3: "#7757ac"
-  s4: "#416d86"
-  s5: "#9b427c"
-  s6: "#68618f"
-  s7: "#3a6880"
-  s8: "#885b8b"
+  s1: "#2a78d6"
+  s2: "#d9582a"
+  s3: "#12907a"
+  s4: "#a87500"
+  s5: "#cc4f82"
+  s6: "#2f7d1f"
+  s7: "#6250d6"
+  s8: "#7d7a00"
   dark-page: "#141d32"
   dark-ink: "#f8f9fc"
   dark-ink-2: "#c7d2ed"
@@ -36,14 +36,14 @@ colors:
   dark-worse: "#ffafb0"
   dark-better: "#74cfc3"
   dark-shift: "#aab9d8"
-  dark-s1: "#91b4ff"
-  dark-s2: "#a7bce8"
-  dark-s3: "#c2a6f1"
-  dark-s4: "#85c0df"
-  dark-s5: "#d8c78a"
-  dark-s6: "#b8ade3"
-  dark-s7: "#8fb2d3"
-  dark-s8: "#d6abdd"
+  dark-s1: "#3987e5"
+  dark-s2: "#d95926"
+  dark-s3: "#199e70"
+  dark-s4: "#c98500"
+  dark-s5: "#d55181"
+  dark-s6: "#2d9d1f"
+  dark-s7: "#9085e9"
+  dark-s8: "#938f0f"
 typography:
   body:
     fontFamily: "system-ui, -apple-system, Segoe UI, sans-serif"
@@ -101,13 +101,13 @@ Square geometry and aligned measurement columns give the viewer a precise readin
 
 The primary blue accent anchors links, active navigation, selected controls and solver bars. The pale blue selection wash marks chosen filters, catalogue entries and compatibility rows. Page, rail and panels share one ground (`page`) in each theme, so content reads as a continuous workspace.
 
-Ink, secondary ink and muted text establish hierarchy; line, axis, control and grid colours separate content and support charts. Red and teal label worse and better results, while shift stays neutral. The eight series colours identify environments independently of navigation and status. Dark mode preserves these roles with a dark navy ground and lighter text and series colours.
+Ink, secondary ink and muted text establish hierarchy; line, axis, control and grid colours separate content and support charts. Red and teal label worse and better results, while shift stays neutral. The eight series colours identify environments independently of navigation and status. They are spread in hue (blue, orange, teal, amber, magenta, green, violet, olive) and were checked with the data-viz palette validator for neighbouring-pair separation under colour-vision simulation, normal-vision separation and 3:1 contrast on the page in both themes. Past three series they are not safe for all-pairs forms such as scatter, so lines also differ by marker shape and carry end-of-line names where the chart is wide enough. Dark mode preserves these roles with a dark navy ground, lighter text and series colours re-tuned for contrast on that ground.
 
 ## Typography
 
 Use the system sans stack for headings, controls and tables. Page titles and the larger Home title share a restrained weight and tight tracking; both use the title tokens above.
 
-Below the titles, text uses six roles on a 15px root: meta 0.8rem (captions, column headers, labels, notes), data 0.875rem (tables, buttons, navigation, catalogue), control 0.9375rem (selects and fixed parameter values), body 1rem (ledes, changes, benchmark names), subhead 1.35rem (sections inside a view and the selected-check pane) and section 1.25rem (Setup's and Benchmarks' sections). Weight separates roles of the same size; parameter names are muted so their values lead.
+Below the titles, text uses seven roles on a 15px root: meta 0.8rem, 12px (dates, build ids, captions, labels), data 0.875rem (tables, buttons, navigation, catalogue), evidence 0.9375rem, 14px (what a reader acts on: change evidence, check-grid headers, install notes, finding text, parameter notes and the chart's reading guide), control 0.9375rem (selects and fixed parameter values), body 1rem (ledes, changes, benchmark names), subhead 1.35rem (sections inside a view and the selected-check pane) and section 1.25rem (Setup's and Benchmarks' sections). Weight separates roles of the same size; parameter names are muted so their values lead.
 
 Monospace belongs to original identifiers and environment specifications. Measurements use tabular numerals and right-aligned numeric columns. Solver timing values are prominent. Keep explanatory prose within about 68 characters per line where space allows.
 
@@ -115,11 +115,11 @@ Monospace belongs to original identifiers and environment specifications. Measur
 
 Breakpoints and sizes live in [ui/src/styles.css](ui/src/styles.css); this section gives the intent.
 
-The compact masthead links Setup and Benchmarks and holds benchmark search and a sun/moon theme toggle. GitHub and build identity sit in the footer; check freshness sits beside All checks. Setup places the install column beside the evidence column: operating-system, Python and package-manager selects, check results, install command and the check grid on the left; solver comparison, findings and the latest changes on the right, divided by a hairline. As the screen narrows, the masthead becomes its own scrolling row that keeps the current page in view, and the two columns stack.
+The compact masthead links Setup and Benchmarks and holds benchmark search and a sun/moon theme toggle. GitHub and build identity sit in the footer; check freshness sits beside Checks. Setup places the install column beside the evidence column: operating-system, Python and package-manager selects, check results, install command and the check grid on the left; solver comparison, findings and the latest changes on the right, divided by a hairline. As the screen narrows, the masthead becomes its own scrolling row that keeps the current page in view, and the two columns stack.
 
-Each page's main content fits a 1440 by 900 laptop screen: the install command and its result line on Setup, the findings on Benchmarks, the whole chart on a benchmark. A browser test checks it.
+Benchmarks content shares one measure of 72rem, so the toolbar, findings, tables and chart end on one right edge; static pages share a centred 46rem measure and their tables run its width. Each page's main content fits a 1440 by 900 laptop screen: the install command and its result line on Setup, the findings on Benchmarks, the whole chart on a benchmark. A browser test checks it.
 
-Only Benchmarks has a catalogue rail, sticky on wide screens and a disclosure on narrow ones. Filters sit directly above the evidence they control. Parameter explanations stay under their controls on desktop and use a disclosure on phones.
+Only Benchmarks has a catalogue rail, sticky on wide screens and a disclosure on narrow ones; inside it each package is a collapsible group and the current benchmark's group is open. Filters sit directly above the evidence they control. Parameter explanations stay under their controls on desktop and use a disclosure on phones.
 
 On phones, release-change tables reflow into labelled rows. Full measurement tables keep horizontal scrolling in their own focusable region. Charts reduce tick density without dropping keyboard access to any release.
 
@@ -137,7 +137,7 @@ Primary downloads use accent fill with page-coloured text and the primary-downlo
 
 Search fields and selects use the page ground and control stroke. Links thicken their underline on hover. Buttons and catalogue entries use the selection wash on hover; row hover uses a faint selection wash. Native-control and catalogue colour transitions last 150ms only when reduced motion is not requested. All interactive controls retain visible keyboard focus.
 
-Release changes put regressions first, one row per case; improvements group by benchmark with their cases folded. Chart legend entries are buttons that bring one environment forward. A history with two releases shows points without a line, and with three or fewer each environment sits a little apart so equal values stay visible. Commits that are not releases draw faint, and the explorer counts them under its changes. Setup puts the command's source check, matching upstream-suite result and coverage caveats before Copy. Phones list checks for the selected platform; desktop keeps the comparison grid with its platform column pinned and a conditional scroll hint. Text is never smaller than 12px.
+Release changes put regressions first, one row per case; improvements group by benchmark with their cases folded. Chart legend entries are buttons that bring one environment forward. A history with two releases shows points without a line, and with three or fewer each environment sits a little apart so equal values stay visible. Commits that are not releases draw faint, and the explorer counts them under its changes. Setup puts the command's source check, matching upstream-suite result and coverage caveats before Copy. Phones list checks for the selected platform; desktop keeps the comparison grid with its platform column pinned and a conditional scroll hint. Text is never smaller than 12px. On phones disclosure summaries, footer links, install file links and the masthead's page links are at least 44px high and finding titles carry 8px of padding above and below (other controls keep their own sizes), the masthead is one row up to 60rem wide with the search behind an icon, and benchmark parameters stack at full width.
 
 The explorer says what the benchmark measures under its title. Desktop explains each parameter under its control; phones keep the controls visible and put explanations under “Parameter details”. New uv projects have an optional copyable setup sequence, and Copy latest has a 44px target.
 

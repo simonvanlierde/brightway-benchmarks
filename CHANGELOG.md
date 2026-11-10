@@ -66,6 +66,26 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   stage no longer rebuilds it. `scripts/box.sh --image` prints the tag.
 - Benchmarks and Setup use readable names, open with what the site checks, and show a plain
   message when data fails to load.
+- Viewer, from a design review:
+  - The Benchmarks catalogue is one collapsible group per package, with the current benchmark's
+    group open, and a shade at the foot while more is below. Names that several packages share
+    say which package they are in.
+  - Evidence a reader acts on (change evidence, check-grid headers, install notes, the chart's
+    reading guide) is 14px; 12px stays for dates, build ids and captions.
+  - Benchmarks sections, toolbar, tables and chart end on one right edge.
+  - The chart's environment notes sit in two columns, its focus hint on one line beside Download
+    SVG, and each line is named at its end where there is room. The series colours are re-stepped
+    so KLU, PyPardiso and UMFPACK differ in hue, and the focused series draws larger.
+  - The heating story opens with its totals as bars in tonnes of CO2-eq, one unit throughout, and
+    moves the model's assumptions below the table. It links the benchmark charts that run on it.
+  - About and the stories share a centred measure, show the current page in the nav and footer, end
+    with a link back to Setup and have a search that opens the Benchmarks catalogue.
+  - Setup spans its intro over both columns, groups the install files under "Files for this set",
+    puts a failed check's explanation beside its status and makes Copy latest a bordered button.
+  - Up to 60rem wide the masthead is one row with the search behind an icon. On a phone benchmark
+    parameters stack at full width, and disclosure summaries, footer links and install file links
+    are 44px high (the other targets keep their own sizes).
+  - The viewer's gzip budget is 182 KB (was 180 KB).
 
 ### Removed
 

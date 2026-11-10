@@ -1,11 +1,8 @@
 // The one module that knows the data's format: the rest of the UI imports its types from here.
-import { Ajv2020, type ValidateFunction } from "ajv/dist/2020.js";
-import guidanceSchema from "../../schema/guidance.schema.json" with { type: "json" };
-import indexSchema from "../../schema/index.schema.json" with { type: "json" };
-import reportSchema from "../../schema/report.schema.json" with { type: "json" };
 import type { Guidance } from "./guidance.gen";
 import type { BenchmarkIndex } from "./index.gen";
 import type { BenchmarkReport } from "./report.gen";
+import { guidanceValidator, indexValidator, reportValidator, type Validator } from "./validators.gen";
 
 export type { BenchmarkIndex, BenchmarkReport, Guidance };
 export type Report = BenchmarkIndex["reports"][number];
@@ -16,12 +13,8 @@ export const FORMAT_VERSION = 1;
 export const GUIDANCE_VERSION = 2;
 export const REPORT_FORMATS: readonly string[] = ["bmf/v0"];
 
-// NOTE: formats go unchecked here, to keep ajv-formats out of the page. The exporter's tests
-// check date-time; uri is unchecked.
-const ajv = new Ajv2020({ allErrors: true, validateFormats: false });
-const checkGuidance = ajv.compile<Guidance>(guidanceSchema);
-const checkIndex = ajv.compile<BenchmarkIndex>(indexSchema);
-const checkReport = ajv.compile<BenchmarkReport>(reportSchema);
+// The validators are compiled from ui/schema/ by `pnpm types` (scripts/generate-validators.mjs), so
+// no schema is compiled in the browser. Formats go unchecked; the exporter's tests check date-time.
 
 /** The data is missing, or does not have the shape ui/schema/ gives. */
 export class ContractError extends Error {
@@ -57,9 +50,10 @@ async function getJson(url: URL, fetcher: typeof fetch, optional = false): Promi
   }
 }
 
-function valid<T>(check: ValidateFunction<T>, data: unknown, url: URL): T {
-  if (check(data)) return data;
-  throw new ContractError(`${url}: ${ajv.errorsText(check.errors)}`);
+function valid<T>(check: Validator, data: unknown, url: URL): T {
+  if (check(data)) return data as T;
+  const errors = check.errors?.map((e) => `data${e.instancePath} ${e.message}`).join(", ") || "No errors";
+  throw new ContractError(`${url}: ${errors}`);
 }
 
 /** Throw when a record names an id the index does not define. */
@@ -117,7 +111,7 @@ export async function loadIndex(base: string | URL, fetcher: typeof fetch = fetc
   if (version !== FORMAT_VERSION) {
     throw new ContractError(`${url}: format_version ${version}, this UI reads ${FORMAT_VERSION}`, "version");
   }
-  const index = valid(checkIndex, data, url);
+  const index = valid<BenchmarkIndex>(indexValidator, data, url);
   checkReferences(index);
   return { ...index, reports: index.reports.filter((r) => REPORT_FORMATS.includes(r.format)) };
 }
@@ -129,7 +123,7 @@ export async function loadReport(
   fetcher: typeof fetch = fetch,
 ): Promise<BenchmarkReport> {
   const url = new URL(report.path, folder(base));
-  return valid(checkReport, await getJson(url, fetcher), url);
+  return valid<BenchmarkReport>(reportValidator, await getJson(url, fetcher), url);
 }
 
 /** Optional setup guidance beside index.json; a missing file leaves the benchmark viewer usable. */
@@ -141,7 +135,7 @@ export async function loadGuidance(base: string | URL, fetcher: typeof fetch = f
   if (version !== GUIDANCE_VERSION) {
     throw new ContractError(`${url}: format_version ${version}, this UI reads ${GUIDANCE_VERSION}`, "version");
   }
-  const guidance = valid(checkGuidance, data, url);
+  const guidance = valid<Guidance>(guidanceValidator, data, url);
   const platforms = new Set(guidance.platforms.map((p) => p.id));
   const checks = new Map(guidance.checks.map((c) => [c.id, c]));
   if (platforms.size !== guidance.platforms.length || checks.size !== guidance.checks.length) {

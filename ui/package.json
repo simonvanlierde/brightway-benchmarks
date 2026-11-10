@@ -13,7 +13,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "types": "json2ts --no-additionalProperties -i schema/index.schema.json -o src/lib/index.gen.ts && json2ts -i schema/report.schema.json -o src/lib/report.gen.ts && json2ts -i schema/guidance.schema.json -o src/lib/guidance.gen.ts && biome format --write src/lib",
+    "types": "json2ts --no-additionalProperties -i schema/index.schema.json -o src/lib/index.gen.ts && json2ts -i schema/report.schema.json -o src/lib/report.gen.ts && json2ts -i schema/guidance.schema.json -o src/lib/guidance.gen.ts && node scripts/generate-validators.mjs && biome format --write src/lib",
     "check": "biome check . && astro check && svelte-check --fail-on-warnings",
     "test": "vitest run",
     "fmt": "biome check --write .",
@@ -22,8 +22,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@observablehq/plot": "0.6.17",
-    "ajv": "8.20.0"
+    "@observablehq/plot": "0.6.17"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
@@ -32,6 +31,7 @@
     "@biomejs/biome": "2.6.4",
     "@playwright/test": "1.64.1",
     "@types/node": "24.19.2",
+    "ajv": "8.20.0",
     "astro": "7.4.5",
     "json-schema-to-typescript": "16.0.0",
     "svelte": "5.57.3",

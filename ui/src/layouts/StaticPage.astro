@@ -62,9 +62,9 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
         <a href={`${repository}/blob/main/docs/method.md`}>Method</a>
         <a href="https://doi.org/10.5281/zenodo.23727602">Cite</a>
         <a href={repository}>GitHub</a>
-        <a href={`${home}stories/solver-choice/`} aria-current={current === "solver-choice" ? "page" : undefined}>Solver story</a>
-        <a href={`${home}stories/home-heating/`} aria-current={current === "home-heating" ? "page" : undefined}>Heating case</a>
-        <a href={`${home}about/`} aria-current={current === "about" ? "page" : undefined}>About &amp; privacy</a>
+        {Object.entries(PAGES).map(([id, [text, path]]) => (
+          <a href={`${home}${path}`} aria-current={current === id ? "page" : undefined}>{id === "about" ? "About & privacy" : text}</a>
+        ))}
       </nav>
     </footer>
   </body>
@@ -90,6 +90,17 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
   }
   .top-inner > .masthead-search {
     margin-left: auto;
+  }
+  /* Three page links do not fit beside the icons at 320px, and these pages have no script to scroll them into view. */
+  @media (max-width: 39rem) {
+    .top-inner > .primary-nav {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      margin: 0;
+    }
+    .top-inner > .masthead-search {
+      grid-row: 3;
+    }
   }
   .static-brand {
     grid-column: 1;

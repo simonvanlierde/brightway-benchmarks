@@ -63,8 +63,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     with a link back to Setup and have a search that opens the Benchmarks catalogue.
   - Setup spans its intro over both columns, groups the install files under "Files for this set",
     puts a failed check's explanation beside its status and makes Copy latest a bordered button.
-  - On a phone the masthead is one row with the search behind an icon, benchmark parameters stack
-    at full width, and disclosure rows, footer links and file links are 44px high.
+  - Up to 60rem wide the masthead is one row with the search behind an icon. On a phone benchmark
+    parameters stack at full width, and disclosure summaries, footer links and install file links
+    are 44px high (the other targets keep their own sizes).
   - The viewer's gzip budget is 182 KB (was 180 KB).
 
 ### Removed

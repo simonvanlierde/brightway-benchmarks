@@ -260,9 +260,10 @@ const HINTS: Record<ContractError["kind"], string> = {
 const unit = $derived(measure?.unit ?? "");
 let tableOpen = $state(false);
 // Opened from a static page's search, which hands its words over as ?q=.
-let search = $state(new URLSearchParams(location.search).get("q") ?? "");
+const handedOver = new URLSearchParams(location.search).get("q") ?? "";
+let search = $state(handedOver);
 // On a phone the search sits behind an icon in the masthead.
-let searchOpen = $state(false);
+let searchOpen = $state(handedOver.length > 0);
 function toggleSearch() {
   searchOpen = !searchOpen;
   if (searchOpen) tick().then(() => document.getElementById("benchmark-search")?.focus());
@@ -339,10 +340,10 @@ $effect(() => {
         <a href={writeView({page:id,params:[]})} aria-current={page === id ? "page" : undefined} onclick={(e) => follow(e, {page:id,params:[]})}>{text}</a>
       {/each}
     </nav>
-    <button type="button" class="search-toggle" aria-label="Show the benchmark search" aria-expanded={searchOpen || search.length > 0} aria-controls="masthead-search" onclick={toggleSearch}>
+    <button type="button" class="search-toggle" aria-label="Show the benchmark search" aria-expanded={searchOpen} aria-controls="masthead-search" onclick={toggleSearch}>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
     </button>
-    <form class="masthead-search" id="masthead-search" class:open={searchOpen || search.length > 0} role="search" onsubmit={openFirst}>
+    <form class="masthead-search" id="masthead-search" class:open={searchOpen} role="search" onsubmit={openFirst}>
       <label for="benchmark-search">Find a benchmark</label>
       <input id="benchmark-search" type="search" value={search} oninput={(e) => searchFor(e.currentTarget.value)} placeholder="Name or package" />
     </form>
@@ -374,13 +375,17 @@ $effect(() => {
         <a class="home" href={writeView({page:"explorer",params:[]})} aria-current={bench ? undefined : "page"} onclick={(e) => follow(e, { page:"explorer", params: [] })}
           >All benchmarks</a
         >
-        {#if matching.length === 0}<p class="rail-empty">No benchmarks match “{search}”.</p>{/if}
+        <div class="rail-status" role="status">
+          {#if search}
+            {#if matching.length === 0}<p class="rail-empty">No benchmarks match “{search}”.</p>{:else}<p class="rail-found">{matching.length} {matching.length === 1 ? "benchmark" : "benchmarks"}</p>{/if}
+          {/if}
+        </div>
         {#each index.groups.filter((g) => matching.some((b) => b.group === g.id)) as g (g.id)}
           {@const members = matching.filter((b) => b.group === g.id)}
           <details class="rail-group" open={g.id === bench?.group || search.length > 0}>
-            <summary id="rail-{g.id}">{g.label ?? g.name}<span class="rail-count">{members.length}</span></summary>
+            <summary>{g.label ?? g.name}{" "}<span class="rail-count">({members.length})</span></summary>
             {#if g.description}<p class="rail-about">{g.description}</p>{/if}
-            <ul aria-labelledby="rail-{g.id}">
+            <ul aria-label={g.label ?? g.name}>
               {#each members as b (b.id)}
                 {@const next = { bench: b.id, params: [] }}
                 <li>
@@ -489,7 +494,7 @@ $effect(() => {
               {missing} of {wanted.length} reports did not load, so their releases are missing below.
             </p>
           {/if}
-          <figure>
+          <figure aria-labelledby="reading-guide">
             {#await chart()}
               <div class="skeleton" aria-busy="true"><span class="sr">Loading the chart…</span></div>
             {:then { default: HistoryChart }}
@@ -498,14 +503,14 @@ $effect(() => {
               <div class="empty" role="alert"><p>The chart did not load: {String(reason)}</p></div>
             {/await}
             <figcaption>
-              <p class="reading-guide">
+              <p class="reading-guide" id="reading-guide">
                 {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment and one even step per commit,
                 not by date{measure?.bounds ? `; the band is ${measure.bounds}` : ""}. A ring marks a change beyond its noise (red worse,
                 teal better); a dashed line marks a level shift across the whole series.
               </p>
               {#if envNotes.length}
                 <dl class="env-notes">
-                  {#each envNotes as note (note.name)}
+                  {#each envNotes as note (`${note.name}|${note.text}`)}
                     <div><dt>{#if note.url}<a href={note.url}>{note.name}</a>{:else}{note.name}{/if}</dt><dd>{note.text}</dd></div>
                   {/each}
                 </dl>

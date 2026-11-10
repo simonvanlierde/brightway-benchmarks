@@ -2,6 +2,7 @@
 import * as Plot from "@observablehq/plot";
 import type { Change } from "../lib/contract";
 import { format, type Line, noiseText, percent, scaleFor, sig, ticksFor, verdict } from "../lib/history";
+import { spreadLabels } from "../lib/labels";
 
 let {
   lines,
@@ -217,10 +218,10 @@ $effect(() => {
         : null,
     ],
   });
-  if (labelled) {
-    const x = plot.scale("x");
-    const y = plot.scale("y");
-    if (!x || !y) throw new Error("the chart has no scales");
+  const x = labelled ? plot.scale("x") : undefined;
+  const y = labelled ? plot.scale("y") : undefined;
+  // An empty series has no scales, so no end labels.
+  if (x && y) {
     const last = Math.max(...data.map((d) => d.at));
     const ends = series
       .flatMap(({ name, dx }) => {
@@ -230,16 +231,11 @@ $effect(() => {
       .sort((a, b) => a.y - b.y);
     // Names that would touch are pushed apart, 14px a line, and kept inside the plot.
     const floor = Number(plot.getAttribute("height")) - 36;
-    let prev = Number.NEGATIVE_INFINITY;
-    for (const e of ends) {
-      e.y = Math.max(e.y, prev + 14);
-      prev = e.y;
-    }
-    let next = Math.max(floor, prev);
-    for (const e of ends.toReversed()) {
-      e.y = Math.min(e.y, next);
-      next = e.y - 14;
-    }
+    const placed = spreadLabels(
+      ends.map((e) => e.y),
+      floor,
+    );
+    for (const [i, e] of ends.entries()) e.y = placed[i] ?? e.y;
     for (const e of ends) {
       const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       text.setAttribute("x", String(e.x + e.dx + 12));
@@ -248,7 +244,7 @@ $effect(() => {
       text.setAttribute("text-anchor", "start"); // the plot's own style centres text
       text.setAttribute("fill", v("--ink-2"));
       text.setAttribute("data-end-label", e.name);
-      if (chosen && e.name !== chosen) text.setAttribute("opacity", "0.35");
+      if (chosen && e.name !== chosen) text.setAttribute("opacity", "0.8");
       if (emphasis(e.name)) text.setAttribute("font-weight", "650");
       text.textContent = e.name;
       plot.append(text);

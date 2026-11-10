@@ -150,7 +150,7 @@ test("one missing report leaves the rest of the chart", async ({ page }) => {
     return route.fulfill({ status: 404, body: "" });
   });
   await chart(page, IMPORT);
-  await expect(page.getByRole("status")).toContainText("1 of 15 reports did not load");
+  await expect(page.locator("main").getByRole("status")).toContainText("1 of 15 reports did not load");
 });
 
 test("data without changes says they were not exported", async ({ page }) => {
@@ -302,7 +302,7 @@ test("clearing a shared package filter stays on release changes", async ({ page 
   await page.goto("?group=bw-processing-dfb1fd2e3103");
   const heading = page.getByRole("heading", { name: "What changed in the latest releases" });
   await expect(heading).toBeVisible();
-  await expect(page.getByRole("status")).toHaveText("3 of 3 changes shown");
+  await expect(page.locator("main").getByRole("status")).toHaveText("3 of 3 changes shown");
   await page.getByLabel("Package", { exact: true }).selectOption({ label: "All packages" });
   await expect(heading).toBeVisible();
   await expect(page).toHaveURL(/page=explorer/);
@@ -582,7 +582,8 @@ for (const [label, status, json] of [
     await page.goto("./");
     await expect(page.getByRole("heading", { name: "Explore the available evidence", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "requirements.txt", exact: true })).toHaveCount(0);
-    if (status !== 404) await expect(page.getByRole("status")).toContainText("Setup guidance could not be loaded");
+    if (status !== 404)
+      await expect(page.locator("main").getByRole("status")).toContainText("Setup guidance could not be loaded");
     await page
       .getByRole("navigation", { name: "Main", exact: true })
       .getByRole("link", { name: "Benchmarks", exact: true })

@@ -361,8 +361,13 @@ code,
   color: var(--accent);
   flex: none;
 }
-.rail-empty {
+.rail-empty,
+.rail-found {
   color: var(--ink-2);
+}
+.rail-found {
+  margin: 4px 0;
+  font-size: 0.8rem;
 }
 .overview-toolbar {
   display: flex;
@@ -380,7 +385,8 @@ code,
   gap: 5px;
 }
 .package-filter {
-  min-width: 12rem;
+  min-width: min(12rem, 100%);
+  max-width: 100%;
 }
 .legend-host {
   min-height: 24px;
@@ -554,13 +560,13 @@ a:hover {
   color: var(--ink);
 }
 .rail-group > summary::before {
-  content: "▸";
+  content: "▸" / "";
   flex: none;
   width: 1em;
   color: var(--muted);
 }
 .rail-group[open] > summary::before {
-  content: "▾";
+  content: "▾" / "";
 }
 .rail-count {
   margin-left: auto;
@@ -701,6 +707,7 @@ details.data {
 }
 .brief-change > div {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: 14px;
@@ -957,8 +964,6 @@ details.data[open] summary {
   }
 
   .top .primary-nav {
-    order: 3;
-    width: 100%;
     overflow-x: auto;
     margin: 0;
   }
@@ -1176,7 +1181,7 @@ so a chosen control needs a line of its own. */
   align-items: center;
   gap: 10px;
   margin-left: auto;
-  flex: 0 1 24rem;
+  flex: 0 1 18rem;
 }
 .masthead-search label {
   color: var(--muted);
@@ -1458,9 +1463,6 @@ table.check-grid td a[aria-current="true"] {
   .findings.wide ul {
     grid-template-columns: minmax(0, 1fr);
   }
-  .masthead-search {
-    flex-basis: 100%;
-  }
 }
 
 .phone-checks,
@@ -1663,8 +1665,8 @@ table.check-grid td a[aria-current="true"] {
   justify-content: space-between;
   gap: 4px 18px;
 }
-@media (max-width: 39rem) {
-  /* One row: brand mark, the two pages, search and theme icons; the search opens a second row. */
+@media (max-width: 60rem) {
+  /* One row: brand, the pages, search and theme icons; the search opens a second row. */
   .top-inner {
     display: grid;
     padding-block: 6px;
@@ -1679,7 +1681,6 @@ table.check-grid td a[aria-current="true"] {
   .top .primary-nav {
     grid-column: 2;
     grid-row: 1;
-    order: 0;
     width: auto;
     margin: 0 0 0 8px;
     padding-right: 0;
@@ -1707,8 +1708,15 @@ table.check-grid td a[aria-current="true"] {
     display: flex;
   }
   .masthead-search label {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
+}
+@media (max-width: 39rem) {
   .brand-name {
     position: absolute;
     width: 1px;

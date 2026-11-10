@@ -199,6 +199,24 @@ class System:
         signed = np.where(self.tech_flip, -self.tech_data, self.tech_data)
         return sparse.csc_matrix((signed, (self.tech_rows, self.tech_cols)), shape=(n, n))
 
+    def condition_estimate(self) -> float:
+        """Estimate of the technosphere matrix's 1-norm condition number, ``||A||_1 * ||A^-1||_1``.
+
+        scipy's ``onenormest`` on the SuperLU inverse is a lower bound, nearly always exact. It
+        draws from numpy's global generator, so a fixed seed makes it repeatable and the
+        caller's state is put back.
+        """
+        a = self.technosphere()
+        lu = sla.splu(a)
+        n = a.shape[0]
+        inverse = sla.LinearOperator((n, n), matvec=lu.solve, rmatvec=lambda x: lu.solve(x, trans="T"))  # ty: ignore[unknown-argument, missing-argument]
+        state = np.random.get_state()  # noqa: NPY002 - scipy draws from the global generator
+        try:
+            np.random.seed(0)  # noqa: NPY002
+            return float(abs(a).sum(axis=0).max() * sla.onenormest(inverse))
+        finally:
+            np.random.set_state(state)  # noqa: NPY002
+
     def biosphere(self) -> sparse.csc_matrix:
         """Biosphere matrix with flows renumbered from 0."""
         shape = (self.profile.flows, self.profile.products)

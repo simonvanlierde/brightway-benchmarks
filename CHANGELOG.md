@@ -17,6 +17,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A condition estimate for every size, recorded next to its times (`bench_lca.Conditioning`), so a
+  solver's score error reads against how hard the matrix is: USEEIO about 6, BAFU 2025 about 1e22
+  ([findings](docs/findings.md#a-score-error-reads-against-the-matrixs-condition-number)).
 - BAFU 2025, the Swiss Federal Administration's LCI database, as a real size beside USEEIO
   (`BWBENCH_SIZES=bafu`). It is downloaded once and never copied into this repository
   ([real databases](docs/method.md#the-real-databases)).

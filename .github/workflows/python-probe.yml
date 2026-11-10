@@ -1,0 +1,65 @@
+name: python-probe
+
+# Which Pythons Brightway installs, imports and scores on (scripts/py_probe.py). Outside the asv
+# harness, so the harness's own Python floor does not apply. The supported lines run daily on each
+# OS; the end-of-life lines a package still declares run weekly on Linux.
+
+on:
+  schedule:
+    # The matrix's include expression repeats this string: keep the two equal.
+    - cron: "23 4 * * 0,2-6" # 04:23 UTC except Mondays
+    - cron: "23 4 * * 1" # Mondays 04:23 UTC, with the end-of-life lines
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: probe · Python ${{ matrix.python }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14", "3.15"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        # The end-of-life lines, on the weekly cron and a manual run only.
+        include: ${{ fromJSON(github.event.schedule == '23 4 * * 0,2-6' && '[]' || '[{"python":"3.9","os":"ubuntu-latest"},{"python":"3.10","os":"ubuntu-latest"}]') }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      OUT: .asv/probe/${{ matrix.python }}
+      # Windows Python would otherwise fail printing uv's non-ASCII error text to a pipe.
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: false
+          version: "0.13.6"
+
+      - run: uv run --no-project --python 3.13 scripts/py_probe.py "${{ matrix.python }}" "$OUT"
+
+      - name: Job summary
+        if: ${{ !cancelled() }}
+        run: |
+          jq -r '"### Python \(.python) on \(.os)\n",
+            (.steps[] | "- \(if .ok then "ok" else "**FAIL**" end) \(.step)\(if .error then ": \(.error)" else "" end)")' \
+            "$OUT/probe.json" >>"$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: python-probe-${{ matrix.python }}-${{ matrix.os }}
+          path: ${{ env.OUT }}
+          include-hidden-files: true
+          if-no-files-found: warn # the venv step can fail before any file

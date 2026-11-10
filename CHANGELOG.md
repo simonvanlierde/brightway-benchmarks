@@ -23,6 +23,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A Python support probe outside the asv harness (`scripts/py_probe.py`, the `python-probe`
+  workflow): install, import and one score on Python 3.11 to 3.15 daily on three operating
+  systems, and on 3.9 and 3.10 weekly on Linux ([running](docs/running.md#which-pythons-work)).
 - Each history's band is the noise allowance the release changes use, so a move that leaves it
   reads as a change; the data table gives each value's allowance
   ([method](docs/method.md#changes-on-the-history-pages)).

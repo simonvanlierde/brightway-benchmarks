@@ -73,7 +73,7 @@ function stepText(step: (typeof steps)[number]): string {
   if (!first) return "";
   const rows = step.map(
     (p) =>
-      `${p.short}: ${format(p.value, unit)}${p.noise === undefined ? "" : ` ${noiseText({ threshold: p.noise })}`}`,
+      `${p.short}: ${format(p.value, unit)}${p.noise === undefined ? "" : ` ${noiseText({ threshold: p.noise })} noise`}`,
   );
   const marks = (changeAt.get(first.commit) ?? []).map((c) => `${c.short}: ${words(c.change)}`);
   const note = first.released ? [] : ["Not a release, so release changes skip it"];

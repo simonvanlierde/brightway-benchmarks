@@ -506,7 +506,7 @@ $effect(() => {
               <p class="reading-guide" id="reading-guide">
                 {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment and one even step per commit,
                 not by date{measure?.noise
-                  ? `; the band is the noise allowance: ${measure.bounds ? `${measure.noise.spreads} × the width of ${measure.bounds}, ` : ""}at least ±${measure.noise.floor * 100}%`
+                  ? `; the band is the noise allowance: ${measure.bounds ? `±${measure.noise.spreads} × the width of ${measure.bounds}, ` : ""}at least ±${+(measure.noise.floor * 100).toFixed(1)}%`
                   : measure?.bounds ? `; the band is ${measure.bounds}` : ""}. A ring marks a release that moved further than its band and the one before it allow (red worse,
                 teal better); a dashed line marks a level shift across the whole series.
               </p>

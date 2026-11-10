@@ -11,6 +11,7 @@ import {
   loadReport,
   type Report,
 } from "../lib/contract";
+import { envNotes, solverLinks } from "../lib/environments";
 import {
   axisLabels,
   benchLabel,
@@ -201,31 +202,8 @@ const shown = $derived<Line[]>(
   index && bench && measureId && reports ? linesOf(index, bench, params, measureId, reports) : [],
 );
 const changes = $derived(index && measureId && machine ? changesFor(index, shown, measureId, machine.id) : []);
-// What a shown environment runs, where the data explains it (an experimental solver, say): one entry each.
-const envNotes = $derived.by(() => {
-  const envs = new Map(index?.environments.map((e) => [e.id, e]));
-  const out = new Map<string, { name: string; text: string; url: string | undefined }>();
-  for (const l of shown) {
-    const env = envs.get(l.env);
-    if (!env?.description || out.has(env.description)) continue;
-    const name = env.label ?? env.name;
-    const text = env.description.startsWith(`${name}: `) ? env.description.slice(name.length + 2) : env.description;
-    out.set(env.description, { name, text, url: env.url ?? undefined });
-  }
-  return [...out.values()];
-});
-// Each other linked solver once: "UMFPACK" and "UMFPACK, MKL" share a page.
-const solverLinks = $derived.by(() => {
-  const envs = new Map(index?.environments.map((e) => [e.id, e]));
-  const noted = new Set(envNotes.map((n) => n.url));
-  const out = new Map<string, string>();
-  for (const l of shown) {
-    const env = envs.get(l.env);
-    if (env?.url && !noted.has(env.url) && !out.has(env.url))
-      out.set(env.url, (env.label ?? env.name).split(/,| on | · /)[0] ?? env.name);
-  }
-  return [...out].map(([url, label]) => ({ url, label }));
-});
+const notes = $derived(envNotes(index, shown));
+const solvers = $derived(solverLinks(index, shown, notes));
 // Commits on the chart that are not releases: release changes skip them.
 const unreleased = $derived(
   new Set(shown.flatMap((l) => l.points.filter((p) => !p.released).map((p) => p.commit))).size,
@@ -495,14 +473,14 @@ $effect(() => {
                 not by date{measure?.bounds ? `; the band is ${measure.bounds}` : ""}. A ring marks a change beyond its noise (red worse,
                 teal better); a dashed line marks a level shift across the whole series.
               </p>
-              {#if envNotes.length}
+              {#if notes.length}
                 <dl class="env-notes">
-                  {#each envNotes as note (`${note.name}|${note.text}`)}
+                  {#each notes as note (`${note.name}|${note.text}`)}
                     <div><dt>{#if note.url}<a href={note.url}>{note.name}</a>{:else}{note.name}{/if}</dt><dd>{note.text}</dd></div>
                   {/each}
                 </dl>
               {/if}
-              {#if solverLinks.length}<p class="env-links">{envNotes.length ? "Also" : "About"} the environments: {#each solverLinks as l, k (l.url)}{#if k}{" · "}{/if}<a href={l.url}>{l.label}</a>{/each}.</p>{/if}
+              {#if solvers.length}<p class="env-links">{notes.length ? "Also" : "About"} the environments: {#each solvers as l, k (l.url)}{#if k}{" · "}{/if}<a href={l.url}>{l.label}</a>{/each}.</p>{/if}
             </figcaption>
           </figure>
 

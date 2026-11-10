@@ -11,14 +11,13 @@ For each generated profile (all of them by default) at seed 0 and the current
 Profiles read from a real archive (``synth.ARCHIVES``) are refused: BAFU's terms forbid
 redistribution, and USEEIO (public domain) is not generator output. Every ecoSpold2 file is
 scanned before it is zipped (``licensed_hits``). What was left out goes to ``OUT-review/``,
-outside the archive. Nothing is uploaded. ``just dataset`` runs this in the benchmark box,
+outside the archive, when anything was. Nothing is uploaded. ``just dataset`` runs this in the benchmark box,
 which has bw_processing.
 """
 
 # First, so the BLAS thread pin lands before numpy loads (bwbench warns otherwise).
 import bwbench  # noqa: F401, I001
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -34,6 +33,7 @@ from pathlib import Path
 from bwbench import ecospold, synth
 from bwbench.matrices import write_datapackages
 from bwbench.shapes import PROFILES, Profile
+from bwbench.useeio import sha256_of
 
 LICENSE = "CC-BY-4.0"
 SEED = 0  # the seed every benchmark uses
@@ -89,19 +89,10 @@ def zip_folder(folder: Path, dest: Path, *, scan: bool) -> None:
             z.writestr(f.relative_to(folder).as_posix(), data)
 
 
-def sha256(path: Path) -> str:
-    """Hex SHA-256 of a file, read in chunks."""
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        while chunk := f.read(1 << 20):
-            h.update(chunk)
-    return h.hexdigest()
-
-
 def write_manifest(out: Path) -> list[dict]:
     """Write ``SHA256SUMS`` (``sha256sum -b`` format) over every file in ``out`` and return the entries."""
     files = [
-        {"path": f.relative_to(out).as_posix(), "bytes": f.stat().st_size, "sha256": sha256(f)}
+        {"path": f.relative_to(out).as_posix(), "bytes": f.stat().st_size, "sha256": sha256_of(f)}
         for f in sorted(out.rglob("*"))
         if f.is_file() and f.name != "SHA256SUMS"
     ]
@@ -198,8 +189,8 @@ Input magnitudes are less dispersed than ecoinvent's.
 
 ## Distribution
 
-{LICENSE}. `SHA256SUMS` holds a checksum for each file; `metadata.json` lists every file with its
-size and checksum, and every profile's fields. Each generator version is a new version of this record.
+{LICENSE}. `SHA256SUMS` holds the checksum of each file; `metadata.json` holds every profile's
+fields. Each generator version is a new version of this record.
 
 ## Maintenance
 
@@ -209,14 +200,30 @@ Simon van Lierde, through the repository's issues. A change to the generator bum
 
 
 def build(out: Path, names: list[str]) -> dict:
-    """Write the dataset into ``out`` (which must not exist) and return its metadata."""
+    """Write the dataset to ``out`` (which must not exist) and return its metadata.
+
+    It is built in ``out.partial`` and renamed at the end, so a failed or killed run leaves no
+    ``out`` for the written-once guard to refuse; the next run clears the partial folder.
+    """
+    final, out = out, out.with_name(out.name + ".partial")
+    shutil.rmtree(out, ignore_errors=True)
     out.mkdir(parents=True)
+    try:
+        meta = _build(out, names)
+    except BaseException:
+        shutil.rmtree(out, ignore_errors=True)
+        raise
+    out.rename(final)
+    return meta
+
+
+def _build(out: Path, names: list[str]) -> dict:
     commit = os.environ.get("BWBENCH_COMMIT") or "unknown"
     profiles = {}
     for name in names:
         s = synth.system(name, seed=SEED)
-        # Beside OUT, not in the box's /tmp: unzipped, `regional`'s ecoSpold2 files take about 34 GB.
-        with tempfile.TemporaryDirectory(prefix=f".{out.name}-{name}-", dir=out.parent) as tmp:
+        # Inside OUT's partial folder, not the box's /tmp: unzipped, `regional`'s ecoSpold2 files take about 34 GB.
+        with tempfile.TemporaryDirectory(prefix=f".{name}-", dir=out) as tmp:
             write_datapackages(s, Path(tmp) / "matrices")
             zip_folder(Path(tmp) / "matrices", out / f"{name}-matrices.zip", scan=False)
             ecospold.write_ecospold(s, Path(tmp) / "ecospold2", flow_ids(s.profile))
@@ -244,17 +251,16 @@ def main(argv: list[str] | None = None) -> int:
     """Refuse what may not ship, record it in OUT-review/, then build OUT."""
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("out", type=Path)
-    parser.add_argument(
-        "profiles", nargs="*", default=[n for n, p in PROFILES.items() if p.builder not in synth.ARCHIVES]
-    )
+    parser.add_argument("profiles", nargs="*", default=list(PROFILES))
     args = parser.parse_args(argv)
     if args.out.exists():
         parser.error(f"{args.out} exists: a dataset version is written once")
-    review = args.out.with_name(args.out.name + "-review")
-    shutil.rmtree(review, ignore_errors=True)
-    review.mkdir(parents=True)
     left_out = refused(args.profiles)
-    (review / "excluded.json").write_text(json.dumps(left_out, indent=2) + "\n")
+    if left_out:
+        review = args.out.with_name(args.out.name + "-review")
+        shutil.rmtree(review, ignore_errors=True)
+        review.mkdir(parents=True)
+        (review / "excluded.json").write_text(json.dumps(left_out, indent=2) + "\n")
     for name, why in left_out.items():
         print(f"{name}: left out, {why}", file=sys.stderr)
     build(args.out, [n for n in args.profiles if n not in left_out])

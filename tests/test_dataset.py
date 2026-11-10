@@ -2,6 +2,7 @@
 
 import hashlib
 import importlib
+import json
 import uuid
 from pathlib import Path
 from types import ModuleType
@@ -57,3 +58,45 @@ def test_zenodo_limits_are_enforced(dataset: ModuleType):
         dataset.check_zenodo([{"bytes": 1}] * 100)
     with pytest.raises(ValueError, match="Zenodo"):
         dataset.check_zenodo([{"bytes": 51 * 10**9}])
+
+
+def stub_matrices(monkeypatch: pytest.MonkeyPatch, dataset: ModuleType) -> None:
+    """write_datapackages needs bw_processing, which only the box has; the zips just need a file."""
+    monkeypatch.setattr(
+        dataset, "write_datapackages", lambda _s, folder: (folder.mkdir(), (folder / "x").write_text("x"))
+    )
+
+
+def test_main_builds_the_generated_profile_and_leaves_out_the_archive_one(
+    dataset: ModuleType, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    stub_matrices(monkeypatch, dataset)
+    assert dataset.main([str(tmp_path / "ds"), "smoke", "bafu"]) == 0
+    assert sorted(p.name for p in (tmp_path / "ds").iterdir()) == [
+        "README.md",
+        "SHA256SUMS",
+        "metadata.json",
+        "smoke-ecospold2.zip",
+        "smoke-matrices.zip",
+    ]
+    assert list(json.loads((tmp_path / "ds-review" / "excluded.json").read_text())) == ["bafu"]
+    meta = json.loads((tmp_path / "ds" / "metadata.json").read_text())
+    assert list(meta["profiles"]) == ["smoke"]
+    assert "files" not in meta  # SHA256SUMS holds the checksums
+    assert not (tmp_path / "ds.partial").exists()
+
+
+def test_nothing_excluded_writes_no_review_folder(dataset: ModuleType, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    stub_matrices(monkeypatch, dataset)
+    dataset.main([str(tmp_path / "ds"), "smoke"])
+    assert not (tmp_path / "ds-review").exists()
+
+
+def test_a_failing_scan_leaves_no_output(dataset: ModuleType, monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    stub_matrices(monkeypatch, dataset)
+    random_ids = lambda p: [str(uuid.UUID(int=j + 1, version=4)) for j in range(p.flows + dataset.SPARE_FLOWS)]  # noqa: E731
+    monkeypatch.setattr(dataset, "flow_ids", random_ids)
+    with pytest.raises(ValueError, match="UUID"):
+        dataset.build(tmp_path / "ds", ["smoke"])
+    assert not (tmp_path / "ds").exists()
+    assert not (tmp_path / "ds.partial").exists()

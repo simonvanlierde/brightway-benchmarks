@@ -17,6 +17,8 @@ flowchart LR
     descr["benchmarks/descriptions.toml<br/>benchmarks/findings.toml"] --> export
     export --> json["index.json + reports<br/>ui/schema/"]
     json --> ui["ui/<br/>Astro + Svelte viewer"]
+    compatb --> guide["scripts/export_guidance.py<br/>guidance.json"]
+    guide --> ui
     compatb --> site["site workflow<br/>just site"]
     ui --> site
     site --> pages["GitHub Pages"]
@@ -26,7 +28,8 @@ flowchart LR
 
 - [`asv/`](../asv/) holds one `SUBJECT.hashes` file per Brightway package (`bw2calc`, `bw2data`,
   `bw_graph_tools`, `bw_processing`, `bw_timex`, `matrix_utils`): the releases and commits to
-  time. `SUBJECT.json` is asv's configuration and `SUBJECT.stack.txt` is the fixed set of
+  time. `bw2calc-conda` is a seventh file, a second bw2calc suite on conda-forge's builds.
+  `SUBJECT.json` is asv's configuration and `SUBJECT.stack.txt` is the fixed set of
   dependencies every release runs on, so a timing change belongs to the subject and not to its
   dependencies. [`scripts/asv_conf.py`](../scripts/asv_conf.py) reads these files.
 - [`benchmarks/`](../benchmarks/) has one `bench_SUBJECT/` folder per package. A case is a setup
@@ -47,11 +50,14 @@ pyinstrument reports that a finding links to, not synthetic profiles.
 
 ## Where it runs
 
-Brightway's code runs only in the box: a container built from
+On your machine, Brightway's code runs only in the box: a container built from
 [`docker/Dockerfile`](../docker/Dockerfile) that sees this repository and nothing else.
 [`scripts/box.sh`](../scripts/box.sh) starts it and
 [`scripts/asv.sh`](../scripts/asv.sh) runs asv inside it. [`justfile`](../justfile) names the
 recipes (`just smoke`, `just bench`). Every recipe and variable is in [`docs/running.md`](running.md).
+
+A hosted CI runner is a throwaway machine too, so the `codspeed` and `cold-install` workflows
+install Brightway straight onto it.
 
 ## Where results go
 
@@ -88,7 +94,10 @@ scripts change on `main`.
 All of them are in [`.github/workflows/`](../.github/workflows/).
 
 - Pull requests: `ui` (lint, types, tests, build, size, browser tests), `python`, `checks` (git
-  hooks), `pr-title`, `dco`, `codspeed`.
+  hooks), `pr-title`, `dco`, `codspeed`, `fuzz` (when the release report script changes) and
+  `cold-install` (when the README or the workflow changes).
 - Scheduled: `compat` (nightly), `smoke` and `cold-install` (weekly, an install of a tested set in
-  a clean container), `links` (weekly web link check), `advisories`, `scorecard`.
+  a clean container), `links` (weekly web link check), `fair` (weekly), `advisories`, `scorecard`.
+- Manual: `noise-hosted` (the noise floor on a hosted runner) and `solvers-macos` (the solver
+  comparison on an Apple Silicon runner).
 - `release` makes the GitHub release when a `vX.Y.Z` tag is pushed.

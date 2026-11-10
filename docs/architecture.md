@@ -96,7 +96,8 @@ All of them are in [`.github/workflows/`](../.github/workflows/).
 - Pull requests: `ui` (lint, types, tests, build, size, browser tests), `python`, `checks` (git
   hooks), `pr-title`, `dco`, `codspeed`, `fuzz` (when the release report script changes) and
   `cold-install` (when the README or the workflow changes).
-- Scheduled: `compat` (nightly), `smoke` and `cold-install` (weekly, an install of a tested set in
+- Scheduled: `compat` (nightly), `python-probe` (daily, plus the end-of-life Pythons on
+  Mondays; [running](running.md#which-pythons-work)), `smoke` and `cold-install` (weekly, an install of a tested set in
   a clean container), `links` (weekly web link check), `fair` (weekly), `advisories`, `scorecard`.
 - Manual: `noise-hosted` (the noise floor on a hosted runner) and `solvers-macos` (the solver
   comparison on an Apple Silicon runner).

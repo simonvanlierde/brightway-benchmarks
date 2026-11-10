@@ -207,6 +207,10 @@ The `python-probe` workflow runs it each day for Python 3.11 to 3.15 on Linux, m
 and each Monday also for 3.9 and 3.10 on Linux, which are past end of life but some packages still
 declare. Each job's summary lists its steps, and its artifact holds both files.
 
+A package none of whose releases declares the Python, such as bw_timex on 3.9, is not a failure:
+its install step says `"declared": false`, and its imports are left out. A red job can still be a
+network failure, as nothing retries, so read the step's error before reporting it upstream.
+
 ### Install a set that works
 
 The site's [Setup page](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility)

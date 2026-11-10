@@ -18,6 +18,30 @@ test("selecting a conda check opens its own install set", async ({ page }) => {
   await expect(page.locator(`${command} pre`)).toContainText("/compat/conda-forge-");
 });
 
+test("the selected check cell is not drawn with the focus outline", async ({ page }) => {
+  await page.goto(`?platform=linux&check=${condaCheck}`);
+  const cell = page.locator(`.check-grid a[href*="check=${condaCheck}"]`);
+  await expect(cell).toHaveCSS("outline-style", "none");
+  await expect(cell).not.toHaveCSS("box-shadow", "none");
+  await cell.focus();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Shift+Tab");
+  await expect(cell).toHaveCSS("outline-style", "solid");
+});
+
+test("the app footer links both stories", async ({ page }) => {
+  await page.goto("?platform=linux");
+  const footer = page.locator(".site-footer");
+  await expect(footer.getByRole("link", { name: "Solver story" })).toHaveAttribute(
+    "href",
+    /\/stories\/solver-choice\/$/,
+  );
+  await expect(footer.getByRole("link", { name: "Heating case" })).toHaveAttribute(
+    "href",
+    /\/stories\/home-heating\/$/,
+  );
+});
+
 test("an explicit check replaces an incompatible remembered manager", async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem("bwbench.manager", "conda"));
   await page.goto(`?platform=linux&check=${preCheck}`);

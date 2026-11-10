@@ -326,3 +326,36 @@ describe("links already posted", () => {
     expect(pickParams(bench, wanted)[at]).toBe("'ecoinvent'");
   });
 });
+
+describe("the noise band", () => {
+  it("is the rule the exporter's release changes use", async () => {
+    const real = new URL("fixtures/real/", import.meta.url);
+    const read = async <T>(path: string): Promise<T> => JSON.parse(await readFile(new URL(path, real), "utf8"));
+    const index = await read<BenchmarkIndex>("index.json");
+    const found = new Set(
+      (index.changes ?? []).filter((c) => c.method === "release").map((c) => `${c.case}/${c.baseline}/${c.commit}`),
+    );
+    let pairs = 0;
+    for (const bench of index.benchmarks.filter((b) => b.measures.includes("latency"))) {
+      const reports = new Map<string, BenchmarkReport>();
+      for (const r of index.reports.filter((r) => r.group === bench.group)) {
+        reports.set(r.commit, await read<BenchmarkReport>(r.path));
+      }
+      for (const c of index.cases.filter((c) => c.benchmark === bench.id)) {
+        for (const line of lines(index, bench, c.params, "latency", reports).filter((l) => l.case === c.id)) {
+          const kept = line.points.filter((p) => p.released);
+          for (const [i, b] of kept.slice(1).entries()) {
+            const a = kept[i];
+            if (!a || a.noise === undefined || b.noise === undefined) throw new Error("a point without its band");
+            // A release counts as a change once it moves beyond the wider of the two bands.
+            expect(Math.abs(b.value / a.value - 1) > Math.max(a.noise, b.noise)).toBe(
+              found.has(`${c.id}/${a.commit}/${b.commit}`),
+            );
+            pairs++;
+          }
+        }
+      }
+    }
+    expect(pairs).toBeGreaterThan(700);
+  });
+});

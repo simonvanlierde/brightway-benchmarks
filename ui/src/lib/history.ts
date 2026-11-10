@@ -119,6 +119,8 @@ export interface Point {
   value: number;
   lower?: number;
   upper?: number;
+  /** How far, as a fraction of the value, the measure's noise rule lets the value move. */
+  noise?: number;
 }
 
 export interface Line {
@@ -139,6 +141,7 @@ export function lines(
 ): Line[] {
   const commits = index.commits.filter((c) => c.group === bench.group);
   const envs = new Map(index.environments.map((e) => [e.id, e]));
+  const rule = index.measures.find((m) => m.id === measure)?.noise;
   const cases = index.cases.filter(
     (c) => c.benchmark === bench.id && c.params.length === params.length && c.params.every((p, i) => p === params[i]),
   );
@@ -161,6 +164,12 @@ export function lines(
           value: metric.value,
           ...(metric.lower_value === undefined ? {} : { lower: metric.lower_value }),
           ...(metric.upper_value === undefined ? {} : { upper: metric.upper_value }),
+          ...(rule && {
+            noise: Math.max(
+              rule.floor,
+              (rule.spreads * ((metric.upper_value ?? 0) - (metric.lower_value ?? 0))) / metric.value,
+            ),
+          }),
         },
       ];
     }),

@@ -71,7 +71,10 @@ function words(change: Change): string {
 function stepText(step: (typeof steps)[number]): string {
   const [first] = step;
   if (!first) return "";
-  const rows = step.map((p) => `${p.short}: ${format(p.value, unit)}`);
+  const rows = step.map(
+    (p) =>
+      `${p.short}: ${format(p.value, unit)}${p.noise === undefined ? "" : ` ${noiseText({ threshold: p.noise })}`}`,
+  );
   const marks = (changeAt.get(first.commit) ?? []).map((c) => `${c.short}: ${words(c.change)}`);
   const note = first.released ? [] : ["Not a release, so release changes skip it"];
   return [`${first.label} · ${first.date}`, ...rows, ...marks, ...note].join("\n");
@@ -93,8 +96,8 @@ $effect(() => {
   const data = points.map((p) => ({
     ...p,
     y: p.value / divisor,
-    lo: (p.lower ?? p.value) / divisor,
-    hi: (p.upper ?? p.value) / divisor,
+    lo: (p.noise === undefined ? (p.lower ?? p.value) : p.value * (1 - p.noise)) / divisor,
+    hi: (p.noise === undefined ? (p.upper ?? p.value) : p.value * (1 + p.noise)) / divisor,
   }));
   const tips = steps.map((s) => ({
     label: s[0]?.label ?? "",

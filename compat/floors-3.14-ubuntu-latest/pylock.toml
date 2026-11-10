@@ -809,9 +809,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/41/a4/ee0bdba1d1e98db
 
 [[packages]]
 name = "soupsieve"
-version = "4.0.1"
-sdist = { url = "https://files.pythonhosted.org/packages/01/7c/a64eedae0b7776cb9602d2da9cb8f8caae8e1b4c1da5e8e87bf1e68121ec/soupsieve-4.0.1.tar.gz", upload-time = 2026-11-04T16:36:27Z, size = 153302, hashes = { sha256 = "7621e3c5f6b371ed2c5eabaac5de300ac3d66d05e6d7f34783e31b63c4f90c75" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/2c/5c/4f68370847b561a389dd9a2d7eb3d19fd8cbb8acbae543a0c6b8d0d9700b/soupsieve-4.0.1-py3-none-any.whl", upload-time = 2026-11-04T16:36:26Z, size = 50688, hashes = { sha256 = "2e68cf7dd5a0f29d81f9d485275ccf294e6475f615e211895d91cb81f8614f04" } }]
+version = "4.1"
+sdist = { url = "https://files.pythonhosted.org/packages/95/48/21a393ff731b8f928fa4f8176f9a7ceba2252ee60a5149f25b45c292aa5c/soupsieve-4.1.tar.gz", upload-time = 2026-11-10T01:59:50Z, size = 161955, hashes = { sha256 = "ca9abf7126667010d8f6e9b39bfc1bc3b23c8aed9bcb0f54a754dde969bb8aab" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/88/73/6a2087c72975cfc07394623bca8d17654342ea4055ae368deafe5a81a542/soupsieve-4.1-py3-none-any.whl", upload-time = 2026-11-10T01:59:48Z, size = 52302, hashes = { sha256 = "e4d667b3974ce6e038e7390486b8093369854a1d345ffdd4c121dfc4a782e809" } }]
 
 [[packages]]
 name = "sparqlwrapper"
@@ -867,9 +867,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/60/45/c7b5c3168458db8
 
 [[packages]]
 name = "tornado"
-version = "6.6"
-sdist = { url = "https://files.pythonhosted.org/packages/d0/02/5f549b1ad5da6267ed1e1fac2eef69257b1979cc812497002499b7895ff9/tornado-6.6.tar.gz", upload-time = 2026-10-21T15:31:04Z, size = 617998, hashes = { sha256 = "34c4aa916d7f2b2d5cadee2c6850f5a4a7f3d688cbf58399ea9bd3057af4abd5" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/30/69/b20cf3a8bf641ec792a5a6050aa153e8f120604f9c23471142de535113e5/tornado-6.6-cp311-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", upload-time = 2026-10-21T15:30:07Z, size = 529544, hashes = { sha256 = "11bb97c00981eb8254e55bd6a5ad960c983ae343fef8ae3ae5584cd1fb70236a" } }]
+version = "6.6.1"
+sdist = { url = "https://files.pythonhosted.org/packages/64/2b/8ff2b41620cbba0eeb0862fed21dcaa5a2ad36c6dd9bb465f9ff7a147be2/tornado-6.6.1.tar.gz", upload-time = 2026-11-09T21:09:22Z, size = 623388, hashes = { sha256 = "28e6311402af59c8b02e3fa0f5e7d8eb465b25081381803b127d97e6a4395d5a" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/38/4d/c65ea949a3cdc185f1afac8c337074d4f2d029b48293d2db4d2c3dea4849/tornado-6.6.1-cp311-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", upload-time = 2026-11-09T21:08:24Z, size = 534470, hashes = { sha256 = "1b6ff57cc69b339f8feb9e7b567b0e0eacb16bfaf234159496623ef7a67ba640" } }]
 
 [[packages]]
 name = "tqdm"

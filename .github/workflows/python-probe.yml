@@ -6,8 +6,8 @@ name: python-probe
 
 on:
   schedule:
-    - cron: "23 4 * * *" # daily 04:23 UTC
-    - cron: "53 4 * * 1" # Mondays 04:53 UTC, adds the end-of-life lines
+    - cron: "23 4 * * 0,2-6" # 04:23 UTC except Mondays
+    - cron: "23 4 * * 1" # Mondays 04:23 UTC, with the end-of-life lines
   workflow_dispatch:
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
         python: ["3.11", "3.12", "3.13", "3.14", "3.15"]
         os: [ubuntu-latest, macos-latest, windows-latest]
         # The end-of-life lines, on the weekly cron and a manual run only.
-        include: ${{ fromJSON(github.event.schedule == '23 4 * * *' && '[]' || '[{"python":"3.9","os":"ubuntu-latest"},{"python":"3.10","os":"ubuntu-latest"}]') }}
+        include: ${{ fromJSON(github.event.schedule == '23 4 * * 0,2-6' && '[]' || '[{"python":"3.9","os":"ubuntu-latest"},{"python":"3.10","os":"ubuntu-latest"}]') }}
     defaults:
       run:
         shell: bash
@@ -52,7 +52,7 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           jq -r '"### Python \(.python) on \(.os)\n",
-            (.steps[] | "- \(if .ok then "ok" else "**FAIL**" end) \(.step)\(if .error then ": `\(.error)`" else "" end)")' \
+            (.steps[] | "- \(if .ok then "ok" else "**FAIL**" end) \(.step)\(if .error then ": \(.error)" else "" end)")' \
             "$OUT/probe.json" >>"$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

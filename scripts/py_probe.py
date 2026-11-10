@@ -96,7 +96,7 @@ def inside() -> list[dict]:
 
 def run(*args: str) -> subprocess.CompletedProcess:
     """ARGS's result, output captured."""
-    return subprocess.run(args, capture_output=True, text=True, check=False)  # noqa: S603 - uv and the venv's python
+    return subprocess.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)  # noqa: S603 - uv and the venv's python
 
 
 def probe(python: str, out: Path) -> list[dict]:
@@ -117,8 +117,15 @@ def probe(python: str, out: Path) -> list[dict]:
                 steps[-1]["error"] = " ".join(done.stderr.split())  # uv wraps its reason over several lines
         (out / "requirements.txt").write_text(run("uv", "pip", "freeze", "--python", str(py)).stdout)
         env = {**os.environ, "BRIGHTWAY_DIR": str(venv / "bw")}
+        # -I drops PYTHONUTF8, so on Windows the inner Python would write cp1252 without -X utf8.
         inner = subprocess.run(  # noqa: S603
-            [str(py), "-I", __file__, "--inside"], capture_output=True, text=True, check=False, env=env
+            [str(py), "-I", "-X", "utf8", __file__, "--inside"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+            env=env,
         )
         try:
             steps += json.loads(inner.stdout)

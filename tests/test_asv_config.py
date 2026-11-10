@@ -50,7 +50,9 @@ def test_conda_pins_match_the_stack_pip_installs(subject: str):
     stack = f"/src/asv/{subject}.stack.txt"
     assert any(stack in cmd for cmd in conf["install_command"])
     pins = dict(
-        line.split(" ;")[0].split("==") for line in (ASV / f"{subject}.stack.txt").read_text().splitlines() if line
+        line.split(" ;")[0].split("==")
+        for line in (ASV / f"{subject}.stack.txt").read_text().splitlines()
+        if line and not line.startswith("#")
     )
     for env in conf["include"]:
         for name, version in env["req"].items():
@@ -65,3 +67,17 @@ def test_patched_solver_environments_name_a_known_solver_and_install_it():
     assert {e["env"]["BWBENCH_SOLVER"] for e in patched} == set(FACTORIZERS)
     for e in patched:
         assert installs[e["env"]["BWBENCH_SOLVER"]] in e["req"]
+
+
+@pytest.mark.parametrize("subject", SUBJECTS)
+def test_stack_names_a_cutoff_no_later_than_in_box(subject: str):
+    """A stack resolved after the cutoff would not install: pip refuses packages uploaded after it.
+
+    An earlier one is how a stack stays put while another subject's release moves the cutoff.
+    """
+    cutoff = re.search(r"^cutoff=(\S+)$", (ASV.parent / "scripts" / "in-box.sh").read_text(), re.MULTILINE)
+    first = (ASV / f"{subject}.stack.txt").read_text().splitlines()[0]
+    resolved = re.fullmatch(r"# cutoff (\S+)", first)
+    assert cutoff
+    assert resolved, f"asv/{subject}.stack.txt starts {first!r}, not '# cutoff DATE' (scripts/stack.sh)"
+    assert resolved[1] <= cutoff[1], f"asv/{subject}.stack.txt was resolved at {resolved[1]}, after {cutoff[1]}"

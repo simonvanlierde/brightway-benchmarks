@@ -116,7 +116,9 @@ benchmark, otherwise with exit 137. Set `BWBENCH_MEM` to give it more.
 
 1. Add it to `asv/<package>.hashes`.
 2. Move the cutoff in `scripts/in-box.sh`.
-3. Run `just stack <package>` to resolve the new fixed set of dependencies.
+3. Run `just stack <package>` to resolve the new fixed set of dependencies. Its first line names
+   the cutoff it was resolved at, and the tests fail when that is later than the one in
+   `scripts/in-box.sh`. Other packages' sets keep their older cutoff until they are resolved again.
 4. Run `just stack-check <package>`, and drop the releases that no longer run on it.
 
 [method.md](method.md#how-the-results-stay-reproducible) says why the set is fixed.

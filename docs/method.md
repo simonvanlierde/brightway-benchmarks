@@ -198,7 +198,8 @@ marks, two ways:
   [`scripts/change_points.py`](../scripts/change_points.py), in an environment of its own.
 
 In the results exported on 30 October 2026, the median case's spread is 0.2 to 1.1% in every
-suite, so the 2% floor sets most bands; a few noisy cases get bands of up to 8% (conda builds of
-bw2calc) or 16% (bw_processing). Most release-to-release steps stay inside the band: 94% for
-bw2calc, 73 to 100% for the other suites, and 5 of 10 for bw_timex, whose releases changed its
-speed.
+suite, so the 2% floor sets most bands: the median band is ±2.0% in five suites and ±3.3 to 3.4%
+in bw_processing and bw_timex. A noisy value widens its own band, up to ±56% for one bw2calc
+release and ±41% for a bw_timex commit that is not a release; 9 of 1,001 release values have a
+band over ±10%. Most release-to-release steps stay inside the band: 94% for bw2calc, 73 to 100%
+for the other suites, and 5 of 10 for bw_timex, whose releases changed its speed.

@@ -60,6 +60,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Each `asv/<package>.stack.txt` names the cutoff it was resolved at, and `just stack` refuses to
   resolve at any other than `scripts/in-box.sh`'s. The new first line renames the benchmark
   environments once.
+- The box image's tag covers its own Dockerfile stage only, so an edit to the CodSpeed or conda
+  stage no longer rebuilds it. `scripts/box.sh --image` prints the tag.
 - Benchmarks and Setup use readable names, open with what the site checks, and show a plain
   message when data fails to load.
 

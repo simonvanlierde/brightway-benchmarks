@@ -61,23 +61,52 @@ def test_box_mounts_the_repo_read_only_and_drops_privileges(box: tuple[Path, Pat
         assert flag in args
 
 
-def test_box_rebuilds_the_image_when_the_dockerfile_changes(box: tuple[Path, Path]):
+def test_box_rebuilds_an_image_only_when_its_stages_change(box: tuple[Path, Path]):
     repo, log = box
+    dockerfile = repo / "docker" / "Dockerfile"
 
-    def built_tag() -> str:
+    def built_tag(target: str = "box") -> str:
         log.write_text("")
-        out = run_box(repo, STUB_NO_IMAGE="1")
+        out = run_box(repo, STUB_NO_IMAGE="1", BWBENCH_TARGET=target)
         assert out.returncode == 0, out.stderr
-        assert "building the box image" in out.stderr
+        assert f"building the {target} image" in out.stderr
         args = log.read_text().split("\n")
         return args[args.index("-t") + 1]
 
-    first = built_tag()
-    assert first.startswith("bwbench-box:")
-    assert built_tag() == first
-    with (repo / "docker" / "Dockerfile").open("a") as f:
-        f.write("# edited\n")
-    assert built_tag() != first
+    def edit(after: str, line: str) -> None:
+        text = dockerfile.read_text()
+        assert after in text
+        dockerfile.write_text(text.replace(after, f"{after}\n{line}", 1))
+
+    box_tag, codspeed, conda = built_tag(), built_tag("codspeed"), built_tag("conda")
+    assert box_tag.startswith("bwbench-box:")
+    assert built_tag() == box_tag
+    # The codspeed and conda stages, and comments anywhere, are not the box image's.
+    edit("AS codspeed", "RUN true")
+    edit("AS conda", "RUN true")
+    edit("AS box", "# a comment")
+    assert built_tag() == box_tag
+    assert built_tag("codspeed") != codspeed
+    assert built_tag("conda") != conda
+    # codspeed builds on box, so a box edit is a codspeed edit too.
+    codspeed = built_tag("codspeed")
+    edit("AS box", "RUN true")
+    assert built_tag() != box_tag
+    assert built_tag("codspeed") != codspeed
+
+
+def test_box_image_prints_the_image_without_running_it(box: tuple[Path, Path]):
+    repo, log = box
+    out = subprocess.run(
+        ["/bin/bash", str(repo / "scripts" / "box.sh"), "--image"],
+        env={"PATH": f"{repo / 'stub'}:/usr/bin:/bin"},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert out.returncode == 0, out.stderr
+    assert out.stdout.startswith("bwbench-box:")
+    assert "run" not in log.read_text().split("\n")
 
 
 def run_in_box(tmp_path: Path, command: str, path: str = "/usr/bin:/bin") -> tuple[int, str]:

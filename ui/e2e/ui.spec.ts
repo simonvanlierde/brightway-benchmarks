@@ -347,6 +347,8 @@ for (const width of [390, 1440]) {
   test(`search keeps results visible and typing focused at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("./");
+    // A phone keeps the search behind an icon.
+    if (width < 600) await page.getByRole("button", { name: "Show the benchmark search" }).click();
     const search = page.getByRole("searchbox", { name: "Find a benchmark" });
     await search.focus();
     await search.pressSequentially("import");
@@ -359,14 +361,24 @@ for (const width of [390, 1440]) {
   });
 }
 
-test("benchmark explanations keep the design's minimum text size", async ({ page }) => {
+// Two tiers: evidence a reader acts on is 14px or more; 12px is for meta (dates, build ids, captions) and the floor.
+test("benchmark explanations keep the design's text tiers", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chart(page, SCORES);
-  const sizes = await page
-    .locator(".field-note, .benchmark-id")
-    .evaluateAll((nodes) => nodes.map((node) => Number.parseFloat(getComputedStyle(node).fontSize)));
-  expect(sizes.length).toBeGreaterThan(0);
-  expect(Math.min(...sizes)).toBeGreaterThanOrEqual(12);
+  const size = (selector: string) =>
+    page
+      .locator(selector)
+      .evaluateAll((nodes) => nodes.map((node) => Number.parseFloat(getComputedStyle(node).fontSize)));
+  const evidence = [
+    ...(await size(".field-note")),
+    ...(await size(".reading-guide")),
+    ...(await size(".env-notes dd")),
+  ];
+  expect(evidence.length).toBeGreaterThan(0);
+  expect(Math.min(...evidence)).toBeGreaterThanOrEqual(14);
+  const meta = await size(".benchmark-id");
+  expect(meta.length).toBeGreaterThan(0);
+  expect(Math.min(...meta)).toBeGreaterThanOrEqual(12);
 });
 
 test("an unknown benchmark link names the problem", async ({ page }) => {
@@ -642,7 +654,7 @@ test("each package manager has its own command, and the choice is remembered", a
   // That check's caveats come with its command, such as the packages conda-forge lacks.
   const conda = (await guidanceFixture()).checks.find((c) => c.id.startsWith("conda-forge-"));
   await expect(page.locator(".install-set .caveats li")).toHaveText(conda?.caveats ?? []);
-  await expect(page.locator(".install-meta a").first()).toHaveText("environment.yml");
+  await expect(page.locator(".install-files a").first()).toHaveText("environment.yml");
   await page.getByRole("combobox", { name: "Package manager" }).selectOption("pixi");
   await expect(command).toContainText("pixi install --frozen");
   await page.reload();

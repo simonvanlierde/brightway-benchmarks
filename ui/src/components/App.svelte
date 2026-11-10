@@ -206,18 +206,28 @@ const shown = $derived<Line[]>(
   index && bench && measureId && reports ? linesOf(index, bench, params, measureId, reports) : [],
 );
 const changes = $derived(index && measureId && machine ? changesFor(index, shown, measureId, machine.id) : []);
-// Each linked solver once: "UMFPACK" and "UMFPACK, MKL" share a page.
-// What a shown environment runs, where the data explains it (an experimental solver, say).
+// What a shown environment runs, where the data explains it (an experimental solver, say): one entry each.
 const envNotes = $derived.by(() => {
   const envs = new Map(index?.environments.map((e) => [e.id, e]));
-  return [...new Set(shown.map((l) => envs.get(l.env)?.description).filter((d): d is string => Boolean(d)))];
+  const out = new Map<string, { name: string; text: string; url: string | undefined }>();
+  for (const l of shown) {
+    const env = envs.get(l.env);
+    if (!env?.description || out.has(env.description)) continue;
+    const name = env.label ?? env.name;
+    const text = env.description.startsWith(`${name}: `) ? env.description.slice(name.length + 2) : env.description;
+    out.set(env.description, { name, text, url: env.url ?? undefined });
+  }
+  return [...out.values()];
 });
+// Each other linked solver once: "UMFPACK" and "UMFPACK, MKL" share a page.
 const solverLinks = $derived.by(() => {
   const envs = new Map(index?.environments.map((e) => [e.id, e]));
+  const noted = new Set(envNotes.map((n) => n.url));
   const out = new Map<string, string>();
   for (const l of shown) {
     const env = envs.get(l.env);
-    if (env?.url && !out.has(env.url)) out.set(env.url, (env.label ?? env.name).split(/,| on | · /)[0] ?? env.name);
+    if (env?.url && !noted.has(env.url) && !out.has(env.url))
+      out.set(env.url, (env.label ?? env.name).split(/,| on | · /)[0] ?? env.name);
   }
   return [...out].map(([url, label]) => ({ url, label }));
 });
@@ -249,7 +259,14 @@ const HINTS: Record<ContractError["kind"], string> = {
 };
 const unit = $derived(measure?.unit ?? "");
 let tableOpen = $state(false);
-let search = $state("");
+// Opened from a static page's search, which hands its words over as ?q=.
+let search = $state(new URLSearchParams(location.search).get("q") ?? "");
+// On a phone the search sits behind an icon in the masthead.
+let searchOpen = $state(false);
+function toggleSearch() {
+  searchOpen = !searchOpen;
+  if (searchOpen) tick().then(() => document.getElementById("benchmark-search")?.focus());
+}
 // The masthead's search shows its matches in the catalogue; Enter opens the first.
 function searchFor(text: string) {
   search = text;
@@ -264,6 +281,10 @@ const matching = $derived(
   index?.benchmarks.filter((b) => `${b.name} ${labelOf(b)}`.toLowerCase().includes(search.toLowerCase())) ?? [],
 );
 const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => (index ? benchLabel(index, b) : b.name);
+// A name shared by several packages ("MultiLCA" in bw2calc and bw2calc (conda-forge)) says which one it is.
+const repeated = $derived(
+  new Set((index?.benchmarks ?? []).map(labelOf).filter((l, _, all) => all.indexOf(l) !== all.lastIndexOf(l))),
+);
 const tableRows = $derived.by(() => {
   const byCommit = shown.map((l) => new Map(l.points.map((p) => [p.commit, p])));
   return commits.map((c) => ({ c, cells: byCommit.map((m) => m.get(c.id)) })).filter((r) => r.cells.some((x) => x));
@@ -312,15 +333,18 @@ $effect(() => {
 <a class="skip" href="#main">Skip to the results</a>
 <header class="top">
   <div class="top-inner">
-    <h1><a href={location.pathname} onclick={(e) => follow(e, { params: [] })}><LogoMark size={24} /><span>{index?.project.name === "brightway-benchmarks" ? "Brightway Benchmarks" : (index?.project.name ?? "Brightway Benchmarks")}</span></a></h1>
+    <h1><a href={location.pathname} onclick={(e) => follow(e, { params: [] })}><LogoMark size={24} /><span class="brand-name">{index?.project.name === "brightway-benchmarks" ? "Brightway Benchmarks" : (index?.project.name ?? "Brightway Benchmarks")}</span></a></h1>
     <nav class="primary-nav" aria-label="Main" bind:this={masthead}>
       {#each PAGES as [id, text] (id)}
         <a href={writeView({page:id,params:[]})} aria-current={page === id ? "page" : undefined} onclick={(e) => follow(e, {page:id,params:[]})}>{text}</a>
       {/each}
     </nav>
-    <form class="masthead-search" role="search" onsubmit={openFirst}>
-      <label class="sr" for="benchmark-search">Find a benchmark</label>
-      <input id="benchmark-search" type="search" value={search} oninput={(e) => searchFor(e.currentTarget.value)} placeholder="Find a benchmark…" />
+    <button type="button" class="search-toggle" aria-label="Show the benchmark search" aria-expanded={searchOpen || search.length > 0} aria-controls="masthead-search" onclick={toggleSearch}>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+    </button>
+    <form class="masthead-search" id="masthead-search" class:open={searchOpen || search.length > 0} role="search" onsubmit={openFirst}>
+      <label for="benchmark-search">Find a benchmark</label>
+      <input id="benchmark-search" type="search" value={search} oninput={(e) => searchFor(e.currentTarget.value)} placeholder="Name or package" />
     </form>
     <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme">
       <svg data-theme-icon="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z"/></svg>
@@ -345,29 +369,32 @@ $effect(() => {
   {:else}
     {#if page === "explorer"}
     <nav class="rail" aria-label="Benchmarks">
-      <details open={wide || search.length > 0}>
+      <details class="rail-all" open={wide || search.length > 0}>
         <summary>Benchmark catalogue</summary>
         <a class="home" href={writeView({page:"explorer",params:[]})} aria-current={bench ? undefined : "page"} onclick={(e) => follow(e, { page:"explorer", params: [] })}
           >All benchmarks</a
         >
         {#if matching.length === 0}<p class="rail-empty">No benchmarks match “{search}”.</p>{/if}
         {#each index.groups.filter((g) => matching.some((b) => b.group === g.id)) as g (g.id)}
-          <h2 id="rail-{g.id}">{g.label ?? g.name}</h2>
-          {#if g.description}<p class="rail-about">{g.description}</p>{/if}
-          <ul aria-labelledby="rail-{g.id}">
-            {#each matching.filter((b) => b.group === g.id) as b (b.id)}
-              {@const next = { bench: b.id, params: [] }}
-              <li>
-                <a
-                  href={writeView(next)}
-                  aria-current={b.id === bench?.id ? "page" : undefined}
-                  onclick={(e) => follow(e, next)}
-                  title={b.name}
-                  >{labelOf(b)}</a
-                >
-              </li>
-            {/each}
-          </ul>
+          {@const members = matching.filter((b) => b.group === g.id)}
+          <details class="rail-group" open={g.id === bench?.group || search.length > 0}>
+            <summary id="rail-{g.id}">{g.label ?? g.name}<span class="rail-count">{members.length}</span></summary>
+            {#if g.description}<p class="rail-about">{g.description}</p>{/if}
+            <ul aria-labelledby="rail-{g.id}">
+              {#each members as b (b.id)}
+                {@const next = { bench: b.id, params: [] }}
+                <li>
+                  <a
+                    href={writeView(next)}
+                    aria-current={b.id === bench?.id ? "page" : undefined}
+                    onclick={(e) => follow(e, next)}
+                    title={b.name}
+                    >{labelOf(b)}{#if repeated.has(labelOf(b))}<span class="sr"> in {g.label ?? g.name}</span>{/if}</a
+                  >
+                </li>
+              {/each}
+            </ul>
+          </details>
         {/each}
       </details>
     </nav>
@@ -471,11 +498,19 @@ $effect(() => {
               <div class="empty" role="alert"><p>The chart did not load: {String(reason)}</p></div>
             {/await}
             <figcaption>
-              {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment and one even step per commit,
-              not by date{measure?.bounds ? `; the band is ${measure.bounds}` : ""}. A ring marks a change beyond its noise (red worse,
-              teal better); a dashed line marks a level shift across the whole series.
-              {#if solverLinks.length}<span class="env-links">About the environments: {#each solverLinks as l, k (l.url)}{#if k}{" · "}{/if}<a href={l.url}>{l.label}</a>{/each}.</span>{/if}
-              {#each envNotes as note (note)}<span class="env-note">{note}</span>{/each}
+              <p class="reading-guide">
+                {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment and one even step per commit,
+                not by date{measure?.bounds ? `; the band is ${measure.bounds}` : ""}. A ring marks a change beyond its noise (red worse,
+                teal better); a dashed line marks a level shift across the whole series.
+              </p>
+              {#if envNotes.length}
+                <dl class="env-notes">
+                  {#each envNotes as note (note.name)}
+                    <div><dt>{#if note.url}<a href={note.url}>{note.name}</a>{:else}{note.name}{/if}</dt><dd>{note.text}</dd></div>
+                  {/each}
+                </dl>
+              {/if}
+              {#if solverLinks.length}<p class="env-links">{envNotes.length ? "Also" : "About"} the environments: {#each solverLinks as l, k (l.url)}{#if k}{" · "}{/if}<a href={l.url}>{l.label}</a>{/each}.</p>{/if}
             </figcaption>
           </figure>
 

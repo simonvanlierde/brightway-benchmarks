@@ -139,11 +139,15 @@ $effect(() => {
   const spread =
     labels.length <= 3 && domain.length > 1 ? Math.min(20, width / (labels.length * 3 * domain.length)) : 0;
   const series = domain.map((name, i) => ({ name, dx: (i - (domain.length - 1) / 2) * spread }));
+  // End-of-line names where they fit; the legend above stays as the fallback and the way to focus a line.
+  const labelled = width >= 640 && domain.length > 1;
+  const labelRoom = labelled ? Math.min(160, Math.ceil(Math.max(...domain.map((n) => n.length)) * 6.8) + 18) : 16;
+  const emphasis = (name: string) => name === chosen;
   const plot = Plot.plot({
     width,
     height: width < 480 ? 300 : 380,
     marginLeft: 56,
-    marginRight: 16,
+    marginRight: labelRoom,
     marginTop: 24,
     marginBottom: 36,
     ariaLabel: `${title}, ${unitName} per release`,
@@ -171,7 +175,14 @@ $effect(() => {
             ? Plot.areaY(mine, { x: "label", y1: "lo", y2: "hi", dx, fill: "short", fillOpacity: 0.12, clip: true })
             : null,
           joined
-            ? Plot.lineY(mine, { x: "label", y: "y", dx, stroke: "short", strokeWidth: 2, strokeOpacity: fade })
+            ? Plot.lineY(mine, {
+                x: "label",
+                y: "y",
+                dx,
+                stroke: "short",
+                strokeWidth: emphasis(name) ? 3.5 : 2,
+                strokeOpacity: fade,
+              })
             : null,
           // Outlined, so a symbol under another of a different shape still shows.
           Plot.dot(mine, {
@@ -181,8 +192,8 @@ $effect(() => {
             fill: "none",
             stroke: "short",
             symbol: "short",
-            r: joined ? 4 : 5,
-            strokeWidth: 1.5,
+            r: (joined ? 5 : 6) + (emphasis(name) ? 2 : 0),
+            strokeWidth: emphasis(name) ? 2.5 : 1.5,
             strokeOpacity: faint,
           }),
           ...tiers.map((t) =>
@@ -206,6 +217,43 @@ $effect(() => {
         : null,
     ],
   });
+  if (labelled) {
+    const x = plot.scale("x");
+    const y = plot.scale("y");
+    if (!x || !y) throw new Error("the chart has no scales");
+    const last = Math.max(...data.map((d) => d.at));
+    const ends = series
+      .flatMap(({ name, dx }) => {
+        const end = data.find((d) => d.short === name && d.at === last) ?? data.filter((d) => d.short === name).at(-1);
+        return end ? [{ name, dx, x: x.apply(end.label) as number, y: y.apply(end.y) as number }] : [];
+      })
+      .sort((a, b) => a.y - b.y);
+    // Names that would touch are pushed apart, 14px a line, and kept inside the plot.
+    const floor = Number(plot.getAttribute("height")) - 36;
+    let prev = Number.NEGATIVE_INFINITY;
+    for (const e of ends) {
+      e.y = Math.max(e.y, prev + 14);
+      prev = e.y;
+    }
+    let next = Math.max(floor, prev);
+    for (const e of ends.toReversed()) {
+      e.y = Math.min(e.y, next);
+      next = e.y - 14;
+    }
+    for (const e of ends) {
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("x", String(e.x + e.dx + 12));
+      text.setAttribute("y", String(e.y));
+      text.setAttribute("dominant-baseline", "central");
+      text.setAttribute("text-anchor", "start"); // the plot's own style centres text
+      text.setAttribute("fill", v("--ink-2"));
+      text.setAttribute("data-end-label", e.name);
+      if (chosen && e.name !== chosen) text.setAttribute("opacity", "0.35");
+      if (emphasis(e.name)) text.setAttribute("font-weight", "650");
+      text.textContent = e.name;
+      plot.append(text);
+    }
+  }
   // Plot labels each mark's group without giving it a role, which axe rejects (aria-prohibited-attr).
   // The pointer's tip is drawn again on each move, so new groups get the same treatment.
   const unlabel = () => {

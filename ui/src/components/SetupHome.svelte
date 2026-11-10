@@ -106,7 +106,8 @@ $effect(() => {
 
 <header class="home-intro">
   <h2>{guidance?.title ?? index.project.name}</h2>
-  <p>Which Brightway packages work together, and which combination runs your LCA fastest? <a href="https://docs.brightway.dev/en/latest/">Brightway</a> is a family of open-source Python packages for life cycle assessment (LCA), each released on its own. Every night this site installs the latest releases on Linux, macOS and Windows and checks that they work together. It times every release on one Linux machine. {guidance?.intro ?? index.project.description ?? ""}</p>
+  <p>Which Brightway packages work together, and which combination runs your LCA fastest? <a href="https://docs.brightway.dev/en/latest/">Brightway</a> is a family of open-source Python packages for life cycle assessment (LCA), each released on its own.</p>
+  <p>Every night this site installs the latest releases on Linux, macOS and Windows and checks that they work together. It times every release on one Linux machine. {guidance?.intro ?? index.project.description ?? ""}</p>
 </header>
 
 <div class="home-columns">
@@ -127,10 +128,11 @@ $effect(() => {
 
       <section class="all-checks" id="all-checks" aria-labelledby="all-checks-heading">
         <div class="checks-heading">
-          <h2 id="all-checks-heading"><span class="desktop-checks">All checks</span><span class="phone-checks">{platform.label} checks</span></h2>
-          <small class="checks-date"><a href={guidance.snapshot.run}>Checked {dateLabel(guidance.snapshot.date)}</a></small>
+          <h2 id="all-checks-heading">Checks</h2>
+          <small class="checks-date">Checked {dateLabel(guidance.snapshot.date)} · <a href={guidance.snapshot.run}>open the run</a></small>
         </div>
         <div class="desktop-checks"><p class="check-help" id="check-instructions"><span>Select a check to view its install set above.</span><span hidden={!overflowing}>Scroll to see all check types.</span></p></div>
+        <div class="phone-checks"><p class="check-showing">Showing {platform.label}. Change the operating system above for the others.</p></div>
         <ul class="platform-checks phone-checks" aria-label="{platform.label} checks">
           {#each mine as c (c.id)}
             <li><a href={writeView(at(c))} onclick={(e) => pick(e, c)} aria-current={c.id === selected?.id ? "true" : undefined}><span><span class="sr">{platform.label} · </span><span class="check-name">{c.label}</span>{" "}<small>Python {c.python}</small></span>{" "}<strong class={statusTone(c.status)}>{statusLabel(c.status)}</strong></a></li>

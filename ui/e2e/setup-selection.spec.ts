@@ -132,7 +132,7 @@ test("a failed test-suite result beside the command says what it covers", async 
   await page.goto("?platform=linux");
   await expect(page.locator(".result-line")).toContainText("Upstream test suites · Python 3.12 Failed");
   await expect(page.locator(".install-set")).toContainText(
-    "Upstream test suites run each package's own tests on the latest releases",
+    "Upstream test suites run each package's own tests, which covers more than the calculation checks, and did not pass",
   );
-  await expect(page.locator(".install-set")).toContainText("the set that last passed the Latest releases check");
+  await expect(page.locator(".install-set")).toContainText("it is the last set that passed the Latest releases check");
 });

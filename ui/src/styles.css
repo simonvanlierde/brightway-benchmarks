@@ -14,14 +14,17 @@
   --worse: #a13236;
   --better: #006c65;
   --shift: #42547d;
-  --s1: #315bba;
-  --s2: #526d91;
-  --s3: #7757ac;
-  --s4: #416d86;
-  --s5: #9b427c;
-  --s6: #68618f;
-  --s7: #3a6880;
-  --s8: #885b8b;
+  --s1: #2a78d6;
+  --s2: #d9582a;
+  --s3: #12907a;
+  --s4: #a87500;
+  --s5: #cc4f82;
+  --s6: #2f7d1f;
+  --s7: #6250d6;
+  --s8: #7d7a00;
+  --measure: 72rem;
+  --text-meta: 0.8rem; /* 12px: dates, build ids, captions */
+  --text-evidence: 0.9375rem; /* 14px: what a reader acts on */
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -39,14 +42,14 @@
     --worse: #ffafb0;
     --better: #74cfc3;
     --shift: #aab9d8;
-    --s1: #91b4ff;
-    --s2: #a7bce8;
-    --s3: #c2a6f1;
-    --s4: #85c0df;
-    --s5: #d8c78a;
-    --s6: #b8ade3;
-    --s7: #8fb2d3;
-    --s8: #d6abdd;
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #c98500;
+    --s5: #d55181;
+    --s6: #2d9d1f;
+    --s7: #9085e9;
+    --s8: #938f0f;
   }
 }
 :root[data-theme="dark"] {
@@ -64,14 +67,14 @@
   --worse: #ffafb0;
   --better: #74cfc3;
   --shift: #aab9d8;
-  --s1: #91b4ff;
-  --s2: #a7bce8;
-  --s3: #c2a6f1;
-  --s4: #85c0df;
-  --s5: #d8c78a;
-  --s6: #b8ade3;
-  --s7: #8fb2d3;
-  --s8: #d6abdd;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --s4: #c98500;
+  --s5: #d55181;
+  --s6: #2d9d1f;
+  --s7: #9085e9;
+  --s8: #938f0f;
 }
 
 * {
@@ -129,8 +132,7 @@ figure {
 figcaption {
   color: var(--ink-2);
   margin-top: 16px;
-  max-width: 68ch;
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   line-height: 1.6;
 }
 button {
@@ -263,7 +265,7 @@ code,
   display: flex;
   flex-wrap: wrap;
   gap: 18px;
-  margin: 26px 0 22px;
+  margin: 18px 0 16px;
 }
 
 .view > header .bench-about {
@@ -284,8 +286,7 @@ code,
 .hint {
   margin: 0;
   color: var(--muted);
-  font-size: 0.8rem;
-  max-width: 56ch;
+  font-size: var(--text-evidence);
 }
 .gap {
   margin-top: 20px;
@@ -320,7 +321,7 @@ code,
   color: var(--ink-2);
   gap: 7px 20px;
   margin-top: 20px;
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
 }
 .empty {
   border: 1px dashed var(--axis);
@@ -364,7 +365,6 @@ code,
   color: var(--ink-2);
 }
 .overview-toolbar {
-  max-width: 64rem;
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
@@ -416,6 +416,20 @@ code,
   display: block;
   margin-bottom: 20px;
 }
+/* Wide, the two paragraphs sit over the two columns they introduce, so no gap opens above the right one. */
+@media (min-width: 55.0625rem) {
+  .home-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    column-gap: 28px;
+  }
+  .home-intro h2 {
+    grid-column: 1 / -1;
+  }
+  .view > .home-intro p:nth-of-type(2) {
+    padding-left: 29px;
+  }
+}
 .home-columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
@@ -424,7 +438,7 @@ code,
 }
 
 .coverage-text {
-  font-size: 0.875rem;
+  font-size: var(--text-evidence);
   line-height: 1.6;
   color: var(--ink-2);
   margin: 5px 0 0;
@@ -432,7 +446,7 @@ code,
 .caveats {
   padding-left: 18px;
   color: var(--ink-2);
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   margin: 7px 0;
 }
 
@@ -471,7 +485,7 @@ code,
 }
 .section-link {
   display: inline-block;
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   font-weight: 650;
   margin-top: 7px;
 }
@@ -481,7 +495,7 @@ code,
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 6px 16px;
   margin: 16px 0;
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   color: var(--ink-2);
 }
 .check-kinds dt {
@@ -514,38 +528,55 @@ a:hover {
   letter-spacing: -0.025em;
   font-weight: 700;
 }
-.top p {
-  margin: 0;
-  color: var(--ink-2);
-  flex: 1 1 20rem;
-  font-size: 0.8rem;
-  max-width: 52ch;
-}
 .top nav {
   display: flex;
   margin-left: auto;
   gap: 22px;
   font-size: 0.875rem;
 }
-.rail summary {
+.rail-all > summary {
   cursor: pointer;
   font-weight: 600;
   padding: 8px 0;
 }
-.rail h2 {
-  font-size: 0.875rem;
-  margin: 24px 0 7px;
-  color: var(--ink);
-  font-weight: 700;
+/* One group per package: the summaries are the tab stops until a group is opened. */
+.rail-group {
+  border-top: 1px solid var(--line);
 }
-.rail h2:has(+ .rail-about) {
-  margin-bottom: 2px;
+.rail-group > summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.rail-group > summary::before {
+  content: "▸";
+  flex: none;
+  width: 1em;
+  color: var(--muted);
+}
+.rail-group[open] > summary::before {
+  content: "▾";
+}
+.rail-count {
+  margin-left: auto;
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
 .rail-about {
-  margin: 0 0 7px;
+  margin: 0 0 4px;
   color: var(--muted);
   font-size: 0.8rem;
   line-height: 1.4;
+}
+.rail-group[open] {
+  padding-bottom: 10px;
 }
 .rail ul {
   list-style: none;
@@ -611,7 +642,7 @@ details.data {
   font-size: 1em;
 }
 .package-pins table {
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
 }
 .package-pins th,
 .package-pins td {
@@ -634,7 +665,7 @@ details.data {
 .solver-evidence > p {
   margin: 7px 0 12px;
   color: var(--ink-2);
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
 }
 /* Styled like a finding title: the way into the story, not a footnote. */
 .solver-evidence > p.story-link {
@@ -644,13 +675,13 @@ details.data {
   font-weight: 650;
 }
 .solver-evidence caption {
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   padding-bottom: 9px;
 }
 .solver-evidence th,
 .solver-evidence td {
   padding: 9px 0;
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   vertical-align: middle;
 }
 .solver-evidence td.num {
@@ -680,7 +711,7 @@ details.data {
   font-variant-numeric: tabular-nums;
 }
 .brief-change p {
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   color: var(--ink-2);
   margin: 7px 0 0;
 }
@@ -746,20 +777,16 @@ tbody tr:hover {
 .latest-table tbody th {
   width: 40%;
 }
-/* Wider, the benchmark and its change drift apart across empty space. */
-.latest-table {
-  max-width: 64rem;
-}
 .cases ul {
   margin: 6px 0 0;
   padding-left: 1.1em;
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
 }
 .clear-filters {
   margin: 0 0 12px;
 }
 .solver-evidence thead th {
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
 }
 .solver-evidence tbody th {
   font-weight: 550;
@@ -786,6 +813,10 @@ tbody tr:hover {
 }
 .view:focus {
   outline: none;
+}
+/* Benchmarks: toolbar, findings, tables and chart end on one right edge. */
+:where(.frame:not(.fullwidth) > .view) > :where(*) {
+  max-width: var(--measure);
 }
 .skip:focus {
   top: 8px;
@@ -824,14 +855,14 @@ tbody tr:hover {
   padding-right: 22px;
 }
 .solver-evidence .measurement-note {
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   line-height: 1.65;
   color: var(--muted);
   margin-top: 12px;
 }
 .brief-change .brief-context {
   color: var(--ink-2);
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
 }
 .direction-filter button.chosen {
   color: var(--accent);
@@ -897,11 +928,16 @@ details.data[open] summary {
     border-right: 1px solid var(--line);
     height: 100vh;
     padding: 28px 24px;
+    /* A shade at the foot while more is below; the local layer covers it at the end of the scroll. */
+    background:
+      linear-gradient(var(--page), var(--page)) bottom / 100% 3rem no-repeat local,
+      linear-gradient(transparent, color-mix(in srgb, var(--ink) 16%, transparent)) bottom / 100% 2rem no-repeat scroll,
+      var(--page);
   }
   .view {
     padding: 42px 40px 36px;
   }
-  .rail summary {
+  .rail-all > summary {
     display: none;
   }
 }
@@ -947,7 +983,6 @@ details.data[open] summary {
   /* The masthead scrolls sideways here; fading its edge shows there is more. */
   .top .primary-nav {
     padding-right: 32px;
-    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
   }
   figure {
     padding: 16px 10px;
@@ -974,10 +1009,6 @@ details.data[open] summary {
     width: 100%;
     justify-content: space-between;
   }
-  .controls {
-    gap: 12px;
-    margin: 18px 0 16px;
-  }
   .fixed {
     line-height: 1.3;
   }
@@ -994,18 +1025,9 @@ details.data[open] summary {
     gap: 4px;
   }
 
-  .platform-tabs {
-    justify-content: space-between;
-  }
-
   .site-footer {
     padding-left: 20px;
     padding-right: 20px;
-  }
-  .top p {
-    flex-basis: 100%;
-    order: 2;
-    font-size: 0.8rem;
   }
   .top nav {
     gap: 14px;
@@ -1056,10 +1078,6 @@ details.data[open] summary {
     padding: 12px 0;
   }
 
-  .platform-tabs button {
-    padding: 7px 15px;
-  }
-
   .brief-change > div {
     display: block;
   }
@@ -1073,9 +1091,6 @@ details.data[open] summary {
   }
   .latest-table tbody th {
     width: auto;
-  }
-  .controls .field {
-    flex: 1 1 calc(50% - 12px);
   }
   .responsive-table .num {
     text-align: left;
@@ -1155,14 +1170,33 @@ so a chosen control needs a line of its own. */
   }
 }
 
-/* Masthead search: one box for the whole catalogue. */
+/* Masthead search: one box for the whole catalogue; a phone puts it behind an icon. */
 .masthead-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-left: auto;
-  flex: 0 1 18rem;
+  flex: 0 1 24rem;
+}
+.masthead-search label {
+  color: var(--muted);
+  font-size: var(--text-meta);
+  white-space: nowrap;
 }
 .masthead-search input {
   font-size: 0.875rem;
   min-height: 38px;
+}
+.search-toggle {
+  display: none;
+  text-decoration: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  color: var(--accent);
+  background: transparent;
 }
 
 /* Setup keeps the test coverage beside the command it qualifies. */
@@ -1215,7 +1249,7 @@ so a chosen control needs a line of its own. */
 }
 .install-meta,
 .install-note {
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   color: var(--ink-2);
   margin: 7px 0 0;
 }
@@ -1223,29 +1257,37 @@ so a chosen control needs a line of its own. */
   margin-left: 8px;
   color: var(--better);
 }
-.text-button {
-  border: 0;
-  background: none;
-  padding: 8px;
+/* A secondary action: the bordered button of the rest of the page, 44px for a thumb. */
+button.secondary {
   min-height: 44px;
-  color: var(--accent);
-  font: inherit;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
+  padding: 4px 14px;
+  margin-left: 6px;
+  font-size: var(--text-evidence);
 }
-.text-button:hover {
-  background: none;
-  text-decoration-thickness: 2px;
+.install-files {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 18px;
+  margin: 2px 0 0;
+  font-size: var(--text-evidence);
+  color: var(--ink-2);
+}
+.files-label {
+  font-weight: 600;
+}
+.status-note {
+  border-left: 3px solid var(--worse);
+  padding-left: 10px;
 }
 .saved-warning {
   color: var(--worse);
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   margin: 7px 0 0;
 }
 .package-pins {
   margin-top: 10px;
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
 }
 .install-set details.package-pins summary {
   cursor: pointer;
@@ -1258,7 +1300,7 @@ so a chosen control needs a line of its own. */
   display: flex;
   flex-wrap: wrap;
   gap: 4px 20px;
-  font-size: 0.8125rem;
+  font-size: var(--text-evidence);
 }
 .result-line li > span {
   font-weight: 650;
@@ -1269,13 +1311,13 @@ so a chosen control needs a line of its own. */
   border-top: 1px solid var(--accent);
 }
 .check-grid {
-  font-size: 0.8125rem;
+  font-size: var(--text-evidence);
 }
 .check-grid caption {
   caption-side: top;
   text-align: left;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   padding-bottom: 6px;
 }
 table.check-grid th,
@@ -1324,7 +1366,7 @@ table.check-grid td a[aria-current="true"] {
 }
 .view .findings p {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: var(--text-evidence);
   color: var(--ink-2);
   max-width: 70ch;
 }
@@ -1354,7 +1396,7 @@ table.check-grid td a[aria-current="true"] {
   margin-bottom: 4px;
 }
 .bench-meta {
-  font-size: 0.8125rem;
+  font-size: var(--text-evidence);
   color: var(--ink-2);
   margin: 4px 0 0;
 }
@@ -1367,15 +1409,34 @@ table.check-grid td a[aria-current="true"] {
   align-content: start;
 }
 .field-note {
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   line-height: 1.45;
   color: var(--ink-2);
   margin: 5px 0 0;
 }
-.env-links,
-.env-note {
-  display: block;
-  margin-top: 4px;
+.reading-guide,
+.env-links {
+  margin: 0;
+}
+.reading-guide {
+  max-width: 75ch;
+}
+/* The environments behind the colours, two to a row beside the chart's reading guide. */
+.env-notes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 32px;
+  margin: 14px 0;
+}
+.env-notes dt {
+  font-weight: 650;
+  color: var(--ink);
+}
+.env-notes dd {
+  margin: 2px 0 0;
+}
+.env-links {
+  margin-top: 10px;
 }
 .sparkline {
   display: block;
@@ -1406,11 +1467,6 @@ table.check-grid td a[aria-current="true"] {
 .parameter-details {
   display: none;
 }
-.check-scroll-hint {
-  color: var(--muted);
-  font-size: 0.8rem;
-  margin: 0 0 6px;
-}
 .check-grid th:first-child {
   position: sticky;
   left: 0;
@@ -1419,7 +1475,7 @@ table.check-grid td a[aria-current="true"] {
 }
 .new-project {
   margin-top: 10px;
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
 }
 .view details.new-project summary,
 .view details.parameter-details summary {
@@ -1597,43 +1653,112 @@ table.check-grid td a[aria-current="true"] {
   min-height: 44px;
   align-content: center;
 }
-.check-help {
+.check-help,
+.check-showing {
   margin: 0 0 6px;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--text-evidence);
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 4px 18px;
 }
 @media (max-width: 39rem) {
+  /* One row: brand mark, the two pages, search and theme icons; the search opens a second row. */
   .top-inner {
     display: grid;
     padding-block: 6px;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 4px 10px;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0 6px;
   }
   .top-inner h1 {
     grid-column: 1;
     grid-row: 1;
   }
-  .top .theme-toggle {
+  .top .primary-nav {
     grid-column: 2;
     grid-row: 1;
-  }
-  .top .primary-nav {
-    grid-column: 1 / -1;
-    grid-row: 2;
+    order: 0;
+    width: auto;
+    margin: 0 0 0 8px;
     padding-right: 0;
+    gap: 16px;
     mask-image: none;
   }
+  .search-toggle {
+    display: inline-grid;
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .top .theme-toggle {
+    grid-column: 4;
+    grid-row: 1;
+  }
   .masthead-search {
+    display: none;
     grid-column: 1 / -1;
-    grid-row: 3;
+    grid-row: 2;
     width: 100%;
+    margin: 0 0 8px;
+  }
+  .masthead-search.open,
+  .masthead-search:target {
+    display: flex;
+  }
+  .masthead-search label {
+    display: none;
+  }
+  .brand-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .setup-controls {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+  /* Benchmark controls stack at full width, as Setup's do; a fixed value is text under its label. */
+  .controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .env-notes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .controls .field {
+    max-width: none;
+  }
+  .controls select {
+    min-height: 44px;
+  }
+  .fixed {
+    min-height: 0;
+    font-weight: 600;
+  }
+  /* Targets of 44px: disclosure rows, footer and file links, finding titles. */
+  summary {
+    min-height: 44px;
+    align-content: center;
+  }
+  .site-footer nav {
+    gap: 0 24px;
+  }
+  footer.site-footer nav a,
+  .view .install-files a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .view .findings h3 a,
+  .view .latest-table tbody th a {
+    padding-block: 8px;
+  }
+  header.top nav.primary-nav a {
+    min-height: 44px;
   }
 }

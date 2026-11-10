@@ -129,7 +129,7 @@ async function copy(text: string, what: string) {
       {/each}
     </ul>
     {@const suites = qualifications.find((c) => c.kind === "suites" && c !== source && c.status !== "success")}
-    {#if suites}<p class="install-note">{suites.label} run each package's own tests on the latest releases, which covers more than the calculation checks. The command below is the set that last passed the {source.label} check.</p>{/if}
+    {#if suites}<p class="install-note status-note">{suites.label} run each package's own tests, which covers more than the calculation checks, and did not pass on the latest releases. The command below still stands: it is the last set that passed the {source.label} check{saved.date ? `, on ${dateLabel(saved.date)}` : ""}.</p>{/if}
     {#if !qualifications.some((c) => c.kind === "suites")}<p class="install-note">No upstream test-suite result is published for this install check.</p>{/if}
     {#if source.status !== "success"}<p class="saved-warning">The latest run of {source.label} did not pass; this is the set that passed on {dateLabel(saved.date)}.</p>{/if}
     {#if source.caveats.length}<ul class="caveats">{#each source.caveats as caveat (caveat)}<li>{caveat}</li>{/each}</ul>{/if}
@@ -140,14 +140,13 @@ async function copy(text: string, what: string) {
     <p class="install-meta">
       {#if saved.pinned && install.latest}
         {@const latest = install.latest}
-        Pinned to {dateLabel(saved.pinned)} <button type="button" class="text-button" onclick={() => copy(latest, "latest")}>Copy latest</button>
+        Pinned to {dateLabel(saved.pinned)} <button type="button" class="secondary" onclick={() => copy(latest, "latest")}>Copy latest</button>
       {:else}
         Passed {dateLabel(saved.date)}
       {/if}
-      {#each saved.files as file (file.url)}<a href={file.url}>{file.label}</a>{/each}
-      <a href={saved.run}>Passing run</a>
       <span role="status">{copied}</span>
     </p>
+    <p class="install-files"><span class="files-label">Files for this set</span> {#each saved.files as file (file.url)}<a href={file.url}>{file.label}</a>{/each}<a href={saved.run}>Passing run</a></p>
     {#if manager === "uv"}
       <p class="install-note">For an existing uv project with a minimum Python version of {source.python} or later (<code>requires-python</code>).</p>
     {/if}

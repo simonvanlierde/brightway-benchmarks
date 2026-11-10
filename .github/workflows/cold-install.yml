@@ -1,0 +1,46 @@
+name: cold install
+
+# The README's "Install a set that works" steps, run as a new user would: a Debian
+# container with git, curl and a C compiler, and uv as the only tool added. It makes an
+# empty project, installs the Brightway packages against the newest passing set the
+# Setup page publishes, and imports them. A moved constraints file, a package that no
+# longer builds on Python 3.13, or a step the README leaves out fails here first.
+# It reads the live site, so a failure can also mean the site is down.
+on:
+  pull_request:
+    paths: [README.md, docs/running.md, .github/workflows/cold-install.yml]
+  schedule:
+    - cron: "47 5 * * 1" # Mondays, 05:47 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  install:
+    name: install a tested set, fresh container
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Pinned to a digest, so a moved tag cannot swap the image. Renovate bumps it.
+    container: buildpack-deps:trixie@sha256:8db3a3d1e68e0a88ed31c2256d0c0e3b127f80685e6b1f3a9bb31e22638b5e7b
+    steps:
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: false
+          version: "0.13.6"
+
+      - name: Install the newest passing set
+        env:
+          SET: https://simonvanlierde.com/brightway-benchmarks/compat/latest-3.13-ubuntu-latest
+        # requires-python must start at the set's Python: uv resolves for every Python the
+        # project allows, and a package without wheels for a newer one fails to build.
+        run: |-
+          mkdir "$RUNNER_TEMP/new-user"
+          cd "$RUNNER_TEMP/new-user"
+          uv init --no-readme --python 3.13
+          uv add brightway25 bw_graph_tools bw_timex -c "$SET/requirements.txt"
+          uv run python -W ignore -c "import bw2data, bw2calc, bw_graph_tools, bw_timex"

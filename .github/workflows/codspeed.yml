@@ -23,6 +23,7 @@ on:
       - '!benchmarks/descriptions.toml'
       - src/**
       - asv/**
+      - scripts/asv_conf.py
       - scripts/codspeed-venv.sh
       - scripts/in-box.sh
       - .github/workflows/codspeed.yml

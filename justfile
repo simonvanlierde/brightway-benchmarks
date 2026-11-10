@@ -119,7 +119,7 @@ site:
     for conf in asv/*.json; do
       s=$(basename "$conf" .json)
       # `just ui-data` reads release tags from asv's mirror; commits and tags are enough.
-      repo=$(python3 -c 'import json, sys; print(json.loads("".join(l for l in open(sys.argv[1]) if not l.lstrip().startswith("//")))["repo"])' "$conf")
+      repo=$(python3 scripts/asv_conf.py repo "$s")
       [ -d ".asv/$s" ] || git clone --quiet --bare --filter=tree:0 "$repo" ".asv/$s"
       # Old links into asv's pages: SUBJECT/index.html#NAME opens NAME's history in the viewer.
       mkdir -p "site/$s"

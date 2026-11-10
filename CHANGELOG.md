@@ -55,6 +55,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   sample: about 25 s a sample at the ecoinvent size.
 - The heating cases cache their expanded factors and process indices beside the BAFU archive, so
   only a run's first process reads the archive more than once (about 6 s a process).
+- `scripts/asv.sh`, `scripts/stack.sh`, `scripts/codspeed-venv.sh` and `just site` read the asv
+  configs through one tested script, `scripts/asv_conf.py`, instead of inline Python.
 - Benchmarks and Setup use readable names, open with what the site checks, and show a plain
   message when data fails to load.
 

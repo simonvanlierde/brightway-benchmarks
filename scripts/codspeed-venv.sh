@@ -22,14 +22,7 @@ for p in "$@"; do
 done
 uv venv -q "$venv" --python 3.13
 py=$venv/bin/python
-reqs=$(python3 -c '
-import json, sys
-conf = json.load(open(f"asv/{sys.argv[1]}.json"))
-pins = [f"{k}=={v[0]}" for k, v in conf["matrix"]["req"].items() if not k.startswith("pip+")]
-# Pinned extras its install_command adds, such as bw2calc 3.x'"'"'s threadpoolctl.
-pins += [w for c in conf.get("install_command", []) for w in c.split() if "==" in w]
-print(" ".join(pins))
-' "$subject")
+reqs=$(python3 scripts/asv_conf.py pins "$subject")
 # shellcheck disable=SC2086 # $reqs and $newer are lists of words
 uv pip install -q --python "$py" $newer --no-deps -r "asv/$subject.stack.txt" $reqs "$spec"
 # shellcheck disable=SC2086

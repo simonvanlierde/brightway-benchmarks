@@ -33,47 +33,7 @@ default=superlu,umfpack
 [ "$(uname -m)" = x86_64 ] && default=superlu,pypardiso,umfpack
 # Written to .asv/ (writable in the box), so asv/ with the tracked configs can stay read-only.
 conf=.asv/.$subject.local.json
-printed=$(
-    BWBENCH_SOLVERS=${BWBENCH_SOLVERS:-$default} python3 - "$subject" "$machine" <<'PY'
-import hashlib, json, os, platform, sys
-subject, machine = sys.argv[1:]
-conf = json.load(open(f"asv/{subject}.json"))
-wanted = os.environ["BWBENCH_SOLVERS"].split(",")
-unknown = set(wanted) - {"superlu", "pypardiso", "umfpack", "klu", "umfpack-T"}
-if unknown or not wanted:
-    sys.exit(f"asv.sh: BWBENCH_SOLVERS takes superlu, pypardiso, umfpack, klu and umfpack-T, not {','.join(sorted(unknown))}")
-for x86_only in ("pypardiso", "klu"):
-    if x86_only in wanted and platform.machine() != "x86_64":
-        sys.exit(f"asv.sh: {x86_only} has wheels for x86_64 only")
-# asv names an environment after its matrix, not after the stack file it installs. A hash
-# of the stack in the name rebuilds the environments when the stack changes, and keeps a
-# resumed run from counting results made on the old stack as done.
-stack = hashlib.sha256(open(f"asv/{subject}.stack.txt", "rb").read()).hexdigest()[:8]
-conf["matrix"]["env"] = {"BWBENCH_STACK": [stack]}
-# Added to an entry's own env, not in place of it: the env is part of the environment's
-# name, so the entries without one keep the names their results are filed under.
-for e in conf.get("include", []):
-    e.setdefault("env", {})["BWBENCH_STACK"] = stack
-name = {"pypardiso": "pypardiso", "scikit-umfpack": "umfpack"}
-
-
-def solvers(e: dict) -> set:
-    # A patched solver's entry installs the library it patches in (umfpack-T: scikit-umfpack).
-    if "BWBENCH_SOLVER" in e["env"]:
-        return {e["env"]["BWBENCH_SOLVER"]}
-    return {name[k] for k in e["req"] if k in name}
-
-
-if conf.get("include"):
-    conf["include"] = [e for e in conf["include"] if solvers(e) <= set(wanted)]
-    if "superlu" not in wanted:
-        conf["exclude"] = [{"python": ".*"}]  # asv excludes from the matrix only, never an include
-if machine in ("smoke", "noise", "stack"):
-    conf["results_dir"] = f"../.asv/{machine}/{subject}"
-json.dump(conf, open(f".asv/.{subject}.local.json", "w"), indent=2)
-print(stack, f".asv/{conf['results_dir']}")
-PY
-)
+printed=$(BWBENCH_SOLVERS=${BWBENCH_SOLVERS:-$default} python3 scripts/asv_conf.py conf "$subject" "$machine")
 stack=${printed%% *} results=${printed#* }
 
 grep -qs "\"$machine\"" "$HOME/.asv-machine.json" ||

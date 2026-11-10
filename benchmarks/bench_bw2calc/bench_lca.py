@@ -198,14 +198,9 @@ def umfpack_context(lca: bc.LCA) -> object:
     return found
 
 
-def refinement_steps(steps: float) -> float:
-    """The steps of iterative refinement UMFPACK took in the timed solve."""
-    return steps
-
-
 @bench(
     {"size": SIZES, "refinement": ["on", "off"]},
-    track={"refinement_steps": refinement_steps},
+    track={"refinement_steps": float},
     error="relative_error",
     asv="NewDemandRefinement",
     fresh_solver=False,

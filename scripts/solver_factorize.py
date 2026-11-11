@@ -117,7 +117,8 @@ def time_cudss(a: sparse.csr_matrix, b: np.ndarray, *, resources: ExitStack | No
             times.append(time.perf_counter() - start)
         solver = retained
         seconds = statistics.median(times)
-        again, _ = timed(lambda: (solver.reset_operands(a=a.copy()), solver.factorize()))
+        copies = iter([a.copy() for _ in range(3)])  # host-side value prep stays out of the timing
+        again, _ = timed(lambda: (solver.reset_operands(a=next(copies)), solver.factorize()), reps=3)
     except BaseException:
         if retained is not None:
             retained.free()

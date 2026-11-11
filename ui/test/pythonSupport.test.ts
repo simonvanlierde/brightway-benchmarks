@@ -94,8 +94,47 @@ describe("supportLead", () => {
     );
     const table = supportTable({ ...support, results }, false);
     expect(table && supportLead(table)).toBe(
-      "3.11, 3.13 and 3.14 work on every system. 3.12 fails for 3 of 9 packages and systems; the reasons are below the table. 3.15 does not install yet: a dependency (cachebox) fails to build.",
+      "3.11, 3.13 and 3.14 work on every system. 3.12 fails for 3 of 9 packages and systems. 3.15 does not install yet: a dependency (cachebox) fails to build. The reasons are below the table.",
     );
+  });
+  it("points to the reasons once, however many Pythons fail in part", () => {
+    const results = support.results.map((r) =>
+      ["3.11", "3.12"].includes(r.python) && r.package === "bw_timex" && r.platform === "linux"
+        ? { ...r, status: "fail" as const, reason: "ImportError: x" }
+        : r,
+    );
+    const table = supportTable({ ...support, results }, false);
+    expect(table && supportLead(table)).toBe(
+      "3.13 and 3.14 work on every system. 3.11 fails for 1 of 9 packages and systems. 3.12 fails for 1 of 9 packages and systems. 3.15 does not install yet: a dependency (cachebox) fails to build. The reasons are below the table.",
+    );
+  });
+  it("counts only the cells that were checked, so a build failure with one cell missing still reads as one", () => {
+    const results = support.results.filter(
+      (r) => !(r.python === "3.15" && r.platform === "macos" && r.package === "bw_timex"),
+    );
+    const table = supportTable({ ...support, results }, false);
+    expect(table && supportLead(table)).toBe(
+      "3.11 to 3.14 work on every system. 3.15 does not install yet: a dependency (cachebox) fails to build.",
+    );
+  });
+  it("says a Python failed everywhere it was checked, not that it fails for 1 of 1", () => {
+    const results = support.results
+      .filter((r) => r.python !== "3.12" || (r.package === "bw_timex" && r.platform === "linux"))
+      .map((r) => (r.python === "3.12" ? { ...r, status: "fail" as const, reason: "ImportError: x" } : r));
+    const table = supportTable({ ...support, results }, false);
+    expect(table && supportLead(table)).toContain("3.12 fails everywhere it was checked.");
+  });
+  it("keeps a Python that passed wherever it was checked, and names the system it was not checked on", () => {
+    const results = support.results.filter((r) => !(r.python === "3.12" && r.platform === "macos"));
+    const table = supportTable({ ...support, results }, false);
+    const label = (id: string) => ({ macos: "macOS" })[id] ?? id;
+    expect(table && supportLead(table, label)).toBe(
+      "3.11, 3.13 and 3.14 work on every system. 3.12 works where checked; not checked on macOS. 3.15 does not install yet: a dependency (cachebox) fails to build.",
+    );
+  });
+  it("is empty when nothing passed or failed", () => {
+    const table = supportTable({ ...support, results: [] }, false);
+    expect(table && supportLead(table)).toBe("");
   });
 });
 

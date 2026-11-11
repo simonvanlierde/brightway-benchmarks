@@ -98,28 +98,42 @@ function span(some: string[], all: string[]): string {
   return some.length > 2 && inRow ? `${some[0]} to ${some.at(-1)}` : listed(some);
 }
 
-/** One line from the table: which Pythons work on every system, and why each other one fails. */
-export function supportLead(table: SupportTable): string {
+/**
+ * One line from the table: which Pythons work on every system, which work where they were checked,
+ * and why each other one fails. Counts only the cells that hold a result; empty when none passed or failed.
+ */
+export function supportLead(table: SupportTable, label: (platform: string) => string = (p) => p): string {
   const cells = (python: string) => table.rows.map((r) => r.cells.get(python));
+  const checked = (python: string) => cells(python).filter((c) => c !== undefined);
   const working = table.pythons.filter((p) => cells(p).every((c) => c?.status === "pass"));
   const out = working.length
     ? [`${span(working, table.pythons)} ${working.length > 1 ? "work" : "works"} on every system.`]
     : [];
+  let reasons = false;
   for (const python of table.pythons.filter((p) => !working.includes(p))) {
-    const all = cells(python);
-    const failed = all.filter((c) => c?.status === "fail");
-    if (failed.length === 0) continue; // only results not declared or not checked: nothing failed
+    const all = checked(python);
+    const failed = all.filter((c) => c.status === "fail");
+    if (failed.length === 0) {
+      if (all.length === 0 || all.some((c) => c.status !== "pass")) continue; // nothing failed, or not declared
+      const unchecked = unique(table.rows.filter((r) => !r.cells.has(python)).map((r) => r.platform));
+      out.push(`${python} works where checked; not checked on ${listed(unchecked.map(label))}.`);
+      continue;
+    }
     // uv's message for a dependency that does not compile: "Failed to build `name==version`: ...".
-    const built = new Set(failed.map((c) => c?.reason?.match(/^Failed to build `?([\w.-]+?)(?:==[^`:\s]*)?`?:/)?.[1]));
+    const built = new Set(failed.map((c) => c.reason?.match(/^Failed to build `?([\w.-]+?)(?:==[^`:\s]*)?`?:/)?.[1]));
     const [dependency] = built;
     if (failed.length === all.length && built.size === 1 && dependency) {
       out.push(`${python} does not install yet: a dependency (${dependency}) fails to build.`);
-    } else {
-      out.push(
-        `${python} fails for ${failed.length} of ${all.length} packages and systems; the reasons are below the table.`,
-      );
+      continue;
     }
+    reasons = true;
+    out.push(
+      failed.length === all.length
+        ? `${python} fails everywhere it was checked.`
+        : `${python} fails for ${failed.length} of ${all.length} packages and systems.`,
+    );
   }
+  if (reasons) out.push("The reasons are below the table.");
   return out.join(" ");
 }
 

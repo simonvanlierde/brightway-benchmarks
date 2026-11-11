@@ -24,7 +24,8 @@ const tone = { pass: "better", fail: "worse", undeclared: "undeclared" } as cons
     {#if eol}
       <p class="coverage-text">Some releases of these packages still declare Python {listed(table.pythons)}, which are past end of life. Checked weekly on {listed([...new Set(table.rows.map((r) => label(r.platform)))])}.</p>
     {:else}
-      <p class="support-lead">{supportLead(table)}</p>
+      {@const lead = supportLead(table, label)}
+      {#if lead}<p class="support-lead">{lead}</p>{/if}
       <p class="coverage-text">Does your Python version work? A daily check installs each package on each Python, imports it and runs a small LCA. Failures stay on the table with the error.</p>
     {/if}
     <div class="scroll" role="region" aria-label="{heading} grid" use:scrollable>

@@ -89,7 +89,12 @@ def test_an_unknown_solver_is_refused(monkeypatch: pytest.MonkeyPatch):
 
 def test_by_column_solves_each_column_of_a_2d_right_hand_side():
     a = np.array([[2.0, 0.0], [1.0, 4.0]])
-    solve = solvers.by_column(lambda b: np.linalg.solve(a, b))
+
+    def one_column(b: np.ndarray) -> np.ndarray:
+        assert b.ndim == 1  # UMFPACK's and KLU's solves take one column
+        return np.linalg.solve(a, b)
+
+    solve = solvers.by_column(one_column)
     b = np.array([[2.0, 4.0], [9.0, 6.0]])
     np.testing.assert_allclose(solve(b), np.linalg.solve(a, b))
     np.testing.assert_allclose(solve(np.array([2.0, 9.0])), [1.0, 2.0])

@@ -347,6 +347,17 @@ Rerun: [`bench_datapackage.Groups`](../benchmarks/bench_bw_processing/bench_data
 
 ## Across packages
 
+### A correct solve can still score the wrong inventory
+
+The reference checks behind every timing compare the solve with an independent one, such as a
+Neumann series on the same matrices. A wrong inventory or a missing impact factor passes that check,
+as both sides solve the same wrong system. The heating model
+([`src/bwbench/heating.py`](../src/bwbench/heating.py)) shows why. BAFU's climate factors sit on
+the parent air compartment, so matching flow identifiers alone leaves the gas boiler's direct
+greenhouse gases without a factor, and the solve still checks out. [The home-heating story](https://simonvanlierde.com/brightway-benchmarks/stories/home-heating/)
+explains the case and its matching rule; [the method](method.md#the-home-heating-case) describes the
+model. Rerun it with `just bench bw2calc` at `BWBENCH_SIZES=bafu`.
+
 ### Test suites and dependency floors
 
 The compat `suites` and `floors` columns ([running](running.md#compat)) found these:

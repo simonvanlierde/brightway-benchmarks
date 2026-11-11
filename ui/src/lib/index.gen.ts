@@ -250,6 +250,10 @@ export interface BenchmarkIndex {
      * A profile of the case that explains the finding.
      */
     profile?: string;
+    /**
+     * The slug of the story that tells this finding in full, at /stories/<slug>/.
+     */
+    story?: string;
   }[];
 }
 export interface Link {

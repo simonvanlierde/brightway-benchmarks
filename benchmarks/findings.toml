@@ -1,9 +1,13 @@
 # The findings the viewer leads with, each opening the history that shows it. docs/findings.md
 # holds the full account; `doc` names its section. scripts/export_ui.py copies these into
 # index.json and fails when a benchmark, group or parameter value no longer exists.
-# `params` names a value (as the viewer shows it) for each parameter the view should fix.
+# `params` names a value (as the viewer shows it) for each parameter the view should fix, in the
+# benchmark's axis order with none skipped: /findings/ builds its links from this order.
 # `profile` (optional) links a profile of the case: an https URL, or the name of an .html file in
 # profiles/, which `just site` publishes (`just profile` writes it to .asv/profiles/).
+# `story` (optional) names the story that tells the finding in full: ui/src/pages/stories/<story>.astro.
+# A finding a story tells may leave out group, benchmark and params until its benchmarks publish:
+# /findings/ lists it, the viewer does not.
 
 [[findings]]
 title = "The solver sets the time for one score"
@@ -12,6 +16,7 @@ group = "bw2calc-conda"
 benchmark = "bench_lca.SingleScore.time_first_score"
 params = { size = "ecoinvent", cls = "LCA" }
 doc = "the-solver-sets-the-time-for-one-score"
+story = "solver-choice"
 
 [[findings]]
 title = "bw2calc 3.0.0 slowed IterativeLCA, and 3.1.0 fixed it"
@@ -27,7 +32,7 @@ title = "bw2calc 3.0.0 doubled JacobiGMRESLCA's Monte Carlo time"
 text = "Ten draws take 0.70 s instead of 0.324 s with every solver, and 3.1.0 has not fixed it."
 group = "bw2calc"
 benchmark = "bench_lca.MonteCarlo.time_iterations"
-params = { size = "ecoinvent", cls = "JacobiGMRESLCA" }
+params = { size = "ecoinvent", iterations = "10", cls = "JacobiGMRESLCA" }
 doc = "bw2calc-300-doubled-jacobigmreslcas-monte-carlo-time"
 
 [[findings]]
@@ -45,3 +50,9 @@ group = "bw_graph_tools"
 benchmark = "bench_traversal.Traversal.time_traverse"
 params = { size = "exiobase", max_calc = "2" }
 doc = "bw_graph_tools-09-made-traversal-16-to-6-times-faster"
+
+[[findings]]
+title = "A correct solve can still score the wrong inventory"
+text = "A benchmark that only checks the linear solve can pass while the inventory or the impact factors are wrong. The heating model checks both beside its timings."
+doc = "a-correct-solve-can-still-score-the-wrong-inventory"
+story = "home-heating"

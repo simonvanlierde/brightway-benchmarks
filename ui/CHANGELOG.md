@@ -9,6 +9,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A Findings item in the masthead and a `/findings/` page: every finding with its history, its write-up and its story where it has one. Stories keep their URLs and mark Findings as current ([decision 0005](../docs/decisions/0005-findings-in-the-masthead.md)).
 - A Python versions table on Setup (3.11 to 3.15 on Linux, macOS and Windows) and an end-of-life table on Benchmarks (3.9 and 3.10), from the optional `pythonSupport` field of `guidance.json`. A failure shows with its reason; a package no release of which declares the Python reads "Not declared".
 
 ### Changed

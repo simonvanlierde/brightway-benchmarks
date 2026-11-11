@@ -177,3 +177,11 @@ test("on a phone the build id is the footer's own last row", async ({ page }) =>
       .evaluate((a) => a.getBoundingClientRect().x),
   );
 });
+
+test("the solver story's per-score saving follows the real ecoinvent figures it comes from", async ({ page }) => {
+  await page.goto("stories/solver-choice/");
+  const sentences = ((await page.locator(".lede").textContent()) ?? "").split(/(?<=\.) /);
+  const saving = sentences.findIndex((s) => s.includes("saves about 3 s"));
+  expect(sentences[saving]).toContain("real ecoinvent");
+  expect(sentences[saving - 1]).toContain("3.66 s");
+});

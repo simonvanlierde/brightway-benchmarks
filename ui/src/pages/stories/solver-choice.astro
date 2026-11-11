@@ -33,7 +33,7 @@ const check = `python -c "import bw2calc as bc; print('PyPardiso' if bc.PYPARDIS
   imageAlt="Three bars for factorizing the real ecoinvent 3.12 matrix: UMFPACK from conda-forge 0.66 seconds, PyPardiso 1.48 seconds, SuperLU 3.66 seconds."
 >
       <h1>Your solver choice can change a Brightway score's time by 5 times or more</h1>
-      <p class="lede">SuperLU takes 3.66 s to factorize the real ecoinvent 3.12 matrix, scikit-umfpack from conda-forge 0.66 s: 5.5 times as long. On the synthetic benchmark database the whole first score takes 27.7 s against 2.63 s. A single score saves about 3 s. The saving counts per Monte Carlo draw and per scenario.</p>
+      <p class="lede">SuperLU takes 3.66 s to factorize the real ecoinvent 3.12 matrix, scikit-umfpack from conda-forge 0.66 s: 5.5 times as long. On real ecoinvent a single score saves about 3 s, and the saving counts per Monte Carlo draw and per scenario. On the synthetic benchmark database the whole first score takes 27.7 s against 2.63 s.</p>
       <p>Every Brightway score ends by solving one large sparse linear system: one equation per product, with almost every coefficient zero. For ecoinvent, the large background database most LCA studies use, that is 26,533 equations. The solver does that arithmetic, and bw2calc picks it from what you have installed. All times use one thread; PyPardiso can use several and is not measured with them.</p>
 
       <aside class="install" aria-labelledby="install">

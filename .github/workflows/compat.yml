@@ -19,7 +19,8 @@ jobs:
   compat:
     name: ${{ matrix.column }} · Python ${{ matrix.python }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    # Windows runs the suites in 40 to 60 minutes, so at 60 a slow runner shows as cancelled.
+    timeout-minutes: ${{ matrix.column == 'suites' && matrix.os == 'windows-latest' && 90 || 60 }}
     # Diagnostic and upstream-suite failures are reported separately, so a new failure in the
     # latest releases stands out.
     continue-on-error: ${{ matrix.column != 'latest' }}

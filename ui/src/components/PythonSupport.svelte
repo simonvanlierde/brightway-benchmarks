@@ -18,7 +18,7 @@ const tone = { pass: "better", fail: "worse", undeclared: "quiet" } as const;
   <section class="python-support" aria-labelledby="{id}-heading">
     <div class="checks-heading">
       <h2 id="{id}-heading">{heading}</h2>
-      <small class="support-date">Oldest result {dateLabel(table.checked)}</small>
+      {#if table.checked}<small class="support-date">Oldest result {dateLabel(table.checked)}</small>{/if}
     </div>
     <p class="coverage-text">
       {#if eol}
@@ -33,19 +33,22 @@ const tone = { pass: "better", fail: "worse", undeclared: "quiet" } as const;
         <caption class="sr">Result by package{several ? ", system" : ""} and Python version</caption>
         <thead>
           <tr>
-            <th scope="col">Package{several ? " and system" : ""}</th>
-            {#each table.pythons as py (py)}<th scope="col">Python {py}</th>{/each}
+            <th scope="col" rowspan="2">Package{several ? " and system" : ""}</th>
+            <th scope="colgroup" colspan={table.pythons.length}>Python</th>
+          </tr>
+          <tr>
+            {#each table.pythons as py (py)}<th scope="col">{py}</th>{/each}
           </tr>
         </thead>
         <tbody>
           {#each table.rows as row (`${row.package} ${row.platform}`)}
             <tr>
-              <th scope="row"><code>{row.package}</code>{#if several}{" "}<span class="quiet">{label(row.platform)}</span>{/if}</th>
+              <th scope="row"><code>{#each row.package.split("_") as part, i (i)}{part}{#if i < row.package.split("_").length - 1}_<wbr />{/if}{/each}</code>{#if several}{" "}<span class="quiet">{label(row.platform)}</span>{/if}</th>
               {#each table.pythons as py (py)}
                 {@const r = row.cells.get(py)}
                 <td>
                   {#if r}<a href={r.run} class={tone[r.status]} aria-label="{row.package}{several ? `, ${label(row.platform)}` : ''}, Python {py}: {supportWord(r.status)}">{supportWord(r.status)}</a>
-                  {:else}<span class="quiet" aria-label="not checked">–</span>{/if}
+                  {:else}<span class="quiet" aria-hidden="true">–</span><span class="sr">not checked</span>{/if}
                 </td>
               {/each}
             </tr>
@@ -59,8 +62,8 @@ const tone = { pass: "better", fail: "worse", undeclared: "quiet" } as const;
     {#if table.failures.length}
       <dl class="support-failures">
         {#each table.failures as f (f.reason)}
-          <dt><code>{f.reason}</code></dt>
-          <dd>{`Python ${listed(f.pythons)}${several ? ` on ${listed(f.platforms.map(label))}` : ""}: ${listed(f.packages)}`}</dd>
+          <dt>{`Python ${listed(f.pythons)}${several ? ` on ${listed(f.platforms.map(label))}` : ""}: ${listed(f.packages)}`}</dt>
+          <dd><code>{f.reason}</code></dd>
         {/each}
       </dl>
     {/if}

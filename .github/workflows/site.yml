@@ -61,8 +61,10 @@ jobs:
       # just from PyPI (rust-just), so no extra action is needed.
       - run: uvx --from rust-just==1.58.0 just site
 
-      # The Python support table: the python-probe workflow's newest result per Python and OS.
-      - run: python3 scripts/probe_site.py site/compat/python-probe.json
+      # The Python support table: the python-probe workflow's newest result per Python and OS. The site
+      # deploys without it (the script warns and writes nothing), so a crash here does not stop the build.
+      - continue-on-error: true
+        run: python3 scripts/probe_site.py site/compat/python-probe.json
         env:
           GH_TOKEN: ${{ github.token }}
 

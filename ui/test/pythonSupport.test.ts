@@ -30,11 +30,20 @@ describe("supportTable", () => {
     expect(cachebox?.packages).toEqual(["brightway25", "bw_graph_tools", "bw_timex"]);
   });
 
-  it("returns nothing when no result falls in the half asked for", () => {
-    expect(
-      supportTable({ ...support, results: support.results.filter((r) => r.python !== "3.9") }, true)?.pythons,
-    ).toEqual(["3.10"]);
-    expect(supportTable({ ...support, results: [] }, true)).toBeUndefined();
+  it("keeps the whole grid when results are missing: a missing cell is empty, not a missing row or column", () => {
+    const dropped = support.results.filter((r) => !(r.python === "3.12" && r.platform === "macos"));
+    const table = supportTable({ ...support, results: dropped }, false);
+    expect(table?.pythons).toEqual(["3.11", "3.12", "3.13", "3.14", "3.15"]);
+    expect(table?.rows).toHaveLength(9);
+    expect(table?.rows.find((r) => r.package === "bw_timex" && r.platform === "macos")?.cells.has("3.12")).toBe(false);
+    const none = supportTable({ ...support, results: [] }, true);
+    expect(none?.pythons).toEqual(["3.9", "3.10"]);
+    expect(none?.rows).toHaveLength(3);
+    expect(none?.checked).toBe("");
+  });
+
+  it("returns nothing when the data lists no Python in the half asked for", () => {
+    expect(supportTable({ ...support, pythons: support.pythons.filter((p) => !p.endOfLife) }, true)).toBeUndefined();
   });
 });
 

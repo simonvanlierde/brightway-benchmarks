@@ -583,9 +583,66 @@
       "bw_graph_tools",
       "bw_timex"
     ],
-    "endOfLife": [
-      "3.9",
-      "3.10"
+    "pythons": [
+      {
+        "version": "3.9",
+        "endOfLife": true,
+        "platforms": [
+          "linux"
+        ]
+      },
+      {
+        "version": "3.10",
+        "endOfLife": true,
+        "platforms": [
+          "linux"
+        ]
+      },
+      {
+        "version": "3.11",
+        "endOfLife": false,
+        "platforms": [
+          "linux",
+          "macos",
+          "windows"
+        ]
+      },
+      {
+        "version": "3.12",
+        "endOfLife": false,
+        "platforms": [
+          "linux",
+          "macos",
+          "windows"
+        ]
+      },
+      {
+        "version": "3.13",
+        "endOfLife": false,
+        "platforms": [
+          "linux",
+          "macos",
+          "windows"
+        ]
+      },
+      {
+        "version": "3.14",
+        "endOfLife": false,
+        "platforms": [
+          "linux",
+          "macos",
+          "windows"
+        ]
+      },
+      {
+        "version": "3.15",
+        "endOfLife": false,
+        "platforms": [
+          "linux",
+          "macos",
+          "windows"
+        ]
+      }
     ],
     "results": [
       {
@@ -610,7 +667,7 @@
         "platform": "linux",
         "package": "bw_timex",
         "status": "fail",
-        "reason": "No solution found when resolving dependencies: Because the current Python version (3.9.25) does not satisfy Python>=3.10 and bw-timex<=0.2.8 depends on Python>=3.10, we can conclude that bw-timex<=0.2.8 cannot be used. \u2026",
+        "reason": "No solution found when resolving dependencies: Because the current Python version (3.9.25) does not satisfy Python>=3.10 and bw-timex<=0.2.8 depends on Python>=3.10, we can conclude that bw-timex<=0.2 \u2026 urrent Python version (3.9.25) does not satisfy Python>=3.11 and bw-timex>=0.3.0 depends on Python>=",
         "date": "2026-11-10",
         "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
       },
@@ -641,30 +698,6 @@
       },
       {
         "python": "3.11",
-        "platform": "linux",
-        "package": "brightway25",
-        "status": "pass",
-        "date": "2026-11-10",
-        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
-      },
-      {
-        "python": "3.11",
-        "platform": "linux",
-        "package": "bw_graph_tools",
-        "status": "pass",
-        "date": "2026-11-10",
-        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
-      },
-      {
-        "python": "3.11",
-        "platform": "linux",
-        "package": "bw_timex",
-        "status": "pass",
-        "date": "2026-11-10",
-        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
-      },
-      {
-        "python": "3.11",
         "platform": "macos",
         "package": "brightway25",
         "status": "pass",
@@ -689,6 +722,30 @@
       },
       {
         "python": "3.11",
+        "platform": "linux",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.11",
+        "platform": "linux",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.11",
+        "platform": "linux",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.11",
         "platform": "windows",
         "package": "brightway25",
         "status": "pass",
@@ -713,30 +770,6 @@
       },
       {
         "python": "3.12",
-        "platform": "linux",
-        "package": "brightway25",
-        "status": "pass",
-        "date": "2026-11-10",
-        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
-      },
-      {
-        "python": "3.12",
-        "platform": "linux",
-        "package": "bw_graph_tools",
-        "status": "pass",
-        "date": "2026-11-10",
-        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
-      },
-      {
-        "python": "3.12",
-        "platform": "linux",
-        "package": "bw_timex",
-        "status": "pass",
-        "date": "2026-11-10",
-        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
-      },
-      {
-        "python": "3.12",
         "platform": "macos",
         "package": "brightway25",
         "status": "pass",
@@ -761,6 +794,30 @@
       },
       {
         "python": "3.12",
+        "platform": "linux",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.12",
+        "platform": "linux",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.12",
+        "platform": "linux",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.12",
         "platform": "windows",
         "package": "brightway25",
         "status": "pass",
@@ -785,7 +842,7 @@
       },
       {
         "python": "3.13",
-        "platform": "linux",
+        "platform": "macos",
         "package": "brightway25",
         "status": "pass",
         "date": "2026-11-10",
@@ -793,7 +850,7 @@
       },
       {
         "python": "3.13",
-        "platform": "linux",
+        "platform": "macos",
         "package": "bw_graph_tools",
         "status": "pass",
         "date": "2026-11-10",
@@ -801,7 +858,7 @@
       },
       {
         "python": "3.13",
-        "platform": "linux",
+        "platform": "macos",
         "package": "bw_timex",
         "status": "pass",
         "date": "2026-11-10",
@@ -809,7 +866,7 @@
       },
       {
         "python": "3.13",
-        "platform": "macos",
+        "platform": "linux",
         "package": "brightway25",
         "status": "pass",
         "date": "2026-11-10",
@@ -817,7 +874,7 @@
       },
       {
         "python": "3.13",
-        "platform": "macos",
+        "platform": "linux",
         "package": "bw_graph_tools",
         "status": "pass",
         "date": "2026-11-10",
@@ -825,7 +882,7 @@
       },
       {
         "python": "3.13",
-        "platform": "macos",
+        "platform": "linux",
         "package": "bw_timex",
         "status": "pass",
         "date": "2026-11-10",
@@ -857,7 +914,7 @@
       },
       {
         "python": "3.14",
-        "platform": "linux",
+        "platform": "macos",
         "package": "brightway25",
         "status": "pass",
         "date": "2026-11-10",
@@ -865,7 +922,7 @@
       },
       {
         "python": "3.14",
-        "platform": "linux",
+        "platform": "macos",
         "package": "bw_graph_tools",
         "status": "pass",
         "date": "2026-11-10",
@@ -873,7 +930,7 @@
       },
       {
         "python": "3.14",
-        "platform": "linux",
+        "platform": "macos",
         "package": "bw_timex",
         "status": "pass",
         "date": "2026-11-10",
@@ -881,7 +938,7 @@
       },
       {
         "python": "3.14",
-        "platform": "macos",
+        "platform": "linux",
         "package": "brightway25",
         "status": "pass",
         "date": "2026-11-10",
@@ -889,7 +946,7 @@
       },
       {
         "python": "3.14",
-        "platform": "macos",
+        "platform": "linux",
         "package": "bw_graph_tools",
         "status": "pass",
         "date": "2026-11-10",
@@ -897,7 +954,7 @@
       },
       {
         "python": "3.14",
-        "platform": "macos",
+        "platform": "linux",
         "package": "bw_timex",
         "status": "pass",
         "date": "2026-11-10",
@@ -924,33 +981,6 @@
         "platform": "windows",
         "package": "bw_timex",
         "status": "pass",
-        "date": "2026-11-10",
-        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
-      },
-      {
-        "python": "3.15",
-        "platform": "linux",
-        "package": "brightway25",
-        "status": "fail",
-        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
-        "date": "2026-11-10",
-        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
-      },
-      {
-        "python": "3.15",
-        "platform": "linux",
-        "package": "bw_graph_tools",
-        "status": "fail",
-        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
-        "date": "2026-11-10",
-        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
-      },
-      {
-        "python": "3.15",
-        "platform": "linux",
-        "package": "bw_timex",
-        "status": "fail",
-        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
         "date": "2026-11-10",
         "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
       },
@@ -975,6 +1005,33 @@
       {
         "python": "3.15",
         "platform": "macos",
+        "package": "bw_timex",
+        "status": "fail",
+        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.15",
+        "platform": "linux",
+        "package": "brightway25",
+        "status": "fail",
+        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.15",
+        "platform": "linux",
+        "package": "bw_graph_tools",
+        "status": "fail",
+        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.15",
+        "platform": "linux",
         "package": "bw_timex",
         "status": "fail",
         "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",

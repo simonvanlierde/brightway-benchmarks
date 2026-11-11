@@ -76,9 +76,34 @@ export interface Guidance {
      */
     packages: string[];
     /**
-     * The Pythons past end of life, which a maintainer view lists apart from the supported ones.
+     * The Pythons the probe runs and the platforms each runs on, in display order: the grid, so a result that is missing shows as not checked.
+     *
+     * @minItems 1
      */
-    endOfLife: string[];
+    pythons: [
+      {
+        version: string;
+        /**
+         * Past end of life: a maintainer view lists these apart from the supported Pythons.
+         */
+        endOfLife: boolean;
+        /**
+         * @minItems 1
+         */
+        platforms: [string, ...string[]];
+      },
+      ...{
+        version: string;
+        /**
+         * Past end of life: a maintainer view lists these apart from the supported Pythons.
+         */
+        endOfLife: boolean;
+        /**
+         * @minItems 1
+         */
+        platforms: [string, ...string[]];
+      }[],
+    ];
     /**
      * @minItems 1
      */

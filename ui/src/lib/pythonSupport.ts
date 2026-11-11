@@ -25,16 +25,25 @@ export interface SupportTable {
 const numeric = (a: string, b: string) => a.localeCompare(b, "en", { numeric: true });
 const unique = (values: string[]) => [...new Set(values)];
 
-/** The supported Pythons (`eol` false) or the end-of-life ones (true) as a table; undefined when none has a result. */
+/**
+ * The supported Pythons (`eol` false) or the end-of-life ones (true) as a table: the full grid the
+ * probe runs, so a result that is missing is an empty cell. Undefined when the data lists none.
+ */
 export function supportTable(
-  support: Omit<PythonSupport, "results"> & { results: SupportResult[] },
+  support: Omit<PythonSupport, "results" | "pythons"> & {
+    results: SupportResult[];
+    pythons: PythonSupport["pythons"][number][];
+  },
   eol: boolean,
 ): SupportTable | undefined {
-  const results = support.results.filter((r) => support.endOfLife.includes(r.python) === eol);
-  if (results.length === 0) return undefined;
+  const pythons = support.pythons.filter((p) => p.endOfLife === eol);
+  if (pythons.length === 0) return undefined;
+  const shown = new Set(pythons.map((p) => p.version));
+  const results = support.results.filter((r) => shown.has(r.python));
   const rows = new Map<string, SupportRow>();
+  const platforms = unique(pythons.flatMap((p) => p.platforms));
   for (const package_ of support.packages) {
-    for (const platform of unique(results.map((r) => r.platform))) {
+    for (const platform of platforms) {
       rows.set(`${package_} ${platform}`, { package: package_, platform, cells: new Map() });
     }
   }
@@ -44,13 +53,13 @@ export function supportTable(
     const reason = r.reason ?? "failed";
     const f = failures.get(reason) ?? { reason, pythons: [], platforms: [], packages: [] };
     f.pythons = unique([...f.pythons, r.python]).sort(numeric);
-    f.platforms = unique([...f.platforms, r.platform]);
+    f.platforms = platforms.filter((p) => p === r.platform || f.platforms.includes(p)); // in grid order
     f.packages = unique([...f.packages, r.package]);
     failures.set(reason, f);
   }
   return {
-    pythons: unique(results.map((r) => r.python)).sort(numeric),
-    rows: [...rows.values()].filter((row) => row.cells.size > 0),
+    pythons: pythons.map((p) => p.version),
+    rows: [...rows.values()],
     failures: [...failures.values()],
     checked: results.map((r) => r.date).sort()[0] ?? "",
   };

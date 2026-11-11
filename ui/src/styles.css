@@ -1776,15 +1776,15 @@ table.check-grid td a[aria-current="true"] {
   }
 }
 
-/* Python support: the check grid's cells, wrapping rather than scrolling so large text does not clip it. */
+/* Python support: the check grid's cells. Words break between words only (package names at their
+   underscores); a table too wide for its box scrolls inside it. */
 .support-grid {
   width: auto;
 }
-/* Wraps rather than scrolls, so a large text size does not clip the table. */
 table.support-grid th,
 table.support-grid td {
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
 }
 table.support-grid tbody th {
   padding-right: 16px;
@@ -1798,8 +1798,8 @@ table.support-grid tbody th {
 .support-failures dt {
   margin-top: 10px;
   color: var(--ink);
-  overflow-wrap: anywhere;
 }
 .support-failures dd {
   margin: 2px 0 0;
+  overflow-wrap: anywhere;
 }

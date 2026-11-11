@@ -2,6 +2,7 @@
 
 import importlib
 import json
+import re
 import shutil
 from pathlib import Path
 from types import ModuleType
@@ -336,7 +337,42 @@ def test_python_support_names_the_failed_step_and_what_it_took_with_it(module: M
     # The install is the first failure and stays the reason; the import errors it caused do not replace it.
     assert got["brightway25"]["reason"] == "Failed to build `cachebox`: x"
     assert got["bw_timex"]["reason"] == "ImportError: no"
-    assert got["bw_graph_tools"]["status"] == "pass"
+    assert "bw_graph_tools" not in got  # no step of its own: nothing was checked, so no Pass
+
+
+def test_a_failed_catch_all_step_does_not_overwrite_not_declared(module: ModuleType, tmp_path: Path):
+    steps = [
+        {"step": "install bw_timex", "ok": True, "declared": False},
+        {"step": "probe", "ok": False, "error": "no output"},
+    ]
+    got = results(module, tmp_path, steps, python="3.9")
+    assert got["bw_timex"]["status"] == "undeclared"
+    assert got["brightway25"]["status"] == "fail"
+
+
+@pytest.mark.parametrize("error", ["", "error: (exit status: 1)", "error:"])
+def test_a_reason_is_never_empty(module: ModuleType, tmp_path: Path, error: str):
+    assert module.reason(error) == "failed"
+    got = results(module, tmp_path, [{"step": "install brightway25", "ok": False, "error": error}])
+    assert got["brightway25"]["reason"] == "failed"  # the schema refuses an empty one, and the page with it
+    assert (
+        results(module, tmp_path, [{"step": "install brightway25", "ok": False}])["brightway25"]["reason"] == "failed"
+    )
+
+
+def test_a_long_reason_keeps_its_tail(module: ModuleType):
+    reason = module.reason("head " + "x" * 400 + " the real cause")
+    assert reason.startswith("head ")
+    assert reason.endswith("the real cause")
+    assert len(reason) < 320
+
+
+def test_the_exported_grid_is_the_probe_workflow_matrix(module: ModuleType):
+    workflow = (ROOT / ".github/workflows/python-probe.yml").read_text()
+    versions = re.findall(r'"(3\.\d+)"', workflow)
+    assert [p["version"] for p in module.PYTHONS] == sorted(set(versions), key=lambda v: int(v.split(".")[1]))
+    (supported,) = re.findall(r"python: \[(.*)\]", workflow)
+    assert tuple(supported.replace('"', "").split(", ")) == module.SUPPORTED
 
 
 def test_python_support_shows_an_undeclared_python_apart_from_a_failure(module: ModuleType, tmp_path: Path):

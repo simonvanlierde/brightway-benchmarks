@@ -16,7 +16,7 @@ let {
   wide?: boolean;
   shownElsewhere?: View[];
   /** The findings page: these cards are its preview. */
-  all?: string;
+  all?: string | undefined;
 } = $props();
 const same = (f: { benchmark: string; params: string[] }, v: View) =>
   v.bench === f.benchmark && v.params.join("\n") === f.params.join("\n");

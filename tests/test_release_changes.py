@@ -182,3 +182,20 @@ def test_a_spread_needs_quartiles_that_hold_the_value(module: ModuleType):
     columns = ["result", "params", "stats_q_25", "stats_q_75"]
     row = [[1.0, 1.0, 0.0, 1.0], [], [0.9, 1.2, 0.0, 0.9], [1.1, 1.4, 0.0, float("nan")]]
     assert module.spreads(row, columns) == [pytest.approx(0.2), None, None, None]
+
+
+def test_cells_line_up_by_parameter_when_the_axis_order_differs(module: ModuleType, tmp_path: Path):
+    env = "uv-py3.12" + STACK
+    old = result("2.000000", env, [1.0, 2.0], [5e8, 5e8], [0.0, 0.0])
+    new = result("3.000000", env, [4.0, 2.0], [5e8, 5e8], [0.0, 0.0])
+    # merge_results.py orders an axis by whichever size ran first, so a release can list them swapped.
+    for data, sizes in ((old, ["'smoke'", "'ecoinvent'"]), (new, ["'ecoinvent'", "'smoke'"])):
+        for row in data["results"].values():
+            row[1] = [sizes]
+    write(tmp_path, old)
+    write(tmp_path, new)
+    rows = module.changes(tmp_path / "results", "s")
+    assert [(c.case, c.params, c.ratio) for c in rows] == [
+        ("SingleScore.time_first_score", "'smoke'", pytest.approx(2.0)),
+        ("SingleScore.time_first_score", "'ecoinvent'", pytest.approx(2.0)),
+    ]

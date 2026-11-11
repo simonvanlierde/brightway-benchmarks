@@ -168,23 +168,26 @@ def changes(results: Path, subject: str) -> list[Change]:
     return out
 
 
+def cells(row: list, columns: list[str]) -> dict[tuple, tuple]:
+    """(value, spread) by parameter combination, from one case's row in an asv file."""
+    params = row[1] if len(row) > 1 and row[1] else []
+    combos = list(itertools.product(*params)) if params else [()]
+    values = row[0] if isinstance(row[0], list) else [row[0]]
+    pad = [None] * len(combos)  # a file without quartiles has no spreads
+    return dict(zip(combos, zip(values, spreads(row, columns) + pad, strict=False), strict=False))
+
+
 def compare(old: dict, new: dict, units: dict) -> list[tuple]:
     """(case, params, old, new, ratio) for each parameter set of each case that moved beyond its noise."""
     rows = []
     for name in sorted(old["results"].keys() & new["results"].keys()):
         if name.rsplit(".", 1)[-1].startswith("track_"):
             continue
-        a, b = old["results"][name], new["results"][name]
-        params = a[1] if len(a) > 1 and a[1] else []
-        labels = [", ".join(p) for p in itertools.product(*params)] if params else [""]
-        before = a[0] if isinstance(a[0], list) else [a[0]]
-        after = b[0] if isinstance(b[0], list) else [b[0]]
-        if b[1:2] != a[1:2]:  # the parameters changed, so the values do not line up
-            continue
-        sa = spreads(a, old.get("result_columns", ["result", "params"]))
-        sb = spreads(b, new.get("result_columns", ["result", "params"]))
-        pad = [None] * len(labels)  # a file without quartiles has no spreads
-        for label, x, y, ka, kb in zip(labels, before, after, sa + pad, sb + pad, strict=False):
+        before = cells(old["results"][name], old.get("result_columns", ["result", "params"]))
+        after = cells(new["results"][name], new.get("result_columns", ["result", "params"]))
+        for combo in [c for c in before if c in after]:  # by value: merge_results may order an axis differently
+            (x, ka), (y, kb) = before[combo], after[combo]
+            label = ", ".join(combo)
             ran_x, ran_y = x is not None and not math.isnan(x), y is not None and not math.isnan(y)
             if not ran_x and not ran_y:
                 continue

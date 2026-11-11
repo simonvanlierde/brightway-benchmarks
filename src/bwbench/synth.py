@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 # tests/test_synth.py pins a hash of system("smoke")'s arrays to it: update both together.
 GENERATOR_VERSION = "5"
 INPUTS_SHARE = 0.5  # random builder: upper bound on the sum of input amounts per column
-FACTORIZE_BUDGET = 900.0  # seconds of SuperLU a benchmark case may spend, half asv's timeout
+FACTORIZE_BUDGET = 900.0  # seconds of SuperLU a benchmark case may spend (asv timeouts: 600 to 1800 s per case)
 MAX_COLUMN_SUM = 0.9  # tiered builder: the reference's series needs column sums below 1
 # The builders that read a real system from a pinned archive, by profile builder name.
 ARCHIVES = {"useeio": useeio.system, "bafu": bafu.system}
@@ -138,8 +138,8 @@ def skip_unless_factorizable(name: str, *, pardiso: bool, factorizations: int = 
     """Skip a case whose SuperLU or UMFPACK factorizations of profile ``name`` would overrun.
 
     The estimate: 43 s per factorization at 18k products of the tiered structure, growing
-    about as n^3.6 (one thread, measured 2026-10-13); half the 30-minute asv timeout is the
-    budget. PyPardiso is far faster, so it is never skipped. asv records the skip as a gap.
+    about as n^3.6 (one thread, measured 2026-10-13); the budget is ``FACTORIZE_BUDGET``.
+    PyPardiso is far faster, so it is never skipped. asv records the skip as a gap.
     """
     seconds = factorizations * 43.0 * (profile(name).products / 18_000) ** 3.6
     if not pardiso and seconds > FACTORIZE_BUDGET:

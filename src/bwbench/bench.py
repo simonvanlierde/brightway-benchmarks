@@ -4,7 +4,7 @@ A benchmark is a setup function decorated with ``@bench`` that returns ``(run, e
 ``run`` is the timed call. ``expect`` checks its result, outside the timing, and is one of:
 
 - a value the result must match within ``rtol``;
-- a function of the result that raises on a wrong one and returns its relative error;
+- a function of the result that raises on a wrong one and returns its relative error, or None;
 - ``UNCHECKED``.
 
 The setup is never timed. It runs fresh before every timed call, which calls ``run`` once.

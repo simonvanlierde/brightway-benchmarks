@@ -2,10 +2,10 @@
 
 The solver is whatever the asv environment installs (PyPardiso, UMFPACK or SuperLU),
 because bw2calc picks it at import, or the one ``BWBENCH_SOLVER`` patches in (KLU, or UMFPACK
-on Aᵀ; see ``bwbench.solvers``). Every case checks its scores against the float64
-reference in ``reference.json``, outside the timed call, and the ``track_relative_error``
-results record the relative error, so a wrong answer shows up in the history next to a
-fast one. Each setup also solves once before the timed call, so one-time costs (imports,
+on Aᵀ; see ``bwbench.solvers``). Every case checks its scores outside the timed call, against
+the float64 reference in ``reference.json`` or, for a Monte Carlo draw, a Neumann solve, and
+the ``track_relative_error`` results record the relative error, so a wrong answer shows up in
+the history next to a fast one. Each setup also solves once before the timed call, so one-time costs (imports,
 first loads) stay out of the first sample.
 """
 
@@ -311,8 +311,8 @@ def iterations(size: str, iterations: int, cls: str) -> BenchSetup:
     """``iterations`` Monte Carlo draws after the first score.
 
     #131 names Monte Carlo at the 100k-product size (``BWBENCH_MC_SIZES=mc100k``) as the
-    case worth benchmarking. BenchSetup checks one draw against a Neumann solve of that draw's
-    matrix, and that the draw differs from the static score.
+    case worth benchmarking. The first setup checks one draw against a Neumann solve of that
+    draw's matrix, and that the draw differs from the static score.
     """
     # LCA refactorizes on every draw; IterativeLCA factorizes once; JacobiGMRESLCA never.
     draws = {"LCA": iterations + 2, "IterativeLCA": 1}.get(cls, 0)

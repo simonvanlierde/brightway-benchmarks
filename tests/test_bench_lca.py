@@ -96,3 +96,20 @@ def test_multilca_runs_at_one_demand_count_only(bench_lca: types.ModuleType, mon
     for demands, variant in [(30, "MultiLCA"), (1, "forward"), (1, "adjoint")]:
         with pytest.raises(ReachedError):
             bench_lca.scores.prepare(size="smoke", demands=demands, variant=variant)
+
+
+def test_fast_scores_on_another_solver_is_not_applicable(bench_lca: types.ModuleType, monkeypatch: pytest.MonkeyPatch):
+    """BWBENCH_STRICT fails a plain NotImplementedError, so a case for another solver must say NotApplicable."""
+
+    class FastScoresOnlyMultiLCA(StubLCA):
+        def __init__(self, demands: dict, data_objs: list, direction: str = "forward") -> None:  # noqa: ARG002
+            super().__init__(demands, data_objs)
+
+    monkeypatch.setattr(bench_lca.bc, "FastScoresOnlyMultiLCA", FastScoresOnlyMultiLCA, raising=False)
+    monkeypatch.setattr(bench_lca, "skip_known_crash", lambda *_, **__: None)
+    with pytest.raises(NotApplicable, match="PARDISO or UMFPACK"):
+        bench_lca.fast_scores("forward")
+    monkeypatch.setattr(bench_lca.bc, "UMFPACK", True, raising=False)
+    monkeypatch.setenv("BWBENCH_SOLVER", "umfpack-T")
+    with pytest.raises(NotApplicable, match="umfpack-T"):
+        bench_lca.fast_scores("adjoint")

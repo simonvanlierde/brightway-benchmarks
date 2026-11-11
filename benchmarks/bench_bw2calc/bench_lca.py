@@ -249,7 +249,7 @@ def fast_scores(direction: str) -> tuple[type, dict]:
     lca_cls = lca_class("FastScoresOnlyMultiLCA")
     skip_known_crash("FastScoresOnlyMultiLCA", calls_next=True)
     if not (bc.PYPARDISO or getattr(bc, "UMFPACK", False)):
-        raise NotImplementedError("FastScoresOnlyMultiLCA needs PARDISO or UMFPACK")
+        raise NotApplicable("FastScoresOnlyMultiLCA needs PARDISO or UMFPACK")
     kwargs = {}
     if "direction" in inspect.signature(lca_cls.__init__).parameters:
         kwargs["direction"] = direction
@@ -257,7 +257,7 @@ def fast_scores(direction: str) -> tuple[type, dict]:
         raise NotImplementedError(f"bw2calc {bc.__version__} has no adjoint direction")
     if direction == "adjoint" and solver() == "umfpack-T":
         # The adjoint hands factorized() Aᵀ, so UMFPACK on its transpose would factorize A.
-        raise NotImplementedError("umfpack-T would factorize A, not Aᵀ, in the adjoint direction")
+        raise NotApplicable("umfpack-T would factorize A, not Aᵀ, in the adjoint direction")
     return lca_cls, kwargs
 
 

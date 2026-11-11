@@ -112,7 +112,8 @@ def _build(name: str, p: Profile, seed: int, uncertain: bool) -> System:  # noqa
         cf_flows.append(flows + n)
         cf_data.append(rng.lognormal(0.0, 1.0, size=flows.size))
 
-    for a in (tech_rows, tech_cols, tech_data, tech_flip, bio_rows, bio_cols, bio_data, scale, *cf_flows, *cf_data):
+    shared = (tech_rows, tech_cols, tech_data, tech_flip, bio_rows, bio_cols, bio_data, scale, *cf_flows, *cf_data)
+    for a in (*shared, *(g for g in (region, sector) if g is not None)):
         a.setflags(write=False)
     return System(
         name,

@@ -8,6 +8,7 @@ extend-ignore-re = [
 [default.extend-words]
 intoto = "intoto" # in-toto attestation bundles, `.intoto.jsonl`
 fo = "fo"         # fsspec's file-object keyword, `fsspec.filesystem("zip", fo=...)`
+writeable = "writeable" # numpy's array flag, `a.flags.writeable`
 
 [files]
 extend-exclude = [

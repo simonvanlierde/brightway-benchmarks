@@ -202,6 +202,9 @@ def test_shared_arrays_are_read_only():
     s = system("smoke")
     with pytest.raises(ValueError, match="read-only"):
         s.tech_data[0] = 2.0
+    for a in (s.region, s.sector):
+        assert a is not None
+        assert not a.flags.writeable
 
 
 def test_neumann_score_matches_the_reference():

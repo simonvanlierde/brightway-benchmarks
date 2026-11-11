@@ -656,3 +656,8 @@ def test_a_recorded_track_value_prepares_nothing(monkeypatch: pytest.MonkeyPatch
     setup(obj, "track_relative_error", 1)
     assert obj.track_relative_error(1) == 0
     assert prepared == []
+
+
+def test_knob_strips_spaces_around_each_value(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("BWBENCH_SIZES", "smoke, ecoinvent")
+    assert bwbench.knob("sizes", "smoke") == ["smoke", "ecoinvent"]

@@ -119,7 +119,7 @@ def test_fast_scores_on_another_solver_is_not_applicable(bench_lca: types.Module
 def test_condition_estimate_runs_in_the_superlu_environment_only(
     bench_lca: types.ModuleType, monkeypatch: pytest.MonkeyPatch
 ):
-    """SciPy's SuperLU gives the same estimate and timing in every environment, so only the base one records it."""
+    """Under asv every environment has the same SciPy, so only the SuperLU one records the estimate."""
     installed: set[str] = set()
 
     def version(dist: str) -> str:
@@ -131,11 +131,16 @@ def test_condition_estimate_runs_in_the_superlu_environment_only(
     monkeypatch.setattr(bench_lca, "skip_unless_factorizable", lambda *_, **__: None)
     monkeypatch.setattr(bench_lca, "system", lambda _size: types.SimpleNamespace(condition_estimate=lambda: 1.0))
     monkeypatch.delenv("BWBENCH_SOLVER", raising=False)
+    monkeypatch.setenv("ASV", "true")
     assert bench_lca.condition_estimate.prepare(size="smoke")() == 1.0
     for dist in ("pypardiso", "scikit-umfpack"):
         installed = {dist}
         with pytest.raises(NotApplicable, match="SuperLU environment"):
             bench_lca.condition_estimate.prepare(size="smoke")
+    # Outside asv (CodSpeed, compat) there is one environment, which keeps the case.
+    monkeypatch.delenv("ASV")
+    assert bench_lca.condition_estimate.prepare(size="smoke")() == 1.0
+    monkeypatch.setenv("ASV", "true")
     installed = set()
     monkeypatch.setenv("BWBENCH_SOLVER", "klu")
     with pytest.raises(NotApplicable, match="SuperLU environment"):

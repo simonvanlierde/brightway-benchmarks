@@ -748,7 +748,7 @@ def test_environments_are_labelled_by_their_solver_and_blas(export_ui: ModuleTyp
         "rattler-py3.12-libblas_=__openblas-numpy2.5.3-scikit-umfpack0.4.2-scipy1.18.1",
         "rattler-py3.12-numpy2.5.3-scipy1.18.1",
     ]
-    assert export_ui.solver_labels(conda) == ["UMFPACK, MKL", "PyPardiso, MKL", "UMFPACK, OpenBLAS", "SuperLU"]
+    assert export_ui.solver_labels(conda) == ["UMFPACK, MKL", "PyPardiso", "UMFPACK, OpenBLAS", "SuperLU"]
     # No solver pinned anywhere: the names differ in something else, so no labels.
     assert export_ui.solver_labels(["uv-py3.12-bw_processing1.6", "uv-py3.12-bw_processinggit"]) is None
     # Two that read the same: the UI sees the clash and shows their full names.

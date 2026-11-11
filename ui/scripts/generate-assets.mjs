@@ -106,8 +106,8 @@ function pngToIco(pngBuffer, width = 32, height = 32) {
 
 // 2. Preview cards (1200x630), one layout for the site and each story: a poster whose headline and
 // bars sit in the centred 630 px, so a square crop keeps both. Solver bars take the series colour the
-// viewer's charts give that solver in the dark theme (ui/src/lib/story-series.ts: --s3, --s7, --s5).
-const DARK = { umfpack: "#199e70", pypardiso: "#9085e9", superlu: "#d55181", neutral: "#7488b3" };
+// viewer's charts give that solver in the dark theme (ui/src/lib/story-series.ts: --s3, --s2, --s5).
+const DARK = { umfpack: "#199e70", pypardiso: "#d95926", superlu: "#d55181", neutral: "#7488b3" };
 function card({ title, caption, bars, titleSize = 62 }) {
   const longest = Math.max(...bars.map((b) => b.value));
   const rows = bars

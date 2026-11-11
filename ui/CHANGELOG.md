@@ -14,6 +14,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- PyPardiso has one colour on every chart, story and preview card: its conda-forge environments are labelled "PyPardiso", not "PyPardiso, MKL", as it only runs on MKL. UMFPACK's BLAS variants keep their own colours.
 - A history's band is the noise allowance its release changes are counted against, not the middle half of the samples. The tip and the data table give each value's allowance ([data](README.md#the-data)).
 
 ## [0.2.0] - 2026-11-01

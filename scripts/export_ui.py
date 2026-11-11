@@ -216,7 +216,7 @@ BLAS = [(re.compile(r"(^|-)(libblas_=__)?mkl"), "MKL"), (re.compile(r"openblas")
 
 
 def solver_labels(names: list[str]) -> list[str] | None:
-    """A solver name for each environment in NAMES, with its BLAS where the name pins one.
+    """A solver name for each environment in NAMES, with its BLAS where the name pins one (not PyPardiso's).
 
     None when no name pins a solver, so the labels would tell nothing apart. Labels that clash
     are fine here: the UI then shows the full names.
@@ -227,7 +227,8 @@ def solver_labels(names: list[str]) -> list[str] | None:
     for n in names:
         solver = next((text for rx, text in SOLVERS if rx.search(n)), "SuperLU")
         blas = next((text for rx, text in BLAS if rx.search(n)), None)
-        labels.append(f"{solver}, {blas}" if blas else solver)
+        # PyPardiso only runs on MKL, so its label stays one colour on pip and conda-forge charts.
+        labels.append(f"{solver}, {blas}" if blas and solver != "PyPardiso" else solver)
     return labels
 
 

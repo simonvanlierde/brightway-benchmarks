@@ -29,11 +29,13 @@ import {
   pickParams,
   pText,
   readView,
+  seriesSlots,
   type View,
   verdict,
   writeView,
 } from "../lib/history";
 import { STATIC_PAGES, staticHref, VIEWER_PAGES } from "../lib/pages";
+import { scrollable } from "../lib/scrollable";
 import Findings from "./Findings.svelte";
 import Masthead from "./Masthead.svelte";
 import PythonSupport from "./PythonSupport.svelte";
@@ -53,10 +55,18 @@ let {
   home?: string;
 } = $props();
 const story = $derived(staticHref(home, "solver-choice"));
+const findingsPage = $derived(staticHref(home, "findings"));
 
-// Fetched with the first chart, so the start page does not load Plot.
+// Fetched once a benchmark is chosen, so the start page does not load Plot. A failed fetch is forgotten,
+// so the next benchmark tries again: after a deploy the old chunk is gone and only a reload finds the new one.
 let chartModule: Promise<typeof import("./HistoryChart.svelte")> | undefined;
-const chart = () => (chartModule ??= import("./HistoryChart.svelte"));
+function chart() {
+  chartModule ??= import("./HistoryChart.svelte");
+  chartModule.catch(() => {
+    chartModule = undefined;
+  });
+  return chartModule;
+}
 
 let index = $state<BenchmarkIndex>();
 let error = $state<string>();
@@ -135,6 +145,10 @@ function follow(e: MouseEvent, next: View) {
 }
 
 const page = $derived(pageOf(view));
+// The chart's code loads beside the benchmark's reports, not after them.
+$effect(() => {
+  if (view.bench) chart();
+});
 // Without a benchmark, Benchmarks opens on its overview: the findings and the latest release changes.
 const bench = $derived(index && findBench(index, view));
 const group = $derived(bench && index?.groups.find((g) => g.id === bench.group));
@@ -202,6 +216,7 @@ $effect(() => {
 const shown = $derived<Line[]>(
   index && bench && measureId && reports ? linesOf(index, bench, params, measureId, reports) : [],
 );
+const slots = $derived(index ? seriesSlots(index, shown) : []);
 const changes = $derived(index && measureId && machine ? changesFor(index, shown, measureId, machine.id) : []);
 const notes = $derived(envNotes(index, shown));
 const solvers = $derived(solverLinks(index, shown, notes));
@@ -285,11 +300,14 @@ $effect(() => {
   if (over > 0) masthead.scrollLeft += over;
 });
 
+// The masthead's name for the site; the data's project name is its repository's.
+const siteName = $derived(
+  index?.project.name === "brightway-benchmarks"
+    ? "Brightway Benchmarks"
+    : (index?.project.name ?? "Brightway Benchmarks"),
+);
 $effect(() => {
-  const name = index?.project.name ?? "Benchmarks";
-  document.title = bench
-    ? `${labelOf(bench)} · ${name}`
-    : `${{ home: "Setup", explorer: "Benchmarks" }[page]} · ${name}`;
+  document.title = `${bench ? labelOf(bench) : { home: "Setup", explorer: "Benchmarks" }[page]} · ${siteName}`;
 });
 </script>
 
@@ -307,14 +325,17 @@ $effect(() => {
 
 <a class="skip" href="#main">Skip to the results</a>
 <Masthead
-  name={index?.project.name === "brightway-benchmarks" ? "Brightway Benchmarks" : (index?.project.name ?? "Brightway Benchmarks")}
+  name={siteName}
   home={location.pathname}
-  links={VIEWER_PAGES.map(({ id, text }) => ({
-    href: writeView({ page: id, params: [] }),
-    text,
-    current: page === id,
-    onclick: (e) => follow(e, { page: id, params: [] }),
-  }))}
+  links={[
+    ...VIEWER_PAGES.map(({ id, text }) => ({
+      href: writeView({ page: id, params: [] }),
+      text,
+      current: page === id,
+      onclick: (e: MouseEvent) => follow(e, { page: id, params: [] }),
+    })),
+    { href: findingsPage, text: "Findings", current: false },
+  ]}
   bind:nav={masthead}
   onbrand={(e) => follow(e, { params: [] })}
   search={{ value: search, open: searchOpen, toggle: toggleSearch, input: searchFor, submit: openFirst }}
@@ -374,11 +395,11 @@ $effect(() => {
     <main class="view" id="main" tabindex="-1">
       {#if guidanceError && page === "home"}<div class="empty" role="status"><p>Setup guidance could not be loaded. Benchmark histories remain available.</p>{@render technical(guidanceError)}</div>{/if}
       {#if page === "home"}
-        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} {story} />
+        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} {story} name={siteName} findings={findingsPage} />
       {:else if !bench}
         {#if view.bench}<p class="empty" role="status">This benchmark is not in the current data. Choose one from the catalogue.</p>{/if}
-        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Choose a finding, a change or a benchmark from the catalogue for its history.</p><p class="lede"><a href={story}>Your solver can make the same LCA five times slower</a>: the story behind the solver numbers.</p></header>
-        <Findings {index} {follow} wide />
+        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Choose a finding, a change or a benchmark from the catalogue for its history.</p><p class="lede"><a href={story}>Your solver choice can change a Brightway score's time by 5 times or more</a>: the story behind the solver numbers.</p></header>
+        <Findings {index} {follow} wide all={findingsPage} />
         <ReleaseChanges {index} {view} {go} {follow} loaded={overview} />
         {#if guidance}<PythonSupport {guidance} eol />{/if}
 
@@ -465,9 +486,9 @@ $effect(() => {
             {#await chart()}
               <div class="skeleton" aria-busy="true"><span class="sr">Loading the chart…</span></div>
             {:then { default: HistoryChart }}
-              <HistoryChart lines={shown} {changes} {unit} better={measure?.better} {title} {filename} />
+              <HistoryChart lines={shown} {slots} {changes} {unit} better={measure?.better} {title} {filename} />
             {:catch reason}
-              <div class="empty" role="alert"><p>The chart did not load: {String(reason)}</p></div>
+              <div class="empty" role="alert"><p>The chart did not load. Reload the page.</p>{@render technical(String(reason))}</div>
             {/await}
             <figcaption>
               <p class="reading-guide" id="reading-guide">
@@ -494,8 +515,7 @@ $effect(() => {
           {:else if changes.length === 0}
             <p class="quiet">Nothing moved beyond its noise here.</p>
           {:else}
-            <!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region must take focus to scroll by keyboard -->
-            <div class="scroll" role="region" aria-label="Changes" tabindex="0">
+            <div class="scroll" role="region" aria-label="Changes" use:scrollable>
               <table class="responsive-table" aria-labelledby="changes-h">
                 <thead>
                   <tr>
@@ -535,8 +555,7 @@ $effect(() => {
           <details class="data" bind:open={tableOpen}>
             <summary>Data table: {tableRows.length} releases × {shown.length} environments</summary>
             {#if tableOpen}<!-- built on opening: a large table is slow to render -->
-            <!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region must take focus to scroll by keyboard -->
-            <div class="scroll" role="region" aria-label="Data table" tabindex="0">
+            <div class="scroll" role="region" aria-label="Data table" use:scrollable>
               <table>
                 <caption>
                   {title}, {measure?.name ?? ""} on {machine?.name}.{measure?.bounds ? ` Range: ${measure.bounds}.` : ""}

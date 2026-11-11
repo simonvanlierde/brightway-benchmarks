@@ -19,6 +19,7 @@ import {
   pText,
   readView,
   seriesOf,
+  seriesSlots,
   shortNames,
   sig,
   ticksFor,
@@ -128,8 +129,33 @@ describe("ticksFor", () => {
       released: !/^[0-9a-f]{8}$/.test(label),
     }));
     expect(ticksFor(steps, 3)).toEqual(["1.0", "1.2", "1.4"]);
-    expect(ticksFor(steps, 20)).toEqual(["1.0", "1.1", "1.2", "1.3", "1.4"]);
+    expect(ticksFor(steps, 5)).toEqual(["1.0", "1.1", "1.2", "1.3", "1.4"]);
+    // With room for every step, a commit that is not a release keeps its label too.
+    expect(ticksFor(steps, 20)).toEqual(steps.map((s) => s.label));
     expect(ticksFor([{ label: "aaaa1111", released: false }], 3)).toEqual(["aaaa1111"]);
+  });
+});
+
+describe("seriesSlots", () => {
+  const index = {
+    environments: [
+      { id: "a", label: "KLU" },
+      { id: "b", label: "PyPardiso" },
+      { id: "c", label: "SuperLU" },
+      { id: "d", label: "PyPardiso" },
+      { id: "e" },
+    ],
+  } as unknown as BenchmarkIndex;
+  const line = (env: string) => ({ env }) as Parameters<typeof seriesSlots>[1][number];
+  it("gives a label the same colour on every chart, from its place among all labels", () => {
+    expect(seriesSlots(index, [line("b"), line("c")])).toEqual([1, 2]);
+    expect(seriesSlots(index, [line("c")])).toEqual([2]);
+    // Another group's environment with the same label takes the same colour.
+    expect(seriesSlots(index, [line("a"), line("d")])).toEqual([0, 1]);
+  });
+  it("falls back to the line's place when a line has no label or two lines would share a colour", () => {
+    expect(seriesSlots(index, [line("c"), line("e")])).toEqual([0, 1]);
+    expect(seriesSlots(index, [line("b"), line("d")])).toEqual([0, 1]);
   });
 });
 

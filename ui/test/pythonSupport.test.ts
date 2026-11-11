@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { Guidance } from "../src/lib/contract";
-import { listed, supportTable } from "../src/lib/pythonSupport";
+import { codeParts, listed, supportLead, supportTable, supportWord } from "../src/lib/pythonSupport";
 
 // The exporter's output for the first python-probe run (see tests/test_export_guidance.py).
 const guidance: Guidance = JSON.parse(readFileSync(new URL("./fixtures/real/guidance.json", import.meta.url), "utf8"));
@@ -78,6 +78,41 @@ describe("supportTable", () => {
 
   it("returns nothing when the data lists no Python in the half asked for", () => {
     expect(supportTable({ ...support, pythons: support.pythons.filter((p) => !p.endOfLife) }, true)).toBeUndefined();
+  });
+});
+
+describe("supportLead", () => {
+  it("names the Pythons that work everywhere and why the others fail, from the data", () => {
+    const table = supportTable(support, false);
+    expect(table && supportLead(table)).toBe(
+      "3.11 to 3.14 work on every system. 3.15 does not install yet: a dependency (cachebox) fails to build.",
+    );
+  });
+  it("points to the reasons when a Python fails only in part, or for another reason", () => {
+    const results = support.results.map((r) =>
+      r.python === "3.12" && r.package === "bw_timex" ? { ...r, status: "fail" as const, reason: "ImportError: x" } : r,
+    );
+    const table = supportTable({ ...support, results }, false);
+    expect(table && supportLead(table)).toBe(
+      "3.11, 3.13 and 3.14 work on every system. 3.12 fails for 3 of 9 packages and systems; the reasons are below the table. 3.15 does not install yet: a dependency (cachebox) fails to build.",
+    );
+  });
+});
+
+describe("the cells and the reasons", () => {
+  it("say Passed, as the check grid does", () => {
+    expect(supportWord("pass")).toBe("Passed");
+  });
+  it("link the run of the oldest result once, beside its date", () => {
+    expect(supportTable(support, false)?.run).toMatch(/actions\/runs\/\d+$/);
+  });
+  it("show a reason's backtick-quoted names as code, without the backticks", () => {
+    expect(codeParts("Failed to build `cachebox==5.2.3`: error")).toEqual([
+      { text: "Failed to build ", code: false },
+      { text: "cachebox==5.2.3", code: true },
+      { text: ": error", code: false },
+    ]);
+    expect(codeParts("plain")).toEqual([{ text: "plain", code: false }]);
   });
 });
 

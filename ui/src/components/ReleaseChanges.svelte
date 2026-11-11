@@ -12,6 +12,7 @@ import {
   type View,
   writeView,
 } from "../lib/history";
+import { scrollable } from "../lib/scrollable";
 import Sparkline from "./Sparkline.svelte";
 
 // `loaded`: reports by path, as they arrive; a row draws its history once its group's reports are in.
@@ -77,8 +78,7 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
         {:else}
           {#if flagged.length}
           <h3 id="flagged-h">Regressions</h3>
-          <!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region must take focus to scroll by keyboard -->
-          <div class="scroll gap" role="region" aria-labelledby="flagged-h" tabindex="0">
+          <div class="scroll gap" role="region" aria-labelledby="flagged-h" use:scrollable>
             <table class="latest-table responsive-table">
               <caption>
                 Largest first, each beside the noise it exceeded.
@@ -118,8 +118,7 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
           {/if}
           {#if gains.length}
           <h3 id="gains-h">Improvements</h3>
-          <!-- svelte-ignore a11y_no_noninteractive_tabindex: a scrolling region must take focus to scroll by keyboard -->
-          <div class="scroll gap" role="region" aria-labelledby="gains-h" tabindex="0">
+          <div class="scroll gap" role="region" aria-labelledby="gains-h" use:scrollable>
             <table class="latest-table gains-table responsive-table">
               <caption>
                 {gains.length} {gains.length === 1 ? "benchmark" : "benchmarks"} with {gainCases} improved {gainCases === 1 ? "case" : "cases"}; open the cases for each environment and its noise.

@@ -7,18 +7,23 @@ interface Props {
   title: string;
   description: string;
   canonical: string;
+  /** The preview card: a PNG in public/. */
   image?: string;
   imageAlt?: string;
 }
-// Platforms cache a preview by image URL, so the URL carries the PNG's hash.
-const ogVersion = createHash("sha256").update(readFileSync("public/og.png")).digest("hex").slice(0, 8);
 const {
   title,
   description,
   canonical,
-  image = `https://simonvanlierde.com/brightway-benchmarks/ui/og.png?v=${ogVersion}`,
+  image: card = "og.png",
   imageAlt = "Brightway benchmarks: tested installation sets and a comparison of measured solver times.",
 } = Astro.props;
+// Platforms cache a preview by image URL, so the URL carries the PNG's hash.
+const version = createHash("sha256")
+  .update(readFileSync(`public/${card}`))
+  .digest("hex")
+  .slice(0, 8);
+const image = `https://simonvanlierde.com/brightway-benchmarks/ui/${card}?v=${version}`;
 ---
 
 <meta charset="utf-8" />

@@ -21,7 +21,12 @@ test("desktop check help shares a row and uses the column labels", async ({ page
   await page.goto("?platform=linux");
   const caption = page.locator(".check-help");
   await expect(caption).toContainText("Select a check");
-  await expect(caption).toContainText("Scroll to see all check types");
+  // At 1440 the grid fits its column, so there is nothing to scroll and no hint.
+  await expect(caption.getByText("Scroll to see all check types")).toBeHidden();
+  // Narrower, it scrolls: the hint shows on the same row, and the grid's right edge is shaded.
+  await page.setViewportSize({ width: 1000, height: 900 });
+  await expect(caption.getByText("Scroll to see all check types")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Check grid" })).toHaveClass(/overflowing/);
   const hint = await caption.locator("span").last().boundingBox();
   const section = await page.locator(".all-checks").boundingBox();
   expect(hint && section && hint.x + hint.width <= section.x + section.width).toBe(true);

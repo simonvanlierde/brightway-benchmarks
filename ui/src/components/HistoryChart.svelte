@@ -1,11 +1,12 @@
 <script lang="ts">
 import * as Plot from "@observablehq/plot";
 import type { Change } from "../lib/contract";
-import { format, type Line, noiseText, percent, scaleFor, sig, ticksFor, verdict } from "../lib/history";
+import { format, type Line, noiseText, percent, scaleFor, ticksFor, verdict } from "../lib/history";
 import { spreadLabels } from "../lib/labels";
 
 let {
   lines,
+  slots,
   changes,
   unit,
   better,
@@ -13,6 +14,8 @@ let {
   filename,
 }: {
   lines: Line[];
+  /** Each line's series colour and symbol (seriesSlots), so an environment looks the same on every chart. */
+  slots: number[];
   changes: Change[];
   unit: string;
   better: "lower" | "higher" | undefined;
@@ -87,11 +90,12 @@ $effect(() => {
   const v = (name: string) => css.getPropertyValue(name).trim();
   const [divisor, unitName] = scale;
   const domain = lines.map((l) => l.short);
-  const colours = domain.map((_, i) => v(`--s${(i % SLOTS) + 1}`));
+  const slot = (i: number) => slots[i] ?? i;
+  const colours = domain.map((_, i) => v(`--s${(slot(i) % SLOTS) + 1}`));
   const labels = steps.map((s) => s[0]?.label ?? "");
   const ticks = ticksFor(
     steps.map((s) => ({ label: s[0]?.label ?? "", released: s[0]?.released ?? false })),
-    Math.floor(width / 72),
+    Math.floor(width / 64), // an 8-character commit id at 12px is about 56px wide
   );
   const data = points.map((p) => ({
     ...p,
@@ -147,6 +151,11 @@ $effect(() => {
   const labelled = width >= 640 && domain.length > 1;
   const labelRoom = labelled ? Math.min(160, Math.ceil(Math.max(...domain.map((n) => n.length)) * 6.8) + 18) : 16;
   const emphasis = (name: string) => name === chosen;
+  // Markers shrink with the room per step; with under 24px a step (fifteen releases on a phone) the lines
+  // and the change rings stay and the per-point markers go, as they would run into each other.
+  const room = (width - 56 - labelRoom) / Math.max(1, labels.length);
+  const marker = joined ? Math.min(5, room / 4.5) : 6;
+  const markers = !joined || room >= 24;
   const plot = Plot.plot({
     width,
     height: width < 480 ? 300 : 380,
@@ -164,10 +173,9 @@ $effect(() => {
       nice: true,
       ticks: width < 480 ? 4 : 6,
       domain: yDomain,
-      tickFormat: (d: number) => sig(d),
     },
     color: { domain, range: colours },
-    symbol: { domain, range: domain.map((_, i) => SYMBOLS[i % SYMBOLS.length] ?? "circle") },
+    symbol: { domain, range: domain.map((_, i) => SYMBOLS[slot(i) % SYMBOLS.length] ?? "circle") },
     marks: [
       Plot.gridY({ stroke: v("--grid"), strokeOpacity: 1 }),
       Plot.ruleX(shifts, { stroke: v("--shift"), strokeDasharray: "4 4", strokeWidth: 1 }),
@@ -189,14 +197,14 @@ $effect(() => {
               })
             : null,
           // Outlined, so a symbol under another of a different shape still shows.
-          Plot.dot(mine, {
+          Plot.dot(markers ? mine : [], {
             x: "label",
             y: "y",
             dx,
             fill: "none",
             stroke: "short",
             symbol: "short",
-            r: (joined ? 5 : 6) + (emphasis(name) ? 2 : 0),
+            r: marker + (emphasis(name) ? 2 : 0),
             strokeWidth: emphasis(name) ? 2.5 : 1.5,
             strokeOpacity: faint,
           }),
@@ -221,6 +229,11 @@ $effect(() => {
         : null,
     ],
   });
+  // A commit that is not a release is named by its short id, in the muted tone.
+  const unnamed = new Set(steps.filter((s) => !s[0]?.released).map((s) => s[0]?.label));
+  for (const tick of plot.querySelectorAll("[aria-label='x-axis tick label'] text")) {
+    if (unnamed.has(tick.textContent ?? "")) tick.setAttribute("fill", v("--muted"));
+  }
   const x = labelled ? plot.scale("x") : undefined;
   const y = labelled ? plot.scale("y") : undefined;
   // An empty series has no scales, so no end labels.

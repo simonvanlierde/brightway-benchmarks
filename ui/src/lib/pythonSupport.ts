@@ -20,6 +20,8 @@ export interface SupportTable {
   failures: SupportFailure[];
   /** The oldest result's date: the table is only as fresh as its stalest cell. */
   checked: string;
+  /** The run behind the oldest result, linked once beside its date. */
+  run: string;
 }
 
 const numeric = (a: string, b: string) => a.localeCompare(b, "en", { numeric: true });
@@ -79,15 +81,57 @@ export function supportTable(
     }
   }
   for (const r of results) rows.get(`${r.package} ${r.platform}`)?.cells.set(r.python, r);
+  const oldest = results.toSorted((a, b) => a.date.localeCompare(b.date))[0];
   return {
     pythons: pythons.map((p) => p.version),
     rows: [...rows.values()],
     failures: failureLines(support.packages, platforms, results),
-    checked: results.map((r) => r.date).sort()[0] ?? "",
+    checked: oldest?.date ?? "",
+    run: oldest?.run ?? "",
   };
 }
 
-const WORDS = { pass: "Pass", fail: "Failed", undeclared: "Not declared" } as const;
+/** "3.11 to 3.14" for three or more Pythons in a row of ALL, else "3.11 and 3.13". */
+function span(some: string[], all: string[]): string {
+  const first = all.indexOf(some[0] ?? "");
+  const inRow = some.every((p, i) => all[first + i] === p);
+  return some.length > 2 && inRow ? `${some[0]} to ${some.at(-1)}` : listed(some);
+}
+
+/** One line from the table: which Pythons work on every system, and why each other one fails. */
+export function supportLead(table: SupportTable): string {
+  const cells = (python: string) => table.rows.map((r) => r.cells.get(python));
+  const working = table.pythons.filter((p) => cells(p).every((c) => c?.status === "pass"));
+  const out = working.length
+    ? [`${span(working, table.pythons)} ${working.length > 1 ? "work" : "works"} on every system.`]
+    : [];
+  for (const python of table.pythons.filter((p) => !working.includes(p))) {
+    const all = cells(python);
+    const failed = all.filter((c) => c?.status === "fail");
+    if (failed.length === 0) continue; // only results not declared or not checked: nothing failed
+    // uv's message for a dependency that does not compile: "Failed to build `name==version`: ...".
+    const built = new Set(failed.map((c) => c?.reason?.match(/^Failed to build `?([\w.-]+?)(?:==[^`:\s]*)?`?:/)?.[1]));
+    const [dependency] = built;
+    if (failed.length === all.length && built.size === 1 && dependency) {
+      out.push(`${python} does not install yet: a dependency (${dependency}) fails to build.`);
+    } else {
+      out.push(
+        `${python} fails for ${failed.length} of ${all.length} packages and systems; the reasons are below the table.`,
+      );
+    }
+  }
+  return out.join(" ");
+}
+
+/** A failure reason in parts, the names it quotes in backticks as code. */
+export function codeParts(reason: string): { text: string; code: boolean }[] {
+  return reason
+    .split("`")
+    .map((text, i) => ({ text, code: i % 2 === 1 }))
+    .filter((p) => p.text);
+}
+
+const WORDS = { pass: "Passed", fail: "Failed", undeclared: "Not declared" } as const;
 /** The word a cell shows: colour never carries the result alone. */
 export const supportWord = (status: SupportResult["status"]) => WORDS[status];
 

@@ -1,0 +1,9 @@
+---
+// A command to paste, with a Copy button that the page's script shows (static pages work without it).
+interface Props {
+  command: string;
+}
+const { command } = Astro.props;
+---
+
+<div class="install-command"><pre><code>{command}</code></pre><button type="button" class="copy" data-copy hidden>Copy</button></div>

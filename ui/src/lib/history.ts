@@ -183,6 +183,18 @@ export function lines(
   return kept.map(({ label: _, ...l }, i) => ({ ...l, short: short[i] ?? l.name }));
 }
 
+/**
+ * Each line's series colour, 0 to 7: its environment label's place among the index's labels, so a
+ * label (a solver) has one colour on every chart and story. By the line's place instead when a line
+ * has no label or two lines would share a colour.
+ */
+export function seriesSlots(index: Pick<BenchmarkIndex, "environments">, shown: Pick<Line, "env">[]): number[] {
+  const labels = [...new Set(index.environments.flatMap((e) => (e.label ? [e.label] : [])))];
+  const label = new Map(index.environments.map((e) => [e.id, e.label]));
+  const slots = shown.map((l) => labels.indexOf(label.get(l.env) ?? "") % 8);
+  return slots.includes(-1) || new Set(slots).size < slots.length ? shown.map((_, i) => i % 8) : slots;
+}
+
 /** The changes on LINES in MEASURE on MACHINE. */
 export function changesFor(index: BenchmarkIndex, lines: Line[], measure: string, machine: string): Change[] {
   const cases = new Set(lines.map((l) => l.case));
@@ -318,6 +330,7 @@ export function ticksFor(steps: { label: string; released: boolean }[], most: nu
   const named = steps.filter((s) => s.released);
   const pool = (named.length > 1 ? named : steps).map((s) => s.label);
   const count = Math.max(2, Math.floor(most));
+  if (steps.length <= count) return steps.map((s) => s.label);
   if (pool.length <= count) return pool;
   return Array.from({ length: count }, (_, i) => pool[Math.round((i * (pool.length - 1)) / (count - 1))] ?? "");
 }

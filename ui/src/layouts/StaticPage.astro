@@ -16,6 +16,7 @@ interface Props {
   current: StaticPageId;
 }
 const { mainClass, current, ...head } = Astro.props;
+const page = STATIC_PAGES.find((p) => p.id === current);
 const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
 const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
 ---
@@ -31,7 +32,9 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
       {home}
       links={[
         ...VIEWER_PAGES.map(({ id, text }) => ({ href: viewerHref(home, id), text, current: false })),
-        { href: staticHref(home, current), text: STATIC_PAGES.find((p) => p.id === current)?.text ?? "", current: true },
+        { href: staticHref(home, "findings"), text: "Findings", current: page?.under === "findings" },
+        // A page outside the three (About) still names itself, as the current one.
+        ...(page && !page.under ? [{ href: staticHref(home, current), text: page.text, current: true }] : []),
       ]}
     />
     <main class={`static-page ${mainClass}`} id="main" tabindex="-1">
@@ -58,7 +61,9 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
     margin: 0 auto;
     padding: 40px 24px 64px;
   }
-  :global(.static-page) :where(p, ul, ol, dl) {
+  /* The lede too: every paragraph ends on the measure's right edge, as the charts and boxes do. */
+  :global(.static-page) :where(p, ul, ol, dl),
+  :global(.static-page .lede) {
     max-width: none;
   }
   :global(.static-page) .back {

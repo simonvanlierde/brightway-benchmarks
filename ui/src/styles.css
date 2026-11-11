@@ -242,10 +242,12 @@ code,
   grid-column: -2;
   padding: 32px 22px 28px;
 }
+/* Off screen by its own height, so a larger text size cannot bring it into view. */
 .skip {
   position: absolute;
   left: 16px;
-  top: -48px;
+  top: 8px;
+  transform: translateY(calc(-100% - 16px));
   padding: 8px 12px;
   background: var(--page);
   border: 1px solid var(--control);
@@ -291,9 +293,19 @@ code,
 .gap {
   margin-top: 20px;
 }
+/* Positioned, so the hidden .sr text in its cells stays inside it rather than widening the page. */
 .scroll {
+  position: relative;
   overflow-x: auto;
   max-width: 100%;
+}
+/* While more is to the right, a shade at the right edge; the local layer covers it at the end of the scroll. */
+.scroll.overflowing {
+  background:
+    linear-gradient(to left, var(--page), var(--page)) right / 2rem 100% no-repeat local,
+    linear-gradient(to left, color-mix(in srgb, var(--ink) 18%, transparent), transparent) right / 1.25rem 100%
+    no-repeat scroll,
+    var(--page);
 }
 .wrap {
   overflow-wrap: anywhere;
@@ -419,22 +431,7 @@ code,
   letter-spacing: -0.015em;
 }
 .home-intro {
-  display: block;
-  margin-bottom: 20px;
-}
-/* Wide, the two paragraphs sit over the two columns they introduce, so no gap opens above the right one. */
-@media (min-width: 55.0625rem) {
-  .home-intro {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-    column-gap: 28px;
-  }
-  .home-intro h2 {
-    grid-column: 1 / -1;
-  }
-  .view > .home-intro p:nth-of-type(2) {
-    padding-left: 29px;
-  }
+  margin-bottom: 24px;
 }
 .home-columns {
   display: grid;
@@ -826,7 +823,7 @@ tbody tr:hover {
   max-width: var(--measure);
 }
 .skip:focus {
-  top: 8px;
+  transform: none;
 }
 .controls .field {
   display: grid;
@@ -977,9 +974,6 @@ details.data[open] summary {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .home-intro {
-    display: block;
-  }
   .fullwidth > .view {
     padding: 26px 22px 40px;
   }
@@ -1253,6 +1247,7 @@ so a chosen control needs a line of its own. */
   border-left: 1px solid var(--line);
   padding: 0 16px;
   font-weight: 650;
+  font-size: var(--text-evidence);
 }
 .install-meta,
 .install-note {
@@ -1264,12 +1259,14 @@ so a chosen control needs a line of its own. */
   margin-left: 8px;
   color: var(--better);
 }
-/* A secondary action: the bordered button of the rest of the page, 44px for a thumb. */
+/* A secondary action, drawn like the Copy button beside the command: a fine frame, 44px for a thumb. */
 button.secondary {
   min-height: 44px;
-  padding: 4px 14px;
+  padding: 4px 16px;
   margin-left: 6px;
+  border-color: var(--line);
   font-size: var(--text-evidence);
+  font-weight: 650;
 }
 .install-files {
   display: flex;
@@ -1339,6 +1336,7 @@ table.check-grid td {
 }
 .check-grid thead th {
   padding: 6px 8px;
+  vertical-align: bottom;
 }
 table.check-grid td a,
 table.check-grid td > span {
@@ -1761,6 +1759,11 @@ table.check-grid td a[aria-current="true"] {
   .site-footer nav {
     gap: 0 24px;
   }
+  /* The build id is the footer's last row of its own, in the meta tone, not a link left over from a wrap. */
+  .site-footer .build-version {
+    flex-basis: 100%;
+    color: var(--muted);
+  }
   footer.site-footer nav a,
   .view .install-files a {
     display: inline-flex;
@@ -1789,6 +1792,18 @@ table.support-grid td {
 table.support-grid tbody th {
   padding-right: 16px;
 }
+/* A package name never breaks: the table scrolls in its region instead. */
+table.support-grid tbody th code {
+  white-space: nowrap;
+}
+table.check-grid td > span.undeclared {
+  color: var(--muted);
+}
+.support-lead {
+  margin: 4px 0 0;
+  font-weight: 650;
+  max-width: 70ch;
+}
 .support-failures {
   margin: 16px 0 0;
   max-width: 68ch;
@@ -1802,4 +1817,14 @@ table.support-grid tbody th {
 .support-failures dd {
   margin: 2px 0 0;
   overflow-wrap: anywhere;
+}
+
+/* Both grids: the row headers sit flush left, so their column's header does too. */
+.check-grid thead th:first-child {
+  padding-left: 0;
+}
+/* A long check name takes two lines, so the check grid fits its column on a laptop. */
+.all-checks .check-grid thead th {
+  white-space: normal;
+  min-width: 5.5rem;
 }

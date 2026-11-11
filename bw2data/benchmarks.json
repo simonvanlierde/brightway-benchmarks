@@ -22,13 +22,14 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'"
             ]
         ],
         "timeout": 1800,
         "type": "peakmemory",
         "unit": "bytes",
-        "version": "3-05303220"
+        "version": "4-05303220"
     },
     "bench_write.DatabaseWrite.time_write": {
         "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
@@ -40,7 +41,8 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'"
             ]
         ],
         "rounds": 2,
@@ -48,7 +50,7 @@
         "timeout": 1800,
         "type": "time",
         "unit": "seconds",
-        "version": "3-05303220",
+        "version": "4-05303220",
         "warmup_time": 0
     },
     "bench_write.DatabaseWrite.track_score_error": {
@@ -59,13 +61,14 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'"
             ]
         ],
         "timeout": 1800,
         "type": "track",
         "unit": "unit",
-        "version": "3-05303220"
+        "version": "4-05303220"
     },
     "version": 2
 }

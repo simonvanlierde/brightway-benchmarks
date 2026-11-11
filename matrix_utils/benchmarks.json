@@ -10,7 +10,8 @@
         "params": [
             [
                 "100",
-                "1000"
+                "1000",
+                "10000"
             ]
         ],
         "repeat": 0,
@@ -19,7 +20,7 @@
         "timeout": 600,
         "type": "time",
         "unit": "seconds",
-        "version": "3",
+        "version": "4",
         "warmup_time": 0
     },
     "version": 2

@@ -1,0 +1,13 @@
+commit 2af0995c7d7b1d50ef842ace093a42516472a322
+generator 4
+a301ea0085dfdda0d5a234ced20a27ff358196921a206ced57487d2fed556d6d  .asv/../results/bw_processing/benchmarks.json
+e047e9cb8ab099ec96f7c3bce6db4abf635d1e1cbfeae7c104ca907f655a5fdb  .asv/../results/bw_processing/pinned-x86-1/ccd49b69-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json
+212d16f08568ae337d290389f21efdb4d3be1c189573ee574aa1e1a5a5c3b8df  .asv/../results/bw_processing/pinned-x86-1/b3106c5f-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json
+fe8777c2c6d42ea4b11b45d222f4af82b80aa3368a6417508658fcfa5f545e2b  .asv/../results/bw_processing/pinned-x86-1/pylock.f08c5a5925c31fa6cec3f655ff8401e2.toml
+5cfc62ea56a8801c0f7fd86bb9f87173367d9f9a17d049fbd9d4278a9b41afa2  .asv/../results/bw_processing/pinned-x86-1/machine.json
+61c2b2437f45681cee356291356f67b1dc91f4550b8e540048049e404490ebda  .asv/../results/bw_processing/pinned-x86-1/75fe8161-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json
+9c309f9d69e551cffff12a637bb0d6d1aec0259209fd0a5d91c9545e787dec03  .asv/../results/bw_processing/pinned-x86-1/20976a11-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json
+0db4d2daceda4e5f69b2f77ca987381ec374eb5a4a7ce43fd900ff07ad4461ad  .asv/../results/bw_processing/pinned-x86-1/e895747b-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json
+672ced109d65e6793522c238f94e306c09ed874e8f0e9bc849f898ef6e570002  .asv/../results/bw_processing/pinned-x86-1/16883ace-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json
+e118d528b12fce21969e85a0dbada85908680e026d0ebae8ce2aac5ae011cc93  .asv/../results/bw_processing/pinned-x86-1/cfeb97a8-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json
+5dfa159852ce1dc417fc9299236cab9bb5bfd69fefe62b74cdc7dcb21c3b09af  .asv/../results/bw_processing/pinned-x86-1/d0a742d6-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json

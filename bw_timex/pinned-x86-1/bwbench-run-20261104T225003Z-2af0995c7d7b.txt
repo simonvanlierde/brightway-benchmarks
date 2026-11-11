@@ -1,0 +1,11 @@
+commit 2af0995c7d7b1d50ef842ace093a42516472a322
+generator 4
+bd1a46c32c995621cba7c87a1d29784fd197b2dce5439066bd9ca7f87d2a0d25  .asv/../results/bw_timex/benchmarks.json
+5cfc62ea56a8801c0f7fd86bb9f87173367d9f9a17d049fbd9d4278a9b41afa2  .asv/../results/bw_timex/pinned-x86-1/machine.json
+91e36339954c0847d53a8b46f3bae52f72a2bab8d3494d71896efaf4b0252fcb  .asv/../results/bw_timex/pinned-x86-1/9f8a7471-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json
+c181cb0091ae711f2636f1b32e8995b530584e20382919e464ea09e23f4dead1  .asv/../results/bw_timex/pinned-x86-1/d9653d82-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json
+a47b0de931763d60d12c251671bbf6503b8ad72c6c9fb47679619991ab2125ba  .asv/../results/bw_timex/pinned-x86-1/531931d0-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json
+a7c8279230cefd7ef4ccc576d4ff32668140935f46398751bef692bcf253bb44  .asv/../results/bw_timex/pinned-x86-1/pylock.5e50132386f98a9751eb6a59050c40e8.toml
+80f40f536dc96bf451c229ea9cb8771eea89dd2213464d611e2c250d0f12388b  .asv/../results/bw_timex/pinned-x86-1/5feeab3b-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json
+f6197578903d0d7e48325cd3ab7830013dc0d6713f3ed771611264ebe54f656e  .asv/../results/bw_timex/pinned-x86-1/601dcd4b-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json
+4406f651633b3194c2419440b4f6254c8e277b395368f98bc8e62d64d04d97ed  .asv/../results/bw_timex/pinned-x86-1/48ad70ce-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json

@@ -1,0 +1,11 @@
+commit 2af0995c7d7b1d50ef842ace093a42516472a322
+generator 4
+338af9e3c2a5f874b164401cc630126b389512146555e27a0004875e8a30585a  .asv/../results/bw2data/benchmarks.json
+5cfc62ea56a8801c0f7fd86bb9f87173367d9f9a17d049fbd9d4278a9b41afa2  .asv/../results/bw2data/pinned-x86-1/machine.json
+cfc97691d9f5251cc476b9ffa7008b4e438d12c158ad4c0a39b4df1ff1f4e34c  .asv/../results/bw2data/pinned-x86-1/646849c2-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd040c487.json
+c88a9124cfb54167f79450dedec0d110480236ad18014cb7ceb8cc72bc5b85f1  .asv/../results/bw2data/pinned-x86-1/106d6271-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd040c487.json
+03f8778ba91b0b2e482e7c406b97b35e1b802fefb0f36be69ce29aacdb471dcf  .asv/../results/bw2data/pinned-x86-1/17f8a8fa-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd040c487.json
+09ac2d182af2388e77b4a27724221a6f3b59757d31ffb11c83f7eb0587a175ab  .asv/../results/bw2data/pinned-x86-1/pylock.c91ac9ee6b8837741b018937263d80a0.toml
+d0c98e73054bd8761160dfa21a63ffc01b52259d78548e22b315097577a2fd6e  .asv/../results/bw2data/pinned-x86-1/8a5b0bdb-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd040c487.json
+b2f658b948eed5bc274199761f9a82ac552ec7c18b16f43aef4b6f05600d741d  .asv/../results/bw2data/pinned-x86-1/242854dd-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd040c487.json
+bb90a732e6002aa07632acb85552b8dc7c6a4b0440a4878e3a7f1e203a62b446  .asv/../results/bw2data/pinned-x86-1/f6999430-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd040c487.json

@@ -22,7 +22,7 @@
         "timeout": 1800,
         "type": "time",
         "unit": "seconds",
-        "version": "3-05303220",
+        "version": "4-05303220",
         "warmup_time": 0
     },
     "bench_timex.TimelineLCI.track_static_score_error": {
@@ -44,7 +44,7 @@
         "timeout": 1800,
         "type": "track",
         "unit": "unit",
-        "version": "3-05303220"
+        "version": "4-05303220"
     },
     "version": 2
 }

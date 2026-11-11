@@ -45,11 +45,12 @@ def gh(*args: str) -> bytes:
 
 
 class GreenArtifacts:
-    """Accept only sets produced by this repository's main-branch compat workflow."""
+    """Accept only artifacts produced by this repository's main-branch run of WORKFLOW (compat.yml by default)."""
 
-    def __init__(self) -> None:
+    def __init__(self, workflow: str = "compat.yml") -> None:
+        self.path = f".github/workflows/{workflow}"
         self.repository = json.loads(gh(f"repos/{REPO}"))["id"]
-        self.workflow = json.loads(gh(f"repos/{REPO}/actions/workflows/compat.yml"))["id"]
+        self.workflow = json.loads(gh(f"repos/{REPO}/actions/workflows/{workflow}"))["id"]
         self.runs: dict[int, bool] = {}
 
     def __call__(self, artifact: dict) -> bool:
@@ -67,7 +68,7 @@ class GreenArtifacts:
             source = json.loads(gh(f"repos/{REPO}/actions/runs/{run_id}"))
             self.runs[run_id] = (
                 source.get("workflow_id") == self.workflow
-                and source.get("path") == ".github/workflows/compat.yml"
+                and source.get("path") == self.path
                 and source.get("event") in {"schedule", "workflow_dispatch"}
                 and source.get("head_branch") == "main"
                 and source.get("repository", {}).get("id") == self.repository

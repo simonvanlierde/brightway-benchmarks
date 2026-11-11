@@ -36,6 +36,7 @@ import {
 import { STATIC_PAGES, staticHref, VIEWER_PAGES } from "../lib/pages";
 import Findings from "./Findings.svelte";
 import Masthead from "./Masthead.svelte";
+import PythonSupport from "./PythonSupport.svelte";
 import ReleaseChanges from "./ReleaseChanges.svelte";
 import SetupHome from "./SetupHome.svelte";
 
@@ -379,6 +380,7 @@ $effect(() => {
         <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Choose a finding, a change or a benchmark from the catalogue for its history.</p><p class="lede"><a href={story}>Your solver can make the same LCA five times slower</a>: the story behind the solver numbers.</p></header>
         <Findings {index} {follow} wide />
         <ReleaseChanges {index} {view} {go} {follow} loaded={overview} />
+        {#if guidance}<PythonSupport {guidance} eol />{/if}
 
       {:else}
         <header class="bench-header">

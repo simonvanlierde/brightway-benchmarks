@@ -207,6 +207,11 @@ The `python-probe` workflow runs it each day for Python 3.11 to 3.15 on Linux, m
 and each Monday also for 3.9 and 3.10 on Linux, which are past end of life but some packages still
 declare. Each job's summary lists its steps, and its artifact holds both files.
 
+The site shows the results: `scripts/probe_site.py` takes the newest artifact of each Python and OS
+from main's runs (the site workflow calls it), and `scripts/export_guidance.py --probe` turns them
+into the `pythonSupport` table of `guidance.json`. Setup lists 3.11 to 3.15; Benchmarks lists the
+end-of-life lines (`END_OF_LIFE` in the exporter).
+
 A package none of whose releases declares the Python, such as bw_timex on 3.9, is not a failure:
 its install step says `"declared": false`, and its imports are left out. A red job can still be a
 network failure, as nothing retries, so read the step's error before reporting it upstream.

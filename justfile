@@ -139,11 +139,12 @@ ui-serve port="4400":
     cd ui && export npm_config_manage_package_manager_versions=false && pnpm install --frozen-lockfile && pnpm run build && node e2e/serve.mjs {{ port }}
 
 # Write the UI's data from results/ to OUT (scripts/export_ui.py says what it reads), and the setup
-# guidance from site/compat/status.json, which `just site` fetches; without it there is none.
+# guidance from site/compat/status.json, which `just site` fetches; without it there is none. The
+# Python support table comes from site/compat/python-probe.json (scripts/probe_site.py); without it there is none.
 # Needs uv: change points come from Apache Otava, in an environment of its own.
 ui-data out:
     python3 scripts/export_ui.py results {{ out }}
-    python3 scripts/export_guidance.py site/compat/status.json {{ out }}
+    python3 scripts/export_guidance.py site/compat/status.json {{ out }} --probe site/compat/python-probe.json
 
 # Commit results/ to the local `results` branch for the site; refuses results that name this host.
 results-commit:

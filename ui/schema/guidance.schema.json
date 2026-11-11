@@ -194,6 +194,49 @@
         }
       }
     },
+    "pythonSupport": {
+      "description": "Whether each package installs, imports and scores on each Python and platform, from the latest run of each.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packages", "endOfLife", "results"],
+      "properties": {
+        "packages": {
+          "description": "The packages checked, in display order.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "endOfLife": {
+          "description": "The Pythons past end of life, which a maintainer view lists apart from the supported ones.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "results": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["python", "platform", "package", "status", "date", "run"],
+            "properties": {
+              "python": { "type": "string", "minLength": 1 },
+              "platform": { "type": "string", "minLength": 1 },
+              "package": { "type": "string", "minLength": 1 },
+              "status": {
+                "description": "`undeclared` is no failure: no release of the package declares this Python.",
+                "enum": ["pass", "fail", "undeclared"]
+              },
+              "reason": {
+                "description": "Why it failed; present when status is fail.",
+                "type": "string",
+                "minLength": 1
+              },
+              "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+              "run": { "type": "string", "minLength": 1, "pattern": "^https?://[^\\s]+$" }
+            }
+          }
+        }
+      }
+    },
     "solverComparison": {
       "type": "object",
       "additionalProperties": false,

@@ -298,12 +298,65 @@ def test_install_includes_all_checked_runtime_roots(module: ModuleType, tmp_path
 
 def test_committed_ui_fixture_is_what_the_exporter_writes(module: ModuleType, tmp_path: Path):
     # The browser tests read this fixture. When this fails, refresh it with
-    # `python3 scripts/export_guidance.py ui/test/fixtures/compat/status.json ui/test/fixtures/real`.
+    # `python3 scripts/export_guidance.py ui/test/fixtures/compat/status.json ui/test/fixtures/real
+    #  --probe ui/test/fixtures/compat/python-probe.json`.
     fixtures = ROOT / "ui/test/fixtures"
     data = tmp_path / "real"
     shutil.copytree(fixtures / "real", data)
-    module.export(fixtures / "compat/status.json", data)
+    module.export(fixtures / "compat/status.json", data, probe_path=fixtures / "compat/python-probe.json")
     assert (data / "guidance.json").read_text() == (fixtures / "real/guidance.json").read_text()
+
+
+def probe_file(tmp_path: Path, steps: list[dict], python: str = "3.15", os_name: str = "ubuntu-latest") -> Path:
+    path = tmp_path / "python-probe.json"
+    cell = {"python": python, "os": os_name, "date": "2026-11-10", "run": "https://example.test/runs/9", "steps": steps}
+    path.write_text(json.dumps({"cells": [cell]}))
+    return path
+
+
+def results(module: ModuleType, tmp_path: Path, steps: list[dict], **kw: str) -> dict[str, dict]:
+    out = module.export(snapshot(tmp_path, [cell()]), tmp_path / "data", probe_path=probe_file(tmp_path, steps, **kw))
+    validator().validate(out)
+    return {r["package"]: r for r in out["pythonSupport"]["results"]}
+
+
+def test_python_support_names_the_failed_step_and_what_it_took_with_it(module: ModuleType, tmp_path: Path):
+    steps = [
+        {
+            "step": "install brightway25",
+            "ok": False,
+            "error": "error: Failed to build `cachebox` cause: x [stdout] log",
+        },
+        {"step": "install bw_timex", "ok": True},
+        {"step": "import bw2data", "ok": False, "error": "ModuleNotFoundError: No module named 'bw2data'"},
+        {"step": "import bw_timex", "ok": False, "error": "ImportError: no (/tmp/py-probe-3.15-x/v/lib/a.py)"},
+        {"step": "score", "ok": False, "error": "ModuleNotFoundError: No module named 'bw2calc'"},
+    ]
+    got = results(module, tmp_path, steps)
+    # The install is the first failure and stays the reason; the import errors it caused do not replace it.
+    assert got["brightway25"]["reason"] == "Failed to build `cachebox`: x"
+    assert got["bw_timex"]["reason"] == "ImportError: no"
+    assert got["bw_graph_tools"]["status"] == "pass"
+
+
+def test_python_support_shows_an_undeclared_python_apart_from_a_failure(module: ModuleType, tmp_path: Path):
+    steps = [
+        {"step": "install bw_timex", "ok": True, "declared": False},
+        {"step": "import bw_graph_tools", "ok": True},
+    ]
+    got = results(module, tmp_path, steps, python="3.9")
+    assert got["bw_timex"] == {**got["bw_timex"], "status": "undeclared"}
+    assert "reason" not in got["bw_timex"]
+
+
+def test_a_venv_failure_fails_every_package(module: ModuleType, tmp_path: Path):
+    got = results(module, tmp_path, [{"step": "venv", "ok": False, "error": "No interpreter found"}])
+    assert {r["status"] for r in got.values()} == {"fail"}
+
+
+def test_no_probe_file_leaves_the_guidance_without_a_table(module: ModuleType, tmp_path: Path):
+    out = module.export(snapshot(tmp_path, [cell()]), tmp_path / "data", probe_path=tmp_path / "missing.json")
+    assert "pythonSupport" not in out
 
 
 @pytest.mark.parametrize(

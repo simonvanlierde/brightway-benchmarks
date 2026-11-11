@@ -1225,6 +1225,7 @@ so a chosen control needs a line of its own. */
 }
 .view .install-set h2,
 .view .all-checks h2,
+.view .python-support h2,
 .view .findings h2,
 .view .changes-header h2 {
   font-size: 1.25rem;
@@ -1311,7 +1312,8 @@ button.secondary {
 .result-line li > span {
   font-weight: 650;
 }
-.all-checks {
+.all-checks,
+.python-support {
   margin-top: 26px;
   padding-top: 18px;
   border-top: 1px solid var(--accent);
@@ -1624,10 +1626,12 @@ table.check-grid td a[aria-current="true"] {
   gap: 4px 16px;
   margin-bottom: 6px;
 }
-.view .all-checks .checks-heading h2 {
+.view .all-checks .checks-heading h2,
+.view .python-support .checks-heading h2 {
   margin: 0;
 }
-.checks-date {
+.checks-date,
+.support-date {
   font-size: 0.8rem;
   color: var(--muted);
 }
@@ -1770,4 +1774,32 @@ table.check-grid td a[aria-current="true"] {
   header.top nav.primary-nav a {
     min-height: 44px;
   }
+}
+
+/* Python support: the check grid's cells, wrapping rather than scrolling so large text does not clip it. */
+.support-grid {
+  width: auto;
+}
+/* Wraps rather than scrolls, so a large text size does not clip the table. */
+table.support-grid th,
+table.support-grid td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+table.support-grid tbody th {
+  padding-right: 16px;
+}
+.support-failures {
+  margin: 16px 0 0;
+  max-width: 68ch;
+  font-size: var(--text-evidence);
+  color: var(--ink-2);
+}
+.support-failures dt {
+  margin-top: 10px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.support-failures dd {
+  margin: 2px 0 0;
 }

@@ -133,7 +133,8 @@ describe("supportLead", () => {
     );
   });
   it("is empty when nothing passed or failed", () => {
-    const table = supportTable({ ...support, results: [] }, false);
+    const results = support.results.map(({ reason: _, ...r }) => ({ ...r, status: "undeclared" as const }));
+    const table = supportTable({ ...support, results }, false);
     expect(table && supportLead(table)).toBe("");
   });
 });

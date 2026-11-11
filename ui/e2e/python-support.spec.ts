@@ -72,6 +72,19 @@ test("a result the data lacks shows as not checked, in the full grid", async ({ 
   await expect(row.getByRole("cell")).toHaveCount(5);
   await expect(row.getByRole("cell").nth(1)).toHaveText(/–\s*not checked/);
   await expect(row.getByRole("cell").nth(1).getByRole("link")).toHaveCount(0);
+  await expect(page.locator(".support-lead")).toContainText("3.12 works where checked; not checked on macOS.");
+});
+
+test("with no pass or fail, Setup draws no empty lead line", async ({ page }) => {
+  const data = JSON.parse(await readFile(new URL("../test/fixtures/real/guidance.json", import.meta.url), "utf8"));
+  data.pythonSupport.results = data.pythonSupport.results.map(({ reason: _, ...r }: { reason?: string }) => ({
+    ...r,
+    status: "undeclared",
+  }));
+  await page.route("**/data/guidance.json", (route) => route.fulfill({ json: data }));
+  await page.goto("");
+  await expect(page.locator(".python-support table")).toBeVisible();
+  await expect(page.locator(".python-support .support-lead")).toHaveCount(0);
 });
 
 test("on a phone the table breaks only between words and the page does not scroll sideways", async ({ page }) => {

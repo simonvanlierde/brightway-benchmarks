@@ -1,3 +1,4 @@
+import importlib.metadata
 import importlib.util
 import sys
 import types
@@ -113,3 +114,29 @@ def test_fast_scores_on_another_solver_is_not_applicable(bench_lca: types.Module
     monkeypatch.setenv("BWBENCH_SOLVER", "umfpack-T")
     with pytest.raises(NotApplicable, match="umfpack-T"):
         bench_lca.fast_scores("adjoint")
+
+
+def test_condition_estimate_runs_in_the_superlu_environment_only(
+    bench_lca: types.ModuleType, monkeypatch: pytest.MonkeyPatch
+):
+    """SciPy's SuperLU gives the same estimate and timing in every environment, so only the base one records it."""
+    installed: set[str] = set()
+
+    def version(dist: str) -> str:
+        if dist not in installed:
+            raise importlib.metadata.PackageNotFoundError(dist)
+        return "1"
+
+    monkeypatch.setattr(importlib.metadata, "version", version)
+    monkeypatch.setattr(bench_lca, "skip_unless_factorizable", lambda *_, **__: None)
+    monkeypatch.setattr(bench_lca, "system", lambda _size: types.SimpleNamespace(condition_estimate=lambda: 1.0))
+    monkeypatch.delenv("BWBENCH_SOLVER", raising=False)
+    assert bench_lca.condition_estimate.prepare(size="smoke")() == 1.0
+    for dist in ("pypardiso", "scikit-umfpack"):
+        installed = {dist}
+        with pytest.raises(NotApplicable, match="SuperLU environment"):
+            bench_lca.condition_estimate.prepare(size="smoke")
+    installed = set()
+    monkeypatch.setenv("BWBENCH_SOLVER", "klu")
+    with pytest.raises(NotApplicable, match="SuperLU environment"):
+        bench_lca.condition_estimate.prepare(size="smoke")

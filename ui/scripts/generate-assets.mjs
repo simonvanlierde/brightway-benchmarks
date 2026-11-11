@@ -150,7 +150,8 @@ const ogHtml = `<!DOCTYPE html>
     color: #f8f9fc;
     text-wrap: balance;
   }
-  .chart { margin-top: 28px; display: flex; flex-direction: column; gap: 12px; }
+  .chart { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .chart-cap { margin-top: 22px; font-size: 26px; line-height: 1.2; color: #aab9d8; }
   .bar-info { display: flex; justify-content: space-between; align-items: baseline; font-size: 36px; line-height: 1.1; margin-bottom: 6px; }
   .bar-name { font-weight: 700; }
   .bar-val { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #c7d2ed; font-size: 34px; }
@@ -163,6 +164,7 @@ const ogHtml = `<!DOCTYPE html>
   <div class="logo-box">${faviconSvg.replace('width="32" height="32"', 'width="48" height="48"')}</div>
   <div class="center">
     <h1 class="title">Continuous benchmarks for the Brightway LCA stack</h1>
+    <div class="chart-cap">One LCA score on an ecoinvent-sized database</div>
     <div class="chart">
       <div>
         <div class="bar-info"><span class="bar-name" style="color:#74cfc3">UMFPACK</span><span class="bar-val">2.63 s</span></div>

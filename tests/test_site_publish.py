@@ -9,14 +9,14 @@ import pytest
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 ASSETS = ("favicon.svg", "favicon.ico", "apple-touch-icon.png", "og.png")
+PAGES = ("index.html", "about/index.html", "findings/index.html", "stories/solver-choice/index.html", "sitemap.xml")
 
 
 def copy_viewer(tmp_path: Path, missing: str | None = None) -> subprocess.CompletedProcess[str]:
     dist = tmp_path / "ui" / "dist"
-    (dist / "about").mkdir(parents=True)
-    (dist / "stories" / "solver-choice").mkdir(parents=True)
-    for name in ("index.html", "about/index.html", "stories/solver-choice/index.html", "sitemap.xml", *ASSETS):
+    for name in (*PAGES, *ASSETS):
         if name != missing:
+            (dist / name).parent.mkdir(parents=True, exist_ok=True)
             (dist / name).write_text(f"fixture: {name}")
     workflow = (REPOSITORY / ".github/workflows/site.yml").read_text()
     start = workflow.index("          mkdir -p site/ui\n")
@@ -44,5 +44,5 @@ def test_publish_copies_complete_preview_assets_and_static_pages(tmp_path: Path)
     for name in ASSETS:
         for prefix in ("site", "site/ui"):
             assert (tmp_path / prefix / name).read_text() == f"fixture: {name}"
-    for name in ("index.html", "about/index.html", "stories/solver-choice/index.html", "sitemap.xml"):
+    for name in PAGES:
         assert (tmp_path / "site" / name).read_text() == f"fixture: {name}"

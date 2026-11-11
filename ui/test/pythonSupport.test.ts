@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { Guidance } from "../src/lib/contract";
-import { listed, supportTable } from "../src/lib/pythonSupport";
+import { codeParts, listed, supportLead, supportTable, supportWord } from "../src/lib/pythonSupport";
 
 // The exporter's output for the first python-probe run (see tests/test_export_guidance.py).
 const guidance: Guidance = JSON.parse(readFileSync(new URL("./fixtures/real/guidance.json", import.meta.url), "utf8"));
@@ -78,6 +78,81 @@ describe("supportTable", () => {
 
   it("returns nothing when the data lists no Python in the half asked for", () => {
     expect(supportTable({ ...support, pythons: support.pythons.filter((p) => !p.endOfLife) }, true)).toBeUndefined();
+  });
+});
+
+describe("supportLead", () => {
+  it("names the Pythons that work everywhere and why the others fail, from the data", () => {
+    const table = supportTable(support, false);
+    expect(table && supportLead(table)).toBe(
+      "3.11 to 3.14 work on every system. 3.15 does not install yet: a dependency (cachebox) fails to build.",
+    );
+  });
+  it("points to the reasons when a Python fails only in part, or for another reason", () => {
+    const results = support.results.map((r) =>
+      r.python === "3.12" && r.package === "bw_timex" ? { ...r, status: "fail" as const, reason: "ImportError: x" } : r,
+    );
+    const table = supportTable({ ...support, results }, false);
+    expect(table && supportLead(table)).toBe(
+      "3.11, 3.13 and 3.14 work on every system. 3.12 fails for 3 of 9 packages and systems. 3.15 does not install yet: a dependency (cachebox) fails to build. The reasons are below the table.",
+    );
+  });
+  it("points to the reasons once, however many Pythons fail in part", () => {
+    const results = support.results.map((r) =>
+      ["3.11", "3.12"].includes(r.python) && r.package === "bw_timex" && r.platform === "linux"
+        ? { ...r, status: "fail" as const, reason: "ImportError: x" }
+        : r,
+    );
+    const table = supportTable({ ...support, results }, false);
+    expect(table && supportLead(table)).toBe(
+      "3.13 and 3.14 work on every system. 3.11 fails for 1 of 9 packages and systems. 3.12 fails for 1 of 9 packages and systems. 3.15 does not install yet: a dependency (cachebox) fails to build. The reasons are below the table.",
+    );
+  });
+  it("counts only the cells that were checked, so a build failure with one cell missing still reads as one", () => {
+    const results = support.results.filter(
+      (r) => !(r.python === "3.15" && r.platform === "macos" && r.package === "bw_timex"),
+    );
+    const table = supportTable({ ...support, results }, false);
+    expect(table && supportLead(table)).toBe(
+      "3.11 to 3.14 work on every system. 3.15 does not install yet: a dependency (cachebox) fails to build.",
+    );
+  });
+  it("says a Python failed everywhere it was checked, not that it fails for 1 of 1", () => {
+    const results = support.results
+      .filter((r) => r.python !== "3.12" || (r.package === "bw_timex" && r.platform === "linux"))
+      .map((r) => (r.python === "3.12" ? { ...r, status: "fail" as const, reason: "ImportError: x" } : r));
+    const table = supportTable({ ...support, results }, false);
+    expect(table && supportLead(table)).toContain("3.12 fails everywhere it was checked.");
+  });
+  it("keeps a Python that passed wherever it was checked, and names the system it was not checked on", () => {
+    const results = support.results.filter((r) => !(r.python === "3.12" && r.platform === "macos"));
+    const table = supportTable({ ...support, results }, false);
+    const label = (id: string) => ({ macos: "macOS" })[id] ?? id;
+    expect(table && supportLead(table, label)).toBe(
+      "3.11, 3.13 and 3.14 work on every system. 3.12 works where checked; not checked on macOS. 3.15 does not install yet: a dependency (cachebox) fails to build.",
+    );
+  });
+  it("is empty when nothing passed or failed", () => {
+    const results = support.results.map(({ reason: _, ...r }) => ({ ...r, status: "undeclared" as const }));
+    const table = supportTable({ ...support, results }, false);
+    expect(table && supportLead(table)).toBe("");
+  });
+});
+
+describe("the cells and the reasons", () => {
+  it("say Passed, as the check grid does", () => {
+    expect(supportWord("pass")).toBe("Passed");
+  });
+  it("link the run of the oldest result once, beside its date", () => {
+    expect(supportTable(support, false)?.run).toMatch(/actions\/runs\/\d+$/);
+  });
+  it("show a reason's backtick-quoted names as code, without the backticks", () => {
+    expect(codeParts("Failed to build `cachebox==5.2.3`: error")).toEqual([
+      { text: "Failed to build ", code: false },
+      { text: "cachebox==5.2.3", code: true },
+      { text: ": error", code: false },
+    ]);
+    expect(codeParts("plain")).toEqual([{ text: "plain", code: false }]);
   });
 });
 

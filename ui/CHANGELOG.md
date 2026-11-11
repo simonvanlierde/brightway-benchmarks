@@ -9,10 +9,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- A Findings item in the masthead and a `/findings/` page: every finding with its history, its write-up and its story where it has one. Stories keep their URLs and mark Findings as current ([decision 0005](../docs/decisions/0005-findings-in-the-masthead.md)).
 - A Python versions table on Setup (3.11 to 3.15 on Linux, macOS and Windows) and an end-of-life table on Benchmarks (3.9 and 3.10), from the optional `pythonSupport` field of `guidance.json`. A failure shows with its reason; a package no release of which declares the Python reads "Not declared".
 
 ### Changed
 
+- PyPardiso has one colour on every chart, story and preview card: its conda-forge environments are labelled "PyPardiso", not "PyPardiso, MKL", as it only runs on MKL. UMFPACK's BLAS variants keep their own colours.
 - A history's band is the noise allowance its release changes are counted against, not the middle half of the samples. The tip and the data table give each value's allowance ([data](README.md#the-data)).
 
 ## [0.2.0] - 2026-11-01

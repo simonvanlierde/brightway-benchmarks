@@ -197,6 +197,9 @@ importers:
       json-schema-to-typescript:
         specifier: 16.0.0
         version: 16.0.0
+      smol-toml:
+        specifier: 1.9.1
+        version: 1.9.1
       svelte:
         specifier: 5.57.3
         version: 5.57.3

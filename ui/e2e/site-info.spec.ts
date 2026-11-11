@@ -1,11 +1,19 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 const SITE = "https://simonvanlierde.com/brightway-benchmarks/";
+// Platforms cache a preview by URL, so each card's URL carries its hash.
+const card = (file: string) =>
+  `${SITE}ui/${file}?v=${createHash("sha256")
+    .update(readFileSync(`public/${file}`))
+    .digest("hex")
+    .slice(0, 8)}`;
 
 test("the initial HTML describes the viewer and names its public canonical URL", async ({ request }) => {
   const html = await (await request.get("/")).text();
-  expect(html).toContain("<title>Brightway benchmarks: tested setups and release histories</title>");
+  expect(html).toContain("<title>Tested setups and release histories · Brightway Benchmarks</title>");
   expect(html).toContain('name="description"');
   expect(html).toContain(`rel="canonical" href="${SITE}"`);
   expect(html).toContain('property="og:title"');
@@ -31,18 +39,15 @@ test("the solver story is static, links the viewer at exact views and has its ow
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto("/stories/solver-choice/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("five times slower");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("by 5 times or more");
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${SITE}stories/solver-choice/`);
-  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
-    "content",
-    `${SITE}ui/story-solver-choice.png`,
-  );
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", card("story-solver-choice.png"));
   const index = await (await request.get("/data/index.json")).json();
   const links = await page
     .locator('main a[href*="page=explorer"]')
     .evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
-  // Two chart links to the viewer and four inline links.
-  expect(links).toHaveLength(6);
+  // Two chart links to the viewer and five inline links.
+  expect(links).toHaveLength(7);
   for (const href of links) {
     const q = new URL(href, SITE).searchParams;
     const group = index.groups.find((g: { name: string }) => g.name === q.get("group"));
@@ -62,6 +67,19 @@ test("the solver story is static, links the viewer at exact views and has its ow
     expect(exists, href).toBe(true);
   }
   await context.close();
+});
+
+test("the heating story has its own preview card", async ({ request }) => {
+  const html = await (await request.get("/stories/home-heating/")).text();
+  expect(html).toContain(`property="og:image" content="${card("story-home-heating.png")}"`);
+  expect((await request.get("/story-home-heating.png")).ok()).toBe(true);
+});
+
+test("every page's title is the page, then the site", async ({ request }) => {
+  for (const path of ["/", "/about/", "/stories/solver-choice/", "/stories/home-heating/"]) {
+    const title = (await (await request.get(path)).text()).match(/<title>([^<]*)<\/title>/)?.[1];
+    expect(title, path).toMatch(/^[^·—:]+ · Brightway Benchmarks$/);
+  }
 });
 
 test("the sitemap and icon are published without listing transient benchmark selections", async ({ request }) => {

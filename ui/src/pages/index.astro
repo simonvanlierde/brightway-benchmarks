@@ -6,6 +6,7 @@ import { staticHref } from "../lib/pages";
 import Head from "./_Head.astro";
 
 const base = import.meta.env.PUBLIC_DATA_URL ?? "data/";
+const data = base.endsWith("/") ? base : `${base}/`;
 const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
 const git = (...args: string[]) => {
   try {
@@ -28,10 +29,13 @@ const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
 <html lang="en">
   <head>
     <Head
-      title="Brightway benchmarks: tested setups and release histories"
+      title="Tested setups and release histories · Brightway Benchmarks"
       description="Choose a tested Brightway installation and explore performance across package releases, with calculation checks and measurement noise beside the results."
       canonical="https://simonvanlierde.com/brightway-benchmarks/"
     />
+    {/* Fetched while the viewer's script loads; `crossorigin` matches fetch()'s mode, so it reuses them. */}
+    <link rel="preload" as="fetch" crossorigin href={`${data}index.json`} />
+    <link rel="preload" as="fetch" crossorigin href={`${data}guidance.json`} />
   </head>
   <body>
     <App client:only="svelte" base={base} build={build} {home} />

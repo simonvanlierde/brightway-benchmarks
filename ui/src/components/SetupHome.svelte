@@ -13,6 +13,7 @@ import {
   type View,
   writeView,
 } from "../lib/history";
+import { scrollable } from "../lib/scrollable";
 import Findings from "./Findings.svelte";
 import InstallSet from "./InstallSet.svelte";
 import PythonSupport from "./PythonSupport.svelte";
@@ -25,6 +26,8 @@ let {
   go,
   follow,
   story,
+  name,
+  findings,
 }: {
   guidance: Guidance | undefined;
   ready: boolean;
@@ -33,6 +36,10 @@ let {
   go: (view: View) => void;
   follow: (event: MouseEvent, view: View) => void;
   story?: string;
+  /** The site's display name, as the masthead shows it. */
+  name: string;
+  /** The findings page, for the cards' "All findings" link. */
+  findings?: string;
 } = $props();
 const chosen = $derived(guidance?.checks.find((c) => c.id === view.check));
 const platform = $derived(
@@ -71,20 +78,7 @@ const rows = $derived.by(() => {
   return [...out.values()].sort((a, b) => a.label.localeCompare(b.label, "en", { numeric: true }));
 });
 
-let grid = $state<HTMLDivElement>();
 let overflowing = $state(false);
-$effect(() => {
-  if (!grid) return;
-  const element = grid;
-  const update = () => {
-    overflowing = element.scrollWidth > element.clientWidth;
-  };
-  const observer = new ResizeObserver(update);
-  observer.observe(element);
-  if (element.firstElementChild) observer.observe(element.firstElementChild);
-  update();
-  return () => observer.disconnect();
-});
 
 const changes = $derived(latestChanges(index));
 // The largest regression, one case, and the benchmark with the largest gain, all its cases: as Benchmarks lists them.
@@ -98,6 +92,9 @@ const comparison = $derived(guidance?.solverComparison);
 // The findings below leave out the comparison above: one fact, one set of numbers on the page.
 const compared = $derived(comparison?.rows.map((r) => readView(new URL(r.href, "https://x/").search)) ?? []);
 const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ?? [])));
+// The intro quotes the table's own figures, so the two never disagree.
+const slowest = $derived(comparison?.rows.find((r) => r.label === "SuperLU"));
+const fastest = $derived(comparison?.rows.find((r) => r.label.startsWith("UMFPACK")));
 
 // Links to the old compatibility view land on the grid.
 $effect(() => {
@@ -106,9 +103,9 @@ $effect(() => {
 </script>
 
 <header class="home-intro">
-  <h2>{guidance?.title ?? index.project.name}</h2>
-  <p>Which Brightway packages work together, and which combination runs your LCA fastest? <a href="https://docs.brightway.dev/en/latest/">Brightway</a> is a family of open-source Python packages for life cycle assessment (LCA), each released on its own.</p>
-  <p>Every night this site installs the latest releases on Linux, macOS and Windows and checks that they work together. It times every release on one Linux machine. {guidance?.intro ?? index.project.description ?? ""}</p>
+  <h2>{guidance?.title ?? name}</h2>
+  {#if slowest && fastest}<p>With nothing extra installed, bw2calc uses SciPy's SuperLU, and one first score on a synthetic ecoinvent-sized database takes {format(slowest.value, slowest.unit)}. With UMFPACK from conda-forge it takes {format(fastest.value, fastest.unit)}.</p>{/if}
+  <p>Every night this site checks that the latest <a href="https://docs.brightway.dev/en/latest/">Brightway</a> releases install and work together on Linux, macOS and Windows. {guidance?.intro ?? index.project.description ?? ""}</p>
 </header>
 
 <div class="home-columns">
@@ -139,8 +136,7 @@ $effect(() => {
             <li><a href={writeView(at(c))} onclick={(e) => pick(e, c)} aria-current={c.id === selected?.id ? "true" : undefined}><span><span class="sr">{platform.label} · </span><span class="check-name">{c.label}</span>{" "}<small>Python {c.python}</small></span>{" "}<strong class={statusTone(c.status)}>{statusLabel(c.status)}</strong></a></li>
           {/each}
         </ul>
-        <!-- svelte-ignore a11y_no_noninteractive_tabindex: the table scrolls inside a keyboard-focusable region -->
-        <div class="scroll desktop-checks" role="region" aria-label="Check grid" tabindex="0" bind:this={grid}>
+        <div class="scroll desktop-checks" role="region" aria-label="Check grid" use:scrollable={(over) => (overflowing = over)}>
           <table class="check-grid" aria-describedby="check-instructions">
             <caption class="sr">Compatibility checks by platform and Python version</caption>
             <thead><tr><th scope="col">Platform</th>{#each columns as col (col.label)}<th scope="col">{col.label}</th>{/each}</tr></thead>
@@ -152,7 +148,7 @@ $effect(() => {
                     {@const c = row.cells.get(col.label)}
                     <td>
                       {#if c}<a href={writeView(at(c))} onclick={(e) => pick(e, c)} aria-current={c.id === selected?.id ? "true" : undefined} class={statusTone(c.status)} aria-label="{row.label}, {col.label}: {statusLabel(c.status)}">{statusLabel(c.status)}</a>
-                      {:else}<span class="quiet" aria-label="not checked">–</span>{/if}
+                      {:else}<span class="quiet" aria-hidden="true">–</span><span class="sr">not checked</span>{/if}
                     </td>
                   {/each}
                 </tr>
@@ -175,15 +171,15 @@ $effect(() => {
     {#if comparison}
       <section class="solver-evidence" aria-labelledby="solver-heading"><h2 id="solver-heading">{comparison.title}</h2><p>{comparison.context}</p>
         {#if platform && comparison.platform && comparison.platform !== platform.id}<p class="measurement-note">No {platform.label} machine was timed, so these values may not hold there.</p>{/if}
-        <table><caption>Recorded measurements; follow a solver to inspect its benchmark.</caption><thead><tr><th scope="col">Solver</th><th scope="col" class="solver-bar-column">Relative time</th><th scope="col" class="num">Measured value</th></tr></thead><tbody>{#each comparison.rows as row (row.label)}<tr><th scope="row"><a href={row.href}>{row.label}</a></th><td class="solver-bar-column"><div class="solver-track" aria-hidden="true"><span style:width={`${largest > 0 ? (row.value / largest) * 100 : 0}%`}></span></div></td><td class="num">{format(row.value, row.unit)}</td></tr>{/each}</tbody></table>
-        {#if story}<p class="story-link">Why the solver work for one score on real ecoinvent takes 0.66 s on one install and 3.66 s on another, and when PyPardiso wins instead: <a href={story}>the solver story</a>.</p>{/if}
+        <table><caption>Recorded measurements; follow a solver to inspect its benchmark.</caption><thead><tr><th scope="col">Solver</th><th scope="col" class="solver-bar-column"><span class="sr">Relative time</span></th><th scope="col" class="num">Time</th></tr></thead><tbody>{#each comparison.rows as row (row.label)}<tr><th scope="row"><a href={row.href}>{row.label}</a></th><td class="solver-bar-column"><div class="solver-track" aria-hidden="true"><span style:width={`${largest > 0 ? (row.value / largest) * 100 : 0}%`}></span></div></td><td class="num">{format(row.value, row.unit)}</td></tr>{/each}</tbody></table>
+        {#if story}<p class="story-link">Real ecoinvent: 3.66 s with SuperLU, 0.66 s with conda-forge UMFPACK. <a href={story}>The story shows what to install</a>.</p>{/if}
         {#if comparison.note}<p class="measurement-note">{comparison.note}</p>{/if}
       </section>
     {:else if guidance}
       <p class="measurement-note solver-pending">The solver comparison is being measured again. <a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Compare solvers in the benchmarks</a>.</p>
     {/if}
 
-    <Findings {index} {follow} shownElsewhere={compared} />
+    <Findings {index} {follow} shownElsewhere={compared} all={findings} />
 
     <section class="release-brief" aria-labelledby="release-brief-heading">
       <h2 id="release-brief-heading">What changed in the latest releases</h2><p>Changes beyond measured noise in each package's latest release.</p>

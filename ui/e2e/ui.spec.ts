@@ -407,10 +407,10 @@ test("a change opens the same machine's history", async ({ page }) => {
   await expect(page.locator(".chart svg")).toBeVisible();
 });
 
-test("the masthead has a Setup and a Benchmarks page", async ({ page }) => {
+test("the masthead has Setup and Benchmarks pages, then the Findings page", async ({ page }) => {
   await page.goto("./");
   const main = page.getByRole("navigation", { name: "Main", exact: true });
-  await expect(main.getByRole("link")).toHaveText(["Setup", "Benchmarks"]);
+  await expect(main.getByRole("link")).toHaveText(["Setup", "Benchmarks", "Findings"]);
   await expect(main.getByRole("link", { name: "Setup", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("navigation", { name: "Benchmarks", exact: true })).toHaveCount(0);
   await main.getByRole("link", { name: "Benchmarks", exact: true }).click();

@@ -3,7 +3,8 @@
 interface Row {
   label: string;
   value: number;
-  tone: "fast" | "mid" | "base";
+  /** The solver's series colour, 1 to 8, as the viewer's charts draw it (lib/story-series.ts); none is neutral. */
+  series?: number;
 }
 interface Props {
   rows: Row[];
@@ -31,7 +32,7 @@ const longest = Math.max(...rows.map((row) => row.value));
             </span>
             <svg viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true" focusable="false">
               <rect class="track" width="100" height="10" />
-              <rect class={`fill ${row.tone}`} width={(row.value / longest) * 100} height="10" />
+<rect class:list={["fill", row.series ? `s${row.series}` : "neutral"]} width={(row.value / longest) * 100} height="10" />
             </svg>
         </li>
       ))
@@ -78,22 +79,25 @@ const longest = Math.max(...rows.map((row) => row.value));
   .track {
     fill: var(--grid);
   }
-  .fast {
-    fill: var(--better);
-  }
-  .mid {
-    fill: var(--s1);
-  }
-  .base {
+  /* A bar without a solver: neutral. Dark: --control is brighter than the series; this stays dimmer, 3.3:1 on the track. */
+  .neutral {
     fill: var(--control);
   }
-  /* Dark: --control is brighter than the fast bar. This one stays dimmer, 3.3:1 on the track. */
-  :global(:root[data-theme="dark"]) .base {
+  :global(:root[data-theme="dark"]) .neutral {
     fill: #7488b3;
   }
   @media (prefers-color-scheme: dark) {
-    :global(:root:not([data-theme="light"])) .base {
+    :global(:root:not([data-theme="light"])) .neutral {
       fill: #7488b3;
     }
   }
+  /* The page's policy blocks style attributes, so each series colour is a class. */
+  .s1 { fill: var(--s1); }
+  .s2 { fill: var(--s2); }
+  .s3 { fill: var(--s3); }
+  .s4 { fill: var(--s4); }
+  .s5 { fill: var(--s5); }
+  .s6 { fill: var(--s6); }
+  .s7 { fill: var(--s7); }
+  .s8 { fill: var(--s8); }
 </style>

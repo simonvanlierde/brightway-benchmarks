@@ -306,6 +306,11 @@
             "type": "string",
             "format": "uri",
             "pattern": "^https?://"
+          },
+          "story": {
+            "description": "The slug of the story that tells this finding in full, at /stories/<slug>/.",
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
           }
         }
       }

@@ -1,6 +1,6 @@
 # 0004. Stories outside the masthead
 
-- Status: accepted
+- Status: superseded by 0005
 - Date: 2026-11-03
 - Amends: 0003, the two pages of the masthead
 

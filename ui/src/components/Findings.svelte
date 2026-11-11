@@ -9,11 +9,14 @@ let {
   follow,
   wide = false,
   shownElsewhere = [],
+  all,
 }: {
   index: BenchmarkIndex;
   follow: (event: MouseEvent, view: View) => void;
   wide?: boolean;
   shownElsewhere?: View[];
+  /** The findings page: these cards are its preview. */
+  all?: string | undefined;
 } = $props();
 const same = (f: { benchmark: string; params: string[] }, v: View) =>
   v.bench === f.benchmark && v.params.join("\n") === f.params.join("\n");
@@ -36,5 +39,6 @@ const shown = $derived(
         </li>
       {/each}
     </ul>
+    {#if all}<a class="section-link" href={all}>All findings</a>{/if}
   </section>
 {/if}

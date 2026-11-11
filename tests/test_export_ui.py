@@ -463,7 +463,9 @@ def test_a_finding_opens_its_history_or_stops_the_export(
     monkeypatch.setattr(export_ui, "FINDINGS", found)
     entry = 'title = "T"\ntext = "X."\ngroup = "s"\nbenchmark = "%s"\nparams = %s\ndoc = "d"\n'
     other = 'title = "O"\ntext = "Y."\ngroup = "elsewhere"\nbenchmark = "b"\nparams = {}\ndoc = "e"\n'
-    found.write_text("[[findings]]\n" + entry % (TIME, '{ cls = "IterativeLCA" }') + "[[findings]]\n" + other)
+    found.write_text(
+        "[[findings]]\n" + entry % (TIME, '{ size = "ecoinvent", cls = "IterativeLCA" }') + "[[findings]]\n" + other
+    )
     index, _ = run(export_ui, results, monkeypatch)
     schema("index").validate(index)
     bench = next(b for b in index["benchmarks"] if b["name"] == TIME)
@@ -472,11 +474,16 @@ def test_a_finding_opens_its_history_or_stops_the_export(
             "title": "T",
             "text": "X.",
             "benchmark": bench["id"],
-            "params": ["", "IterativeLCA"],
+            "params": ["ecoinvent", "IterativeLCA"],
             "url": "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/findings.md#d",
         }
     ]  # the finding about a group this export lacks is left out
-    for params, error in [('{ cls = "Fast" }', "no value Fast"), ('{ solver = "x" }', "no parameter solver")]:
+    for params, error in [
+        ('{ cls = "Fast" }', "no value Fast"),
+        ('{ solver = "x" }', "no parameter solver"),
+        # /findings/ links by position, so a skipped or reordered axis would open the wrong view.
+        ('{ cls = "IterativeLCA", size = "ecoinvent" }', "in axis order"),
+    ]:
         found.write_text("[[findings]]\n" + entry % (TIME, params))
         shutil.rmtree(tmp_path / "out")
         with pytest.raises(SystemExit, match=error):
@@ -512,9 +519,38 @@ def test_a_finding_links_its_profile_or_stops_the_export(
             run(export_ui, results, monkeypatch)
 
 
+def test_a_finding_names_its_story_or_stops_the_export(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    files = {"m/11111111-a": result("11" * 20, "a" + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))}
+    results = layout(tmp_path, files)
+    found = tmp_path / "findings.toml"
+    stories = tmp_path / "stories"
+    stories.mkdir()
+    (stories / "solver-choice.astro").write_text("---\n---\n")
+    monkeypatch.setattr(export_ui, "FINDINGS", found)
+    monkeypatch.setattr(export_ui, "STORIES", stories)
+    entry = 'title = "T"\ntext = "X."\ngroup = "s"\nbenchmark = "%s"\nparams = {}\ndoc = "d"\nstory = "%s"\n'
+    # A finding a story tells without a benchmark of its own yet: on the findings page, not in the viewer.
+    told = 'title = "H"\ntext = "Y."\ndoc = "h"\nstory = "solver-choice"\n'
+    found.write_text("[[findings]]\n" + entry % (TIME, "solver-choice") + "[[findings]]\n" + told)
+    index, _ = run(export_ui, results, monkeypatch)
+    schema("index").validate(index)
+    assert [(f["title"], f["story"]) for f in index["findings"]] == [("T", "solver-choice")]
+    for text, error in [
+        ("[[findings]]\n" + entry % (TIME, "missing"), "no story missing"),
+        ('[[findings]]\ntitle = "H"\ntext = "Y."\ndoc = "h"\n', "names neither a benchmark nor a story"),
+    ]:
+        found.write_text(text)
+        shutil.rmtree(tmp_path / "out", ignore_errors=True)
+        with pytest.raises(SystemExit, match=error):
+            run(export_ui, results, monkeypatch)
+
+
 def test_every_finding_opens_a_history_in_the_published_data(export_ui: ModuleType):
     index = json.loads((ROOT / "ui" / "test" / "fixtures" / "real" / "index.json").read_text())
-    assert len(export_ui.findings(index)) == len(export_ui.tomllib.loads(export_ui.FINDINGS.read_text())["findings"])
+    listed = export_ui.tomllib.loads(export_ui.FINDINGS.read_text())["findings"]
+    assert len(export_ui.findings(index)) == len([f for f in listed if "benchmark" in f])
 
 
 def test_every_benchmark_and_parameter_the_ui_shows_is_described():
@@ -712,7 +748,7 @@ def test_environments_are_labelled_by_their_solver_and_blas(export_ui: ModuleTyp
         "rattler-py3.12-libblas_=__openblas-numpy2.5.3-scikit-umfpack0.4.2-scipy1.18.1",
         "rattler-py3.12-numpy2.5.3-scipy1.18.1",
     ]
-    assert export_ui.solver_labels(conda) == ["UMFPACK, MKL", "PyPardiso, MKL", "UMFPACK, OpenBLAS", "SuperLU"]
+    assert export_ui.solver_labels(conda) == ["UMFPACK, MKL", "PyPardiso", "UMFPACK, OpenBLAS", "SuperLU"]
     # No solver pinned anywhere: the names differ in something else, so no labels.
     assert export_ui.solver_labels(["uv-py3.12-bw_processing1.6", "uv-py3.12-bw_processinggit"]) is None
     # Two that read the same: the UI sees the clash and shows their full names.

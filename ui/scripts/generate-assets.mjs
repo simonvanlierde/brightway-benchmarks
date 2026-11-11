@@ -3,7 +3,7 @@
 // - ui/public/favicon.ico (Standard 32x32 multi-platform favicon)
 // - ui/public/apple-touch-icon.png (180x180 for iOS/mobile bookmarks)
 // - ui/public/og.png (1200x630 Open Graph card for social sharing)
-// - ui/public/story-solver-choice.png (1200x630 card for the solver story)
+// - ui/public/story-solver-choice.png and story-home-heating.png (1200x630 cards for the stories)
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -104,14 +104,26 @@ function pngToIco(pngBuffer, width = 32, height = 32) {
   return Buffer.concat([header, entry, pngBuffer]);
 }
 
-// 2. Open Graph card HTML (1200x630): a poster, headline and solver bars inside the centred 630 px
-const ogHtml = `<!DOCTYPE html>
+// 2. Preview cards (1200x630), one layout for the site and each story: a poster whose headline and
+// bars sit in the centred 630 px, so a square crop keeps both. Solver bars take the series colour the
+// viewer's charts give that solver in the dark theme (ui/src/lib/story-series.ts: --s3, --s2, --s5).
+const DARK = { umfpack: "#199e70", pypardiso: "#d95926", superlu: "#d55181", neutral: "#7488b3" };
+function card({ title, caption, bars, titleSize = 62 }) {
+  const longest = Math.max(...bars.map((b) => b.value));
+  const rows = bars
+    .map(
+      (b) => `<div>
+        <div class="bar-info"><span class="bar-name">${b.name}</span><span class="bar-val">${b.text}</span></div>
+        <div class="bar-track"><div style="width:${(b.value / longest) * 100}%;background:${b.color}"></div></div>
+      </div>`,
+    )
+    .join("");
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; }
-  /* Poster: the headline and the solver bars sit in the centred 630 px, so a square crop keeps both. */
   body {
     width: 1200px;
     height: 630px;
@@ -143,7 +155,7 @@ const ogHtml = `<!DOCTYPE html>
   }
   .center { width: 630px; }
   .title {
-    font-size: 62px;
+    font-size: ${titleSize}px;
     font-weight: 700;
     letter-spacing: -0.03em;
     line-height: 1.08;
@@ -163,27 +175,57 @@ const ogHtml = `<!DOCTYPE html>
 <div class="frame">
   <div class="logo-box">${faviconSvg.replace('width="32" height="32"', 'width="48" height="48"')}</div>
   <div class="center">
-    <h1 class="title">Continuous benchmarks for the Brightway LCA stack</h1>
-    <div class="chart-cap">One LCA score on an ecoinvent-sized database</div>
-    <div class="chart">
-      <div>
-        <div class="bar-info"><span class="bar-name" style="color:#74cfc3">UMFPACK</span><span class="bar-val">2.63 s</span></div>
-        <div class="bar-track"><div style="width:9.5%;background:#74cfc3"></div></div>
-      </div>
-      <div>
-        <div class="bar-info"><span class="bar-name" style="color:#91b4ff">PyPardiso</span><span class="bar-val">10.0 s</span></div>
-        <div class="bar-track"><div style="width:36%;background:#91b4ff"></div></div>
-      </div>
-      <div>
-        <div class="bar-info"><span class="bar-name">SuperLU</span><span class="bar-val">27.7 s</span></div>
-        <div class="bar-track"><div style="width:100%;background:#526d91"></div></div>
-      </div>
-    </div>
+    <h1 class="title">${title}</h1>
+    <div class="chart-cap">${caption}</div>
+    <div class="chart">${rows}</div>
   </div>
   <div class="footer-url">simonvanlierde.com/brightway-benchmarks</div>
 </div>
 </body>
 </html>`;
+}
+const CARDS = {
+  "og.png": card({
+    title: "Continuous benchmarks for the Brightway LCA stack",
+    caption: "One LCA score on an ecoinvent-sized database",
+    bars: [
+      { name: "UMFPACK", text: "2.63 s", value: 2.63, color: DARK.umfpack },
+      { name: "PyPardiso", text: "10.0 s", value: 10.0, color: DARK.pypardiso },
+      { name: "SuperLU", text: "27.7 s", value: 27.7, color: DARK.superlu },
+    ],
+  }),
+  // The solver story's factorization times on real ecoinvent.
+  "story-solver-choice.png": card({
+    title: "Your solver choice can change a Brightway score's time by 5 times or more",
+    titleSize: 46,
+    caption: "Factorizing real ecoinvent 3.12, one thread",
+    bars: [
+      { name: "UMFPACK", text: "0.66 s", value: 0.66, color: DARK.umfpack },
+      { name: "PyPardiso", text: "1.48 s", value: 1.48, color: DARK.pypardiso },
+      { name: "SuperLU", text: "3.66 s", value: 3.66, color: DARK.superlu },
+    ],
+  }),
+  // The findings page: one finding's release-to-release change, so neutral bars.
+  "findings.png": card({
+    title: "What the Brightway benchmarks found",
+    titleSize: 54,
+    caption: "bw2calc IterativeLCA with UMFPACK, one score",
+    bars: [
+      { name: "3.0.0", text: "45.0 s", value: 45.0, color: DARK.neutral },
+      { name: "3.1.0", text: "9.04 s", value: 9.04, color: DARK.neutral },
+    ],
+  }),
+  // The heating story's twenty-year climate scores: options, not solvers, so neutral bars.
+  "story-home-heating.png": card({
+    title: "Checking a home‑heating calculation", // a non-breaking hyphen
+    titleSize: 54,
+    caption: "Climate score over twenty years, t CO₂ eq",
+    bars: [
+      { name: "Heat pump", text: "23.2 t", value: 23.2, color: DARK.neutral },
+      { name: "Gas boiler", text: "49.4 t", value: 49.4, color: DARK.neutral },
+    ],
+  }),
+};
 
 const browser = await chromium.launch();
 
@@ -206,52 +248,13 @@ const icoPngBuf = await icoPage.screenshot({ type: "png" });
 const icoBuf = pngToIco(icoPngBuf, 32, 32);
 writeFileSync(join(publicDir, "favicon.ico"), icoBuf);
 
-// 5. Render og.png (1200x630)
-const ogPage = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
-await ogPage.emulateMedia({ colorScheme: "dark" });
-await ogPage.setContent(ogHtml);
-const ogBuf = await ogPage.screenshot({ type: "png" });
-writeFileSync(join(publicDir, "og.png"), ogBuf);
-
-// 6. Render story-solver-choice.png (1200x630): the solver story's three factorization times on real ecoinvent.
-const storyBars = [
-  ["UMFPACK, conda-forge on OpenBLAS", "0.66 s", 0.66, "#74cfc3"],
-  ["PyPardiso", "1.48 s", 1.48, "#91b4ff"],
-  ["SuperLU, SciPy's default", "3.66 s", 3.66, "#526d91"],
-]
-  .map(
-    ([
-      name,
-      value,
-      seconds,
-      color,
-    ]) => `<div class="row"><div class="info"><span>${name}</span><span class="mono">${value}</span></div>
-    <div class="track"><div style="width:${(seconds / 3.66) * 100}%;background:${color}"></div></div></div>`,
-  )
-  .join("");
-const storyHtml = `<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { width: 1200px; height: 630px; background: #141d32; color: #f8f9fc; padding: 56px 72px;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; }
-  .kicker { font-size: 20px; color: #aab9d8; }
-  h1 { font-size: 54px; line-height: 1.15; letter-spacing: -0.03em; margin: 16px 0 40px; max-width: 980px; }
-  .row { margin-bottom: 22px; }
-  .info { display: flex; justify-content: space-between; font-size: 24px; margin-bottom: 8px; }
-  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #c7d2ed; }
-  .track { height: 22px; background: #121829; border: 1px solid #2a3755; }
-  .track div { height: 100%; }
-  .foot { margin-top: auto; display: flex; justify-content: space-between; font-size: 18px; color: #aab9d8; }
-</style></head><body>
-  <div class="kicker">Brightway benchmarks</div>
-  <h1>Your solver can make the same LCA five times slower</h1>
-  ${storyBars}
-  <div class="foot"><span>Factorizing real ecoinvent 3.12 cut-off, one thread</span><span class="mono">simonvanlierde.com/brightway-benchmarks</span></div>
-</body></html>`;
-const storyPage = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
-await storyPage.emulateMedia({ colorScheme: "dark" });
-await storyPage.setContent(storyHtml);
-writeFileSync(join(publicDir, "story-solver-choice.png"), await storyPage.screenshot({ type: "png" }));
+// 5. Render the preview cards
+for (const [file, html] of Object.entries(CARDS)) {
+  const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.setContent(html);
+  writeFileSync(join(publicDir, file), await page.screenshot({ type: "png" }));
+}
 
 await browser.close();
-console.log("Assets generated: favicon.svg, favicon.ico, apple-touch-icon.png, og.png, story-solver-choice.png");
+console.log(`Assets generated: favicon.svg, favicon.ico, apple-touch-icon.png, ${Object.keys(CARDS).join(", ")}`);

@@ -72,6 +72,7 @@ CHANGE_POINTS = Path(__file__).with_name("change_points.py")
 DESCRIPTIONS = Path(__file__).resolve().parents[1] / "benchmarks" / "descriptions.toml"
 FINDINGS = DESCRIPTIONS.with_name("findings.toml")
 PROFILES = DESCRIPTIONS.parents[1] / "profiles"  # `just site` publishes this folder at PUBLIC_BASE/profiles/
+STORIES = DESCRIPTIONS.parents[1] / "ui" / "src" / "pages" / "stories"  # a story's slug is its file name
 
 
 def slug(name: str) -> str:
@@ -215,7 +216,7 @@ BLAS = [(re.compile(r"(^|-)(libblas_=__)?mkl"), "MKL"), (re.compile(r"openblas")
 
 
 def solver_labels(names: list[str]) -> list[str] | None:
-    """A solver name for each environment in NAMES, with its BLAS where the name pins one.
+    """A solver name for each environment in NAMES, with its BLAS where the name pins one (not PyPardiso's).
 
     None when no name pins a solver, so the labels would tell nothing apart. Labels that clash
     are fine here: the UI then shows the full names.
@@ -226,7 +227,8 @@ def solver_labels(names: list[str]) -> list[str] | None:
     for n in names:
         solver = next((text for rx, text in SOLVERS if rx.search(n)), "SuperLU")
         blas = next((text for rx, text in BLAS if rx.search(n)), None)
-        labels.append(f"{solver}, {blas}" if blas else solver)
+        # PyPardiso only runs on MKL, so its label stays one colour on pip and conda-forge charts.
+        labels.append(f"{solver}, {blas}" if blas and solver != "PyPardiso" else solver)
     return labels
 
 
@@ -368,17 +370,33 @@ def profile_url(path: Path, value: str) -> str:
     return f"{PUBLIC_BASE}profiles/{quote(name)}"
 
 
+def only_a_story(path: Path, finding: dict) -> bool:
+    """Whether FINDING is told by a story and names no benchmark; stops the export on a missing story."""
+    story = finding.get("story")
+    if story and not (STORIES / f"{story}.astro").is_file():
+        msg = f"{path.name}: {finding['title']}: no story {story} in ui/src/pages/stories/"
+        raise SystemExit(msg)
+    if "benchmark" in finding:
+        return False
+    if not story:
+        msg = f"{path.name}: {finding['title']} names neither a benchmark nor a story"
+        raise SystemExit(msg)
+    return True
+
+
 def findings(index: dict) -> list[dict]:
     """FINDINGS' entries, each naming its benchmark's id and a label per axis.
 
     A finding about a group this export lacks is left out; one that names a benchmark, parameter or
-    value its group lacks fails the export, as its link would open the wrong history.
+    value its group lacks fails the export, as its link would open the wrong history. So does a
+    `story` with no page in STORIES. A finding a story tells without a benchmark of its own is left
+    out too: the findings page lists it, the viewer has no history to open.
     """
     path = FINDINGS
     groups = {g["name"]: g["id"] for g in index["groups"]}
     out = []
     for f in tomllib.loads(path.read_text())["findings"]:
-        if f["group"] not in groups:
+        if only_a_story(path, f) or f["group"] not in groups:
             continue
         bench = next(
             (b for b in index["benchmarks"] if b["group"] == groups.get(f["group"]) and b["name"] == f["benchmark"]),
@@ -398,6 +416,9 @@ def findings(index: dict) -> list[dict]:
                 msg = f"{path.name}: {f['benchmark']}'s {axis['name']} has no value {value}"
                 raise SystemExit(msg)
             params.append(value)
+        if list(f["params"]) != names[: len(f["params"])]:
+            msg = f"{path.name}: {f['benchmark']}'s params must name {', '.join(names)} in axis order, none skipped"
+            raise SystemExit(msg)
         out.append(
             {
                 "title": f["title"],
@@ -407,6 +428,7 @@ def findings(index: dict) -> list[dict]:
                 "url": f"{REPO}/blob/main/docs/findings.md#{f['doc']}",
             }
             | ({"profile": profile_url(path, f["profile"])} if "profile" in f else {})
+            | ({"story": f["story"]} if "story" in f else {})
         )
     return out
 

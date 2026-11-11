@@ -736,7 +736,7 @@ test("the page publishes a favicon and Open Graph metadata", async ({ page, requ
   const icon = page.locator("link[rel='icon'][type='image/svg+xml']");
   await expect(icon).toHaveAttribute("href", /favicon\.svg$/);
   const ogImage = page.locator("meta[property='og:image']");
-  await expect(ogImage).toHaveAttribute("content", /og\.png$/);
+  await expect(ogImage).toHaveAttribute("content", /og\.png\?v=[0-9a-f]{8}$/);
 
   const iconRes = await request.get("/favicon.svg");
   expect(iconRes.status()).toBe(200);

@@ -36,6 +36,12 @@ test("Benchmarks shows the end-of-life Pythons on Linux", async ({ page }) => {
   await expect(table.getByRole("link", { name: "bw_graph_tools, Python 3.9: Failed" })).toBeVisible();
   await expect(table.getByRole("link", { name: "brightway25, Python 3.10: Failed" })).toBeVisible();
   await expect(page.locator(".python-support .support-failures")).toContainText("stdout_feedback_logger");
+  // No release of bw_timex declares 3.9: not a failure, so no failure line, and the legend says so.
+  const undeclared = table.getByRole("link", { name: "bw_timex, Python 3.9: Not declared" });
+  await expect(undeclared).toHaveText("Not declared");
+  await expect(undeclared).toHaveClass(/quiet/);
+  await expect(page.locator(".python-support .support-failures")).not.toContainText("bw-timex");
+  await expect(page.getByText("Not declared: no release of the package supports that Python")).toBeVisible();
 });
 
 test("a result the data lacks shows as not checked, in the full grid", async ({ page }) => {

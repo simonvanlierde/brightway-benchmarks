@@ -30,6 +30,40 @@ describe("supportTable", () => {
     expect(cachebox?.packages).toEqual(["brightway25", "bw_graph_tools", "bw_timex"]);
   });
 
+  it("claims only what failed when two unrelated failures share a reason", () => {
+    const fail = (python: string, platform: string, package_: string) => ({
+      python,
+      platform,
+      package: package_,
+      status: "fail" as const,
+      reason: "ModuleNotFoundError: No module named 'x'",
+      date: "2026-11-10",
+      run: "https://example.test/runs/1",
+    });
+    const pair = {
+      packages: ["brightway25", "bw_timex"],
+      pythons: [
+        { version: "3.14", endOfLife: false, platforms: ["linux", "macos"] },
+        { version: "3.15", endOfLife: false, platforms: ["linux", "macos"] },
+      ],
+      results: [fail("3.14", "linux", "brightway25"), fail("3.15", "macos", "bw_timex")],
+    };
+    // Merging by reason alone would read as both packages on both Pythons and both systems.
+    expect(supportTable(pair, false)?.failures).toEqual([
+      { reason: pair.results[0]?.reason, pythons: ["3.14"], platforms: ["linux"], packages: ["brightway25"] },
+      { reason: pair.results[0]?.reason, pythons: ["3.15"], platforms: ["macos"], packages: ["bw_timex"] },
+    ]);
+    // The same failure of one package on two Pythons and on the same systems is one line.
+    pair.results.push(fail("3.15", "linux", "brightway25"));
+    pair.results.push(fail("3.15", "macos", "brightway25"));
+    pair.results.push(fail("3.14", "macos", "brightway25"));
+    expect(supportTable(pair, false)?.failures[0]).toMatchObject({
+      pythons: ["3.14", "3.15"],
+      platforms: ["linux", "macos"],
+      packages: ["brightway25"],
+    });
+  });
+
   it("keeps the whole grid when results are missing: a missing cell is empty, not a missing row or column", () => {
     const dropped = support.results.filter((r) => !(r.python === "3.12" && r.platform === "macos"));
     const table = supportTable({ ...support, results: dropped }, false);

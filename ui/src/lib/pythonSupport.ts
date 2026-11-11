@@ -26,13 +26,44 @@ const numeric = (a: string, b: string) => a.localeCompare(b, "en", { numeric: tr
 const unique = (values: string[]) => [...new Set(values)];
 
 /**
+ * One line per reason, for the combinations that failed with it and no others. Results merge into a line
+ * only where they share the reason, Python and platforms (more packages), and then the reason, packages
+ * and platforms (more Pythons), so a line's Pythons x platforms x packages is exactly what failed.
+ */
+function failureLines(packages: string[], platforms: string[], results: SupportResult[]): SupportFailure[] {
+  const failed = new Map<string, { reason: string; python: string; package: string; platforms: string[] }>();
+  for (const r of results.filter((x) => x.status === "fail")) {
+    const reason = r.reason ?? "failed";
+    const key = `${reason}\u0000${r.python}\u0000${r.package}`;
+    const f = failed.get(key) ?? { reason, python: r.python, package: r.package, platforms: [] };
+    f.platforms = platforms.filter((p) => p === r.platform || f.platforms.includes(p)); // in grid order
+    failed.set(key, f);
+  }
+  const byPython = new Map<string, SupportFailure>();
+  for (const f of failed.values()) {
+    const key = `${f.reason}\u0000${f.python}\u0000${f.platforms.join()}`;
+    const line = byPython.get(key) ?? { reason: f.reason, pythons: [f.python], platforms: f.platforms, packages: [] };
+    line.packages = packages.filter((p) => p === f.package || line.packages.includes(p));
+    byPython.set(key, line);
+  }
+  const merged = new Map<string, SupportFailure>();
+  for (const f of byPython.values()) {
+    const key = `${f.reason}\u0000${f.packages.join()}\u0000${f.platforms.join()}`;
+    const line = merged.get(key) ?? { ...f, pythons: [] };
+    line.pythons = unique([...line.pythons, ...f.pythons]).sort(numeric);
+    merged.set(key, line);
+  }
+  return [...merged.values()];
+}
+
+/**
  * The supported Pythons (`eol` false) or the end-of-life ones (true) as a table: the full grid the
  * probe runs, so a result that is missing is an empty cell. Undefined when the data lists none.
  */
 export function supportTable(
   support: Omit<PythonSupport, "results" | "pythons"> & {
     results: SupportResult[];
-    pythons: PythonSupport["pythons"][number][];
+    pythons: { version: string; endOfLife: boolean; platforms: string[] }[];
   },
   eol: boolean,
 ): SupportTable | undefined {
@@ -48,19 +79,10 @@ export function supportTable(
     }
   }
   for (const r of results) rows.get(`${r.package} ${r.platform}`)?.cells.set(r.python, r);
-  const failures = new Map<string, SupportFailure>();
-  for (const r of results.filter((x) => x.status === "fail")) {
-    const reason = r.reason ?? "failed";
-    const f = failures.get(reason) ?? { reason, pythons: [], platforms: [], packages: [] };
-    f.pythons = unique([...f.pythons, r.python]).sort(numeric);
-    f.platforms = platforms.filter((p) => p === r.platform || f.platforms.includes(p)); // in grid order
-    f.packages = unique([...f.packages, r.package]);
-    failures.set(reason, f);
-  }
   return {
     pythons: pythons.map((p) => p.version),
     rows: [...rows.values()],
-    failures: [...failures.values()],
+    failures: failureLines(support.packages, platforms, results),
     checked: results.map((r) => r.date).sort()[0] ?? "",
   };
 }

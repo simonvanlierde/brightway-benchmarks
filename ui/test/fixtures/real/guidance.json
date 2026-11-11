@@ -666,8 +666,7 @@
         "python": "3.9",
         "platform": "linux",
         "package": "bw_timex",
-        "status": "fail",
-        "reason": "No solution found when resolving dependencies: Because the current Python version (3.9.25) does not satisfy Python>=3.10 and bw-timex<=0.2.8 depends on Python>=3.10, we can conclude that bw-timex<=0.2 \u2026 urrent Python version (3.9.25) does not satisfy Python>=3.11 and bw-timex>=0.3.0 depends on Python>=",
+        "status": "undeclared",
         "date": "2026-11-10",
         "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
       },

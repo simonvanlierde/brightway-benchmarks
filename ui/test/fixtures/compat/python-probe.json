@@ -16,8 +16,8 @@
         },
         {
           "step": "install bw_timex",
-          "ok": false,
-          "error": "error: No solution found when resolving dependencies cause: Because the current Python version (3.9.25) does not satisfy Python>=3.10 and bw-timex<=0.2.8 depends on Python>=3.10, we can conclude that bw-timex<=0.2.8 cannot be used. And because only the following versions of bw-timex are available: bw-timex<=0.2.8 bw-timex>=0.3.0 we can conclude that bw-timex<0.3.0 cannot be used. (1) Because the current Python version (3.9.25) does not satisfy Python>=3.11 and bw-timex>=0.3.0 depends on Python>="
+          "ok": true,
+          "declared": false
         },
         {
           "step": "import bw2data",
@@ -43,11 +43,6 @@
           "step": "import bw_graph_tools",
           "ok": false,
           "error": "TypeError: unsupported operand type(s) for |: '_SpecialForm' and 'NoneType'"
-        },
-        {
-          "step": "import bw_timex",
-          "ok": false,
-          "error": "ModuleNotFoundError: No module named 'bw_timex'"
         },
         {
           "step": "score",
@@ -741,17 +736,17 @@
         {
           "step": "install brightway25",
           "ok": false,
-          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /Users/runner/.cache/uv/builds-v0/.tmpLGyXqB/bin/python --compatibility off` [stderr] Updating crates.io index Downloading crates ... Downloaded find-msvc-tools v0.1.4 Downloaded scopeguard v1.2.0 Downloaded autocfg v1.4.0 Downloaded bitflags v2.9.0 Downloaded cfg-if v1.0.3 Downloaded memoffset v0.9.1 Down"
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /Users/runner/.cache/uv/builds-v0/.tmpLGyXqB/bin/python --compatibility off` [stderr] Updating crates.io in \u2026 htway25` (v1.1.1) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
         },
         {
           "step": "install bw_graph_tools",
           "ok": false,
-          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /Users/runner/.cache/uv/builds-v0/.tmpz5mrue/bin/python --compatibility off` [stderr] \ud83d\udce6 Including license file `LICENSE` \ud83c\udf79 Building a mixed python/rust project \ud83d\udc0d Found CPython 3.15 at /Users/runner/.cache/uv/builds-v0/.tmpz5mrue/bin/python \ud83d\udd17 Found pyo3 bindings \ud83d\udce1 Using build options features from pyproject"
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /Users/runner/.cache/uv/builds-v0/.tmpz5mrue/bin/python --compatibility off` [stderr] \ud83d\udce6 Including license f \u2026 ph-tools` (v0.10) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
         },
         {
           "step": "install bw_timex",
           "ok": false,
-          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /Users/runner/.cache/uv/builds-v0/.tmpTpUS1X/bin/python --compatibility off` [stderr] \ud83d\udce6 Including license file `LICENSE` \ud83c\udf79 Building a mixed python/rust project \ud83d\udc0d Found CPython 3.15 at /Users/runner/.cache/uv/builds-v0/.tmpTpUS1X/bin/python \ud83d\udd17 Found pyo3 bindings \ud83d\udce1 Using build options features from pyproject"
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /Users/runner/.cache/uv/builds-v0/.tmpTpUS1X/bin/python --compatibility off` [stderr] \ud83d\udce6 Including license f \u2026 w-timex` (v1.4.1) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
         },
         {
           "step": "import bw2data",
@@ -804,17 +799,17 @@
         {
           "step": "install brightway25",
           "ok": false,
-          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /home/runner/.cache/uv/builds-v0/.tmpqexrVO/bin/python --compatibility off` [stderr] Updating crates.io index Downloading crates ... Downloaded cfg-if v1.0.3 Downloaded bitflags v2.9.0 Downloaded fastrand v2.3.0 Downloaded cc v1.2.40 Downloaded windows-link v0.2.0 Downloaded pyo3-macros v0.27.1 Downloaded "
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /home/runner/.cache/uv/builds-v0/.tmpqexrVO/bin/python --compatibility off` [stderr] Updating crates.io ind \u2026 htway25` (v1.1.1) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
         },
         {
           "step": "install bw_graph_tools",
           "ok": false,
-          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /home/runner/.cache/uv/builds-v0/.tmpnjHym8/bin/python --compatibility off` [stderr] \ud83d\udce6 Including license file `LICENSE` \ud83c\udf79 Building a mixed python/rust project \ud83d\udc0d Found CPython 3.15 at /home/runner/.cache/uv/builds-v0/.tmpnjHym8/bin/python \ud83d\udd17 Found pyo3 bindings \ud83d\udce1 Using build options features from pyproject.t"
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /home/runner/.cache/uv/builds-v0/.tmpnjHym8/bin/python --compatibility off` [stderr] \ud83d\udce6 Including license fi \u2026 ph-tools` (v0.10) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
         },
         {
           "step": "install bw_timex",
           "ok": false,
-          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /home/runner/.cache/uv/builds-v0/.tmpe0yQr5/bin/python --compatibility off` [stderr] \ud83d\udce6 Including license file `LICENSE` \ud83c\udf79 Building a mixed python/rust project \ud83d\udc0d Found CPython 3.15 at /home/runner/.cache/uv/builds-v0/.tmpe0yQr5/bin/python \ud83d\udd17 Found pyo3 bindings \ud83d\udce1 Using build options features from pyproject.t"
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /home/runner/.cache/uv/builds-v0/.tmpe0yQr5/bin/python --compatibility off` [stderr] \ud83d\udce6 Including license fi \u2026 w-timex` (v1.4.1) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
         },
         {
           "step": "import bw2data",
@@ -867,17 +862,17 @@
         {
           "step": "install brightway25",
           "ok": false,
-          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit code: 1) [stdout] Running `maturin pep517 build-wheel -i C:\\Users\\runneradmin\\AppData\\Local\\uv\\cache\\builds-v0\\.tmpmgjW3c\\Scripts\\python.exe --compatibility off` [stderr] Updating crates.io index Downloading crates ... Downloaded bitflags v2.9.0 Downloaded fastrand v2.3.0 Downloaded find-msvc-tools v0.1.4 Downloaded indoc v2.0.6 Downloaded cfg-if v1.0.3 Downloaded"
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit code: 1) [stdout] Running `maturin pep517 build-wheel -i C:\\Users\\runneradmin\\AppData\\Local\\uv\\cache\\builds-v0\\.tmpmgjW3c\\Scripts\\python.exe --compatibility off` [std \u2026 htway25` (v1.1.1) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
         },
         {
           "step": "install bw_graph_tools",
           "ok": false,
-          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit code: 1) [stdout] Running `maturin pep517 build-wheel -i C:\\Users\\runneradmin\\AppData\\Local\\uv\\cache\\builds-v0\\.tmpXEGOwW\\Scripts\\python.exe --compatibility off` [stderr] \ud83d\udce6 Including license file `LICENSE` \ud83c\udf79 Building a mixed python/rust project \ud83d\udc0d Found CPython 3.15 at C:\\Users\\runneradmin\\AppData\\Local\\uv\\cache\\builds-v0\\.tmpXEGOwW\\Scripts\\python.exe \ud83d\udd17 Found pyo3 "
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit code: 1) [stdout] Running `maturin pep517 build-wheel -i C:\\Users\\runneradmin\\AppData\\Local\\uv\\cache\\builds-v0\\.tmpXEGOwW\\Scripts\\python.exe --compatibility off` [std \u2026 ph-tools` (v0.10) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
         },
         {
           "step": "install bw_timex",
           "ok": false,
-          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit code: 1) [stdout] Running `maturin pep517 build-wheel -i C:\\Users\\runneradmin\\AppData\\Local\\uv\\cache\\builds-v0\\.tmp6YNnoH\\Scripts\\python.exe --compatibility off` [stderr] \ud83d\udce6 Including license file `LICENSE` \ud83c\udf79 Building a mixed python/rust project \ud83d\udc0d Found CPython 3.15 at C:\\Users\\runneradmin\\AppData\\Local\\uv\\cache\\builds-v0\\.tmp6YNnoH\\Scripts\\python.exe \ud83d\udd17 Found pyo3 "
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit code: 1) [stdout] Running `maturin pep517 build-wheel -i C:\\Users\\runneradmin\\AppData\\Local\\uv\\cache\\builds-v0\\.tmp6YNnoH\\Scripts\\python.exe --compatibility off` [std \u2026 w-timex` (v1.4.1) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
         },
         {
           "step": "import bw2data",

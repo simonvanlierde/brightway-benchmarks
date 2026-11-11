@@ -26,18 +26,24 @@ from export_guidance import END_OF_LIFE
 
 PREFIX = "python-probe-"
 NAME = re.compile(r"python-probe-(?P<python>\d+\.\d+)-(?P<os>[\w-]+)")
-# Enough of a step's error to name its cause; a uv build log runs to kilobytes.
-ERROR = 500
+# Enough of a step's error to name its cause; a uv build log runs to kilobytes. uv puts what failed first and
+# why it failed last, so a long error keeps both ends.
+ERROR_HEAD, ERROR_TAIL = 300, 200
 # A result older than this many days is no longer a current result: a daily job (3.11 to 3.15) that has
 # not produced one in 3 days has stopped, and the Monday-only end-of-life jobs get a week and two days.
 MAX_AGE_DAYS = {"daily": 3, "weekly": 9}
 
 
+def cut(error: str) -> str:
+    """ERROR, or its first ERROR_HEAD and last ERROR_TAIL characters around an ellipsis when it is longer."""
+    return error if len(error) <= ERROR_HEAD + ERROR_TAIL else f"{error[:ERROR_HEAD]} … {error[-ERROR_TAIL:]}"
+
+
 def trim(probe: dict) -> list[dict]:
-    """PROBE's steps, each error cut to ERROR characters; a step without `step` and `ok` is a KeyError."""
+    """PROBE's steps, each error cut by `cut`; a step without `step` and `ok` is a KeyError."""
     return [
         {"step": s["step"], "ok": s["ok"], **{k: s[k] for k in ("declared",) if k in s}}
-        | ({"error": str(s["error"])[:ERROR]} if "error" in s else {})
+        | ({"error": cut(str(s["error"]))} if "error" in s else {})
         for s in probe["steps"]
     ]
 

@@ -93,7 +93,7 @@ def test_keeps_each_cells_newest_trusted_result_and_cuts_long_errors(
         ("3.15", "ubuntu-latest", "2026-11-10"),
     ]
     assert cells[1]["run"].endswith("/actions/runs/300")
-    assert len(cells[1]["steps"][0]["error"]) == probe_site.ERROR
+    assert len(cells[1]["steps"][0]["error"]) < 520
 
 
 def test_a_result_older_than_its_cadence_is_left_out(
@@ -141,3 +141,14 @@ def test_no_current_result_warns_and_writes_no_file(
     cells = run(probe_site, monkeypatch, tmp_path, [artifact(1, "python-probe-3.15-ubuntu-latest", "2026-10-01")])
     assert cells is None
     assert "::warning::" in capsys.readouterr().out
+
+
+def test_a_long_error_keeps_the_end_uv_puts_its_cause_in(probe_site: ModuleType, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.syspath_prepend(str(SCRIPTS))
+    export_guidance = importlib.import_module("export_guidance")
+    chain = "Because of a long chain of reasons, " * 18
+    error = f"error: No solution found: {chain}so bw-timex>=0.3.0 cannot be used."
+    assert len(error) > 650
+    [step] = probe_site.trim({"steps": [{"step": "install bw_timex", "ok": False, "error": error}]})
+    assert step["error"].endswith("bw-timex>=0.3.0 cannot be used.")
+    assert export_guidance.reason(step["error"]).endswith("bw-timex>=0.3.0 cannot be used.")

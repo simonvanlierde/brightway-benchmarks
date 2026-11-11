@@ -224,13 +224,15 @@ def test_neumann_score_matches_the_reference():
 
 
 def test_skip_unless_factorizable():
-    synth.skip_unless_factorizable("smoke", pardiso=False, factorizations=1_000)
-    synth.skip_unless_factorizable("regional", pardiso=True, factorizations=10)
+    synth.skip_unless_factorizable("smoke", pardiso=False, timeout=600, factorizations=1_000)
+    synth.skip_unless_factorizable("regional", pardiso=True, timeout=600, factorizations=10)
     with pytest.raises(NotImplementedError, match="without PyPardiso"):
-        synth.skip_unless_factorizable("mc100k", pardiso=False)
-    synth.skip_unless_factorizable("ecoinvent", pardiso=False, factorizations=2)  # about 6 min
+        synth.skip_unless_factorizable("mc100k", pardiso=False, timeout=1800)
+    synth.skip_unless_factorizable("ecoinvent", pardiso=False, timeout=600, factorizations=2)  # about 6 min
     with pytest.raises(NotImplementedError):
-        synth.skip_unless_factorizable("ecoinvent", pardiso=False, factorizations=12)  # Monte Carlo with LCA
+        synth.skip_unless_factorizable(
+            "ecoinvent", pardiso=False, timeout=1800, factorizations=12
+        )  # Monte Carlo with LCA
 
 
 def test_stale_tmp_folders_are_swept(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
@@ -354,3 +356,16 @@ def test_datapackages_follow_xdg_cache_home(monkeypatch: pytest.MonkeyPatch, tmp
     assert data_root() == tmp_path / "bwbench"
     monkeypatch.delenv("XDG_CACHE_HOME")
     assert data_root() == Path.home() / ".cache" / "bwbench"
+
+
+def test_the_random_builder_skips_sooner_than_the_tiered_one():
+    # stress-random at 20k products: SuperLU takes about 5 min a factorization, the tiered rule said 1.
+    with pytest.raises(NotImplementedError, match="stress-random"):
+        synth.skip_unless_factorizable("stress-random", pardiso=False, timeout=600, factorizations=3)
+    synth.skip_unless_factorizable("ecoinvent", pardiso=False, timeout=600, factorizations=3)  # about 9 min
+
+
+def test_the_budget_is_the_case_timeout():
+    with pytest.raises(NotImplementedError):  # about 12 min, past a 10-min case and under the old 15-min budget
+        synth.skip_unless_factorizable("ecoinvent", pardiso=False, timeout=600, factorizations=4)
+    synth.skip_unless_factorizable("ecoinvent", pardiso=False, timeout=900, factorizations=4)

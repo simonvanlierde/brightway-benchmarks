@@ -1,8 +1,11 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import codemeta from "../../codemeta.json" with { type: "json" };
 
 const SITE = "https://simonvanlierde.com/brightway-benchmarks/";
-const IMAGE = `${SITE}ui/og.png`;
+const OG_HASH = createHash("sha256").update(readFileSync("public/og.png")).digest("hex").slice(0, 8);
+const IMAGE = `${SITE}ui/og.png?v=${OG_HASH}`;
 
 for (const path of ["/", "/about/"]) {
   test(`${path} initial HTML includes one canonical and complete sharing metadata`, async ({ browser }) => {

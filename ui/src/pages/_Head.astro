@@ -1,4 +1,6 @@
 ---
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { softwareJsonLd } from "../lib/structured-data";
 
 interface Props {
@@ -8,11 +10,13 @@ interface Props {
   image?: string;
   imageAlt?: string;
 }
+// Platforms cache a preview by image URL, so the URL carries the PNG's hash.
+const ogVersion = createHash("sha256").update(readFileSync("public/og.png")).digest("hex").slice(0, 8);
 const {
   title,
   description,
   canonical,
-  image = "https://simonvanlierde.com/brightway-benchmarks/ui/og.png",
+  image = `https://simonvanlierde.com/brightway-benchmarks/ui/og.png?v=${ogVersion}`,
   imageAlt = "Brightway benchmarks: tested installation sets and a comparison of measured solver times.",
 } = Astro.props;
 ---

@@ -104,15 +104,23 @@ def remap(
             raise ValueError(msg)
         return np.searchsorted(processes, makers[at])
 
+    def process_index(ids: NDArray) -> NDArray[np.int64]:
+        """The index of each process id in ``ids``."""
+        at = np.minimum(np.searchsorted(processes, ids), n - 1)
+        if not np.array_equal(processes[at], ids):
+            msg = "an exchange names a process with no product"
+            raise ValueError(msg)
+        return at
+
     flows = np.unique(bio_indices["row"])
     flow_index = lambda ids: np.searchsorted(flows, ids) + n  # noqa: E731
     arrays = {
         "tech_rows": product_index(tech_indices["row"]).astype(np.int64),
-        "tech_cols": np.searchsorted(processes, tech_indices["col"]).astype(np.int64),
+        "tech_cols": process_index(tech_indices["col"]).astype(np.int64),
         "tech_data": tech_data.astype(np.float64),
         "tech_flip": tech_flip.astype(np.bool_),
         "bio_rows": flow_index(bio_indices["row"]).astype(np.int64),
-        "bio_cols": np.searchsorted(processes, bio_indices["col"]).astype(np.int64),
+        "bio_cols": process_index(bio_indices["col"]).astype(np.int64),
         "bio_data": bio_data.astype(np.float64),
         "ids": processes.astype(np.int64),
     }

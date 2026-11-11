@@ -51,7 +51,6 @@ if TYPE_CHECKING:
 # tests/test_synth.py pins a hash of system("smoke")'s arrays to it: update both together.
 GENERATOR_VERSION = "5"
 INPUTS_SHARE = 0.5  # random builder: upper bound on the sum of input amounts per column
-FACTORIZE_BUDGET = 900.0  # seconds of SuperLU a benchmark case may spend (asv timeouts: 600 to 1800 s per case)
 MAX_COLUMN_SUM = 0.9  # tiered builder: the reference's series needs column sums below 1
 # The builders that read a real system from a pinned archive, by profile builder name.
 ARCHIVES = {"useeio": useeio.system, "bafu": bafu.system}
@@ -112,7 +111,8 @@ def _build(name: str, p: Profile, seed: int, uncertain: bool) -> System:  # noqa
         cf_flows.append(flows + n)
         cf_data.append(rng.lognormal(0.0, 1.0, size=flows.size))
 
-    for a in (tech_rows, tech_cols, tech_data, tech_flip, bio_rows, bio_cols, bio_data, scale, *cf_flows, *cf_data):
+    shared = (tech_rows, tech_cols, tech_data, tech_flip, bio_rows, bio_cols, bio_data, scale, *cf_flows, *cf_data)
+    for a in (*shared, *(g for g in (region, sector) if g is not None)):
         a.setflags(write=False)
     return System(
         name,
@@ -134,15 +134,27 @@ def _build(name: str, p: Profile, seed: int, uncertain: bool) -> System:  # noqa
     )
 
 
-def skip_unless_factorizable(name: str, *, pardiso: bool, factorizations: int = 1) -> None:
+def factorize_seconds(name: str) -> float:
+    """Estimated seconds for one SuperLU factorization of profile ``name``, one thread.
+
+    Tiered structure: 43 s at 18k products, growing about as n^3.6 (measured 2026-10-13).
+    The random builder fills L+U far more: 17 s at 8k products, growing about as n^3.1
+    (stress-random and exiobase shapes, measured 2026-11-11).
+    """
+    p = profile(name)
+    if p.builder == "random":
+        return 17.0 * (p.products / 8_000) ** 3.1
+    return 43.0 * (p.products / 18_000) ** 3.6
+
+
+def skip_unless_factorizable(name: str, *, pardiso: bool, timeout: float, factorizations: int = 1) -> None:
     """Skip a case whose SuperLU or UMFPACK factorizations of profile ``name`` would overrun.
 
-    The estimate: 43 s per factorization at 18k products of the tiered structure, growing
-    about as n^3.6 (one thread, measured 2026-10-13); the budget is ``FACTORIZE_BUDGET``.
-    PyPardiso is far faster, so it is never skipped. asv records the skip as a gap.
+    ``timeout`` is the case's asv timeout in seconds: a case estimated past it skips instead
+    of timing out. PyPardiso is far faster, so it is never skipped. asv records the skip as a gap.
     """
-    seconds = factorizations * 43.0 * (profile(name).products / 18_000) ** 3.6
-    if not pardiso and seconds > FACTORIZE_BUDGET:
+    seconds = factorizations * factorize_seconds(name)
+    if not pardiso and seconds > timeout:
         msg = f"{name}: {factorizations} factorizations would take about {seconds / 60:.0f} min without PyPardiso"
         raise NotImplementedError(msg)
 

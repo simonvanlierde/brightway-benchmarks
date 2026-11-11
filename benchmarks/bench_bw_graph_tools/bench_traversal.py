@@ -34,7 +34,7 @@ def calculation_count(traversal: NewNodeEachVisitGraphTraversal) -> float:
     fresh_solver=False,
 )
 def traverse(size: str, max_calc: int) -> BenchSetup:
-    skip_unless_factorizable(size, pardiso=bc.PYPARDISO)
+    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, timeout=900)  # asv's default
     inventory, methods, refs, _ = packages(size)
     lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]])
     lca.lci()

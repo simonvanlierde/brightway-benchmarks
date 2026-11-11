@@ -59,6 +59,14 @@ def test_remap_refuses_an_exchange_for_a_product_nobody_makes():
         useeio.remap(tech, data, flip, bio, bio_data, cfs)
 
 
+@pytest.mark.parametrize("matrix", ["tech", "bio"])
+def test_remap_refuses_an_exchange_for_a_process_that_makes_nothing(matrix: str):
+    tech, data, flip, bio, bio_data, cfs = tiny()
+    {"tech": tech, "bio": bio}[matrix]["col"][-1] = 12
+    with pytest.raises(ValueError, match="no product"):
+        useeio.remap(tech, data, flip, bio, bio_data, cfs)
+
+
 def test_remap_refuses_a_process_with_two_products():
     tech, data, flip, bio, bio_data, cfs = tiny()
     tech["col"][1] = 7

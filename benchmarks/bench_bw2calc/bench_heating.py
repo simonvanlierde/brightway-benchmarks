@@ -67,7 +67,7 @@ VERSION = f"{profile_version()}-heating{heating.VERSION}"  # asv history key: th
 def heating_scores(size: str) -> BenchSetup:
     """Both options against the three EN 15804 methods with MultiLCA, the foreground loaded beside BAFU."""
     s, at = background(size)
-    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=2)
+    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, timeout=900, factorizations=2)
     inventory, methods, _, _ = load(datapackages(s))
     fg = heating.foreground(s, at, **heating.DEFAULTS)
     config = {"impact_categories": [method_name(i) for i in range(len(methods))]}
@@ -106,7 +106,9 @@ def heating_sweep(size: str, scenarios: int, variant: str) -> BenchSetup:
     scenario's electricity comes in through the demand (``heating.scenario_demand``).
     """
     s, at = background(size)
-    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=scenarios if variant == "rebuild" else 1)
+    skip_unless_factorizable(
+        size, pardiso=bc.PYPARDISO, timeout=1800, factorizations=scenarios if variant == "rebuild" else 1
+    )
     inventory, methods, _, _ = load(datapackages(s))
     method = methods[0]
     grid = heating.scenarios(scenarios)

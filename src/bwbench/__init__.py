@@ -83,7 +83,7 @@ def knob(name: str, default: str, cast: Callable[[str], Any] = str) -> list[Any]
     asv reads parameters at import, so a smoke run and a full run differ only in the
     environment: ``BWBENCH_SIZES=smoke`` here, ``ecoinvent,exiobase`` on a quiet machine.
     """
-    return [cast(v) for v in os.environ.get(f"BWBENCH_{name.upper()}", default).split(",")]
+    return [cast(v.strip()) for v in os.environ.get(f"BWBENCH_{name.upper()}", default).split(",")]
 
 
 def group_counts() -> list[int]:

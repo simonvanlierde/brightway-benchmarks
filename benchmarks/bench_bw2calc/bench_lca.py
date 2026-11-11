@@ -117,7 +117,9 @@ def score_of(scores: object, method: tuple, demand: str) -> float:
 def first_score(size: str, cls: str) -> BenchSetup:
     """One demand, one method: build the matrices, factorize, solve, characterize."""
     # The setup solves once before the timed call; JacobiGMRESLCA solves by GMRES, not LU.
-    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=0 if cls == "JacobiGMRESLCA" else 2)
+    skip_unless_factorizable(
+        size, pardiso=bc.PYPARDISO, factorizations=0 if cls == "JacobiGMRESLCA" else 2, timeout=600
+    )
     lca_cls = lca_class(cls)
     inventory, methods, refs, _ = packages(size)
     rtol = rtol_for(cls)
@@ -149,7 +151,9 @@ def redo_lci(size: str, cls: str) -> BenchSetup:
     # `self.solver`), so only it factorizes ahead. IterativeLCA's first solve is one factorization
     # anyway (a direct solve, or 3.x's reference); JacobiGMRESLCA makes none.
     factorize = cls == "LCA"
-    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=0 if cls == "JacobiGMRESLCA" else 1)
+    skip_unless_factorizable(
+        size, pardiso=bc.PYPARDISO, factorizations=0 if cls == "JacobiGMRESLCA" else 1, timeout=600
+    )
     skip_known_crash(cls, calls_next=False)
     inventory, methods, refs, _ = packages(size)
     rtol = rtol_for(cls)
@@ -182,7 +186,7 @@ def condition_estimate(size: str) -> BenchSetup:
     It needs only SciPy, so it does not depend on the bw2calc release, and the timed call is the
     estimate itself: one LU factorization and a few solves.
     """
-    skip_unless_factorizable(size, pardiso=False)  # SuperLU factorizes, whatever bw2calc uses
+    skip_unless_factorizable(size, pardiso=False, timeout=1800)  # SuperLU factorizes, whatever bw2calc uses
     return system(size).condition_estimate, UNCHECKED
 
 
@@ -216,7 +220,7 @@ def redo_lci_refinement(size: str, refinement: str) -> BenchSetup:
     """
     if not getattr(bc, "UMFPACK", False) or bc.PYPARDISO:
         raise NotApplicable("needs bw2calc to solve with UMFPACK, not PyPardiso or SuperLU")
-    skip_unless_factorizable(size, pardiso=False)
+    skip_unless_factorizable(size, pardiso=False, timeout=600)
     from scikits.umfpack import umfpack  # noqa: PLC0415
 
     inventory, methods, refs, _ = packages(size)
@@ -249,7 +253,7 @@ def fast_scores(direction: str) -> tuple[type, dict]:
     lca_cls = lca_class("FastScoresOnlyMultiLCA")
     skip_known_crash("FastScoresOnlyMultiLCA", calls_next=True)
     if not (bc.PYPARDISO or getattr(bc, "UMFPACK", False)):
-        raise NotImplementedError("FastScoresOnlyMultiLCA needs PARDISO or UMFPACK")
+        raise NotApplicable("FastScoresOnlyMultiLCA needs PARDISO or UMFPACK")
     kwargs = {}
     if "direction" in inspect.signature(lca_cls.__init__).parameters:
         kwargs["direction"] = direction
@@ -257,7 +261,7 @@ def fast_scores(direction: str) -> tuple[type, dict]:
         raise NotImplementedError(f"bw2calc {bc.__version__} has no adjoint direction")
     if direction == "adjoint" and solver() == "umfpack-T":
         # The adjoint hands factorized() Aᵀ, so UMFPACK on its transpose would factorize A.
-        raise NotImplementedError("umfpack-T would factorize A, not Aᵀ, in the adjoint direction")
+        raise NotApplicable("umfpack-T would factorize A, not Aᵀ, in the adjoint direction")
     return lca_cls, kwargs
 
 
@@ -275,7 +279,7 @@ def scores(size: str, demands: int, variant: str) -> BenchSetup:
     """
     if variant == "MultiLCA" and demands != MULTILCA_DEMANDS:
         raise NotApplicable(f"MultiLCA runs at {MULTILCA_DEMANDS} demands only: it has no direction to switch")
-    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=2)
+    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, timeout=900, factorizations=2)  # asv's default
     inventory, methods, refs, _ = packages(size)
     config = {"impact_categories": [method_name(i) for i in range(len(methods))]}
     wanted = {f"d{i}": {i: 1} for i in range(demands)}
@@ -316,7 +320,7 @@ def iterations(size: str, iterations: int, cls: str) -> BenchSetup:
     """
     # LCA refactorizes on every draw; IterativeLCA factorizes once; JacobiGMRESLCA never.
     draws = {"LCA": iterations + 2, "IterativeLCA": 1}.get(cls, 0)
-    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, factorizations=draws)
+    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, timeout=1800, factorizations=draws)
     skip_known_crash(cls, calls_next=True)
     inventory, methods, refs, scale = packages(size, uncertain=True)
     lca = lca_class(cls)(demand={0: 1}, data_objs=[inventory, methods[0]], use_distributions=True, seed_override=1)

@@ -12,6 +12,7 @@ The site must still deploy without the table, so a failure here is a `::warning:
 file written; a result too old for its cadence is left out, and shows as not checked.
 """
 
+import argparse
 import io
 import json
 import re
@@ -98,4 +99,6 @@ def main(out: Path, today: date | None = None) -> None:
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("out", type=Path, help="the JSON file to write")
+    main(parser.parse_args().out)

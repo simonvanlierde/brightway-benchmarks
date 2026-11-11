@@ -489,7 +489,10 @@ def test_track_methods_run_the_case_outside_a_box_run(monkeypatch: pytest.Monkey
 def rapl(folder: Path, energy_uj: int) -> Path:
     """A stand-in for /sys/class/powercap/intel-rapl:0, whose counter wraps past 262143328850 µJ."""
     folder.mkdir(exist_ok=True)
-    (folder / "energy_uj").write_text(f"{energy_uj}\n")
+    # Swap the file in whole: the meter thread reads it meanwhile, and write_text truncates first,
+    # so a read in between sees "" and voids the sample, which sysfs never does.
+    (folder / "energy_uj.tmp").write_text(f"{energy_uj}\n")
+    (folder / "energy_uj.tmp").replace(folder / "energy_uj")
     (folder / "max_energy_range_uj").write_text("262143328850\n")
     return folder
 

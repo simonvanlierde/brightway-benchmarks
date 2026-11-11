@@ -142,7 +142,7 @@ fresh environment and runs every case once at the `smoke` size, untimed.
 - `suites`: like `latest`, but runs the test suites of bw2data, bw2calc, bw2io, bw_processing,
   matrix_utils, bw_graph_tools and bw_timex, from each package's GitHub tag.
 
-bw_timex pulls in PyPardiso on Linux x86_64, so there bw2calc solves with PyPardiso.
+bw_timex pulls in PyPardiso on Linux x86_64 and 64-bit Windows, so there bw2calc solves with PyPardiso.
 
 Each run writes to `.asv/compat/PYTHON-COLUMN/`: `requirements.txt`, and `pylock.toml` with
 each wheel's hash for that job's operating system. `pylock.toml` says `requires-python >=3.13`,

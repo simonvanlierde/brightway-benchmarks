@@ -35,20 +35,13 @@ LABELS = {
     "suites": "Upstream test suites",
 }
 
+# One clause each: what the check installs and runs.
 DESCRIPTIONS = {
-    "latest": "Install the latest stable releases from PyPI and run each benchmark case once on a small database.",
-    "floors": (
-        "Keep Brightway at its latest releases, use the lowest allowed versions of its direct dependencies, "
-        "and run the small-database calculations."
-    ),
-    "pre": "Allow pre-release packages from PyPI and run each benchmark case once on a small database.",
-    "conda-forge": (
-        "Install the available Brightway packages from conda-forge and run the small-database calculations."
-    ),
-    "suites": (
-        "Run upstream package test suites against the latest installed releases; "
-        "this is broader than the small-database calculation checks."
-    ),
+    "latest": "The latest stable releases from PyPI, each benchmark case run once on a small database.",
+    "floors": "Brightway's latest releases with the lowest allowed versions of its direct dependencies.",
+    "pre": "The latest releases with pre-release packages from PyPI allowed, on the small database.",
+    "conda-forge": "The Brightway packages available from conda-forge, on the small database.",
+    "suites": "The upstream package test suites, run against the latest releases.",
 }
 
 
@@ -205,7 +198,7 @@ def _solver_cases(index: dict, groups: dict) -> dict:
         group, label = groups.get(bench["group"]), env.get("label")
         name = {("bw2calc", "PyPardiso"): "PyPardiso", ("bw2calc", "SuperLU"): "SuperLU"}.get((group, label))
         if group == "bw2calc-conda" and label == "UMFPACK" and "mkl" not in env.get("name", "").lower():
-            name = "UMFPACK · conda-forge"
+            name = "UMFPACK · conda-forge, without PyPardiso"
         if name:
             selected.setdefault(bench["group"], []).append((case, bench, name))
     return selected
@@ -253,18 +246,20 @@ def solver_comparison(data_dir: Path) -> dict | None:
             query = urlencode({"bench": bench["id"], "measure": "latency", "machine": report["machine"]})
             query += "&" + urlencode([("p", "ecoinvent"), ("p", "LCA")])
             rows[name] = {"label": name, "value": value, "unit": "ns", "href": f"?{query}"}
-    for (machine, release), rows in sorted(selected.items()):
+    for (_machine, release), rows in sorted(selected.items()):
         if len(rows) == 3:
-            machine_name = next((m["name"] for m in index["machines"] if m["id"] == machine), machine)
             return {
                 "title": "Solver alternatives, measured on one Linux machine",
-                "context": f"First LCA score · bw2calc {release} · synthetic ecoinvent-sized database · {machine_name}",
+                "context": (
+                    f"First LCA score · bw2calc {release} · synthetic ecoinvent-sized database · "
+                    "one pinned Linux machine, one thread"
+                ),
                 "platform": MEASURED_ON,
                 "note": (
                     "These fixed benchmark environments differ from the compatibility snapshot. "
                     "Timings do not predict every workflow or machine."
                 ),
-                "rows": [rows[name] for name in ("UMFPACK · conda-forge", "PyPardiso", "SuperLU")],
+                "rows": [rows[name] for name in ("UMFPACK · conda-forge, without PyPardiso", "PyPardiso", "SuperLU")],
             }
     return None
 
@@ -284,7 +279,7 @@ def export(
     out = {
         "format_version": 2,
         "title": "A tested Brightway setup",
-        "intro": "Pick your platform below for a set that passed.",
+        "intro": "Pick your operating system for an install set that passed its checks.",
         "snapshot": {"date": status["date"], "run": web_url(status["run"])},
         "platforms": [],
         "checks": [],

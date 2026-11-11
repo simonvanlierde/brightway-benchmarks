@@ -186,10 +186,11 @@ def test_solver_comparison_uses_values_from_one_machine_and_matching_release(mod
     assert {r["label"]: r["value"] for r in result["rows"]} == {
         "PyPardiso": 10e9,
         "SuperLU": 27e9,
-        "UMFPACK · conda-forge": 2e9,
+        "UMFPACK · conda-forge, without PyPardiso": 2e9,
     }
     assert all("machine=machine" in row["href"] and row["unit"] == "ns" for row in result["rows"])
     assert "3.1.0" in result["context"]
+    assert result["context"].endswith("one pinned Linux machine, one thread")
     (data / "conda.json").unlink()
     assert module.solver_comparison(data) is None
 
@@ -243,7 +244,7 @@ def test_solver_comparison_takes_the_latest_release_and_never_falls_back(module:
     result = module.solver_comparison(data)
     # The MKL build of UMFPACK is not the conda-forge row, and 2.5.0's slower values stay out.
     assert {r["label"]: r["value"] for r in result["rows"]} == {
-        "UMFPACK · conda-forge": 2e9,
+        "UMFPACK · conda-forge, without PyPardiso": 2e9,
         "PyPardiso": 10e9,
         "SuperLU": 27e9,
     }

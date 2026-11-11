@@ -67,6 +67,79 @@ export interface Guidance {
       }[];
     };
   }[];
+  /**
+   * Whether each package installs, imports and scores on each Python and platform, from the latest run of each.
+   */
+  pythonSupport?: {
+    /**
+     * The packages checked, in display order.
+     */
+    packages: string[];
+    /**
+     * The Pythons the probe runs and the platforms each runs on, in display order: the grid, so a result that is missing shows as not checked.
+     *
+     * @minItems 1
+     */
+    pythons: [
+      {
+        version: string;
+        /**
+         * Past end of life: a maintainer view lists these apart from the supported Pythons.
+         */
+        endOfLife: boolean;
+        /**
+         * @minItems 1
+         */
+        platforms: [string, ...string[]];
+      },
+      ...{
+        version: string;
+        /**
+         * Past end of life: a maintainer view lists these apart from the supported Pythons.
+         */
+        endOfLife: boolean;
+        /**
+         * @minItems 1
+         */
+        platforms: [string, ...string[]];
+      }[],
+    ];
+    /**
+     * @minItems 1
+     */
+    results: [
+      {
+        python: string;
+        platform: string;
+        package: string;
+        /**
+         * `undeclared` is no failure: no release of the package declares this Python.
+         */
+        status: "pass" | "fail" | "undeclared";
+        /**
+         * Why it failed; present when status is fail.
+         */
+        reason?: string;
+        date: string;
+        run: string;
+      },
+      ...{
+        python: string;
+        platform: string;
+        package: string;
+        /**
+         * `undeclared` is no failure: no release of the package declares this Python.
+         */
+        status: "pass" | "fail" | "undeclared";
+        /**
+         * Why it failed; present when status is fail.
+         */
+        reason?: string;
+        date: string;
+        run: string;
+      }[],
+    ];
+  };
   solverComparison?: {
     title: string;
     context: string;

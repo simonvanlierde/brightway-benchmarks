@@ -15,6 +15,7 @@ import {
 } from "../lib/history";
 import Findings from "./Findings.svelte";
 import InstallSet from "./InstallSet.svelte";
+import PythonSupport from "./PythonSupport.svelte";
 
 let {
   guidance,
@@ -198,3 +199,5 @@ $effect(() => {
     </section>
   </div>
 </div>
+
+{#if guidance}<PythonSupport {guidance} />{/if}

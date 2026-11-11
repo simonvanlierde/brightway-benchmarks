@@ -1,0 +1,920 @@
+{
+  "cells": [
+    {
+      "python": "3.9",
+      "os": "ubuntu-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true,
+          "declared": false
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": false,
+          "error": "TypeError: unsupported operand type(s) for |: '_SpecialForm' and 'NoneType'"
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.10",
+      "os": "ubuntu-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": false,
+          "error": "ImportError: cannot import name 'stdout_feedback_logger' from 'bw2data.logs' (/tmp/py-probe-3.10-bs8b6fua/v/lib/python3.10/site-packages/bw2data/logs.py)"
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.11",
+      "os": "macos-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.11",
+      "os": "ubuntu-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.11",
+      "os": "windows-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.12",
+      "os": "macos-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.12",
+      "os": "ubuntu-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.12",
+      "os": "windows-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.13",
+      "os": "macos-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.13",
+      "os": "ubuntu-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.13",
+      "os": "windows-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.14",
+      "os": "macos-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.14",
+      "os": "ubuntu-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.14",
+      "os": "windows-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": true
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "install bw_timex",
+          "ok": true
+        },
+        {
+          "step": "import bw2data",
+          "ok": true
+        },
+        {
+          "step": "import bw2calc",
+          "ok": true
+        },
+        {
+          "step": "import bw2io",
+          "ok": true
+        },
+        {
+          "step": "import bw_processing",
+          "ok": true
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": true
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": true
+        },
+        {
+          "step": "import bw_timex",
+          "ok": true
+        },
+        {
+          "step": "score",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "python": "3.15",
+      "os": "macos-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": false,
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /Users/runner/.cache/uv/builds-v0/.tmpLGyXqB/bin/python --compatibility off` [stderr] Updating crates.io in \u2026 htway25` (v1.1.1) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": false,
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /Users/runner/.cache/uv/builds-v0/.tmpz5mrue/bin/python --compatibility off` [stderr] \ud83d\udce6 Including license f \u2026 ph-tools` (v0.10) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
+        },
+        {
+          "step": "install bw_timex",
+          "ok": false,
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /Users/runner/.cache/uv/builds-v0/.tmpTpUS1X/bin/python --compatibility off` [stderr] \ud83d\udce6 Including license f \u2026 w-timex` (v1.4.1) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
+        },
+        {
+          "step": "import bw2data",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw2data'"
+        },
+        {
+          "step": "import bw2calc",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw2calc'"
+        },
+        {
+          "step": "import bw2io",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw2io'"
+        },
+        {
+          "step": "import bw_processing",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw_processing'"
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'matrix_utils'"
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw_graph_tools'"
+        },
+        {
+          "step": "import bw_timex",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw_timex'"
+        },
+        {
+          "step": "score",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw2calc'"
+        }
+      ]
+    },
+    {
+      "python": "3.15",
+      "os": "ubuntu-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": false,
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /home/runner/.cache/uv/builds-v0/.tmpqexrVO/bin/python --compatibility off` [stderr] Updating crates.io ind \u2026 htway25` (v1.1.1) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": false,
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /home/runner/.cache/uv/builds-v0/.tmpnjHym8/bin/python --compatibility off` [stderr] \ud83d\udce6 Including license fi \u2026 ph-tools` (v0.10) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
+        },
+        {
+          "step": "install bw_timex",
+          "ok": false,
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit status: 1) [stdout] Running `maturin pep517 build-wheel -i /home/runner/.cache/uv/builds-v0/.tmpe0yQr5/bin/python --compatibility off` [stderr] \ud83d\udce6 Including license fi \u2026 w-timex` (v1.4.1) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
+        },
+        {
+          "step": "import bw2data",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw2data'"
+        },
+        {
+          "step": "import bw2calc",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw2calc'"
+        },
+        {
+          "step": "import bw2io",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw2io'"
+        },
+        {
+          "step": "import bw_processing",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw_processing'"
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'matrix_utils'"
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw_graph_tools'"
+        },
+        {
+          "step": "import bw_timex",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw_timex'"
+        },
+        {
+          "step": "score",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw2calc'"
+        }
+      ]
+    },
+    {
+      "python": "3.15",
+      "os": "windows-latest",
+      "date": "2026-11-10",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915",
+      "steps": [
+        {
+          "step": "install brightway25",
+          "ok": false,
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit code: 1) [stdout] Running `maturin pep517 build-wheel -i C:\\Users\\runneradmin\\AppData\\Local\\uv\\cache\\builds-v0\\.tmpmgjW3c\\Scripts\\python.exe --compatibility off` [std \u2026 htway25` (v1.1.1) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
+        },
+        {
+          "step": "install bw_graph_tools",
+          "ok": false,
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit code: 1) [stdout] Running `maturin pep517 build-wheel -i C:\\Users\\runneradmin\\AppData\\Local\\uv\\cache\\builds-v0\\.tmpXEGOwW\\Scripts\\python.exe --compatibility off` [std \u2026 ph-tools` (v0.10) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
+        },
+        {
+          "step": "install bw_timex",
+          "ok": false,
+          "error": "error: Failed to build `cachebox==5.2.3` cause: The build backend returned an error cause: Call to `maturin.build_wheel` failed (exit code: 1) [stdout] Running `maturin pep517 build-wheel -i C:\\Users\\runneradmin\\AppData\\Local\\uv\\cache\\builds-v0\\.tmp6YNnoH\\Scripts\\python.exe --compatibility off` [std \u2026 w-timex` (v1.4.1) depends on `bw2data` (v4.8) which depends on `deepdiff` (v9.1.0) which depends on `cachebox` hint: Build failures usually indicate a problem with the package or the build environment"
+        },
+        {
+          "step": "import bw2data",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw2data'"
+        },
+        {
+          "step": "import bw2calc",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw2calc'"
+        },
+        {
+          "step": "import bw2io",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw2io'"
+        },
+        {
+          "step": "import bw_processing",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw_processing'"
+        },
+        {
+          "step": "import matrix_utils",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'matrix_utils'"
+        },
+        {
+          "step": "import bw_graph_tools",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw_graph_tools'"
+        },
+        {
+          "step": "import bw_timex",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw_timex'"
+        },
+        {
+          "step": "score",
+          "ok": false,
+          "error": "ModuleNotFoundError: No module named 'bw2calc'"
+        }
+      ]
+    }
+  ]
+}

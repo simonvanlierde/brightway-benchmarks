@@ -576,5 +576,494 @@
         "href": "?bench=bw2calc-bench-lca-singlescore-time-first-score-0523b3edee8d&measure=latency&machine=pinned-x86-1-2504b6871767&p=ecoinvent&p=LCA"
       }
     ]
+  },
+  "pythonSupport": {
+    "packages": [
+      "brightway25",
+      "bw_graph_tools",
+      "bw_timex"
+    ],
+    "pythons": [
+      {
+        "version": "3.9",
+        "endOfLife": true,
+        "platforms": [
+          "linux"
+        ]
+      },
+      {
+        "version": "3.10",
+        "endOfLife": true,
+        "platforms": [
+          "linux"
+        ]
+      },
+      {
+        "version": "3.11",
+        "endOfLife": false,
+        "platforms": [
+          "linux",
+          "macos",
+          "windows"
+        ]
+      },
+      {
+        "version": "3.12",
+        "endOfLife": false,
+        "platforms": [
+          "linux",
+          "macos",
+          "windows"
+        ]
+      },
+      {
+        "version": "3.13",
+        "endOfLife": false,
+        "platforms": [
+          "linux",
+          "macos",
+          "windows"
+        ]
+      },
+      {
+        "version": "3.14",
+        "endOfLife": false,
+        "platforms": [
+          "linux",
+          "macos",
+          "windows"
+        ]
+      },
+      {
+        "version": "3.15",
+        "endOfLife": false,
+        "platforms": [
+          "linux",
+          "macos",
+          "windows"
+        ]
+      }
+    ],
+    "results": [
+      {
+        "python": "3.9",
+        "platform": "linux",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.9",
+        "platform": "linux",
+        "package": "bw_graph_tools",
+        "status": "fail",
+        "reason": "TypeError: unsupported operand type(s) for |: '_SpecialForm' and 'NoneType'",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.9",
+        "platform": "linux",
+        "package": "bw_timex",
+        "status": "undeclared",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.10",
+        "platform": "linux",
+        "package": "brightway25",
+        "status": "fail",
+        "reason": "ImportError: cannot import name 'stdout_feedback_logger' from 'bw2data.logs'",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.10",
+        "platform": "linux",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.10",
+        "platform": "linux",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.11",
+        "platform": "macos",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.11",
+        "platform": "macos",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.11",
+        "platform": "macos",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.11",
+        "platform": "linux",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.11",
+        "platform": "linux",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.11",
+        "platform": "linux",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.11",
+        "platform": "windows",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.11",
+        "platform": "windows",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.11",
+        "platform": "windows",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.12",
+        "platform": "macos",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.12",
+        "platform": "macos",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.12",
+        "platform": "macos",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.12",
+        "platform": "linux",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.12",
+        "platform": "linux",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.12",
+        "platform": "linux",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.12",
+        "platform": "windows",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.12",
+        "platform": "windows",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.12",
+        "platform": "windows",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.13",
+        "platform": "macos",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.13",
+        "platform": "macos",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.13",
+        "platform": "macos",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.13",
+        "platform": "linux",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.13",
+        "platform": "linux",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.13",
+        "platform": "linux",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.13",
+        "platform": "windows",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.13",
+        "platform": "windows",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.13",
+        "platform": "windows",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.14",
+        "platform": "macos",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.14",
+        "platform": "macos",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.14",
+        "platform": "macos",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.14",
+        "platform": "linux",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.14",
+        "platform": "linux",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.14",
+        "platform": "linux",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.14",
+        "platform": "windows",
+        "package": "brightway25",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.14",
+        "platform": "windows",
+        "package": "bw_graph_tools",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.14",
+        "platform": "windows",
+        "package": "bw_timex",
+        "status": "pass",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.15",
+        "platform": "macos",
+        "package": "brightway25",
+        "status": "fail",
+        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.15",
+        "platform": "macos",
+        "package": "bw_graph_tools",
+        "status": "fail",
+        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.15",
+        "platform": "macos",
+        "package": "bw_timex",
+        "status": "fail",
+        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.15",
+        "platform": "linux",
+        "package": "brightway25",
+        "status": "fail",
+        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.15",
+        "platform": "linux",
+        "package": "bw_graph_tools",
+        "status": "fail",
+        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.15",
+        "platform": "linux",
+        "package": "bw_timex",
+        "status": "fail",
+        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.15",
+        "platform": "windows",
+        "package": "brightway25",
+        "status": "fail",
+        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.15",
+        "platform": "windows",
+        "package": "bw_graph_tools",
+        "status": "fail",
+        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      },
+      {
+        "python": "3.15",
+        "platform": "windows",
+        "package": "bw_timex",
+        "status": "fail",
+        "reason": "Failed to build `cachebox==5.2.3`: The build backend returned an error: Call to `maturin.build_wheel` failed",
+        "date": "2026-11-10",
+        "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/42921245915"
+      }
+    ]
   }
 }

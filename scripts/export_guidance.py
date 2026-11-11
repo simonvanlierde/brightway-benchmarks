@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """Export setup and solver evidence beside index.json, without fetching external data.
 
-Usage: export_guidance.py COMPAT_STATUS UI_DATA_DIR [--public-base SITE_URL].
+Usage: export_guidance.py COMPAT_STATUS UI_DATA_DIR [--public-base SITE_URL] [--probe PROBE_JSON].
+
+PROBE_JSON is probe_site.py's file; without it the guidance has no Python support table.
 """
 
 import argparse
 import json
 import math
+import re
 import sys
 from pathlib import Path, PurePosixPath
 from urllib.parse import urlencode, urljoin, urlsplit
 
 from compat_site import FILES
 from output_path import output_path
+from py_probe import PACKAGES as PROBED
 
 PUBLIC_BASE = "https://simonvanlierde.com/brightway-benchmarks/"
 PLATFORMS = {
@@ -20,6 +24,7 @@ PLATFORMS = {
     "macos-latest": ("macos", "macOS"),
     "windows-latest": ("windows", "Windows"),
 }
+PLATFORM_IDS = [key for key, _ in PLATFORMS.values()]
 # The benchmark machines are Linux x86-64 boxes (docs/running.md); results do not record an OS.
 MEASURED_ON = "linux"
 LABELS = {
@@ -77,6 +82,83 @@ def _installs(column: str, files: list[str], folder: str) -> list[dict]:
         {"manager": "uv", "command": f"uv add {PACKAGES} -c {folder}requirements.txt"},
         {"manager": "pip", "command": f"pip install {PACKAGES} -c {folder}requirements.txt"},
     ]
+
+
+# The Pythons python-probe.yml runs: the supported ones on every system, the end-of-life ones (past end of
+# life, but some releases still declare them) on Linux only. Keep both equal to that workflow's matrix.
+SUPPORTED = ("3.11", "3.12", "3.13", "3.14", "3.15")
+END_OF_LIFE = ("3.9", "3.10")
+PYTHONS = [
+    {"version": v, "endOfLife": v in END_OF_LIFE, "platforms": ["linux"] if v in END_OF_LIFE else PLATFORM_IDS}
+    for v in (*END_OF_LIFE, *SUPPORTED)
+]
+OWNER = {module: package for package, modules in PROBED.items() for module in modules}
+# What differs between runners but not in cause: a temp path after an ImportError, uv's exit code wording.
+RUNNER_NOISE = re.compile(r"(?:^| )\((?:/|[A-Za-z]:\\|exit )[^)]*\)")
+# A reason keeps its start and its tail: uv puts the cause of a resolve failure last.
+REASON_HEAD, REASON_TAIL = 200, 100
+
+
+def reason(error: str) -> str:
+    """The short cause in a probe step's ERROR: uv's build log and the probe's temp paths left out."""
+    text = " ".join(error.split()).split(" [stdout]")[0].replace(" cause: ", ": ").removeprefix("error:")
+    text = RUNNER_NOISE.sub("", text).strip() or "failed"
+    return text if len(text) <= REASON_HEAD + REASON_TAIL else f"{text[:REASON_HEAD]} … {text[-REASON_TAIL:]}"
+
+
+def _outcomes(steps: list[dict]) -> dict[str, dict]:
+    """Each package's result in one probe: its first failing step is the reason; `declared: false` is no failure.
+
+    A package with no step of its own is left out: nothing was checked for it.
+    """
+    out: dict[str, dict] = {}
+    for step in steps:
+        name = step["step"]
+        catch_all = False
+        if name.startswith("install "):
+            owners = [name.removeprefix("install ")]
+        elif name.startswith("import "):
+            owners = [OWNER.get(name.removeprefix("import "), "")]
+        elif name == "score":
+            owners = ["brightway25"]
+        else:  # the venv, or the inner run, failed: nothing was checked for any package
+            owners, catch_all = list(PROBED), True
+        for package in filter(PROBED.__contains__, owners):
+            have = out.get(package, {}).get("status")
+            if have == "fail" or (catch_all and have == "undeclared"):
+                continue
+            if step.get("declared") is False:
+                out[package] = {"status": "undeclared"}
+            elif not step["ok"]:
+                out[package] = {"status": "fail", "reason": reason(step.get("error", ""))}
+            else:
+                out.setdefault(package, {"status": "pass"})
+    return out
+
+
+def python_support(probe_path: Path | None) -> dict:
+    """{"pythonSupport": table} from probe_site.py's file, a result per package, Python and platform; {} without one."""
+    if probe_path is None or not probe_path.is_file():
+        return {}
+    results = []
+    for cell in json.loads(probe_path.read_text())["cells"]:
+        if cell["os"] not in PLATFORMS:
+            continue
+        outcomes = _outcomes(cell["steps"])
+        results += [
+            {
+                "python": cell["python"],
+                "platform": PLATFORMS[cell["os"]][0],
+                "package": package,
+                **outcomes[package],
+                "date": cell["date"],
+                "run": web_url(cell["run"]),
+            }
+            for package in PROBED
+            if package in outcomes
+        ]
+    table = {"packages": list(PROBED), "pythons": PYTHONS, "results": results}
+    return {"pythonSupport": table} if results else {}
 
 
 def _folder(public_base: str, directory: str) -> str:
@@ -187,7 +269,9 @@ def solver_comparison(data_dir: Path) -> dict | None:
     return None
 
 
-def export(status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE) -> dict | None:
+def export(
+    status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE, probe_path: Path | None = None
+) -> dict | None:
     """Write guidance.json using the supplied snapshot and already exported benchmark reports."""
     public_base = web_url(public_base).rstrip("/") + "/"
     target = data_dir / "guidance.json"
@@ -245,6 +329,7 @@ def export(status_path: Path, data_dir: Path, public_base: str = PUBLIC_BASE) ->
     out["platforms"] = [platforms[key] for key in ("linux", "macos", "windows") if key in platforms]
     if comparison := solver_comparison(data_dir):
         out["solverComparison"] = comparison
+    out.update(python_support(probe_path))
     data_dir.mkdir(parents=True, exist_ok=True)
     output_path(target).write_text(json.dumps(out, indent=2) + "\n")
     return out
@@ -255,5 +340,6 @@ if __name__ == "__main__":
     parser.add_argument("status", type=Path)
     parser.add_argument("data", type=Path)
     parser.add_argument("--public-base", default=PUBLIC_BASE)
+    parser.add_argument("--probe", type=Path)
     args = parser.parse_args()
-    export(args.status, args.data, args.public_base)
+    export(args.status, args.data, args.public_base, args.probe)

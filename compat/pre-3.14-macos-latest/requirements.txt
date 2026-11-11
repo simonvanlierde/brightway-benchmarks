@@ -47,7 +47,7 @@ jupyterlab-widgets==3.0.17
 kiwisolver==1.5.1
 loguru==0.7.3
 lxml==7.0.0b1
-markdown-it-py==4.2.0
+markdown-it-py==4.3.0
 matplotlib==3.11.2
 matplotlib-inline==0.2.2
 matrix-utils==0.9

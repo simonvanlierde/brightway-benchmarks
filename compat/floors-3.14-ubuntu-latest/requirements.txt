@@ -50,7 +50,7 @@ ipywidgets==7.5.0
 isoduration==20.11.0
 jedi==0.20.1
 jinja2==3.1.6
-jsonpointer==3.10
+jsonpointer==3.12
 jsonschema==4.0.1
 jupyter-client==8.10.0
 jupyter-core==5.9.1
@@ -61,7 +61,7 @@ jupyterlab-pygments==0.3.0
 kiwisolver==1.5.1
 loguru==0.3.0
 lxml==6.0.1
-markdown-it-py==4.2.0
+markdown-it-py==4.3.0
 markupsafe==3.0.4
 matplotlib==3.10.5
 matrix-utils==0.9

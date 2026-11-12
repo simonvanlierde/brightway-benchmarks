@@ -58,6 +58,10 @@ done < <(env | grep '^BWBENCH_' || true)
 # The repo is read-only in the box, so code asv installs cannot change what the host later
 # runs (.git, .venv, justfile, scripts/, the asv/ configs). Only these folders are writable.
 writable=".asv results site"
+# /tmp is a tmpfs, so the Brightway projects bw2data and bw_timex write (tempfile.mkdtemp, and
+# in-box.sh's HOME) never touch the overlay disk. Its pages count against the memory cap, so the
+# venvs live under .asv/. It allows exec, as tools may still run programs from /tmp.
+tmpfs_size=6g
 
 # An oss-bench without OSS_BENCH_RW would mount the repo read-write, so use it only if it has it.
 # It takes no extra mounts, so an energy run goes to docker, on BWBENCH_CPUSET's CPUs if set.
@@ -71,6 +75,11 @@ if [ "${BWBENCH_ENERGY:-}" != 1 ] && command -v oss-bench >/dev/null && grep -q 
         }
         export OSS_BENCH_NOASLR=1
     fi
+    grep -qF "rw,exec,size=\$OSS_BENCH_TMPFS" "$(command -v oss-bench)" || {
+        echo "box.sh: this oss-bench cannot put /tmp on an exec tmpfs (OSS_BENCH_TMPFS)" >&2
+        exit 2
+    }
+    export OSS_BENCH_TMPFS=$tmpfs_size
     OSS_BENCH_IMAGE=$image OSS_BENCH_RW=$writable exec oss-bench "$repo" \
         env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
 fi
@@ -97,4 +106,5 @@ exec ${gate[@]+"${gate[@]}"} docker run --rm -i --init --name "tmp-bwbench-$$" -
     --cap-drop ALL --security-opt no-new-privileges ${noaslr[@]+"${noaslr[@]}"} --pids-limit 4096 \
     ${energy[@]+"${energy[@]}"} ${energy[@]+--cpuset-cpus "$cpus"} \
     --memory "${BWBENCH_MEM:-2g}" --memory-swap "${BWBENCH_MEM:-2g}" --cpus "${BWBENCH_CPUS:-2}" \
+    --tmpfs "/tmp:rw,exec,size=$tmpfs_size,mode=1777" \
     "${mounts[@]}" -w /src "$image" env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"

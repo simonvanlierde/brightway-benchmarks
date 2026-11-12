@@ -9,6 +9,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### For readers of the history pages
 
+- The box's `/tmp` is a tmpfs from the v5 rerun on, so bw2data's `DatabaseWrite` times a write to
+  memory, about 6% faster than to the container's disk. bw_timex's times do not change
+  ([method](docs/method.md#how-the-results-stay-reproducible)).
 - Every benchmark's history starts again from the rerun after the change to generator version 5 in
   this release. Earlier times stay in the results branch's git history
   ([method](docs/method.md#how-the-results-stay-reproducible)).

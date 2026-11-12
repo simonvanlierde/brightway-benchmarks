@@ -21,7 +21,9 @@ for a in "$@"; do
         ;;
     esac
 done
-venv=/tmp/profile-venv
+# On disk beside the uv cache, not in the tmpfs /tmp, whose pages count against the box memory.
+venv=$PWD/.asv/venvs/profile
+rm -rf "$venv"
 # shellcheck disable=SC2086 # $pin, $packages and $params are lists of words
 sh scripts/codspeed-venv.sh "$venv" "$subject" $pin $packages
 # Keep in step with the pyinstrument pin in pyproject.toml.

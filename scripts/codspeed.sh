@@ -9,7 +9,9 @@
 set -eu
 subject=$1
 shift
-venv=/tmp/codspeed-venv
+# On disk beside the uv cache, not in the tmpfs /tmp, whose pages count against the box memory.
+venv=$PWD/.asv/venvs/codspeed
+rm -rf "$venv"
 sh scripts/codspeed-venv.sh "$venv" "$subject" "$@"
 
 # The runner calls whoami, and the container's uid has no passwd entry.

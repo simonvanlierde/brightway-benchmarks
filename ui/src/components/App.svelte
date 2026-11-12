@@ -270,19 +270,81 @@ function toggleSearch() {
   searchOpen = !searchOpen;
   if (searchOpen) tick().then(() => document.getElementById("benchmark-search")?.focus());
 }
-// The masthead's search shows its matches in the catalogue; Enter opens the first.
+// The masthead's search lists benchmarks and the static pages' sections as you type; Enter opens the first.
 function searchFor(text: string) {
   search = text;
-  if (page !== "explorer" || bench) go({ page: "explorer", params: [] }, false);
 }
 function openFirst(e: SubmitEvent) {
   e.preventDefault();
   const first = matching[0];
   if (first) go({ bench: first.id, params: [] });
+  else if (pageHits[0]) location.href = pageHits[0].url;
 }
-const matching = $derived(
-  index?.benchmarks.filter((b) => `${b.name} ${labelOf(b)}`.toLowerCase().includes(search.toLowerCase())) ?? [],
-);
+// Every word must appear in the benchmark's name, label or package, in any order.
+const matching = $derived.by(() => {
+  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
+  return (
+    index?.benchmarks.filter((b) => {
+      const g = index?.groups.find((x) => x.id === b.group);
+      const text = `${b.name} ${labelOf(b)} ${g?.label ?? ""} ${g?.name ?? ""}`.toLowerCase();
+      return words.every((w) => text.includes(w));
+    }) ?? []
+  );
+});
+
+// Findings, stories and About are indexed by Pagefind after the build (`pnpm build`); `pnpm dev` has no
+// index, so the search lists benchmarks only there.
+interface Pagefind {
+  options(o: { baseUrl: string }): Promise<void>;
+  debouncedSearch(text: string): Promise<{ results: { data(): Promise<PageData> }[] } | null>;
+}
+interface PageSection {
+  url: string;
+  title: string;
+  excerpt: string;
+}
+interface PageData extends PageSection {
+  meta: { title: string };
+  sub_results: PageSection[];
+}
+let pagefind: Promise<Pagefind | undefined> | undefined;
+// A runtime URL: the bundler must not look for Pagefind, which is written after it runs.
+const loadPagefind = (url: string): Promise<Pagefind> => import(/* @vite-ignore */ url);
+let pageHits = $state<(PageSection & { page: string })[]>([]);
+$effect(() => {
+  const text = search.trim();
+  if (!text) {
+    pageHits = [];
+    return;
+  }
+  pagefind ??= loadPagefind(`${import.meta.env.BASE_URL}pagefind/pagefind.js`).then(
+    async (pf) => {
+      await pf.options({ baseUrl: home });
+      return pf;
+    },
+    () => undefined,
+  );
+  let stale = false;
+  pagefind.then(async (pf) => {
+    const found = await pf?.debouncedSearch(text);
+    if (!found || stale) return;
+    const pages = await Promise.all(found.results.slice(0, 5).map((r) => r.data()));
+    if (stale) return;
+    // A page's best sections, not the page itself, when it has headings to land on.
+    pageHits = pages
+      .flatMap((d) =>
+        (d.sub_results.length ? d.sub_results.slice(0, 3) : [d]).map((x) => ({ ...x, page: d.meta.title })),
+      )
+      .slice(0, 6);
+  });
+  return () => {
+    stale = true;
+  };
+});
+// Opened from a static page's search: the words arrive in the field, with their results open.
+$effect(() => {
+  if (handedOver) document.getElementById("benchmark-search")?.focus();
+});
 const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => (index ? benchLabel(index, b) : b.name);
 // A name shared by several packages ("MultiLCA" in bw2calc and bw2calc (conda-forge)) says which one it is.
 const repeated = $derived(
@@ -351,7 +413,22 @@ $effect(() => {
   ]}
   bind:nav={masthead}
   onbrand={(e) => follow(e, { params: [] })}
-  search={{ value: search, open: searchOpen, toggle: toggleSearch, input: searchFor, submit: openFirst }}
+  search={{
+    value: search,
+    open: searchOpen,
+    toggle: toggleSearch,
+    input: searchFor,
+    submit: openFirst,
+    results: {
+      benchmarks: matching.slice(0, 6).map((b) => {
+        const next = { bench: b.id, params: [] };
+        const g = index?.groups.find((x) => x.id === b.group);
+        return { href: writeView(next), title: labelOf(b), detail: g?.label ?? g?.name ?? "", onclick: (e: MouseEvent) => follow(e, next) };
+      }),
+      more: matching.length > 6 ? { count: matching.length, href: writeView({ page: "explorer", params: [] }), onclick: (e: MouseEvent) => follow(e, { page: "explorer", params: [] }) } : undefined,
+      pages: pageHits.map((h) => ({ href: h.url, title: h.title, detail: h.page, excerpt: h.excerpt })),
+    },
+  }}
 />
 
 <div class="frame" class:fullwidth={page !== "explorer"}>
@@ -623,4 +700,5 @@ $effect(() => {
     <a href={staticHref(home, "about")}>About & privacy</a>
     {#if build}<a class="build-version" href={build.url} aria-label="Build {build.label}">{build.label}</a>{/if}
   </nav>
+  <p class="licence">© 2026 Simon van Lierde · <a href="https://github.com/simonvanlierde/brightway-benchmarks/blob/main/LICENSE">BSD 3-Clause</a></p>
 </footer>

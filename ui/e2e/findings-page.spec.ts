@@ -31,13 +31,14 @@ test("the findings page lists every finding, and each link opens what it names",
   const items = page.locator(".finding-list > li");
   // findings.toml lists them in the write-up's order, which groups them by package.
   await expect(items.getByRole("heading", { level: 4 })).toHaveText(listed.map((f) => f.title));
-  const stories = await items
-    .getByRole("link", { name: /^Read the story/ })
-    .evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
-  expect(stories).toEqual(listed.filter((f) => f.story).map((f) => `/stories/${f.story}/`));
-  for (const href of stories) expect((await request.get(href)).ok(), href).toBe(true);
+  // A headline opens its story where it has one, its write-up otherwise.
+  const titles = await items.locator("h4 a").evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
+  expect(titles).toEqual(listed.map((f) => (f.story ? `/stories/${f.story}/` : `#${f.doc}`)));
+  for (const href of titles.filter((h) => h.startsWith("/"))) expect((await request.get(href)).ok(), href).toBe(true);
   // Each history link opens the view the viewer's own finding card opens.
-  const views = await items.locator("h4 a").evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
+  const views = await items
+    .getByRole("link", { name: /^Open the history/ })
+    .evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
   expect(views).toHaveLength(published.findings.length);
   for (const [i, href] of views.entries()) {
     const want = [...(published.findings[i]?.params ?? [])];
@@ -56,12 +57,21 @@ test("the findings page carries each write-up, and a headline's link lands on it
     .locator(".writeups a")
     .evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? "").filter((h) => !/^(https?:|#|\/)/.test(h)));
   expect(relative).toEqual([]);
-  const first = listed[0] as (typeof listed)[number];
+  const first = listed.find((f) => f.story) as (typeof listed)[number];
   await page.getByRole("link", { name: `Write-up on ${first.title}` }).click();
   await expect(page).toHaveURL(new RegExp(`#${first.doc}$`));
   await expect(
     page.locator(`#${first.doc} + .finding-links`).getByRole("link", { name: "Open the history" }),
   ).toBeVisible();
+});
+
+test("a wide findings page has an outline of every write-up beside it", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("findings/");
+  const outline = page.getByRole("navigation", { name: "Findings" });
+  for (const f of listed) await expect(outline.locator(`a[href="#${f.doc}"]`), f.doc).toHaveCount(1);
+  await page.locator(".writeups h3").nth(4).scrollIntoViewIfNeeded();
+  await expect(outline.getByRole("link", { name: "Headlines" })).toBeInViewport();
 });
 
 test("Benchmarks' intro links to all findings", async ({ page }) => {

@@ -169,7 +169,7 @@ test("on a phone the build id is the footer's own last row", async ({ page }) =>
   await page.goto(MULTI);
   const build = await page.locator(".build-version").boundingBox();
   const links = await page
-    .locator(".site-footer a:not(.build-version)")
+    .locator(".site-footer nav a:not(.build-version)")
     .evaluateAll((as) => as.map((a) => a.getBoundingClientRect().bottom));
   expect(build?.y ?? 0).toBeGreaterThanOrEqual(Math.max(...links));
   expect(build?.x).toBe(

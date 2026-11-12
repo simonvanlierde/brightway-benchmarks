@@ -92,6 +92,8 @@ html {
   accent-color: var(--accent);
   line-height: 1.55;
   scrollbar-color: var(--axis) var(--page);
+  /* Setup can fit the window and Benchmarks never does: without a reserved gutter the page shifts sideways between them. */
+  scrollbar-gutter: stable;
 }
 body {
   margin: 0;
@@ -623,6 +625,8 @@ details.data {
 }
 .primary-nav a {
   display: flex;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
   border-bottom: 2px solid transparent;
   padding: 5px 0;
@@ -687,6 +691,11 @@ details.data {
   background: var(--accent);
 }
 
+.site-footer .licence {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
 .site-footer nav {
   display: flex;
   flex-wrap: wrap;
@@ -839,6 +848,14 @@ tbody tr:hover {
   color: var(--accent);
   border-bottom-color: var(--accent);
   font-weight: 650;
+}
+/* A hidden bold copy of each link's text holds its width, so the links do not move when the current page changes. */
+.primary-nav a::after {
+  content: attr(data-text) / "";
+  font-weight: 650;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
 }
 .view .home-intro h2 {
   max-width: 32ch;
@@ -1116,11 +1133,15 @@ so a chosen control needs a line of its own. */
 
 /* Masthead search: one box for the whole catalogue; a phone puts it behind an icon. */
 .masthead-search {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
   margin-left: auto;
-  flex: 0 1 18rem;
+  flex: 0 1 22rem;
+}
+.masthead-search input {
+  flex: 1;
 }
 .masthead-search label {
   color: var(--muted);
@@ -1272,6 +1293,13 @@ table.check-grid th,
 table.check-grid td {
   padding: 0;
   white-space: nowrap;
+}
+/* A cell's hidden label sits at the cell's top: at its line end it hangs below the last row and the grid scrolls vertically. */
+table.check-grid td {
+  position: relative;
+}
+table.check-grid td .sr {
+  top: 0;
 }
 .check-grid tbody th {
   padding: 6px 12px 6px 0;
@@ -1789,4 +1817,75 @@ table.check-grid td > span.undeclared {
 .view .solver-evidence tbody th a {
   display: inline-block;
   padding-block: 4px;
+}
+
+/* Masthead search results; last, so their selectors outrank the page rules they share elements with. */
+/* They drop over the page while the search has focus. */
+.search-results {
+  display: none;
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(30rem, calc(100vw - 32px));
+  max-height: min(70vh, 36rem);
+  overflow-y: auto;
+  padding: 8px 0;
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
+}
+.masthead-search:focus-within .search-results:not(.dismissed) {
+  display: block;
+}
+#masthead-search .search-results h2 {
+  margin: 8px 16px 2px;
+  color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.search-results ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+#masthead-search .search-results a {
+  display: grid;
+  gap: 2px;
+  padding: 8px 16px;
+  color: var(--ink);
+  font-size: var(--text-evidence);
+  font-weight: 600;
+  text-decoration: none;
+}
+.search-results a:is(:hover, :focus-visible) {
+  background: var(--accent-wash);
+  outline-offset: -2px;
+}
+.search-results .hit-detail {
+  color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 400;
+}
+.search-results .hit-excerpt {
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  font-weight: 400;
+  line-height: 1.5;
+}
+.search-results mark {
+  background: none;
+  color: var(--accent);
+  font-weight: 650;
+}
+#masthead-search .search-results .hit-more {
+  color: var(--accent);
+}
+.search-results .hit-none {
+  margin: 8px 16px;
+  color: var(--muted);
+  font-size: var(--text-evidence);
 }

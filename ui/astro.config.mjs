@@ -52,6 +52,8 @@ export default defineConfig({
       // Observable Plot adds two fixed <style> elements to every chart it draws. Their hashes
       // change with the Plot version. When they do, the chart tests in e2e/csp.spec.ts fail, and the
       // console error they show names the blocked style's new hash.
+      // Pagefind's search runs as WebAssembly, which the browser compiles only under 'wasm-unsafe-eval'.
+      scriptDirective: { resources: ["'self'", "'wasm-unsafe-eval'"] },
       styleDirective: {
         hashes: [
           "sha256-jSYQUrW7J0b3jPqhZP9C2Xh1PyJKHKXd4s0fpGGKrww=",

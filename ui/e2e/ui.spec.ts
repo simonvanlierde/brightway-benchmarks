@@ -364,20 +364,48 @@ test("a link to another page moves keyboard focus to that page", async ({ page }
   await expect(page.locator("#main")).toBeFocused();
 });
 
-test("the masthead search filters the catalogue and opens the first match", async ({ page }) => {
+test("the masthead search lists benchmarks and findings, and opens the first match", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("./");
-  const search = page.getByRole("searchbox", { name: "Find a benchmark" });
-  await search.fill("MultiLCA");
-  await expect(page).toHaveURL(/page=explorer/);
-  await expect(page.getByRole("navigation", { name: "Benchmarks" }).locator("li a")).toHaveCount(2);
-  await search.fill("timeraw_import_bw2calc");
-  await expect(page.getByRole("navigation", { name: "Benchmarks" }).locator("li a")).toHaveCount(2);
-  await search.fill("missing-case");
-  await expect(page.getByText("No benchmarks match")).toBeVisible();
+  const search = page.getByRole("searchbox", { name: "Search" });
+  const results = page.locator(".search-results");
+  // Words match in any order, and typing on Setup stays on Setup.
+  await search.fill("bw2calc multilca");
+  await expect(results.getByRole("link", { name: /^MultiLCA/ })).toHaveCount(2);
+  await expect(page).not.toHaveURL(/page=explorer/);
+  await search.fill("solver");
+  await expect(results.locator('a[href*="/findings/#"], a[href*="/stories/"]').first()).toBeVisible();
+  await search.fill("zzzqqq");
+  await expect(results.getByText("Nothing matches")).toBeVisible();
   await search.fill("timeraw_import_bw2calc");
   await search.press("Enter");
   await expect(page.locator(".benchmark-id")).toContainText("bench_import.timeraw_import_bw2calc");
+});
+
+test("the search results take the arrow keys and close on Escape", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("./");
+  const search = page.getByRole("searchbox", { name: "Search" });
+  await search.fill("multilca");
+  const first = page.locator(".search-results a").first();
+  await expect(first).toBeVisible();
+  await search.press("ArrowDown");
+  await expect(first).toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(search).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".search-results")).toBeHidden();
+});
+
+test("the catalogue on Benchmarks follows the search", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("?page=explorer");
+  const search = page.getByRole("searchbox", { name: "Search" });
+  const catalogue = page.getByRole("navigation", { name: "Benchmarks" });
+  await search.fill("MultiLCA");
+  await expect(catalogue.locator("li a")).toHaveCount(2);
+  await search.fill("missing-case");
+  await expect(catalogue.getByText("No benchmarks match")).toBeVisible();
 });
 
 for (const width of [390, 1440]) {
@@ -385,16 +413,15 @@ for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("./");
     // A phone keeps the search behind an icon.
-    if (width < 600) await page.getByRole("button", { name: "Show the benchmark search" }).click();
-    const search = page.getByRole("searchbox", { name: "Find a benchmark" });
+    if (width < 600) await page.getByRole("button", { name: "Show the search" }).click();
+    const search = page.getByRole("searchbox", { name: "Search" });
     await search.focus();
     await search.pressSequentially("import");
     await expect(search).toBeFocused();
     await expect(search).toHaveValue("import");
-    const catalogue = page.getByRole("navigation", { name: "Benchmarks" });
-    await expect(catalogue.locator("li a").first()).toBeVisible();
-    await search.fill("missing-case");
-    await expect(catalogue.getByText("No benchmarks match")).toBeVisible();
+    const first = page.locator(".search-results a").first();
+    await expect(first).toBeVisible();
+    await expect(first).toBeInViewport();
   });
 }
 

@@ -37,9 +37,9 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
         ...(page && !page.under ? [{ href: staticHref(home, current), text: page.text, current: true }] : []),
       ]}
     />
-    <main class={`static-page ${mainClass}`} id="main" tabindex="-1">
+    <main class={`static-page ${mainClass}`} id="main" tabindex="-1" data-pagefind-body>
       <slot />
-      <p class="back"><a href={home}>Back to Setup</a>, where the tested install sets are.</p>
+      <p class="back" data-pagefind-ignore><a href={home}>Back to Setup</a>, where the tested install sets are.</p>
     </main>
     <footer class="site-footer">
       <nav aria-label="Project">
@@ -48,6 +48,7 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
         <a href={repository}>GitHub</a>
         <a href={staticHref(home, "about")} aria-current={current === "about" ? "page" : undefined}>About & privacy</a>
       </nav>
+      <p class="licence">© 2026 Simon van Lierde · <a href={`${repository}/blob/main/LICENSE`}>BSD 3-Clause</a></p>
     </footer>
   </body>
 </html>

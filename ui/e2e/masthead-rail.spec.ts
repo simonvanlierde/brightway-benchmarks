@@ -31,7 +31,7 @@ test("Setup does not scroll sideways at 900px", async ({ page }) => {
     document.documentElement.scrollWidth,
     document.documentElement.clientWidth,
   ]);
-  expect(scroll).toBe(client);
+  expect(scroll).toBeLessThanOrEqual(client);
 });
 
 test("the phone search toggle closes while the field has text", async ({ page }) => {

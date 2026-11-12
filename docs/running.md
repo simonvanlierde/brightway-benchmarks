@@ -112,6 +112,11 @@ go to `results/` or the site's benchmark history.
 The box has 2 GB and no swap by default. A job over the limit is killed: under asv as a failed
 benchmark, otherwise with exit 137. Set `BWBENCH_MEM` to give it more.
 
+The box's `/tmp` is a tmpfs of up to 6 GB, and what lands there counts against that memory:
+HOME with bw2data's and bw_timex's projects, extracted archives, and the venvs of `just codspeed`,
+`just profile` and `just compat`. A bw2data write at the ecoinvent size needs more than the 2 GB
+default.
+
 ## Add a release
 
 1. Add it to `asv/<package>.hashes`.

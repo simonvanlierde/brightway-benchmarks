@@ -238,18 +238,22 @@ def test_box_puts_tmp_on_a_tmpfs(box: tuple[Path, Path]):
     repo, log = box
     assert run_box(repo).returncode == 0
     args = log.read_text().split("\n")
-    assert args[args.index("--tmpfs") + 1] == "/tmp:rw,size=6g,mode=1777"  # noqa: S108 - the container's /tmp, not the host's
+    assert args[args.index("--tmpfs") + 1] == "/tmp:rw,exec,size=6g,mode=1777"  # noqa: S108 - the container's /tmp, not the host's
 
 
 def test_box_asks_oss_bench_for_a_tmpfs_and_refuses_one_without_it(box: tuple[Path, Path]):
     repo, _ = box
     stub = repo / "stub" / "oss-bench"
-    stub.write_text('#!/bin/sh\n# OSS_BENCH_RW OSS_BENCH_TMPFS\necho "tmpfs ${OSS_BENCH_TMPFS-unset}" >&2\n')
+    stub.write_text(
+        '#!/bin/sh\n# OSS_BENCH_RW rw,exec,size=$OSS_BENCH_TMPFS\necho "tmpfs ${OSS_BENCH_TMPFS-unset}" >&2\n'
+    )
     stub.chmod(0o755)
     out = run_box(repo)
     assert out.returncode == 0, out.stderr
     assert "tmpfs 6g" in out.stderr
-    stub.write_text("#!/bin/sh\n# OSS_BENCH_RW only\nexit 0\n")
-    out = run_box(repo)
-    assert out.returncode == 2
-    assert "OSS_BENCH_TMPFS" in out.stderr
+    # The first oss-bench with the knob mounted it noexec, which broke the venvs made in /tmp.
+    for old in ("# OSS_BENCH_RW only", "# OSS_BENCH_RW rw,size=$OSS_BENCH_TMPFS"):
+        stub.write_text(f"#!/bin/sh\n{old}\nexit 0\n")
+        out = run_box(repo)
+        assert out.returncode == 2
+        assert "OSS_BENCH_TMPFS" in out.stderr

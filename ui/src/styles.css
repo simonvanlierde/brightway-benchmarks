@@ -92,8 +92,13 @@ html {
   accent-color: var(--accent);
   line-height: 1.55;
   scrollbar-color: var(--axis) var(--page);
-  /* Setup can fit the window and Benchmarks never does: without a reserved gutter the page shifts sideways between them. */
-  scrollbar-gutter: stable;
+}
+/* Setup can fit a desktop window and Benchmarks never does: without a reserved gutter the page shifts
+   sideways between them. A narrow window keeps the width: phones overlay their scrollbars anyway. */
+@media (min-width: 60rem) {
+  html {
+    scrollbar-gutter: stable;
+  }
 }
 body {
   margin: 0;

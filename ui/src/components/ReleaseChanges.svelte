@@ -46,7 +46,7 @@ const packageChanges = $derived(latest.filter((r) => !packageId || r.group.id ==
 const filtered = $derived(packageChanges.filter((r) => direction === "all" || r.way === direction));
 const worse = $derived(packageChanges.filter((r) => r.way === "worse").length);
 const better = $derived(packageChanges.filter((r) => r.way === "better").length);
-const flagged = $derived(filtered.filter((r) => r.way !== "better"));
+const flagged = $derived(byBenchmark(filtered.filter((r) => r.way !== "better")));
 const gains = $derived(byBenchmark(filtered.filter((r) => r.way === "better")));
 const gainCases = $derived(gains.reduce((n, g) => n + g.rows.length, 0));
 const narrowed = $derived(packageId !== "" || direction !== "all");
@@ -56,7 +56,7 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
         <header class="changes-header">
           <h2 id="changes-heading">What changed in the latest releases</h2>
           <p class="lede">
-            The latest release of each package, compared with the one before it. Only changes beyond measurement noise appear here.
+            Each package's latest release against the one before. Only changes beyond measurement noise are listed.
           </p>
         </header>
         <div class="overview-toolbar">
@@ -81,7 +81,7 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
           <div class="scroll gap" role="region" aria-labelledby="flagged-h" use:scrollable>
             <table class="latest-table responsive-table">
               <caption>
-                Largest first, each beside the noise it exceeded.
+                Largest first, each beside the noise it exceeded; one row per benchmark and machine.
               </caption>
               <thead>
                 <tr>
@@ -93,7 +93,9 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
                 </tr>
               </thead>
               <tbody>
-                {#each flagged as row, i (i)}
+                {#each flagged as g (g.bench.id + g.rows[0]?.change.machine)}
+                  {@const row = g.rows[0]}
+                  {#if row}
                   {@const next = { bench: row.bench.id, params: row.params, measure: row.change.measure, machine: row.change.machine }}
                   <tr>
                     <th scope="row" class="wrap">
@@ -104,20 +106,31 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
                       {#if row.params.length}<br /><span class="quiet">{row.params.join(", ")}</span>{/if}
                     </th>
                     <td class="num" data-label="Change">
-                      <span class="delta {row.way}">{percent(row.change.ratio)} {row.way}</span><br />
-                      <span class="quiet">beyond {noiseText(row.change)} noise</span>
+                      <span class="delta {row.way}">{percentRange(g.rows)} {row.way}</span>
+                      {#if g.rows.length === 1}<br /><span class="quiet">beyond {noiseText(row.change)} noise</span>{/if}
                     </td>
                     <td data-label="History"><Sparkline points={history(row)} mark={row.change.commit} /></td>
-                    <td class="wrap" data-label="Environment">{row.env}{#if index.machines.length > 1}<br /><span class="quiet">{index.machines.find((m) => m.id === row.change.machine)?.name ?? row.change.machine}</span>{/if}</td>
+                    <td class="wrap" data-label="Environment">
+                      {#if g.rows.length === 1}{row.env}
+                      {:else}
+                        <details class="cases">
+                          <summary>{g.rows.length} environments</summary>
+                          <ul>{#each g.rows as r, i (i)}<li>{percent(r.change.ratio)} · {r.env}{#if r.params.join() !== row.params.join()} · {r.params.join(", ")}{/if} <span class="quiet">beyond {noiseText(r.change)} noise</span></li>{/each}</ul>
+                        </details>
+                      {/if}
+                      {#if index.machines.length > 1}<br /><span class="quiet">{index.machines.find((m) => m.id === row.change.machine)?.name ?? row.change.machine}</span>{/if}
+                    </td>
                     <td class="nowrap" data-label="Releases">{row.from} → {row.to}</td>
                   </tr>
+                  {/if}
                 {/each}
               </tbody>
             </table>
           </div>
           {/if}
           {#if gains.length}
-          <h3 id="gains-h">Improvements</h3>
+          <details class="gains" open={direction === "better"}>
+          <summary><h3 id="gains-h">Improvements</h3> <span class="quiet">{gains.length} {gains.length === 1 ? "benchmark" : "benchmarks"}, {gainCases} {gainCases === 1 ? "case" : "cases"}</span></summary>
           <div class="scroll gap" role="region" aria-labelledby="gains-h" use:scrollable>
             <table class="latest-table gains-table responsive-table">
               <caption>
@@ -164,6 +177,7 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
               </tbody>
             </table>
           </div>
+          </details>
           {/if}
         {/if}
 </section>

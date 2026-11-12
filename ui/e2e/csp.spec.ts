@@ -56,7 +56,7 @@ test("the search form on a static page submits under the policy", async ({ page 
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/\?page=explorer&q=multi$/);
   // The explorer has loaded its data and drawn, so a block on the new page would have shown by now.
-  await expect(page.locator(".findings h3 a").first()).toBeVisible();
+  await expect(page.locator(".latest-table tbody th a").first()).toBeVisible();
   await page.waitForLoadState("networkidle");
   expect(problems).toEqual([]);
 });

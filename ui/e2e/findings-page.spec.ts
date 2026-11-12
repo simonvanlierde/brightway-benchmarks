@@ -64,9 +64,10 @@ test("the findings page carries each write-up, and a headline's link lands on it
   ).toBeVisible();
 });
 
-test("Benchmarks' finding cards end with one link to all findings", async ({ page }) => {
+test("Benchmarks' intro links to all findings", async ({ page }) => {
   await page.goto("?page=explorer");
-  const all = page.locator(".findings").getByRole("link", { name: "All findings" });
+  const all = page.locator(".overview-intro").getByRole("link", { name: "what the benchmarks found" });
   await expect(all).toHaveCount(1);
   await expect(all).toHaveAttribute("href", "/findings/");
+  await expect(page.locator(".findings")).toHaveCount(0);
 });

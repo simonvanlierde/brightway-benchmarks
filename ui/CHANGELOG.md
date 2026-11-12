@@ -15,7 +15,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Setup is shorter: the finding cards moved to the Findings page, the check descriptions fold under "What each check covers", and the Python versions table takes one row for a package that gives the same result on every system ([decision 0006](../docs/decisions/0006-footer-and-setup-without-findings.md)).
+- Setup is about installing ([decision 0006](../docs/decisions/0006-setup-installs.md)): the solver comparison, the Python versions table and the release changes moved to Benchmarks, and a short "From the benchmarks" list links to them. The check grid sits beside the install set, the check descriptions fold under "What each check covers", and the files, package versions and "Copy latest" fold under "What's in this set". Setup opens on the visitor's own operating system.
+- The Python versions table takes one row for a package that gives the same result on every system.
+- Benchmarks drops its finding cards for a link to Findings, groups each regression's environments into one row, and folds the improvements behind their count.
 - The footer links Method, Cite, GitHub and About only; the stories are reached from Findings.
 - A finding's write-up link in `index.json` opens the site's `/findings/` page, not the Markdown on GitHub.
 - PyPardiso has one colour on every chart, story and preview card: its conda-forge environments are labelled "PyPardiso", not "PyPardiso, MKL", as it only runs on MKL. UMFPACK's BLAS variants keep their own colours.

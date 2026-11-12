@@ -29,6 +29,8 @@ const attr = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").r
 
 // docs/findings.md is the write-up, rendered here in full. Its title gives way to the page's own;
 // its links to the repository's files (method.md, ../benchmarks/...) open on GitHub.
+let section = "Findings";
+let count = 0;
 let doc = (await compiledContent())
   .replace(/<h1[^>]*>[\s\S]*?<\/h1>/, "")
   .replace(
@@ -36,7 +38,16 @@ let doc = (await compiledContent())
     (_, rel) => `href="${new URL(rel, `${repository}/blob/main/docs/`)}"`,
   )
   // A wide table scrolls in its own box, as the viewer's do, so the page never scrolls sideways.
-  .replace(/<table>/g, '<div class="scroll" role="region" tabindex="0" aria-label="Table, scrolls sideways"><table>')
+  // Each box is named after its section, so no two regions share a label.
+  .replace(/<h3 id="[^"]*">([\s\S]*?)<\/h3>|<table>/g, (match, heading) => {
+    if (heading !== undefined) {
+      section = heading.replace(/<[^>]+>/g, "");
+      count = 0;
+      return match;
+    }
+    count += 1;
+    return `<div class="scroll" role="region" tabindex="0" aria-label="${section.replaceAll('"', "&quot;")}, table ${count}"><table>`;
+  })
   .replace(/<\/table>/g, "</table></div>");
 const at = (f: Finding) => doc.indexOf(`<h3 id="${f.doc}"`);
 const missing = findings.filter((f) => at(f) < 0).map((f) => f.doc);
@@ -78,7 +89,7 @@ const headlines = packages
   imageAlt="Bar chart: one bw2calc IterativeLCA score took 45.0 s with 3.0.0 and 9.04 s with 3.1.0."
 >
   <h1>What the benchmarks found</h1>
-  <p class="lede">The headlines first, by package; each opens the release history that shows it. The write-ups below say how each was measured and how to rerun it, and a story tells a finding in full.</p>
+  <p class="lede">The headlines come first, grouped by package. Each opens the history that shows it. The write-ups below say how each was measured and how to rerun it.</p>
 
   <div class="findings-main">
   <section class="headlines" aria-labelledby="headlines-heading">

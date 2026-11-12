@@ -40,8 +40,8 @@ test("the chart's code is requested with the benchmark's reports, before they ar
 test("a scroll region takes keyboard focus only while it has something to scroll", async ({ page }) => {
   const focusable = () => page.locator('[role="region"][tabindex="0"]');
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("?platform=linux");
-  await page.locator(".python-support").waitFor();
+  await page.goto("?page=explorer");
+  await page.locator("#python-support").waitFor();
   await expect(focusable()).toHaveCount(0);
   await page.setViewportSize({ width: 320, height: 800 });
   await expect(focusable()).toHaveCount(1);
@@ -79,14 +79,15 @@ test("without guidance, Setup's heading is the site's name, as the masthead show
   await expect(page.getByRole("main").getByRole("heading", { level: 2 }).first()).toHaveText("Brightway Benchmarks");
 });
 
-test("Setup's intro quotes the solver table's own figures", async ({ page }) => {
-  await page.goto("");
+test("Setup's solver nudge quotes the solver table's own figures", async ({ page }) => {
+  await page.goto("?page=explorer");
   const cells = page.locator(".solver-evidence tbody td.num");
   await expect(cells).toHaveCount(3);
   const [umfpack, , superlu] = await cells.allTextContents();
-  const intro = page.locator(".home-intro p").first();
-  await expect(intro).toContainText(`takes ${superlu}`);
-  await expect(intro).toContainText(`it takes ${umfpack}`);
+  await page.goto("");
+  const nudge = page.locator(".nudges li").filter({ hasText: "Which solver to install" });
+  await expect(nudge).toContainText(`${superlu} with SciPy's SuperLU`);
+  await expect(nudge).toContainText(`${umfpack} with UMFPACK`);
 });
 
 test("the skip link stays out of view at a larger text size until it has focus", async ({ page }) => {
@@ -104,6 +105,7 @@ test("the skip link stays out of view at a larger text size until it has focus",
 test("Copy and Copy latest are drawn as one kind of button", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("?platform=linux");
+  await page.locator(".package-pins summary").click();
   const look = (name: string) =>
     page.getByRole("button", { name, exact: true }).evaluate((b) => {
       const s = getComputedStyle(b);

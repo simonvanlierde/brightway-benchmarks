@@ -30,7 +30,7 @@ const tone = { pass: "better", fail: "worse", undeclared: "undeclared" } as cons
 </script>
 
 {#if table}
-  <section class="python-support" aria-labelledby="{id}-heading">
+  <section class="python-support" {id} aria-labelledby="{id}-heading">
     <div class="checks-heading">
       <h2 id="{id}-heading">{heading}</h2>
       {#if table.checked}<small class="support-date">Checked {dateLabel(table.checked)}{#if table.run}{" · "}<a href={table.run}>open the run</a>{/if}</small>{/if}
@@ -40,7 +40,7 @@ const tone = { pass: "better", fail: "worse", undeclared: "undeclared" } as cons
     {:else}
       {@const lead = supportLead(table, label)}
       {#if lead}<p class="support-lead">{lead}</p>{/if}
-      <p class="coverage-text">Does your Python version work? A daily check installs each package on each Python, imports it and runs a small LCA. Failures stay on the table with the error.</p>
+      <p class="coverage-text">A daily check installs each package on each Python, imports it and runs a small LCA. A failure stays in the table with its error.</p>
     {/if}
     <div class="scroll" role="region" aria-label="{heading} grid" use:scrollable>
       <table class="check-grid support-grid">

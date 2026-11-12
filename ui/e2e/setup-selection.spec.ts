@@ -130,9 +130,9 @@ test("the OS select keeps focus when the new platform has no passing set", async
 
 test("a failed test-suite result beside the command says what it covers", async ({ page }) => {
   await page.goto("?platform=linux");
-  await expect(page.locator(".result-line")).toContainText("Upstream test suites · Python 3.12 Failed");
+  await expect(page.locator(".result-line")).toContainText("Failed Upstream test suites · Python 3.12");
   await expect(page.locator(".install-set")).toContainText(
-    "Upstream test suites run each package's own tests, which covers more than the calculation checks, and did not pass",
+    "Upstream test suites did not pass on the latest releases. They run each package's own tests, which cover more than these calculation checks.",
   );
   await expect(page.locator(".install-set")).toContainText("it is the last set that passed the Latest releases check");
 });

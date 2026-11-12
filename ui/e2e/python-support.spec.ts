@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
-test("Setup shows each package on Python 3.11 to 3.15 with the failure and its reason", async ({ page }) => {
-  await page.goto("");
-  const section = page.locator(".python-support");
+test("Benchmarks shows each package on Python 3.11 to 3.15 with the failure and its reason", async ({ page }) => {
+  await page.goto("?page=explorer");
+  const section = page.locator("#python-support");
   const table = page.getByRole("region", { name: "Python versions grid" }).getByRole("table");
   // One header row; each version's header says Python to a screen reader.
   await expect(table.getByRole("columnheader")).toHaveText([
@@ -36,8 +36,20 @@ test("Setup shows each package on Python 3.11 to 3.15 with the failure and its r
   // The quoted name shows as code, without the backticks.
   await expect(reasons.locator("dd")).toContainText("Failed to build cachebox==5.2.3:");
   await expect(reasons.locator("dd code").first()).toHaveText("cachebox==5.2.3");
-  // The end-of-life lines are the maintainers' view.
-  await expect(page.getByRole("heading", { name: "End-of-life Pythons" })).toHaveCount(0);
+  // The end-of-life lines are the maintainers' view, a section of their own.
+  await expect(page.locator("#eol-python")).toBeVisible();
+});
+
+test("Setup keeps one Python line under the selects and no table", async ({ page }) => {
+  await page.goto("");
+  const note = page.locator(".python-note");
+  await expect(note).toContainText("3.11 to 3.14 work on every system. 3.15 does not install yet");
+  await expect(note.getByRole("link", { name: "All Python versions" })).toHaveAttribute(
+    "href",
+    "?page=explorer#python-support",
+  );
+  await expect(page.locator("#python-support")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Python versions grid" })).toHaveCount(0);
 });
 
 test("Benchmarks shows the end-of-life Pythons on Linux", async ({ page }) => {
@@ -46,7 +58,7 @@ test("Benchmarks shows the end-of-life Pythons on Linux", async ({ page }) => {
   await expect(table.getByRole("columnheader")).toHaveText(["Package", "Python 3.9", "Python 3.10"]);
   await expect(table.getByRole("link", { name: "bw_graph_tools, Python 3.9: Failed" })).toBeVisible();
   await expect(table.getByRole("link", { name: "brightway25, Python 3.10: Failed" })).toBeVisible();
-  await expect(page.locator(".python-support .support-failures")).toContainText("stdout_feedback_logger");
+  await expect(page.locator("#eol-python .support-failures")).toContainText("stdout_feedback_logger");
   // No release of bw_timex declares 3.9: not a failure, so no failure line, and the legend says so.
   // Not a link and not a smaller font: the same cell as Passed, in the muted tone.
   const undeclared = table.getByRole("row").filter({ hasText: "bw_timex" }).getByRole("cell").first();
@@ -55,7 +67,7 @@ test("Benchmarks shows the end-of-life Pythons on Linux", async ({ page }) => {
   const size = (cell: typeof undeclared) => cell.locator("span").evaluate((e) => getComputedStyle(e).font);
   const passed = table.getByRole("row").filter({ hasText: "bw_timex" }).getByRole("cell").nth(1);
   expect(await size(undeclared)).toBe(await size(passed));
-  await expect(page.locator(".python-support .support-failures")).not.toContainText("bw-timex");
+  await expect(page.locator("#eol-python .support-failures")).not.toContainText("bw-timex");
   await expect(page.getByText("Not declared: no release of the package supports that Python")).toBeVisible();
 });
 
@@ -65,7 +77,7 @@ test("a result the data lacks shows as not checked, in the full grid", async ({ 
     (r: { python: string; platform: string }) => !(r.python === "3.12" && r.platform === "macos"),
   );
   await page.route("**/data/guidance.json", (route) => route.fulfill({ json: data }));
-  await page.goto("");
+  await page.goto("?page=explorer");
   const table = page.getByRole("region", { name: "Python versions grid" }).getByRole("table");
   // Each package now differs between systems on 3.12, so each takes a row per system again.
   await expect(table.getByRole("row")).toHaveCount(10);
@@ -73,24 +85,29 @@ test("a result the data lacks shows as not checked, in the full grid", async ({ 
   await expect(row.getByRole("cell")).toHaveCount(5);
   await expect(row.getByRole("cell").nth(1)).toHaveText(/–\s*not checked/);
   await expect(row.getByRole("cell").nth(1).getByRole("link")).toHaveCount(0);
-  await expect(page.locator(".support-lead")).toContainText("3.12 works where checked; not checked on macOS.");
+  await expect(page.locator("#python-support .support-lead")).toContainText(
+    "3.12 works where checked; not checked on macOS.",
+  );
 });
 
-test("with no pass or fail, Setup draws no empty lead line", async ({ page }) => {
+test("with no pass or fail, Benchmarks draws no empty lead line and Setup no Python note", async ({ page }) => {
   const data = JSON.parse(await readFile(new URL("../test/fixtures/real/guidance.json", import.meta.url), "utf8"));
   data.pythonSupport.results = data.pythonSupport.results.map(({ reason: _, ...r }: { reason?: string }) => ({
     ...r,
     status: "undeclared",
   }));
   await page.route("**/data/guidance.json", (route) => route.fulfill({ json: data }));
+  await page.goto("?page=explorer");
+  await expect(page.locator("#python-support table")).toBeVisible();
+  await expect(page.locator("#python-support .support-lead")).toHaveCount(0);
   await page.goto("");
-  await expect(page.locator(".python-support table")).toBeVisible();
-  await expect(page.locator(".python-support .support-lead")).toHaveCount(0);
+  await expect(page.locator(".install-set")).toBeVisible();
+  await expect(page.locator(".python-note")).toHaveCount(0);
 });
 
 test("on a phone the table breaks only between words and the page does not scroll sideways", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
-  await page.goto("");
+  await page.goto("?page=explorer");
   const grid = page.getByRole("region", { name: "Python versions grid" });
   await grid.scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

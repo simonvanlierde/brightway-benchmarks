@@ -36,11 +36,11 @@ import {
 } from "../lib/history";
 import { staticHref, VIEWER_PAGES } from "../lib/pages";
 import { scrollable } from "../lib/scrollable";
-import Findings from "./Findings.svelte";
 import Masthead from "./Masthead.svelte";
 import PythonSupport from "./PythonSupport.svelte";
 import ReleaseChanges from "./ReleaseChanges.svelte";
 import SetupHome from "./SetupHome.svelte";
+import SolverComparison from "./SolverComparison.svelte";
 
 type Axis = BenchmarkIndex["benchmarks"][number]["params"][number];
 
@@ -55,6 +55,11 @@ let {
   home?: string;
 } = $props();
 const story = $derived(staticHref(home, "solver-choice"));
+// A link such as Setup's "All Python versions" names a section of the overview, which draws after the data loads.
+$effect(() => {
+  if (view.page === "explorer" && !view.bench && guidance && location.hash)
+    tick().then(() => document.getElementById(location.hash.slice(1))?.scrollIntoView());
+});
 const findingsPage = $derived(staticHref(home, "findings"));
 
 // Fetched once a benchmark is chosen, so the start page does not load Plot. A failed fetch is forgotten,
@@ -403,13 +408,13 @@ $effect(() => {
     <main class="view" id="main" tabindex="-1">
       {#if guidanceError && page === "home"}<div class="empty" role="status"><p>Setup guidance could not be loaded. Benchmark histories remain available.</p>{@render technical(guidanceError)}</div>{/if}
       {#if page === "home"}
-        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} {story} name={siteName} />
+        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} name={siteName} findings={findingsPage} />
       {:else if !bench}
         {#if view.bench}<p class="empty" role="status">This benchmark is not in the current data. Choose one from the catalogue.</p>{/if}
-        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Choose a finding, a change or a benchmark from the catalogue for its history.</p><p class="lede"><a href={story}>Your solver choice can change a Brightway score's time by 5 times or more</a>: the story behind the solver numbers.</p></header>
-        <Findings {index} {follow} all={findingsPage} />
+        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Open a change or a benchmark from the catalogue for its history, or read <a href={findingsPage}>what the benchmarks found</a>.</p></header>
+        {#if guidance?.solverComparison}<SolverComparison comparison={guidance.solverComparison} {story} />{/if}
         <ReleaseChanges {index} {view} {go} {follow} loaded={overview} />
-        {#if guidance}<PythonSupport {guidance} eol />{/if}
+        {#if guidance}<PythonSupport {guidance} /><PythonSupport {guidance} eol />{/if}
 
       {:else}
         <header class="bench-header">

@@ -1889,6 +1889,9 @@ table.check-grid td > span.undeclared {
 #masthead-search .search-results .hit-more {
   color: var(--accent);
 }
+.search-results ul[aria-busy="true"] {
+  opacity: 0.55;
+}
 .search-results .hit-none {
   margin: 8px 16px;
   color: var(--muted);

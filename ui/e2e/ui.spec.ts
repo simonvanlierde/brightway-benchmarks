@@ -364,10 +364,15 @@ test("a link to another page moves keyboard focus to that page", async ({ page }
   await expect(page.locator("#main")).toBeFocused();
 });
 
-test("the masthead search lists benchmarks and findings, and opens the first match", async ({ page }) => {
+/** The viewer at a desktop width, once the app has replaced the masthead drawn before it mounts. */
+async function openViewer(page: Page, path = "./") {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("./");
+  await page.goto(path);
   await page.locator("#main").waitFor();
+}
+
+test("the masthead search lists benchmarks and findings, and opens the first match", async ({ page }) => {
+  await openViewer(page);
   const search = page.getByRole("searchbox", { name: "Search" });
   const results = page.locator(".search-results");
   // Words match in any order, and typing on Setup stays on Setup.
@@ -384,9 +389,7 @@ test("the masthead search lists benchmarks and findings, and opens the first mat
 });
 
 test("the search results take the arrow keys and close on Escape", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("./");
-  await page.locator("#main").waitFor();
+  await openViewer(page);
   const search = page.getByRole("searchbox", { name: "Search" });
   await search.fill("multilca");
   const first = page.locator(".search-results a").first();
@@ -404,9 +407,7 @@ test("the search results take the arrow keys and close on Escape", async ({ page
 });
 
 test("Enter does not open a page hit left from the previous words", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("./");
-  await page.locator("#main").waitFor();
+  await openViewer(page);
   const search = page.getByRole("searchbox", { name: "Search" });
   await search.fill("solver");
   await expect(page.locator('.search-results a[href*="/stories/"]').first()).toBeVisible();
@@ -417,10 +418,36 @@ test("Enter does not open a page hit left from the previous words", async ({ pag
   await expect(page).not.toHaveURL(/stories|findings/);
 });
 
+test("Enter waits for Pagefind when no benchmark matches the words", async ({ page }) => {
+  await openViewer(page);
+  const search = page.getByRole("searchbox", { name: "Search" });
+  // A cold search: Pagefind has not loaded yet when Enter is pressed.
+  await search.fill("solver");
+  await search.press("Enter");
+  await expect(page).toHaveURL(/\/(stories|findings)\//);
+});
+
+test("a search settles on no page hits when Pagefind's fragments fail to load", async ({ page }) => {
+  await page.route("**/pagefind/fragment/**", (route) => route.abort());
+  await openViewer(page);
+  await page.getByRole("searchbox", { name: "Search" }).fill("solver");
+  await expect(page.locator(".search-results").getByText("Nothing matches")).toBeVisible();
+  await expect(page.locator("#search-count")).toHaveText("No results");
+});
+
+test("page hits stay in the list while Pagefind answers the next keystroke", async ({ page }) => {
+  await openViewer(page);
+  const search = page.getByRole("searchbox", { name: "Search" });
+  const pages = page.locator(".search-results h2", { hasText: "Findings and pages" });
+  await search.fill("sol");
+  await expect(pages).toBeVisible();
+  await search.press("v");
+  // Sampled at once, before Pagefind's debounce has run.
+  expect(await pages.count()).toBe(1);
+});
+
 test("the search's status line is in the page before anyone types, and waits for Pagefind", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("./");
-  await page.locator("#main").waitFor();
+  await openViewer(page);
   const status = page.locator("#search-count");
   await expect(status).toHaveAttribute("role", "status");
   await expect(status).toHaveText("");
@@ -429,9 +456,7 @@ test("the search's status line is in the page before anyone types, and waits for
 });
 
 test("a page hit's excerpt leaves out the hidden link text", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("./");
-  await page.locator("#main").waitFor();
+  await openViewer(page);
   await page.getByRole("searchbox", { name: "Search" }).fill("score");
   const excerpts = page.locator(".search-results .hit-excerpt");
   await expect(excerpts.first()).toBeVisible();
@@ -439,9 +464,7 @@ test("a page hit's excerpt leaves out the hidden link text", async ({ page }) =>
 });
 
 test("the catalogue on Benchmarks follows the search", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("?page=explorer");
-  await page.locator("#main").waitFor();
+  await openViewer(page, "?page=explorer");
   const search = page.getByRole("searchbox", { name: "Search" });
   const catalogue = page.getByRole("navigation", { name: "Benchmarks" });
   await search.fill("MultiLCA");

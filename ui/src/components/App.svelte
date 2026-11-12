@@ -275,8 +275,19 @@ function openFirst(e: SubmitEvent) {
   e.preventDefault();
   const first = matching[0];
   if (first) go({ bench: first.id, params: [] });
-  else if (pageHits[0]) location.href = pageHits[0].url;
+  // No benchmark matches: open the first page hit for these words, once Pagefind has them.
+  else enterFor = search.trim();
 }
+let enterFor = $state("");
+$effect(() => {
+  if (!enterFor) return;
+  // Typing on cancels the pending Enter.
+  if (enterFor !== search.trim()) enterFor = "";
+  else if (pagesSettled) {
+    enterFor = "";
+    if (pageResult.hits[0]) location.href = pageResult.hits[0].url;
+  }
+});
 // Every word must appear in the benchmark's name, label or package, in any order.
 const matching = $derived.by(() => {
   const words = search.toLowerCase().split(/\s+/).filter(Boolean);
@@ -307,39 +318,35 @@ interface PageData extends PageSection {
 let pagefind: Promise<Pagefind | undefined> | undefined;
 // A runtime URL: the bundler must not look for Pagefind, which is written after it runs.
 const loadPagefind = (url: string): Promise<Pagefind> => import(/* @vite-ignore */ url);
-// The hits name the words they answer: while Pagefind waits out its debounce, the last words' hits are not shown.
+// The hits name the words they answer. While Pagefind works on new words the last hits stay in view, marked busy,
+// but Enter and the status line wait for the answer.
 let pageResult = $state<{ text: string; hits: (PageSection & { page: string })[] }>({ text: "", hits: [] });
 const pagesSettled = $derived(pageResult.text === search.trim());
-const pageHits = $derived(pagesSettled ? pageResult.hits : []);
 $effect(() => {
   const text = search.trim();
-  if (!text) {
-    pageResult = { text, hits: [] };
-    return;
-  }
-  pagefind ??= loadPagefind(`${import.meta.env.BASE_URL}pagefind/pagefind.js`).then(
-    async (pf) => {
+  if (!text) return;
+  pagefind ??= loadPagefind(`${import.meta.env.BASE_URL}pagefind/pagefind.js`)
+    .then(async (pf) => {
       await pf.options({ baseUrl: home });
       return pf;
-    },
-    () => undefined,
-  );
+    })
+    .catch(() => undefined);
   let stale = false;
   pagefind.then(async (pf) => {
-    // Without an index (`pnpm dev`, or a failed load) the pages have nothing to add.
-    const found = pf ? await pf.debouncedSearch(text) : { results: [] };
-    if (!found || stale) return;
-    const pages = await Promise.all(found.results.slice(0, 5).map((r) => r.data()));
-    if (stale) return;
-    // A page's best sections, not the page itself, when it has headings to land on.
-    pageResult = {
-      text,
-      hits: pages
+    let hits: typeof pageResult.hits = [];
+    // Without an index (`pnpm dev`) or after a failed fetch, the pages have nothing to add.
+    try {
+      const found = pf ? await pf.debouncedSearch(text) : { results: [] };
+      if (!found) return; // superseded by newer words
+      const pages = await Promise.all(found.results.slice(0, 5).map((r) => r.data()));
+      // A page's best sections, not the page itself, when it has headings to land on.
+      hits = pages
         .flatMap((d) =>
           (d.sub_results.length ? d.sub_results.slice(0, 3) : [d]).map((x) => ({ ...x, page: d.meta.title })),
         )
-        .slice(0, 6),
-    };
+        .slice(0, 6);
+    } catch {}
+    if (!stale) pageResult = { text, hits };
   });
   return () => {
     stale = true;
@@ -431,7 +438,7 @@ $effect(() => {
         return { href: writeView(next), title: labelOf(b), detail: g?.label ?? g?.name ?? "", onclick: (e: MouseEvent) => follow(e, next) };
       }),
       more: matching.length > 6 ? { count: matching.length, href: writeView({ page: "explorer", params: [] }), onclick: (e: MouseEvent) => follow(e, { page: "explorer", params: [] }) } : undefined,
-      pages: pageHits.map((h) => ({ href: h.url, title: h.title, detail: h.page, excerpt: h.excerpt })),
+      pages: pageResult.hits.map((h) => ({ href: h.url, title: h.title, detail: h.page, excerpt: h.excerpt })),
       pending: !pagesSettled,
     },
   }}

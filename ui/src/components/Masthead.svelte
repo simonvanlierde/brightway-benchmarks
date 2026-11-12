@@ -119,7 +119,8 @@ function picked(e: MouseEvent, hit: { onclick?: (e: MouseEvent) => void }) {
             {/if}
             {#if r.pages.length}
               <h2>Findings and pages</h2>
-              <ul>
+              <!-- While Pagefind answers new words, the last words' hits stay, dimmed, so the list does not jump. -->
+              <ul aria-busy={r.pending}>
                 {#each r.pages as hit (hit.href)}
                   <!-- Pagefind's excerpt: text from this site's own pages, with the matches in <mark>. -->
                   <li><a href={hit.href} onclick={(e) => picked(e, hit)}>{hit.title}{#if hit.detail !== hit.title}<span class="hit-detail">{hit.detail}</span>{/if}{#if hit.excerpt}<span class="hit-excerpt">{@html hit.excerpt}</span>{/if}</a></li>

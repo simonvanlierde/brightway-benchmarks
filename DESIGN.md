@@ -109,7 +109,11 @@ Use the system sans stack for headings, controls and tables. Page titles and the
 
 Below the titles, text uses seven roles on a 15px root: meta 0.8rem, 12px (dates, build ids, captions, labels), data 0.875rem (tables, buttons, navigation, catalogue), evidence 0.9375rem, 14px (what a reader acts on: change evidence, check-grid headers, install notes, finding text, parameter notes and the chart's reading guide), control 0.9375rem (selects and fixed parameter values), body 1rem (ledes, changes, benchmark names), subhead 1.35rem (sections inside a view and the selected-check pane) and section 1.25rem (Setup's and Benchmarks' sections). Weight separates roles of the same size; parameter names are muted so their values lead.
 
-Monospace belongs to original identifiers and environment specifications. Measurements use tabular numerals and right-aligned numeric columns. Solver timing values are prominent. Keep explanatory prose within about 68 characters per line where space allows.
+Monospace belongs to original identifiers and environment specifications. Measurements use tabular numerals and right-aligned numeric columns. Solver timing values are prominent.
+
+Story charts sit between horizontal rules, with the evidence link after the rows. On hover-capable devices, a row takes the selection wash to connect its label, value and bar without motion.
+
+Static reading pages use 1.0625rem body text with 1.7 line height and a 65ch prose measure. Section headings have more space above than below; headings balance and prose wraps with `pretty`. Charts and tables retain the full page width.
 
 ## Layout
 
@@ -117,7 +121,7 @@ Breakpoints and sizes live in [ui/src/styles.css](ui/src/styles.css); this secti
 
 The compact masthead links Setup, Benchmarks and Findings (decision 0005) and holds benchmark search and a sun/moon theme toggle. The Findings page groups the headline findings by package in a two-column ledger (package left, findings right), then renders the write-ups of `docs/findings.md` below (decision 0006); a story marks Findings as the current item, and the Benchmarks intro links it. A benchmark view that shows a finding names it in a pale-blue band under its description. Method, Cite, GitHub, About and build identity sit in the footer, the build id on its own row on phones; check freshness sits beside Checks. Setup is about installing (decision 0006): the title and the install column (operating-system, Python and package-manager selects, a one-line Python summary, check results and the install command) on the left; the check grid and a quiet "From the benchmarks" list on the right, divided by a hairline. That list's few lines (the solver times, the largest release change each way, the Findings page) are the way into the evidence, which lives on Benchmarks. As the screen narrows, the masthead becomes its own scrolling row that keeps the current page in view, and the two columns stack.
 
-Benchmarks content shares one measure of 72rem, so the toolbar, findings, tables and chart end on one right edge; static pages share a centred 46rem measure and their tables run its width. Each page's main content fits a 1440 by 900 laptop screen: the install command and its result line on Setup, the solver comparison on Benchmarks, the whole chart on a benchmark. A browser test checks it.
+Benchmarks content shares one measure of 72rem, so the toolbar, findings, tables and chart end on one right edge; static pages share a centred 46rem frame, with prose capped at 65ch and tables spanning the frame. Narrow static-page mastheads give navigation its own row so every link stays visible without JavaScript. Each page's main content fits a 1440 by 900 laptop screen: the install command and its result line on Setup, the solver comparison on Benchmarks, the whole chart on a benchmark. A browser test checks it.
 
 Only Benchmarks has a catalogue rail, sticky on wide screens and a disclosure on narrow ones; inside it each package is a collapsible group and the current benchmark's group is open. Filters sit directly above the evidence they control. Parameter explanations stay under their controls on desktop and use a disclosure on phones.
 

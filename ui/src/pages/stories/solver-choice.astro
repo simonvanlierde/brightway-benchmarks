@@ -133,37 +133,19 @@ const check = `python -c "import bw2calc as bc; print('PyPardiso' if bc.PYPARDIS
 </script>
 
 <style>
-  :global(.story) h1 {
-    font-size: clamp(1.8rem, 4vw, 2.4rem);
-    letter-spacing: -0.03em;
-  }
-  :global(.story) h2 {
-    font-size: 1.25rem;
-    margin: 32px 0 10px;
-  }
-  :global(.story) p {
-    margin: 12px 0;
-  }
-  :global(.story) .lede {
-    color: var(--ink);
-    font-size: 1.0625rem;
-  }
   .install,
   .setup {
     border: 1px solid var(--line);
     padding: 4px 20px;
     margin: 24px 0;
   }
-  /* The block a reader acts on: a heavier frame, and each command on its own line with Copy. */
   .install {
     background: var(--accent-wash);
     border-color: var(--accent);
-    border-left-width: 4px;
     padding: 8px 22px 18px;
   }
-  .install h2 {
+  :global(.story) .install h2 {
     margin-top: 12px;
-    font-size: 1.35rem;
   }
   .install :global(.install-command) {
     background: var(--page);

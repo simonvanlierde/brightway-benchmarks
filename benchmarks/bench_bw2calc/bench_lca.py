@@ -12,6 +12,7 @@ first loads) stay out of the first sample.
 import inspect
 import os
 import warnings
+from importlib import metadata
 
 import bw2calc as bc
 import numpy as np
@@ -59,6 +60,14 @@ def lca_class(name: str) -> type:
     if not hasattr(bc, name):
         raise NotImplementedError(f"bw2calc {bc.__version__} has no {name}")
     return getattr(bc, name)
+
+
+def _installed(dist: str) -> bool:
+    try:
+        metadata.version(dist)
+    except metadata.PackageNotFoundError:
+        return False
+    return True
 
 
 def _source_has(fn: object, text: str) -> bool:
@@ -184,8 +193,15 @@ def condition_estimate(size: str) -> BenchSetup:
     """The 1-norm condition number of the technosphere matrix, so a score error reads against it.
 
     It needs only SciPy, so it does not depend on the bw2calc release, and the timed call is the
-    estimate itself: one LU factorization and a few solves.
+    estimate itself: one LU factorization and a few solves. Every asv environment pins the same
+    SciPy, so under asv only the SuperLU one (no PyPardiso, no UMFPACK, no patched solver) records
+    it: the others would repeat the same factorization, about a minute and a half per sample at the
+    ecoinvent size. CodSpeed and the compat run have one environment each, so they always run it.
     """
+    if os.environ.get("ASV") and (
+        os.environ.get("BWBENCH_SOLVER") or any(_installed(d) for d in ("pypardiso", "scikit-umfpack"))
+    ):
+        raise NotApplicable("the condition estimate is SciPy's alone: it runs in the SuperLU environment")
     skip_unless_factorizable(size, pardiso=False, timeout=1800)  # SuperLU factorizes, whatever bw2calc uses
     return system(size).condition_estimate, UNCHECKED
 

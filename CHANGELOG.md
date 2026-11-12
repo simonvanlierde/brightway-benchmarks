@@ -23,6 +23,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `MultiScores` runs `MultiLCA` at 30 demands only, as the stories read it: it has no direction
   to switch, and at 1 and 10 demands it timed the same factorization. The forward and adjoint
   variants keep 1, 10 and 30.
+- `Conditioning` is recorded in the SuperLU environment only. It is SciPy's estimate, with the
+  same SciPy in every environment, so the PyPardiso and UMFPACK environments timed the same
+  factorization again: a quarter of each bw2calc release's run.
 
 ### Added
 

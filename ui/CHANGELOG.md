@@ -11,6 +11,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - A Findings item in the masthead and a `/findings/` page: the headline findings grouped by package, each with its history and its story where it has one, then every write-up of `docs/findings.md`, rendered on the page. Stories keep their URLs and mark Findings as current ([decision 0005](../docs/decisions/0005-findings-in-the-masthead.md)).
 - A benchmark view that shows a finding names it and links its write-up.
+- The masthead search lists benchmarks and the sections of Findings, the stories and About as you type, from a [Pagefind](https://pagefind.app/) index built after the site. Words match in any order, and arrow keys move through the results.
+- Findings has an outline of every write-up beside it on a wide screen.
+- The footer names the copyright holder and the BSD 3-Clause licence.
 - A Python versions table (3.11 to 3.15 on Linux, macOS and Windows) and an end-of-life table (3.9 and 3.10) on Benchmarks, with a one-line summary on Setup, from the optional `pythonSupport` field of `guidance.json`. A failure shows with its reason; a package no release of which declares the Python reads "Not declared".
 
 ### Changed
@@ -19,9 +22,16 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The Python versions table takes one row for a package that gives the same result on every system.
 - Benchmarks drops its finding cards for a link to Findings, groups each regression's environments into one row, and folds the improvements behind their count.
 - The footer links Method, Cite, GitHub and About only; the stories are reached from Findings.
+- A headline on Findings opens its story where it has one and its write-up otherwise; its history is a link of its own.
+- Typing in the search no longer leaves Setup for Benchmarks.
 - A finding's write-up link in `index.json` opens the site's `/findings/` page, not the Markdown on GitHub.
 - PyPardiso has one colour on every chart, story and preview card: its conda-forge environments are labelled "PyPardiso", not "PyPardiso, MKL", as it only runs on MKL. UMFPACK's BLAS variants keep their own colours.
 - A history's band is the noise allowance its release changes are counted against, not the middle half of the samples. The tip and the data table give each value's allowance ([data](README.md#the-data)).
+
+### Fixed
+
+- Moving between Setup and Benchmarks no longer shifts the page: the masthead links keep their width when one turns bold, and the scrollbar's gutter is always reserved. The viewer draws its masthead before its script runs, so arriving from a static page does not flash an empty page.
+- The check grid on Setup no longer scrolls vertically: hidden cell labels hung below its last row.
 
 ## [0.2.0] - 2026-11-01
 

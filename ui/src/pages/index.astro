@@ -1,8 +1,9 @@
 ---
 import { execFileSync } from "node:child_process";
 import App from "../components/App.svelte";
+import Masthead from "../components/Masthead.svelte";
 import "../styles.css";
-import { staticHref } from "../lib/pages";
+import { staticHref, VIEWER_PAGES, viewerHref } from "../lib/pages";
 import Head from "./_Head.astro";
 
 const base = import.meta.env.PUBLIC_DATA_URL ?? "data/";
@@ -38,7 +39,19 @@ const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
     <link rel="preload" as="fetch" crossorigin href={`${data}guidance.json`} />
   </head>
   <body>
-    <App client:only="svelte" base={base} build={build} {home} />
+    <App client:only="svelte" base={base} build={build} {home}>
+      {/* The viewer's masthead, drawn before its script runs, so a page change does not flash an empty page. */}
+      <Masthead
+        slot="fallback"
+        name="Brightway Benchmarks"
+        home={import.meta.env.BASE_URL}
+        links={[
+          ...VIEWER_PAGES.map(({ id, text }) => ({ href: viewerHref(home, id), text, current: false })),
+          { href: staticHref(home, "findings"), text: "Findings", current: false },
+        ]}
+        search={{ value: "", open: false, toggle: () => {}, input: () => {}, submit: () => {} }}
+      />
+    </App>
     <noscript>
       <main class="view">
         <h1>Brightway benchmarks</h1>

@@ -52,11 +52,20 @@ test("the search form on a static page submits under the policy", async ({ page 
   const problems = await watch(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/about/");
-  await page.getByLabel("Find a benchmark").fill("multi");
+  await page.getByRole("searchbox", { name: "Search" }).fill("multi");
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/\?page=explorer&q=multi$/);
   // The explorer has loaded its data and drawn, so a block on the new page would have shown by now.
   await expect(page.locator(".latest-table tbody th a").first()).toBeVisible();
+  // The words arrive with their results open, and Pagefind's WebAssembly runs under the policy.
+  await expect(
+    page
+      .locator(".search-results")
+      .getByRole("list")
+      .filter({ has: page.locator('a[href*="/findings/"], a[href*="/stories/"], a[href*="/about/"]') })
+      .getByRole("link")
+      .first(),
+  ).toBeVisible();
   await page.waitForLoadState("networkidle");
   expect(problems).toEqual([]);
 });

@@ -31,15 +31,20 @@ test("the selected check cell is not drawn with the focus outline", async ({ pag
 
 test("the footer names the project links, not the pages the masthead and Findings reach", async ({ page }) => {
   await page.goto("?platform=linux");
-  const links = page.locator(".site-footer").getByRole("link");
+  const links = page.locator(".site-footer nav").getByRole("link");
   await expect(links).toHaveText(["Method", "Cite", "GitHub", "About & privacy", /./]);
   await page.goto("about/");
-  await expect(page.locator(".site-footer").getByRole("link")).toHaveText([
+  await expect(page.locator(".site-footer nav").getByRole("link")).toHaveText([
     "Method",
     "Cite",
     "GitHub",
     "About & privacy",
   ]);
+  await expect(page.locator(".site-footer .licence")).toHaveText(/© \d{4} Simon van Lierde · BSD 3-Clause/);
+  await expect(page.locator(".site-footer .licence").getByRole("link", { name: "Simon van Lierde" })).toHaveAttribute(
+    "href",
+    "https://simonvanlierde.com/",
+  );
 });
 
 test("an explicit check replaces an incompatible remembered manager", async ({ page }) => {

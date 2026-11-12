@@ -85,12 +85,14 @@ const image = `https://simonvanlierde.com/brightway-benchmarks/ui/${card}?v=${ve
       try { localStorage.setItem("bwbench.theme", preference); } catch {}
       apply();
     });
-    const observer = new MutationObserver(() => {
-      if (document.querySelector("[data-theme-toggle]")) {
+    // The viewer's masthead is drawn twice: before its script runs, then by the app. Label each new button.
+    let labelled;
+    new MutationObserver(() => {
+      const button = document.querySelector("[data-theme-toggle]");
+      if (button && button !== labelled) {
+        labelled = button;
         buttons();
-        observer.disconnect();
       }
-    });
-    observer.observe(root, { childList: true, subtree: true });
+    }).observe(root, { childList: true, subtree: true });
   })();
 </script>

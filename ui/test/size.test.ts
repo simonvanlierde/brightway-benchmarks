@@ -11,6 +11,7 @@ const budget = (name: string) =>
   Number(new RegExp(`${name}_BUDGET_KB = (\\d+)`).exec(readFileSync(script, "utf8"))?.[1]);
 const VIEWER = budget("VIEWER");
 const STATIC = budget("STATIC");
+const SEARCH = budget("SEARCH");
 
 const temporary: string[] = [];
 afterEach(() => {
@@ -91,4 +92,21 @@ it("keeps an inline theme script within the static-page budget", () => {
   expect(result.status, result.stdout + result.stderr).toBe(0);
   expect(result.stdout).toMatch(new RegExp(`about/index.html .*budget ${STATIC} KB`));
   expect(result.stdout).toMatch(new RegExp(`index.html \\d+\\.\\d KB gzipped, budget ${VIEWER} KB`));
+});
+
+it("budgets the first search apart, without Pagefind's unused UI bundles", () => {
+  const dir = fixture();
+  mkdirSync(join(dir, "dist/pagefind/index"), { recursive: true });
+  writeFileSync(join(dir, "dist/index.html"), "<astro-island></astro-island>");
+  writeFileSync(join(dir, "dist/_astro/app.js"), `const data = "${content(VIEWER - 12)}";`);
+  writeFileSync(join(dir, "dist/pagefind/pagefind-ui.js"), `const data = "${content(VIEWER)}";`);
+  writeFileSync(join(dir, "dist/pagefind/pagefind.js"), `const data = "${content(SEARCH - 12)}";`);
+  let result = run(dir);
+  expect(result.status, result.stdout).toBe(0);
+  expect(result.stdout).toMatch(new RegExp(`first search \\d+\\.\\d KB gzipped, budget ${SEARCH} KB`));
+  // A fragment counts too: each result shown fetches one.
+  mkdirSync(join(dir, "dist/pagefind/fragment"));
+  writeFileSync(join(dir, "dist/pagefind/fragment/en_1.pf_fragment"), content(24));
+  result = run(dir);
+  expect(result.status).toBe(1);
 });

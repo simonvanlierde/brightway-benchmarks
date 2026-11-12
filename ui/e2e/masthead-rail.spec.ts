@@ -19,8 +19,39 @@ test("a rail group is named for its package, and filtering announces the count",
 test("the masthead is one short row at tablet width", async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 900 });
   await page.goto("?page=explorer");
+  // The masthead drawn before the app runs is replaced when it mounts; measure the app's.
+  await page.locator("#main").waitFor();
   const box = await page.locator("header.top").boundingBox();
   expect(box?.height).toBeLessThan(100);
+});
+
+test("the viewer draws its masthead before its script runs", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  await page.goto("/");
+  const nav = page.getByRole("navigation", { name: "Main" });
+  await expect(nav.getByRole("link")).toHaveText(["Setup", "Benchmarks", "Findings"]);
+  await expect(page.getByRole("searchbox", { name: "Search" })).toBeVisible();
+  // Enter before the app mounts hands the words over as ?q=, rather than dropping them.
+  await page.getByRole("searchbox", { name: "Search" }).fill("multi");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/[?&]q=multi$/);
+  await context.close();
+});
+
+test("switching between Setup and Benchmarks moves neither the page nor the masthead links", async ({ page }) => {
+  // Tall enough that Setup fits without a scrollbar while Benchmarks needs one.
+  await page.setViewportSize({ width: 1440, height: 3000 });
+  const measure = async (path: string) => {
+    await page.goto(path);
+    await page.locator("#main").waitFor();
+    await page.locator(".view h2").first().waitFor();
+    return page.evaluate(() => [
+      document.documentElement.clientWidth,
+      ...[...document.querySelectorAll(".primary-nav a")].map((a) => Math.round(a.getBoundingClientRect().x)),
+    ]);
+  };
+  expect(await measure("?page=explorer")).toEqual(await measure("./"));
 });
 
 test("Setup does not scroll sideways at 900px", async ({ page }) => {
@@ -31,7 +62,7 @@ test("Setup does not scroll sideways at 900px", async ({ page }) => {
     document.documentElement.scrollWidth,
     document.documentElement.clientWidth,
   ]);
-  expect(scroll).toBe(client);
+  expect(scroll).toBeLessThanOrEqual(client);
 });
 
 test("the phone search toggle closes while the field has text", async ({ page }) => {

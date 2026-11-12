@@ -58,9 +58,9 @@ done < <(env | grep '^BWBENCH_' || true)
 # The repo is read-only in the box, so code asv installs cannot change what the host later
 # runs (.git, .venv, justfile, scripts/, the asv/ configs). Only these folders are writable.
 writable=".asv results site"
-# /tmp is a tmpfs, so bw2data's databases and bw_timex's projects (written under HOME, which
-# in-box.sh makes in /tmp) never touch the overlay disk. It allows exec: codspeed.sh, profile.sh
-# and compat.sh build venvs there. Its pages count against the memory cap.
+# /tmp is a tmpfs, so the Brightway projects bw2data and bw_timex write (tempfile.mkdtemp, and
+# in-box.sh's HOME) never touch the overlay disk. Its pages count against the memory cap, so the
+# venvs live under .asv/. It allows exec, as tools may still run programs from /tmp.
 tmpfs_size=6g
 
 # An oss-bench without OSS_BENCH_RW would mount the repo read-write, so use it only if it has it.

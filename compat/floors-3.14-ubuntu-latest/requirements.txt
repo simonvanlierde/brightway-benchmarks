@@ -127,7 +127,7 @@ rfc3986-validator==0.1.1
 rich==15.0.0
 scipy==1.16.1
 seaborn==0.12.0
-send2trash==2.1.0
+send2trash==2.2.0
 setuptools==84.2.1
 six==1.17.0
 snowflake-id==1.0.2

@@ -58,13 +58,42 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
     max-width: 46rem;
     margin: 0 auto;
     padding: 40px 24px 64px;
+    font-size: 1.0625rem;
+    line-height: 1.7;
   }
-  /* The lede too: every paragraph ends on the measure's right edge, as the charts and boxes do. */
-  :global(.static-page) :where(p, ul, ol, dl),
+  :global(.static-page :where(p, ul, ol, dl)) {
+    max-width: 65ch;
+  }
+  :global(.static-page p) {
+    margin: 16px 0;
+  }
+  :global(.static-page code) {
+    overflow-wrap: anywhere;
+  }
+  :global(.static-page h1) {
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    letter-spacing: -0.03em;
+  }
+  :global(.static-page h2) {
+    font-size: 1.35rem;
+    margin: 48px 0 12px;
+  }
   :global(.static-page .lede) {
-    max-width: none;
+    color: var(--ink-2);
+    margin-block: 20px 32px;
   }
-  :global(.static-page) .back {
+  :global(.static-page :where(h2, h3, h4)) {
+    scroll-margin-top: 24px;
+  }
+  @media (max-width: 39rem) {
+    :global(.static-page) {
+      padding: 32px 20px 48px;
+    }
+    :global(.static-page h2) {
+      margin-top: 36px;
+    }
+  }
+  :global(.static-page .back) {
     margin-top: 40px;
     padding-top: 20px;
     border-top: 1px solid var(--line);

@@ -21,7 +21,6 @@ const longest = Math.max(...rows.map((row) => row.value));
 
 <figure class="bars">
   <figcaption>{caption}</figcaption>
-  {href && <a class="open" href={href}>{linkText}<span class="sr">: {caption}</span></a>}
   <ul>
     {
       rows.map((row) => (
@@ -38,38 +37,58 @@ const longest = Math.max(...rows.map((row) => row.value));
       ))
     }
   </ul>
+  {href && <a class="open" href={href}>{linkText}<span class="sr">: {caption}</span></a>}
 </figure>
 
 <style>
   .bars {
-    margin: 20px 0;
+    margin: 32px 0;
+    padding: 20px 0;
+    border-inline: 0;
   }
   figcaption {
     color: var(--ink-2);
-    font-size: 0.9rem;
-    margin-bottom: 8px;
+    font-size: var(--text-evidence);
+    margin: 0 0 16px;
   }
   ul {
     list-style: none;
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 10px;
+    gap: 8px;
+    max-width: none;
   }
   .open {
-    display: inline-block;
-    margin-bottom: 10px;
-    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 44px;
+    margin-top: 12px;
+    font-size: var(--text-evidence);
+  }
+  li {
+    padding: 8px;
+    margin-inline: -8px;
+  }
+  @media (hover: hover) {
+    li:hover {
+      background: var(--accent-wash);
+    }
   }
   .row-head {
     display: flex;
     justify-content: space-between;
     gap: 16px;
-    margin-bottom: 3px;
+    align-items: baseline;
+    font-size: var(--text-evidence);
+    line-height: 1.5;
+    margin-bottom: 8px;
   }
   .row-head strong {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+    font-size: 1.25rem;
   }
   svg {
     display: block;

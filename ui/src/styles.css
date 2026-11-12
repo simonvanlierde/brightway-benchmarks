@@ -97,6 +97,11 @@ body {
   margin: 0;
   background: var(--page);
 }
+p,
+li,
+dd {
+  text-wrap: pretty;
+}
 ::selection {
   background: var(--accent-wash);
   color: var(--ink);
@@ -1219,7 +1224,7 @@ button.secondary {
 .files-label {
   font-weight: 600;
 }
-.status-note {
+.install-note {
   max-width: 68ch;
 }
 .saved-warning {

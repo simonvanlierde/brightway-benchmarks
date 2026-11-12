@@ -9,11 +9,17 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- A Findings item in the masthead and a `/findings/` page: every finding with its history, its write-up and its story where it has one. Stories keep their URLs and mark Findings as current ([decision 0005](../docs/decisions/0005-findings-in-the-masthead.md)).
-- A Python versions table on Setup (3.11 to 3.15 on Linux, macOS and Windows) and an end-of-life table on Benchmarks (3.9 and 3.10), from the optional `pythonSupport` field of `guidance.json`. A failure shows with its reason; a package no release of which declares the Python reads "Not declared".
+- A Findings item in the masthead and a `/findings/` page: the headline findings grouped by package, each with its history and its story where it has one, then every write-up of `docs/findings.md`, rendered on the page. Stories keep their URLs and mark Findings as current ([decision 0005](../docs/decisions/0005-findings-in-the-masthead.md)).
+- A benchmark view that shows a finding names it and links its write-up.
+- A Python versions table (3.11 to 3.15 on Linux, macOS and Windows) and an end-of-life table (3.9 and 3.10) on Benchmarks, with a one-line summary on Setup, from the optional `pythonSupport` field of `guidance.json`. A failure shows with its reason; a package no release of which declares the Python reads "Not declared".
 
 ### Changed
 
+- Setup is about installing ([decision 0006](../docs/decisions/0006-setup-installs.md)): the solver comparison, the Python versions table and the release changes moved to Benchmarks, and a short "From the benchmarks" list links to them. The check grid sits beside the install set, the check descriptions fold under "What each check covers", and the files, package versions and "Copy latest" fold under "What's in this set". Setup opens on the visitor's own operating system.
+- The Python versions table takes one row for a package that gives the same result on every system.
+- Benchmarks drops its finding cards for a link to Findings, groups each regression's environments into one row, and folds the improvements behind their count.
+- The footer links Method, Cite, GitHub and About only; the stories are reached from Findings.
+- A finding's write-up link in `index.json` opens the site's `/findings/` page, not the Markdown on GitHub.
 - PyPardiso has one colour on every chart, story and preview card: its conda-forge environments are labelled "PyPardiso", not "PyPardiso, MKL", as it only runs on MKL. UMFPACK's BLAS variants keep their own colours.
 - A history's band is the noise allowance its release changes are counted against, not the middle half of the samples. The tip and the data table give each value's allowance ([data](README.md#the-data)).
 

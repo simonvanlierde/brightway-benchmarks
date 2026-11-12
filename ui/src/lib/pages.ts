@@ -8,23 +8,24 @@ export const VIEWER_PAGES = [
 ] as const;
 
 /**
- * The static pages: the footer names all. Findings is the masthead's third item; `under` is the
- * masthead item a page belongs to, so a story marks Findings as current (decision 0005).
+ * The static pages. Findings is the masthead's third item; `under` is the masthead item a page
+ * belongs to, so a story marks Findings as current (decision 0005). The footer names About only:
+ * Findings lists the stories (decision 0006).
  */
 export const STATIC_PAGES = [
-  { id: "findings", text: "Findings", footer: "Findings", path: "findings/", under: "findings" },
-  { id: "about", text: "About", footer: "About & privacy", path: "about/", under: undefined },
+  { id: "findings", text: "Findings", path: "findings/", under: "findings" },
+  { id: "about", text: "About", path: "about/", under: undefined },
   {
     id: "solver-choice",
     text: "Solver story",
-    footer: "Solver story",
+
     path: "stories/solver-choice/",
     under: "findings",
   },
   {
     id: "home-heating",
     text: "Heating case",
-    footer: "Heating case",
+
     path: "stories/home-heating/",
     under: "findings",
   },

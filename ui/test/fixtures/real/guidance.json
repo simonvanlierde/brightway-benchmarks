@@ -555,7 +555,7 @@
     "title": "Solver alternatives, measured on one Linux machine",
     "context": "First LCA score \u00b7 bw2calc 3.1.0 \u00b7 synthetic ecoinvent-sized database \u00b7 one pinned Linux machine, one thread",
     "platform": "linux",
-    "note": "These fixed benchmark environments differ from the compatibility snapshot. Timings do not predict every workflow or machine.",
+    "note": "Timed in fixed benchmark environments, not the tested install sets. Other workflows and machines will differ.",
     "rows": [
       {
         "label": "UMFPACK \u00b7 conda-forge, without PyPardiso",

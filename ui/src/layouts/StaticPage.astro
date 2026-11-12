@@ -46,9 +46,7 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
         <a href={`${repository}/blob/main/docs/method.md`}>Method</a>
         <a href="https://doi.org/10.5281/zenodo.23727602">Cite</a>
         <a href={repository}>GitHub</a>
-        {STATIC_PAGES.map((p) => (
-          <a href={staticHref(home, p.id)} aria-current={current === p.id ? "page" : undefined}>{p.footer}</a>
-        ))}
+        <a href={staticHref(home, "about")} aria-current={current === "about" ? "page" : undefined}>About & privacy</a>
       </nav>
     </footer>
   </body>

@@ -4,12 +4,13 @@ Unless a finding says otherwise, the numbers come from the
 [benchmark history](https://simonvanlierde.com/brightway-benchmarks/), measured in October 2026
 on the ecoinvent-sized synthetic database, one thread, on an efficiency core of an Intel
 i9-14900KF. Every release runs on the same fixed dependencies, so a step in a history is that
-package's own change ([method](method.md)). These synthetic histories use generator v4;
-generator v5 passes the fill guards, but its histories still need the full rerun.
-Direct-solver times measured on v4 overstate real ecoinvent: a SuperLU score takes 27.7 s
-against a 3.66 s factorization of the real
-matrix, and UMFPACK on reference BLAS 9.05 s against 1.79 s, because the profile's factors fill
-about three times as much ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
+package's own change ([method](method.md)).
+
+These synthetic histories use generator v4. Generator v5 passes the fill guards, but its
+histories still need the full rerun. Direct-solver times on v4 overstate real ecoinvent: a
+SuperLU score takes 27.7 s against a 3.66 s factorization of the real matrix, and UMFPACK on
+reference BLAS 9.05 s against 1.79 s. The profile's factors fill about three times as much
+([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
 
 The pinned [#85](https://github.com/simonvanlierde/brightway-benchmarks/issues/85) lists every
 upstream issue with its current state.
@@ -42,10 +43,10 @@ Rerun: [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py).
 
 **PyPardiso and UMFPACK used about 180 J above idle per score, against 483 J for SuperLU.**
 
-A quiet run on 7 November 2026 measured CPU package energy with Intel RAPL, using bw2calc
+A quiet run on 7 November 2026 measured CPU package energy with Intel RAPL. It used bw2calc
 3.1.0, Python 3.12, one thread on the same efficiency-core slot, and generator v4's
-ecoinvent-sized profile. The fill caveat above applies. A five-minute baseline measured
-9.19 W; each sample subtracts that power times its own elapsed time.
+ecoinvent-sized profile, so the fill caveat above applies. A five-minute baseline measured
+9.19 W. Each sample subtracts that power times its own elapsed time.
 
 | Solver | Median package J / score | Median J above idle | Above-idle range, 3 samples |
 | --- | --- | --- | --- |
@@ -53,10 +54,10 @@ ecoinvent-sized profile. The fill caveat above applies. A five-minute baseline m
 | PyPardiso | 273 | 180 | 177–184 |
 | UMFPACK, reference BLAS | 263 | 179 | 167–210 |
 
-The UMFPACK and PyPardiso energy ranges overlap. Three samples do not establish which uses
-less energy. Each reading covers one first score, with setup and verification outside the
-measured span. RAPL covers the CPU package, including other processes; it does not measure
-whole-machine power. [Measurement and idle subtraction](running.md#energy-per-operation).
+The UMFPACK and PyPardiso ranges overlap, and three samples do not show which uses less
+energy. Each reading covers one first score, with setup and verification outside the measured
+span. RAPL covers the CPU package, including other processes, not whole-machine power.
+[Measurement and idle subtraction](running.md#energy-per-operation).
 
 Rerun: [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py), with the
 [`idle sampler`](../scripts/idle_energy.py) and
@@ -88,9 +89,9 @@ bw2calc can't turn refinement off yet
 
 The history builds scikit-umfpack, which has no PyPI wheels, on Debian's reference BLAS.
 `bw2calc-conda` runs the suite on conda-forge's builds instead. There, on bw2calc 2.4.0 and
-3.1.0 alike, UMFPACK's first score drops from 9.06 to 2.63 s, but a second functional unit is
-23 to 27% slower (42.7 against 33.6 ms on 3.1.0), on MKL's BLAS too. So the slower solve comes
-with conda-forge's builds, not the BLAS. Other solvers stay within 1%, and scores match.
+3.1.0 alike, UMFPACK's first score drops from 9.06 to 2.63 s. A second functional unit is 23 to
+27% slower (42.7 against 33.6 ms on 3.1.0), on MKL's BLAS too. So the slower solve comes with
+conda-forge's builds, not the BLAS. Other solvers stay within 1%, and scores match.
 
 On the real ecoinvent 3.12 matrix:
 
@@ -183,8 +184,8 @@ What it means for you: nothing yet. bw2calc can't use cuDSS, and these times don
 sampling, rebuilding the matrices, or the inventory and impact scores of a real draw.
 
 Two rounds at each CPU thread count ran on the performance cores of an Intel i9-14900KF with an
-NVIDIA RTX 4090. Each round takes the median of three factorizations and five solves; the table
-gives the range over the two rounds. GPU times include the transfers to and from the host. The
+NVIDIA RTX 4090. Each round takes the median of three factorizations and five solves, and the
+table gives the range over the two rounds. GPU times include the transfers to and from the host. The
 CUDA context and library warm-up happen before timing.
 
 | Solver | CPU threads | First factorization | Repeated numeric factorization | Solve |
@@ -198,11 +199,11 @@ CUDA context and library warm-up happen before timing.
 
 The scores agree with UMFPACK to a relative difference of at most 4e-12, checked with a random
 positive characterization row. With changing values (`--cudss-updates`: three row-scaled
-updates, same sparsity), cuDSS still refactorizes in 34 to 37 ms without a new analysis, and the
+updates, same sparsity), cuDSS still refactorizes in 34 to 37 ms without a new analysis. The
 solutions stay within a relative difference of 4e-10 of SuperLU's.
 
-Before anyone claims this for Monte Carlo, a GPU backend needs real LCA draws, changed sparsity
-and resource cleanup tested. It's the case for letting callers choose the solver in bw2calc
+A GPU backend needs real LCA draws, changed sparsity and resource cleanup tested before anyone
+claims this for Monte Carlo. It's the case for letting callers choose the solver in bw2calc
 ([brightway2-calc#184](https://github.com/brightway-lca/brightway2-calc/issues/184)).
 
 Rerun: [`scripts/solver_factorize.py --pardiso --cudss`](../scripts/solver_factorize.py), with
@@ -240,11 +241,13 @@ condition number times 1e-16, and the checks allow 1e-9.
 | ecoinvent-shaped synthetic | 2.5e3 | 4.3e-15 SuperLU, 1.7e-15 UMFPACK |
 | BAFU 2025 | 9.4e21 | 6.5e-7 SuperLU (fails the check), 1.9e-15 UMFPACK |
 
-BAFU's estimate is far past 1e16, so a direct solve has no digits to promise, and SuperLU lands
-8 orders of magnitude from UMFPACK's refined solve at 1e-15. The estimate is SciPy's
-`onenormest` on the SuperLU inverse times the 1-norm of A, with a fixed seed, so a given SciPy
-build gives the same value for a size. Near 1e22 the number comes from rounding in the LU
-factors, so read BAFU's as an order of magnitude: another BLAS or compiler can move it.
+BAFU's estimate is far past 1e16, so a direct solve has no digits to promise. SuperLU lands 8
+orders of magnitude from UMFPACK's refined solve at 1e-15.
+
+The estimate is SciPy's `onenormest` on the SuperLU inverse times the 1-norm of A, with a fixed
+seed, so a given SciPy build gives the same value for a size. Near 1e22 the number comes from
+rounding in the LU factors. Read BAFU's as an order of magnitude: another BLAS or compiler can
+move it.
 
 Graph: [bw2calc, condition estimate](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.Conditioning.track_condition_estimate).
 Rerun: [`bench_lca.Conditioning`](../benchmarks/bench_bw2calc/bench_lca.py).
@@ -260,8 +263,7 @@ What it means for you: nothing yet.
 ([brightway2-data#306](https://github.com/brightway-lca/brightway2-data/issues/306)).
 
 Writing an ecoinvent-sized database takes 15.3 s on 4.6.2 and 4.7, and 15.1 s on 4.8. #268's
-raw SQLite `executemany` took 10.4 s, and #270, the next commit, 15.4 s. These times come from
-asv's `--interleave-rounds`.
+raw SQLite `executemany` took 10.4 s, and #270, the next commit, 15.4 s. The times come from asv's `--interleave-rounds`.
 
 Graph: [bw2data, database write](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2data&bench=bench_write.DatabaseWrite.time_write).
 Rerun: [`bench_write.DatabaseWrite`](../benchmarks/bench_bw2data/bench_write.py).
@@ -350,13 +352,15 @@ Rerun: [`bench_datapackage.Groups`](../benchmarks/bench_bw_processing/bench_data
 ### A correct solve can still score the wrong inventory
 
 The reference checks behind every timing compare the solve with an independent one, such as a
-Neumann series on the same matrices. A wrong inventory or a missing impact factor passes that check,
-as both sides solve the same wrong system. The heating model
-([`src/bwbench/heating.py`](../src/bwbench/heating.py)) shows why. BAFU's climate factors sit on
-the parent air compartment, so matching flow identifiers alone leaves the gas boiler's direct
-greenhouse gases without a factor, and the solve still checks out. [The home-heating story](https://simonvanlierde.com/brightway-benchmarks/stories/home-heating/)
-explains the case and its matching rule; [the method](method.md#the-home-heating-case) describes the
-model. Rerun it with `just bench bw2calc` at `BWBENCH_SIZES=bafu`.
+Neumann series on the same matrices. A wrong inventory or a missing impact factor passes that
+check, as both sides solve the same wrong system.
+
+The heating model ([`src/bwbench/heating.py`](../src/bwbench/heating.py)) shows why. BAFU's
+climate factors sit on the parent air compartment. Matching flow identifiers alone leaves the gas
+boiler's direct greenhouse gases without a factor, and the solve still checks out.
+[The home-heating story](https://simonvanlierde.com/brightway-benchmarks/stories/home-heating/)
+explains the case and its matching rule; [the method](method.md#the-home-heating-case) describes
+the model. Rerun it with `just bench bw2calc` at `BWBENCH_SIZES=bafu`.
 
 ### Test suites and dependency floors
 

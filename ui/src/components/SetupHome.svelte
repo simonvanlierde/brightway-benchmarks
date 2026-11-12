@@ -2,21 +2,10 @@
 import { tick } from "svelte";
 import type { BenchmarkIndex, Guidance } from "../lib/contract";
 import { dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/guidance";
-import {
-  benchLabel,
-  byBenchmark,
-  format,
-  latestChanges,
-  noiseText,
-  percentRange,
-  readView,
-  type View,
-  writeView,
-} from "../lib/history";
+import { benchLabel, byBenchmark, format, latestChanges, percentRange, type View, writeView } from "../lib/history";
+import { supportLead, supportTable } from "../lib/pythonSupport";
 import { scrollable } from "../lib/scrollable";
-import Findings from "./Findings.svelte";
 import InstallSet from "./InstallSet.svelte";
-import PythonSupport from "./PythonSupport.svelte";
 
 let {
   guidance,
@@ -25,7 +14,6 @@ let {
   view,
   go,
   follow,
-  story,
   name,
   findings,
 }: {
@@ -35,15 +23,18 @@ let {
   view: View;
   go: (view: View) => void;
   follow: (event: MouseEvent, view: View) => void;
-  story?: string;
   /** The site's display name, as the masthead shows it. */
   name: string;
-  /** The findings page, for the cards' "All findings" link. */
+  /** The findings page, for the nudge beside the install set. */
   findings?: string;
 } = $props();
 const chosen = $derived(guidance?.checks.find((c) => c.id === view.check));
+// With no platform in the address, start on the visitor's own system; the select still changes it.
+const ua =
+  (navigator as Navigator & { userAgentData?: { platform: string } }).userAgentData?.platform || navigator.platform;
+const detected = /win/i.test(ua) ? "windows" : /mac/i.test(ua) ? "macos" : /linux|x11/i.test(ua) ? "linux" : undefined;
 const platform = $derived(
-  guidance?.platforms.find((p) => p.id === (chosen?.platform ?? view.platform)) ?? guidance?.platforms[0],
+  guidance?.platforms.find((p) => p.id === (chosen?.platform ?? view.platform ?? detected)) ?? guidance?.platforms[0],
 );
 const mine = $derived(guidance?.checks.filter((c) => c.platform === platform?.id) ?? []);
 const selected = $derived(
@@ -89,12 +80,17 @@ const moves = $derived(
   ].filter((rows) => rows.length > 0),
 );
 const comparison = $derived(guidance?.solverComparison);
-// The findings below leave out the comparison above: one fact, one set of numbers on the page.
-const compared = $derived(comparison?.rows.map((r) => readView(new URL(r.href, "https://x/").search)) ?? []);
-const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ?? [])));
-// The intro quotes the table's own figures, so the two never disagree.
+// The solver nudge quotes the comparison's own figures, so Setup and Benchmarks never disagree.
 const slowest = $derived(comparison?.rows.find((r) => r.label === "SuperLU"));
 const fastest = $derived(comparison?.rows.find((r) => r.label.startsWith("UMFPACK")));
+// The daily Python probe, as one line under the Python select; Benchmarks has its full table.
+const pythonSupport = $derived(guidance?.pythonSupport && supportTable(guidance.pythonSupport, false));
+const pythonNote = $derived(
+  pythonSupport && {
+    text: supportLead(pythonSupport, (id) => guidance?.platforms.find((p) => p.id === id)?.label ?? id),
+    href: `${writeView({ page: "explorer", params: [] })}#python-support`,
+  },
+);
 
 // Links to the old compatibility view land on the grid.
 $effect(() => {
@@ -102,14 +98,12 @@ $effect(() => {
 });
 </script>
 
-<header class="home-intro">
-  <h2>{guidance?.title ?? name}</h2>
-  {#if slowest && fastest}<p>With nothing extra installed, bw2calc uses SciPy's SuperLU, and one first score on a synthetic ecoinvent-sized database takes {format(slowest.value, slowest.unit)}. With UMFPACK from conda-forge it takes {format(fastest.value, fastest.unit)}.</p>{/if}
-  <p>Every night this site checks that the latest <a href="https://docs.brightway.dev/en/latest/">Brightway</a> releases install and work together on Linux, macOS and Windows. {guidance?.intro ?? index.project.description ?? ""}</p>
-</header>
-
 <div class="home-columns">
   <div class="setup-column">
+    <header class="home-intro">
+      <h2>{guidance?.title ?? name}</h2>
+      <p>Every night we check that the latest <a href="https://docs.brightway.dev/en/latest/">Brightway</a> releases install and work together on Linux, macOS and Windows. {guidance?.intro ?? index.project.description ?? ""}</p>
+    </header>
     {#if guidance && platform}
       {#snippet platformChoice()}
         <label class="control-label" for="setup-platform">Operating system</label>
@@ -118,18 +112,24 @@ $effect(() => {
         </select>
       {/snippet}
       {#if selected}
-        <InstallSet {selected} checks={mine} platform={platform.label} {platformChoice} explicitCheck={!!chosen} onSelectCheck={(c) => go({ page: "home", platform: c.platform, check: c.id, params: [] })} />
+        <InstallSet {selected} checks={mine} platform={platform.label} {platformChoice} {pythonNote} explicitCheck={!!chosen} onSelectCheck={(c) => go({ page: "home", platform: c.platform, check: c.id, params: [] })} />
       {:else}
         {@render platformChoice()}
-        <p class="no-saved">No passing set is published for {platform.label}. The checks below show what was tried.</p>
+        <p class="no-saved">No passing set is published for {platform.label}. The checks show what was tried.</p>
       {/if}
 
+    {:else if !ready}<p class="empty" aria-live="polite">Loading tested setups…</p>
+    {:else}<section><h2>Explore the available evidence</h2><p class="coverage-text">Setup guidance is unavailable. Benchmark histories and release changes remain available.</p><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Open the benchmarks</a></section>{/if}
+  </div>
+
+  <div class="evidence-column">
+    {#if guidance && platform}
       <section class="all-checks" id="all-checks" aria-labelledby="all-checks-heading">
         <div class="checks-heading">
           <h2 id="all-checks-heading">Checks</h2>
           <small class="checks-date">Checked {dateLabel(guidance.snapshot.date)} · <a href={guidance.snapshot.run}>open the run</a></small>
         </div>
-        <div class="desktop-checks"><p class="check-help" id="check-instructions"><span>Select a check to view its install set above.</span><span hidden={!overflowing}>Scroll to see all check types.</span></p></div>
+        <div class="desktop-checks"><p class="check-help" id="check-instructions"><span>Select a check to show its install set.</span><span hidden={!overflowing}>Scroll to see all check types.</span></p></div>
         <div class="phone-checks"><p class="check-showing">Showing {platform.label}. Change the operating system above for the others.</p></div>
         <ul class="platform-checks phone-checks" aria-label="{platform.label} checks">
           {#each mine as c (c.id)}
@@ -156,44 +156,32 @@ $effect(() => {
             </tbody>
           </table>
         </div>
-        <dl class="check-kinds">
-          {#each columns as col (col.label)}
-            <dt>{col.label}</dt>
-            <dd>{col.description ?? col.coverage}</dd>
-          {/each}
-        </dl>
+        <details class="check-kinds-details">
+          <summary>What each check covers</summary>
+          <dl class="check-kinds">
+            {#each columns as col (col.label)}
+              <dt>{col.label}</dt>
+              <dd>{col.description ?? col.coverage}</dd>
+            {/each}
+          </dl>
+        </details>
       </section>
-    {:else if !ready}<p class="empty" aria-live="polite">Loading tested setups…</p>
-    {:else}<section><h2>Explore the available evidence</h2><p class="coverage-text">Setup guidance is unavailable. Benchmark histories and release changes remain available.</p><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Open the benchmarks</a></section>{/if}
-  </div>
-
-  <div class="evidence-column">
-    {#if comparison}
-      <section class="solver-evidence" aria-labelledby="solver-heading"><h2 id="solver-heading">{comparison.title}</h2><p>{comparison.context}</p>
-        {#if platform && comparison.platform && comparison.platform !== platform.id}<p class="measurement-note">No {platform.label} machine was timed, so these values may not hold there.</p>{/if}
-        <table><caption>Recorded measurements; follow a solver to inspect its benchmark.</caption><thead><tr><th scope="col">Solver</th><th scope="col" class="solver-bar-column"><span class="sr">Relative time</span></th><th scope="col" class="num">Time</th></tr></thead><tbody>{#each comparison.rows as row (row.label)}<tr><th scope="row"><a href={row.href}>{row.label}</a></th><td class="solver-bar-column"><div class="solver-track" aria-hidden="true"><span style:width={`${largest > 0 ? (row.value / largest) * 100 : 0}%`}></span></div></td><td class="num">{format(row.value, row.unit)}</td></tr>{/each}</tbody></table>
-        {#if story}<p class="story-link">Real ecoinvent: 3.66 s with SuperLU, 0.66 s with conda-forge UMFPACK. <a href={story}>The story shows what to install</a>.</p>{/if}
-        {#if comparison.note}<p class="measurement-note">{comparison.note}</p>{/if}
-      </section>
-    {:else if guidance}
-      <p class="measurement-note solver-pending">The solver comparison is being measured again. <a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Compare solvers in the benchmarks</a>.</p>
     {/if}
-
-    <Findings {index} {follow} shownElsewhere={compared} all={findings} />
-
-    <section class="release-brief" aria-labelledby="release-brief-heading">
-      <h2 id="release-brief-heading">What changed in the latest releases</h2><p>Changes beyond measured noise in each package's latest release.</p>
+  <aside class="nudges" aria-labelledby="nudges-heading">
+    <h2 id="nudges-heading">From the benchmarks</h2>
+    <ul>
+      {#if slowest && fastest}
+        <li><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Which solver to install</a><span>One score: {format(slowest.value, slowest.unit)} with SciPy's SuperLU, {format(fastest.value, fastest.unit)} with UMFPACK from conda-forge.</span></li>
+      {/if}
       {#each moves as rows, i (i)}
         {@const row = rows[0]}
         {#if row}
-        {@const next = { bench: row.bench.id, params: row.params, measure: row.change.measure, machine: row.change.machine }}
-        <article class="brief-change"><div><h3><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchLabel(index, row.bench)}</a></h3><strong class={row.way}>{percentRange(rows)} {row.way}</strong></div><p>{#if rows.length > 1}{rows.length} cases, each beyond its noise{:else}{row.env} · beyond {noiseText(row.change)} noise{/if}</p><p class="brief-context">{row.group.label ?? row.group.name} · {row.from} → {row.to}{#if index.machines.length > 1} · {index.machines.find((m) => m.id === row.change.machine)?.name}{/if}</p></article>
+          {@const next = { bench: row.bench.id, params: row.params, measure: row.change.measure, machine: row.change.machine }}
+          <li><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchLabel(index, row.bench)}</a><span><strong class={row.way}>{percentRange(rows)} {row.way}</strong> in {row.group.label ?? row.group.name} {row.to}</span></li>
         {/if}
       {/each}
-      {#if moves.length === 0}<p class="coverage-text">No release changes beyond measured noise were published.</p>{/if}
-      <a class="section-link" href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Open all release changes</a>
-    </section>
+      {#if findings}<li><a href={findings}>What the benchmarks found</a><span>Release regressions, fixes and the solver story, each with its write-up.</span></li>{/if}
+    </ul>
+  </aside>
   </div>
 </div>
-
-{#if guidance}<PythonSupport {guidance} />{/if}

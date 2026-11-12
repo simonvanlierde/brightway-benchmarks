@@ -256,8 +256,8 @@ def solver_comparison(data_dir: Path) -> dict | None:
                 ),
                 "platform": MEASURED_ON,
                 "note": (
-                    "These fixed benchmark environments differ from the compatibility snapshot. "
-                    "Timings do not predict every workflow or machine."
+                    "Timed in fixed benchmark environments, not the tested install sets. "
+                    "Other workflows and machines will differ."
                 ),
                 "rows": [rows[name] for name in ("UMFPACK · conda-forge, without PyPardiso", "PyPardiso", "SuperLU")],
             }

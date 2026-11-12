@@ -19,7 +19,7 @@ const pipScore = link("bw2calc", single, "ecoinvent", "LCA");
 // 30 products: published results of the latest bw2calc-conda run, in the viewer's MultiScores view.
 const thirty = (variant: string) => link("bw2calc-conda", multi, "ecoinvent", "30", variant);
 // Real ecoinvent: docs/findings.md, the solver table under "On the real ecoinvent 3.12 matrix".
-const realFindings = `${repository}/blob/main/docs/findings.md#umfpacks-speed-depends-on-its-blas-and-its-refinement-step`;
+const realFindings = `${home}findings/#umfpacks-speed-depends-on-its-blas-and-its-refinement-step`;
 const check = `python -c "import bw2calc as bc; print('PyPardiso' if bc.PYPARDISO else 'UMFPACK' if bc.UMFPACK else 'SuperLU')"`;
 ---
 

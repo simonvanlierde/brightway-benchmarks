@@ -4,7 +4,7 @@ name: ui
 on:
   push:
     branches: [main]
-    paths: [ui/**, scripts/export_ui.py, .github/workflows/ui.yml]
+    paths: [ui/**, scripts/export_ui.py, benchmarks/findings.toml, docs/findings.md, .github/workflows/ui.yml]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:

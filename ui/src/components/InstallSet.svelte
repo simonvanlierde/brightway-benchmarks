@@ -13,6 +13,7 @@ let {
   explicitCheck = false,
   onSelectCheck,
   platformChoice,
+  pythonNote,
 }: {
   selected: GuidanceCheck;
   checks: GuidanceCheck[];
@@ -20,6 +21,8 @@ let {
   explicitCheck?: boolean;
   onSelectCheck?: (check: GuidanceCheck) => void;
   platformChoice?: Snippet;
+  /** The Python probe's one-line summary, with a link to its table. */
+  pythonNote?: { text: string; href: string } | undefined;
 } = $props();
 
 function stored(): Manager {
@@ -122,15 +125,14 @@ async function copy(text: string, what: string) {
       </select>
     </div>
   </div>
+  {#if pythonNote?.text}<p class="install-note python-note">{pythonNote.text} <a href={pythonNote.href}>All Python versions</a></p>{/if}
   {#if source && saved && install}
+    {@const suites = qualifications.find((c) => c.kind === "suites" && c !== source && c.status !== "success")}
     <ul class="result-line" aria-label="Check results on {platform}">
       {#each qualifications as c (c.id)}
-        <li><a href={c.run} title="Open the check's run">{c.kind === "smoke" ? "Smoke calculations · " : ""}{c.label} · Python {c.python}</a> <span class={statusTone(c.status)}>{statusLabel(c.status)}</span></li>
+        <li><a class={statusTone(c.status)} href={c.run} title="Open the check's run">{statusLabel(c.status)}</a> {c.kind === "smoke" ? "Smoke calculations · " : ""}{c.label} · Python {c.python}</li>
       {/each}
     </ul>
-    {@const suites = qualifications.find((c) => c.kind === "suites" && c !== source && c.status !== "success")}
-    {#if suites}<p class="install-note status-note">{suites.label} run each package's own tests, which covers more than the calculation checks, and did not pass on the latest releases. The command below still stands: it is the last set that passed the {source.label} check{saved.date ? `, on ${dateLabel(saved.date)}` : ""}.</p>{/if}
-    {#if !qualifications.some((c) => c.kind === "suites")}<p class="install-note">No upstream test-suite result is published for this install check.</p>{/if}
     {#if source.status !== "success"}<p class="saved-warning">The latest run of {source.label} did not pass; this is the set that passed on {dateLabel(saved.date)}.</p>{/if}
     {#if source.caveats.length}<ul class="caveats">{#each source.caveats as caveat (caveat)}<li>{caveat}</li>{/each}</ul>{/if}
     <div class="install-command">
@@ -138,37 +140,32 @@ async function copy(text: string, what: string) {
       <button type="button" class="copy" onclick={() => copy(install.command, "command")}>Copy</button>
     </div>
     <p class="install-meta">
-      {#if saved.pinned && install.latest}
-        {@const latest = install.latest}
-        Pinned to {dateLabel(saved.pinned)} <button type="button" class="secondary" onclick={() => copy(latest, "latest")}>Copy latest</button>
-      {:else}
-        Passed {dateLabel(saved.date)}
-      {/if}
+      Passed {dateLabel(saved.date)}{#if manager === "uv"}, for a uv project that needs Python {source.python} or later{/if}{#if source !== selected}, from the {source.label} check{/if}.
       <span role="status">{copied}</span>
     </p>
-    <p class="install-files"><span class="files-label">Files for this set</span> {#each saved.files as file (file.url)}<a href={file.url}>{file.label}</a>{/each}<a href={saved.run}>Passing run</a></p>
-    {#if manager === "uv"}
-      <p class="install-note">For an existing uv project with a minimum Python version of {source.python} or later (<code>requires-python</code>).</p>
-    {/if}
-    {#if source !== selected}
-      <p class="install-note">From the {source.label} check on Python {source.python}.</p>
-    {/if}
+    {#if suites}<p class="install-note status-note">{suites.label} did not pass on the latest releases. They run each package's own tests, which cover more than these calculation checks. The command above still stands: it is the last set that passed the {source.label} check.</p>{/if}
+    {#if !qualifications.some((c) => c.kind === "suites")}<p class="install-note">No upstream test-suite result is published for this check.</p>{/if}
     <div class="install-details">
     {#if manager === "uv"}
       <details class="new-project">
-        <summary>Starting a new project?</summary>
-        <p>With uv installed, run these commands in the folder where you keep your projects. They create <code>brightway-project</code> with Python {source.python} and add this tested set.</p>
+        <summary>No project yet? Create one</summary>
+        <p>With uv installed, run these in the folder where you keep your projects. They create <code>brightway-project</code> with Python {source.python} and add this tested set.</p>
         <div class="install-command"><pre><code>{projectSetup}</code></pre><button type="button" class="copy" onclick={() => copy(projectSetup, "project setup")}>Copy project setup</button></div>
       </details>
     {/if}
     <details class="package-pins">
-      <summary>{saved.packages.length} tested packages</summary>
+      <summary>What's in this set: {saved.packages.length} packages, files</summary>
       <table aria-label="Tested package versions"><tbody>{#each saved.packages as pkg (pkg.name)}<tr><th scope="row">{pkg.name}</th><td>{pkg.version}</td></tr>{/each}</tbody></table>
+      <p class="install-files"><span class="files-label">Files</span> {#each saved.files as file (file.url)}<a href={file.url}>{file.label}</a>{/each}<a href={saved.run}>Passing run</a></p>
+      {#if saved.pinned && install.latest}
+        {@const latest = install.latest}
+        <p class="install-meta">Pinned to {dateLabel(saved.pinned)}. For the same packages unpinned: <button type="button" class="secondary" onclick={() => copy(latest, "latest")}>Copy latest</button></p>
+      {/if}
     </details>
     </div>
   {:else if explicitCheck && !selected.lastPassed}
-    <p class="no-saved">No passing install set is published for {selected.label} on Python {selected.python}. <a href={selected.run}>Open the check's run</a> or choose another check below.</p>
+    <p class="no-saved">No passing install set is published for {selected.label} on Python {selected.python}. <a href={selected.run}>Open the check's run</a> or choose another check.</p>
   {:else}
-    <p class="no-saved">No {manager} set has passed on {platform} on Python {selected.python}. Choose another package manager, or a check below.</p>
+    <p class="no-saved">No {manager} set has passed on {platform} on Python {selected.python}. Choose another package manager or check.</p>
   {/if}
 </section>

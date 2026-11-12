@@ -82,7 +82,7 @@ test("a static page's nav fits at 320px", async ({ page }) => {
 test("the chart is named by its reading guide, not the whole caption", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("?page=explorer");
-  await page.locator(".findings h3 a").first().click();
+  await page.locator(".latest-table tbody th a").first().click();
   const figure = page.locator("figure[aria-labelledby=reading-guide]");
   await expect(figure).toBeVisible();
   await expect(page.locator("#reading-guide")).toBeVisible();

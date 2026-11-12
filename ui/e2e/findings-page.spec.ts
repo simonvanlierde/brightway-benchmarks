@@ -2,8 +2,11 @@ import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { parse } from "smol-toml";
 
-const listed = (parse(readFileSync("../benchmarks/findings.toml", "utf8")) as { findings: Record<string, unknown>[] })
-  .findings;
+const listed = (
+  parse(readFileSync("../benchmarks/findings.toml", "utf8")) as {
+    findings: { title: string; doc: string; story?: string }[];
+  }
+).findings;
 const published = JSON.parse(readFileSync("test/fixtures/real/index.json", "utf8")) as {
   findings: { title: string; params: string[] }[];
 };
@@ -26,14 +29,15 @@ test("the masthead has three items, and Findings is current on its page and on e
 test("the findings page lists every finding, and each link opens what it names", async ({ page, request }) => {
   await page.goto("findings/");
   const items = page.locator(".finding-list > li");
-  await expect(items.getByRole("heading", { level: 2 })).toHaveText(listed.map((f) => String(f.title)));
+  // findings.toml lists them in the write-up's order, which groups them by package.
+  await expect(items.getByRole("heading", { level: 4 })).toHaveText(listed.map((f) => f.title));
   const stories = await items
     .getByRole("link", { name: /^Read the story/ })
     .evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
   expect(stories).toEqual(listed.filter((f) => f.story).map((f) => `/stories/${f.story}/`));
   for (const href of stories) expect((await request.get(href)).ok(), href).toBe(true);
   // Each history link opens the view the viewer's own finding card opens.
-  const views = await items.locator("h2 a").evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
+  const views = await items.locator("h4 a").evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
   expect(views).toHaveLength(published.findings.length);
   for (const [i, href] of views.entries()) {
     const want = [...(published.findings[i]?.params ?? [])];
@@ -44,11 +48,26 @@ test("the findings page lists every finding, and each link opens what it names",
   }
 });
 
-test("Setup's and Benchmarks' finding cards end with one link to all findings", async ({ page }) => {
-  for (const path of ["", "?page=explorer"]) {
-    await page.goto(path);
-    const all = page.locator(".findings").getByRole("link", { name: "All findings" });
-    await expect(all, path).toHaveCount(1);
-    await expect(all).toHaveAttribute("href", "/findings/");
-  }
+test("the findings page carries each write-up, and a headline's link lands on it", async ({ page }) => {
+  await page.goto("findings/");
+  for (const f of listed) await expect(page.locator(`.writeups h3#${f.doc}`), f.doc).toHaveCount(1);
+  // The write-up's links to repository files open on GitHub, not as paths on this site.
+  const relative = await page
+    .locator(".writeups a")
+    .evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? "").filter((h) => !/^(https?:|#|\/)/.test(h)));
+  expect(relative).toEqual([]);
+  const first = listed[0] as (typeof listed)[number];
+  await page.getByRole("link", { name: `Write-up on ${first.title}` }).click();
+  await expect(page).toHaveURL(new RegExp(`#${first.doc}$`));
+  await expect(
+    page.locator(`#${first.doc} + .finding-links`).getByRole("link", { name: "Open the history" }),
+  ).toBeVisible();
+});
+
+test("Benchmarks' intro links to all findings", async ({ page }) => {
+  await page.goto("?page=explorer");
+  const all = page.locator(".overview-intro").getByRole("link", { name: "what the benchmarks found" });
+  await expect(all).toHaveCount(1);
+  await expect(all).toHaveAttribute("href", "/findings/");
+  await expect(page.locator(".findings")).toHaveCount(0);
 });

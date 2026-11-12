@@ -273,6 +273,11 @@ code,
 .view > header .bench-about {
   max-width: 68ch;
 }
+.view > header .bench-finding {
+  max-width: 68ch;
+  padding: 8px 12px;
+  background: var(--accent-wash);
+}
 
 .chart {
   min-height: 260px;
@@ -435,7 +440,7 @@ code,
 }
 .home-columns {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 28px;
   align-items: start;
 }
@@ -471,21 +476,6 @@ code,
   background: transparent;
   overflow: hidden;
 }
-.release-brief {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-column: 1 / -1;
-  column-gap: 32px;
-  padding-top: 22px;
-  border-top: 1px solid var(--accent);
-}
-.release-brief > :where(h2, p, a) {
-  grid-column: 1 / -1;
-}
-.brief-change {
-  padding: 17px 0;
-  border-top: 1px solid var(--line);
-}
 .section-link {
   display: inline-block;
   font-size: var(--text-evidence);
@@ -497,8 +487,7 @@ code,
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 6px 16px;
-  margin: 16px 0;
-  font-size: var(--text-evidence);
+  margin: 8px 0 16px;
   color: var(--ink-2);
 }
 .check-kinds dt {
@@ -635,11 +624,6 @@ details.data {
   text-decoration: none;
   white-space: nowrap;
 }
-.release-brief > h2 {
-  font-size: 1.5rem;
-  letter-spacing: -0.025em;
-  font-weight: 650;
-}
 
 .install-command code {
   font-size: 1em;
@@ -696,28 +680,6 @@ details.data {
   display: block;
   height: 100%;
   background: var(--accent);
-}
-.release-brief > p {
-  margin: 8px 0 18px;
-  color: var(--ink-2);
-  font-size: 0.875rem;
-}
-.brief-change > div {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 14px;
-}
-.brief-change strong {
-  flex: none;
-  font-size: 1rem;
-  font-variant-numeric: tabular-nums;
-}
-.brief-change p {
-  font-size: var(--text-evidence);
-  color: var(--ink-2);
-  margin: 7px 0 0;
 }
 
 .site-footer nav {
@@ -795,9 +757,6 @@ tbody tr:hover {
 .solver-evidence tbody th {
   font-weight: 550;
 }
-.brief-change h3 a {
-  color: var(--ink);
-}
 
 .latest-table tbody th a {
   display: inline-block;
@@ -864,10 +823,6 @@ tbody tr:hover {
   color: var(--muted);
   margin-top: 12px;
 }
-.brief-change .brief-context {
-  color: var(--ink-2);
-  font-size: var(--text-evidence);
-}
 .direction-filter button.chosen {
   color: var(--accent);
   background: var(--accent-wash);
@@ -880,20 +835,15 @@ tbody tr:hover {
   border-bottom-color: var(--accent);
   font-weight: 650;
 }
-.view > .home-intro h2 {
+.view .home-intro h2 {
   max-width: 32ch;
   font-size: clamp(1.75rem, 2.6vw, 2.5rem);
   font-weight: 650;
   letter-spacing: -0.03em;
 }
-.view > .home-intro p {
+.view .home-intro p {
   max-width: 70ch;
   margin-top: 9px;
-}
-.view .brief-change h3 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 650;
 }
 
 .rail li a:hover {
@@ -1077,14 +1027,6 @@ details.data[open] summary {
     padding: 12px 0;
   }
 
-  .brief-change > div {
-    display: block;
-  }
-  .brief-change strong {
-    display: block;
-    margin-top: 6px;
-  }
-
   .view > header h2 {
     font-size: min(1.8rem, 11vw);
   }
@@ -1114,9 +1056,6 @@ details.data[open] summary {
     padding-top: 14px;
     padding-bottom: 14px;
   }
-  .release-brief {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .responsive-table td[data-label="Releases"],
   .responsive-table td[data-label="Cases"],
   .responsive-table td[data-label="Environment"] {
@@ -1129,10 +1068,10 @@ details.data[open] summary {
     white-space: normal;
     font-size: 0.8rem;
   }
-  .view > .home-intro h2 {
+  .view .home-intro h2 {
     font-size: 2.1rem;
   }
-  .view > .home-intro p {
+  .view .home-intro p {
     font-size: 0.875rem;
   }
   .responsive-table td[data-label="Environment"]::before {
@@ -1206,6 +1145,7 @@ so a chosen control needs a line of its own. */
 }
 .evidence-column {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 28px;
   padding-left: 28px;
   border-left: 1px solid var(--line);
@@ -1220,7 +1160,6 @@ so a chosen control needs a line of its own. */
 .view .install-set h2,
 .view .all-checks h2,
 .view .python-support h2,
-.view .findings h2,
 .view .changes-header h2 {
   font-size: 1.25rem;
   letter-spacing: -0.02em;
@@ -1281,8 +1220,7 @@ button.secondary {
   font-weight: 600;
 }
 .status-note {
-  border-left: 3px solid var(--worse);
-  padding-left: 10px;
+  max-width: 68ch;
 }
 .saved-warning {
   color: var(--worse);
@@ -1355,43 +1293,11 @@ table.check-grid td a[aria-current="true"] {
   font-weight: 800;
 }
 
-/* Findings: a claim each, linked to the chart that shows it. */
-.findings ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.findings li {
-  padding: 10px 0;
-  border-top: 1px solid var(--line);
-}
-.view .findings h3 {
-  font-size: 0.9375rem;
-  font-weight: 650;
-  margin: 0 0 3px;
-}
-.view .findings p {
-  margin: 0;
-  font-size: var(--text-evidence);
-  color: var(--ink-2);
-  max-width: 70ch;
-}
-.findings.wide ul {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 32px;
-}
 .quiet-link {
   color: var(--muted);
 }
-.solver-pending {
-  margin: 0;
-}
 .overview-intro {
   margin-bottom: 18px;
-}
-.overview-intro + .findings {
-  margin-bottom: 32px;
 }
 .view .changes-header {
   margin-top: 0;
@@ -1461,9 +1367,6 @@ table.check-grid td a[aria-current="true"] {
     padding-left: 0;
     border-left: 0;
   }
-  .findings.wide ul {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 .phone-checks,
@@ -1476,11 +1379,13 @@ table.check-grid td a[aria-current="true"] {
   z-index: 1;
   background: var(--page);
 }
-.new-project {
+.new-project,
+.check-kinds-details {
   margin-top: 10px;
   font-size: var(--text-evidence);
 }
 .view details.new-project summary,
+.view details.check-kinds-details summary,
 .view details.parameter-details summary {
   cursor: pointer;
   color: var(--accent);
@@ -1770,7 +1675,6 @@ table.check-grid td a[aria-current="true"] {
     align-items: center;
     min-height: 44px;
   }
-  .view .findings h3 a,
   .view .latest-table tbody th a {
     padding-block: 8px;
   }
@@ -1827,4 +1731,57 @@ table.check-grid td > span.undeclared {
 .all-checks .check-grid thead th {
   white-space: normal;
   min-width: 5.5rem;
+}
+
+/* Setup's way into the evidence: a few quiet lines, not a second page. */
+.nudges {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.view .evidence-column .nudges h2 {
+  font-size: var(--text-evidence);
+  font-weight: 650;
+  color: var(--ink-2);
+  margin: 0;
+}
+.nudges ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nudges li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--grid);
+  font-size: var(--text-evidence);
+}
+.view .nudges li > a {
+  font-weight: 650;
+  justify-self: start;
+}
+.view .nudges li > span {
+  color: var(--ink-2);
+}
+.python-note {
+  max-width: 68ch;
+}
+.view > .solver-evidence {
+  margin: 8px 0 32px;
+  max-width: 48rem;
+}
+/* Improvements fold behind their count: regressions are what a maintainer opens the page for. */
+.view details.gains {
+  margin-top: 4px;
+}
+.view details.gains > summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+  color: var(--accent);
+  font-size: var(--text-evidence);
+}
+.view .solver-evidence tbody th a {
+  display: inline-block;
+  padding-block: 4px;
 }

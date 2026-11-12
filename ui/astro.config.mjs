@@ -41,6 +41,8 @@ export default defineConfig({
   // The site serves the viewer under a sub-path (UI_BASE, e.g. /brightway-benchmarks/ui/); "/" elsewhere.
   base: process.env.UI_BASE,
   integrations: [svelte(), policy],
+  // /findings/ renders docs/findings.md. Shiki would colour code blocks with inline styles the policy blocks.
+  markdown: { syntaxHighlight: false },
   // GitHub Pages sends no headers, so Astro writes the policy into a <meta> in every page, with
   // a hash for each script and style it emits. The rest is same-origin: the data is read from
   // the site's own /ui/data/, and nothing loads from another origin.

@@ -700,5 +700,5 @@ $effect(() => {
     <a href={staticHref(home, "about")}>About & privacy</a>
     {#if build}<a class="build-version" href={build.url} aria-label="Build {build.label}">{build.label}</a>{/if}
   </nav>
-  <p class="licence">© 2026 Simon van Lierde · <a href="https://github.com/simonvanlierde/brightway-benchmarks/blob/main/LICENSE">BSD 3-Clause</a></p>
+  <p class="licence">© 2026 <a href="https://simonvanlierde.com/">Simon van Lierde</a> · <a href="https://github.com/simonvanlierde/brightway-benchmarks/blob/main/LICENSE">BSD 3-Clause</a></p>
 </footer>

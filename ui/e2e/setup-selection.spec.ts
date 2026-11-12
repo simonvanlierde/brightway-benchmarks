@@ -41,6 +41,10 @@ test("the footer names the project links, not the pages the masthead and Finding
     "About & privacy",
   ]);
   await expect(page.locator(".site-footer .licence")).toHaveText(/© \d{4} Simon van Lierde · BSD 3-Clause/);
+  await expect(page.locator(".site-footer .licence").getByRole("link", { name: "Simon van Lierde" })).toHaveAttribute(
+    "href",
+    "https://simonvanlierde.com/",
+  );
 });
 
 test("an explicit check replaces an incompatible remembered manager", async ({ page }) => {

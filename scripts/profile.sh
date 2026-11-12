@@ -22,7 +22,7 @@ for a in "$@"; do
     esac
 done
 # On disk beside the uv cache, not in the tmpfs /tmp, whose pages count against the box memory.
-venv=.asv/venvs/profile
+venv=$PWD/.asv/venvs/profile
 rm -rf "$venv"
 # shellcheck disable=SC2086 # $pin, $packages and $params are lists of words
 sh scripts/codspeed-venv.sh "$venv" "$subject" $pin $packages

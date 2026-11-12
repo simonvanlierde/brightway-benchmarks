@@ -10,7 +10,7 @@ set -eu
 subject=$1
 shift
 # On disk beside the uv cache, not in the tmpfs /tmp, whose pages count against the box memory.
-venv=.asv/venvs/codspeed
+venv=$PWD/.asv/venvs/codspeed
 rm -rf "$venv"
 sh scripts/codspeed-venv.sh "$venv" "$subject" "$@"
 

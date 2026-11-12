@@ -17,7 +17,7 @@ latest | floors | pre | conda-forge | suites) ;;
 esac
 out=.asv/compat/$python-$column
 # On disk beside the uv cache, not in the tmpfs /tmp, whose pages count against the box memory.
-venv=.asv/venvs/compat-$python-$column
+venv=$PWD/.asv/venvs/compat-$python-$column
 rm -rf "$out" "$venv"
 mkdir -p "$out"
 # in-box.sh holds releases back to its cutoff, and pyproject.toml's exclude-newer holds them

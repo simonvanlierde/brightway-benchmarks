@@ -231,3 +231,25 @@ def test_box_energy_run_refuses_to_run_without_the_quiet_gate(box: tuple[Path, P
     assert out.returncode == 2
     assert "quiet gate" in out.stderr
     assert "run" not in log.read_text().split("\n")
+
+
+def test_box_puts_tmp_on_a_tmpfs(box: tuple[Path, Path]):
+    """bw2data and bw_timex write their projects under /tmp; every run keeps them off the overlay disk."""
+    repo, log = box
+    assert run_box(repo).returncode == 0
+    args = log.read_text().split("\n")
+    assert args[args.index("--tmpfs") + 1] == "/tmp:rw,size=6g,mode=1777"  # noqa: S108 - the container's /tmp, not the host's
+
+
+def test_box_asks_oss_bench_for_a_tmpfs_and_refuses_one_without_it(box: tuple[Path, Path]):
+    repo, _ = box
+    stub = repo / "stub" / "oss-bench"
+    stub.write_text('#!/bin/sh\n# OSS_BENCH_RW OSS_BENCH_TMPFS\necho "tmpfs ${OSS_BENCH_TMPFS-unset}" >&2\n')
+    stub.chmod(0o755)
+    out = run_box(repo)
+    assert out.returncode == 0, out.stderr
+    assert "tmpfs 6g" in out.stderr
+    stub.write_text("#!/bin/sh\n# OSS_BENCH_RW only\nexit 0\n")
+    out = run_box(repo)
+    assert out.returncode == 2
+    assert "OSS_BENCH_TMPFS" in out.stderr

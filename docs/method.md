@@ -151,6 +151,9 @@ match within `DIRECT_RTOL` (1e-9); an error outside that tolerance fails the cas
 - Timings from the generator v5 rerun onwards run on Python 3.13. Earlier times, including every
   published v4 history, ran on Python 3.12. The newest release of each minor line resolves to
   wheels on 3.13 over the same pinned stacks.
+- From the v5 rerun, the box's `/tmp` is a tmpfs, so bw2data's databases and bw_timex's projects
+  live in memory. On the efficiency cores bw2data's ecoinvent-size write took 6% less than on the
+  container's disk (four runs each), and bw_timex's times did not move.
 - Each run records what was installed (`pylock.toml`) and an RO-Crate naming the code and
   settings.
 - A change to the synthetic generator bumps `GENERATOR_VERSION`, which changes every
@@ -176,8 +179,8 @@ So a step of 5% or more at the ecoinvent size is real. ASLR stays on for asv, wh
 nothing measurable. Cases of a few milliseconds vary more, and up to five-fold unless the CPU
 runs its performance power profile (`powerprofilesctl set performance` on Linux).
 
-bw2data's write stalls for 16 to 17 s in 1 or 2 samples in 12, while the host flushes its disk
-cache. asv's median doesn't move.
+Before the v5 rerun, with `/tmp` on disk, bw2data's write stalled for 16 to 17 s in 1 or 2
+samples in 12, while the host flushed its disk cache. asv's median didn't move.
 
 **A GitHub-hosted runner hides changes under about 15%.** On `ubuntu-latest` (the
 `noise-hosted` workflow), the same smoke cases spread 1 to 14%, median 4.0%. It would catch a

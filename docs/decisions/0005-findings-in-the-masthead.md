@@ -1,6 +1,6 @@
 # 0005. Findings in the masthead
 
-- Status: accepted
+- Status: accepted; amended by 0006
 - Date: 2026-11-11
 - Supersedes: 0004
 

@@ -425,7 +425,7 @@ def findings(index: dict) -> list[dict]:
                 "text": f["text"],
                 "benchmark": bench["id"],
                 "params": params,
-                "url": f"{REPO}/blob/main/docs/findings.md#{f['doc']}",
+                "url": f"{PUBLIC_BASE}findings/#{f['doc']}",
             }
             | ({"profile": profile_url(path, f["profile"])} if "profile" in f else {})
             | ({"story": f["story"]} if "story" in f else {})

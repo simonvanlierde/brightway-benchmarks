@@ -14,19 +14,19 @@ test("Setup shows each package on Python 3.11 to 3.15 with the failure and its r
     "Python 3.14",
     "Python 3.15",
   ]);
-  await expect(table.getByRole("row")).toHaveCount(10); // a header row and three packages on three systems
+  await expect(table.getByRole("row")).toHaveCount(4); // a header row and three packages, each the same on every system
   // The lead line comes from the data, and the run is linked once, beside the date.
   await expect(section.locator(".support-lead")).toHaveText(
     "3.11 to 3.14 work on every system. 3.15 does not install yet: a dependency (cachebox) fails to build.",
   );
   await expect(section.locator(".support-date")).toHaveText(/^Checked \w{3} \d{1,2}, \d{4} · open the run$/);
   await expect(section.locator(".support-date a")).toHaveAttribute("href", /actions\/runs\/\d+/);
-  // Only a failed cell is a link: nine of them, not 45 tab stops.
-  await expect(table.getByRole("link")).toHaveCount(9);
-  const failed = table.getByRole("link", { name: "bw_timex, Windows, Python 3.15: Failed" });
+  // Only a failed cell is a link: three of them, not 15 tab stops.
+  await expect(table.getByRole("link")).toHaveCount(3);
+  const failed = table.getByRole("link", { name: "bw_timex, every system, Python 3.15: Failed" });
   await expect(failed).toHaveText("Failed");
   await expect(failed).toHaveAttribute("href", /actions\/runs\/\d+/);
-  const passed = table.getByRole("row").filter({ hasText: "brightway25 Linux" }).getByRole("cell").nth(2);
+  const passed = table.getByRole("row").filter({ hasText: "brightway25 every system" }).getByRole("cell").nth(2);
   await expect(passed).toHaveText("Passed");
   const reasons = section.locator(".support-failures");
   // The line naming what failed comes before its reason.
@@ -67,6 +67,7 @@ test("a result the data lacks shows as not checked, in the full grid", async ({ 
   await page.route("**/data/guidance.json", (route) => route.fulfill({ json: data }));
   await page.goto("");
   const table = page.getByRole("region", { name: "Python versions grid" }).getByRole("table");
+  // Each package now differs between systems on 3.12, so each takes a row per system again.
   await expect(table.getByRole("row")).toHaveCount(10);
   const row = table.getByRole("row").filter({ hasText: "bw_timex macOS" });
   await expect(row.getByRole("cell")).toHaveCount(5);

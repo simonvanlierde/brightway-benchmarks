@@ -274,14 +274,26 @@ test("Benchmarks opens on the findings, and each finding opens its chart", async
   await expect(page.locator(".chart svg")).toBeVisible();
 });
 
-test("Setup leaves out the finding its solver chart already shows", async ({ page }) => {
+test("Setup leaves the findings to the Findings page", async ({ page }) => {
   await page.goto("./");
-  const findings = page.getByRole("region", { name: "What the benchmarks show" });
-  await expect(findings.getByRole("heading", { level: 3 }).first()).toBeVisible();
-  await expect(findings.getByRole("heading", { name: "The solver sets the time for one score" })).toHaveCount(0);
-  await expect(
-    findings.getByRole("link", { name: "Write-up on bw2calc 3.0.0 slowed IterativeLCA, and 3.1.0 fixed it" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What changed in the latest releases" })).toBeVisible();
+  await expect(page.locator(".findings")).toHaveCount(0);
+});
+
+test("a benchmark view names the finding it shows and links its write-up", async ({ page }) => {
+  await page.goto(
+    "?page=explorer&group=bw2calc&bench=bench_lca.SingleScore.time_first_score&p=ecoinvent&p=IterativeLCA",
+  );
+  const finding = page.locator(".bench-finding");
+  await expect(finding).toHaveCount(1);
+  await expect(finding).toContainText("bw2calc 3.0.0 slowed IterativeLCA, and 3.1.0 fixed it");
+  await expect(finding.getByRole("link")).toHaveAttribute(
+    "href",
+    /\/findings\/#bw2calc-300-slowed-iterativelca-without-pypardiso-and-310-fixed-it$/,
+  );
+  // Another class of the same benchmark is not what the finding is about.
+  await page.getByLabel("Calculation class", { exact: true }).selectOption("LCA");
+  await expect(finding).toHaveCount(0);
 });
 
 test("the explorer explains the benchmark and links the chosen values", async ({ page }) => {

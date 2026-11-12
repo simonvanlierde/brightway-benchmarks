@@ -29,17 +29,17 @@ test("the selected check cell is not drawn with the focus outline", async ({ pag
   await expect(cell).toHaveCSS("outline-style", "solid");
 });
 
-test("the app footer links both stories", async ({ page }) => {
+test("the footer names the project links, not the pages the masthead and Findings reach", async ({ page }) => {
   await page.goto("?platform=linux");
-  const footer = page.locator(".site-footer");
-  await expect(footer.getByRole("link", { name: "Solver story" })).toHaveAttribute(
-    "href",
-    /\/stories\/solver-choice\/$/,
-  );
-  await expect(footer.getByRole("link", { name: "Heating case" })).toHaveAttribute(
-    "href",
-    /\/stories\/home-heating\/$/,
-  );
+  const links = page.locator(".site-footer").getByRole("link");
+  await expect(links).toHaveText(["Method", "Cite", "GitHub", "About & privacy", /./]);
+  await page.goto("about/");
+  await expect(page.locator(".site-footer").getByRole("link")).toHaveText([
+    "Method",
+    "Cite",
+    "GitHub",
+    "About & privacy",
+  ]);
 });
 
 test("an explicit check replaces an incompatible remembered manager", async ({ page }) => {

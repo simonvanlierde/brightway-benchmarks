@@ -273,6 +273,11 @@ code,
 .view > header .bench-about {
   max-width: 68ch;
 }
+.view > header .bench-finding {
+  max-width: 68ch;
+  padding: 8px 12px;
+  background: var(--accent-wash);
+}
 
 .chart {
   min-height: 260px;
@@ -497,8 +502,7 @@ code,
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 6px 16px;
-  margin: 16px 0;
-  font-size: var(--text-evidence);
+  margin: 8px 0 16px;
   color: var(--ink-2);
 }
 .check-kinds dt {
@@ -1476,11 +1480,13 @@ table.check-grid td a[aria-current="true"] {
   z-index: 1;
   background: var(--page);
 }
-.new-project {
+.new-project,
+.check-kinds-details {
   margin-top: 10px;
   font-size: var(--text-evidence);
 }
 .view details.new-project summary,
+.view details.check-kinds-details summary,
 .view details.parameter-details summary {
   cursor: pointer;
   color: var(--accent);

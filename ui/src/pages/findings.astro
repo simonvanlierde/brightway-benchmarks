@@ -1,6 +1,7 @@
 ---
 import { parse } from "smol-toml";
 import findingsToml from "../../../benchmarks/findings.toml?raw";
+import { compiledContent } from "../../../docs/findings.md";
 import StaticPage from "../layouts/StaticPage.astro";
 import { viewerHref } from "../lib/story-links";
 
@@ -23,6 +24,48 @@ const view = (f: Finding) =>
   f.group && f.benchmark ? viewerHref(home, f.group, f.benchmark, Object.values(f.params ?? {})) : undefined;
 const profile = (value: string) =>
   value.startsWith("https://") ? value : `${home}profiles/${value.replace(/^profiles\//, "")}`;
+const story = (f: Finding) => `${home}stories/${f.story}/`;
+const attr = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll('"', "&quot;");
+
+// docs/findings.md is the write-up, rendered here in full. Its title gives way to the page's own;
+// its links to the repository's files (method.md, ../benchmarks/...) open on GitHub.
+let doc = (await compiledContent())
+  .replace(/<h1[^>]*>[\s\S]*?<\/h1>/, "")
+  .replace(
+    /href="(?!https?:|#|mailto:)([^"]+)"/g,
+    (_, rel) => `href="${new URL(rel, `${repository}/blob/main/docs/`)}"`,
+  )
+  // A wide table scrolls in its own box, as the viewer's do, so the page never scrolls sideways.
+  .replace(/<table>/g, '<div class="scroll" role="region" tabindex="0" aria-label="Table, scrolls sideways"><table>')
+  .replace(/<\/table>/g, "</table></div>");
+const at = (f: Finding) => doc.indexOf(`<h3 id="${f.doc}"`);
+const missing = findings.filter((f) => at(f) < 0).map((f) => f.doc);
+if (missing.length)
+  throw new Error(`findings.toml: no section in docs/findings.md with the anchor ${missing.join(", ")}`);
+
+// Under each finding's section heading, the links the headline card has.
+for (const f of findings) {
+  const links = [
+    view(f) && `<a href="${attr(view(f) ?? "")}">Open the history</a>`,
+    f.story && `<a href="${story(f)}">Read the story</a>`,
+    f.profile && `<a href="${attr(profile(f.profile))}">Profile</a>`,
+  ].filter(Boolean);
+  doc = doc.replace(
+    new RegExp(`(<h3 id="${f.doc}"[^>]*>[\\s\\S]*?</h3>)`),
+    `$1<p class="finding-links">${links.join("")}</p>`,
+  );
+}
+
+// Each package is a top-level section of the write-up; a headline goes under the one its section is in.
+const packages = [...doc.matchAll(/<h2 id="([^"]+)">([\s\S]*?)<\/h2>/g)].map((m) => ({
+  id: m[1] ?? "",
+  name: (m[2] ?? "").replace(/<[^>]+>/g, ""),
+  at: m.index,
+}));
+const packageOf = (f: Finding) => packages.findLast((p) => p.at < at(f));
+const headlines = packages
+  .map((p) => ({ ...p, findings: findings.filter((f) => packageOf(f) === p).sort((a, b) => at(a) - at(b)) }))
+  .filter((p) => p.findings.length);
 ---
 
 <StaticPage
@@ -35,21 +78,37 @@ const profile = (value: string) =>
   imageAlt="Bar chart: one bw2calc IterativeLCA score took 45.0 s with 3.0.0 and 9.04 s with 3.1.0."
 >
   <h1>What the benchmarks found</h1>
-  <p class="lede">Each finding opens the release history that shows it. The write-up says how it was measured and how to rerun it; a story tells it in full, for someone choosing what to install.</p>
+  <p class="lede">The headlines first, by package; each opens the release history that shows it. The write-ups below say how each was measured and how to rerun it, and a story tells a finding in full.</p>
 
-  <ol class="finding-list">
-    {findings.map((f) => (
-      <li>
-        <h2>{view(f) ? <a href={view(f)}>{f.title}</a> : f.title}</h2>
-        <p>{f.text}</p>
-        <p class="finding-links">
-          {f.story && <a class="story-link" href={`${home}stories/${f.story}/`}>Read the story<span class="sr">: {f.title}</span></a>}
-          <a href={`${repository}/blob/main/docs/findings.md#${f.doc}`}>Write-up<span class="sr"> on {f.title}</span></a>
-          {f.profile && <a href={profile(f.profile)}>Profile<span class="sr"> for {f.title}</span></a>}
-        </p>
-      </li>
+  <div class="findings-main">
+  <section class="headlines" aria-labelledby="headlines-heading">
+    <h2 id="headlines-heading">Headlines</h2>
+    {headlines.map((p) => (
+      <div class="headline-group">
+        <h3>{p.name}</h3>
+        <ol class="finding-list">
+          {p.findings.map((f) => (
+            <li>
+              <h4>{view(f) ? <a href={view(f)}>{f.title}</a> : f.title}</h4>
+              <p>{f.text}</p>
+              <p class="finding-links">
+                {f.story && <a class="story-link" href={story(f)}>Read the story<span class="sr">: {f.title}</span></a>}
+                <a href={`#${f.doc}`}>Write-up<span class="sr"> on {f.title}</span></a>
+                {f.profile && <a href={profile(f.profile)}>Profile<span class="sr"> for {f.title}</span></a>}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </div>
     ))}
-  </ol>
+  </section>
+
+  <nav class="writeup-nav" aria-label="Write-ups by package">
+    <span>Write-ups:</span>
+    {packages.map((p) => <a href={`#${p.id}`}>{p.name}</a>)}
+  </nav>
+  <article class="writeups" set:html={doc} />
+  </div>
 </StaticPage>
 
 <style>
@@ -60,36 +119,134 @@ const profile = (value: string) =>
   :global(.findings-page) .lede {
     color: var(--ink-2);
   }
+  .headlines {
+    margin-top: 32px;
+  }
+  .headlines > h2 {
+    font-size: 1.35rem;
+    margin: 0 0 4px;
+  }
+  /* A ledger: the package in the left column, its headlines beside it. */
+  .headline-group {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 0 24px;
+    border-top: 1px solid var(--line);
+  }
+  .headline-group h3 {
+    font-size: var(--text-evidence);
+    font-weight: 650;
+    color: var(--ink-2);
+    margin: 0;
+    padding-top: 22px;
+    overflow-wrap: anywhere;
+  }
   .finding-list {
     list-style: none;
-    margin: 32px 0 0;
+    margin: 0;
     padding: 0;
   }
   .finding-list li {
-    border-top: 1px solid var(--line);
     padding: 20px 0 8px;
   }
-  .finding-list h2 {
-    font-size: 1.2rem;
+  .finding-list li + li {
+    border-top: 1px solid var(--grid);
+  }
+  .finding-list h4 {
+    font-size: 1.1rem;
     line-height: 1.3;
-    margin: 0 0 8px;
+    margin: 0 0 6px;
   }
   .finding-list p {
     margin: 0 0 10px;
   }
-  .finding-list .finding-links {
-    margin: -6px 0 0;
+  /* Global: the write-up's link lines come from set:html, which Astro does not scope. */
+  .findings-main :global(.finding-links) {
     display: flex;
     flex-wrap: wrap;
     gap: 4px 20px;
     font-size: var(--text-evidence);
   }
-  .finding-links a {
+  .finding-list .finding-links {
+    margin: -6px 0 0;
+  }
+  .findings-main :global(.finding-links a) {
     display: inline-flex;
     align-items: center;
     min-height: 44px;
   }
   .finding-links .story-link {
     font-weight: 650;
+  }
+  @media (max-width: 39rem) {
+    .headline-group {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .headline-group h3 {
+      padding-top: 16px;
+    }
+    .finding-list li {
+      padding-top: 10px;
+    }
+  }
+  .writeup-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 18px;
+    margin: 48px 0 0;
+    padding: 6px 0;
+    border-block: 1px solid var(--line);
+    font-size: var(--text-evidence);
+  }
+  .writeup-nav span {
+    color: var(--ink-2);
+    font-weight: 650;
+  }
+  .writeup-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .writeups {
+    margin-top: 24px;
+  }
+  .writeups :global(h2) {
+    font-size: 1.35rem;
+    margin: 48px 0 0;
+    padding-top: 16px;
+    border-top: 2px solid var(--ink);
+  }
+  .writeups :global(h3) {
+    font-size: 1.1rem;
+    line-height: 1.3;
+    margin: 32px 0 8px;
+  }
+  .writeups :global(:is(h2, h3)) {
+    scroll-margin-top: 16px;
+  }
+  .writeups :global(h3 + .finding-links) {
+    margin: -4px 0 4px;
+  }
+  .writeups :global(table) {
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+    font-size: var(--text-evidence);
+    margin: 0 0 16px;
+  }
+  .writeups :global(:is(th, td)) {
+    text-align: left;
+    padding: 6px 16px 6px 0;
+    border-bottom: 1px solid var(--grid);
+    vertical-align: top;
+  }
+  .writeups :global(th) {
+    border-bottom-color: var(--line);
+  }
+  /* The target of a headline's "Write-up" link: its heading, marked once you land. */
+  .writeups :global(h3:target) {
+    background: var(--accent-wash);
+    margin-inline: -8px;
+    padding-inline: 8px;
   }
 </style>

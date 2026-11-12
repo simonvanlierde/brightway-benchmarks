@@ -34,7 +34,7 @@ import {
   verdict,
   writeView,
 } from "../lib/history";
-import { STATIC_PAGES, staticHref, VIEWER_PAGES } from "../lib/pages";
+import { staticHref, VIEWER_PAGES } from "../lib/pages";
 import { scrollable } from "../lib/scrollable";
 import Findings from "./Findings.svelte";
 import Masthead from "./Masthead.svelte";
@@ -153,6 +153,14 @@ $effect(() => {
 const bench = $derived(index && findBench(index, view));
 const group = $derived(bench && index?.groups.find((g) => g.id === bench.group));
 const params = $derived(bench ? pickParams(bench, view.params) : []);
+// The findings this view shows: same benchmark, and every value the finding fixes is the one chosen.
+const shownFindings = $derived(
+  bench
+    ? (index?.findings ?? []).filter(
+        (f) => f.benchmark === bench.id && pickParams(bench, f.params).every((v, i) => !f.params[i] || v === params[i]),
+      )
+    : [],
+);
 const measureId = $derived(bench && (bench.measures.find((m) => m === view.measure) ?? bench.measures[0]));
 const measure = $derived(index?.measures.find((m) => m.id === measureId));
 const machines = $derived(
@@ -395,11 +403,11 @@ $effect(() => {
     <main class="view" id="main" tabindex="-1">
       {#if guidanceError && page === "home"}<div class="empty" role="status"><p>Setup guidance could not be loaded. Benchmark histories remain available.</p>{@render technical(guidanceError)}</div>{/if}
       {#if page === "home"}
-        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} {story} name={siteName} findings={findingsPage} />
+        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} {story} name={siteName} />
       {:else if !bench}
         {#if view.bench}<p class="empty" role="status">This benchmark is not in the current data. Choose one from the catalogue.</p>{/if}
         <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Choose a finding, a change or a benchmark from the catalogue for its history.</p><p class="lede"><a href={story}>Your solver choice can change a Brightway score's time by 5 times or more</a>: the story behind the solver numbers.</p></header>
-        <Findings {index} {follow} wide all={findingsPage} />
+        <Findings {index} {follow} all={findingsPage} />
         <ReleaseChanges {index} {view} {go} {follow} loaded={overview} />
         {#if guidance}<PythonSupport {guidance} eol />{/if}
 
@@ -407,6 +415,7 @@ $effect(() => {
         <header class="bench-header">
           <h2>{labelOf(bench)}</h2>
           {#if bench.description}<p class="bench-about">{bench.description}</p>{/if}
+          {#each shownFindings as f (f.title)}<p class="bench-finding"><strong>Finding:</strong> {f.title}.{#if f.url}{" "}<a href={f.url}>Read the write-up<span class="sr"> on {f.title}</span></a>{/if}</p>{/each}
           <p class="bench-meta">
             {#if group?.url}<a href={group.url}>{group.label ?? group.name}</a>{:else}{group?.label ?? group?.name}{/if}
             · {measure?.name ?? measureId}{measure?.statistic ? `, ${measure.statistic}` : ""}{measure?.better
@@ -606,7 +615,7 @@ $effect(() => {
   <nav aria-label="Project">
     {#each index?.project.links ?? [] as link (link.url)}<a href={link.url}>{link.name}</a>{/each}
     {#if index?.project.url}<a href={index.project.url}>GitHub</a>{/if}
-    {#each STATIC_PAGES as p (p.id)}<a href={staticHref(home, p.id)}>{p.footer}</a>{/each}
+    <a href={staticHref(home, "about")}>About & privacy</a>
     {#if build}<a class="build-version" href={build.url} aria-label="Build {build.label}">{build.label}</a>{/if}
   </nav>
 </footer>

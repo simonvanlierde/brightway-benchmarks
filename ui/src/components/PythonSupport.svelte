@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { Guidance } from "../lib/contract";
 import { dateLabel } from "../lib/guidance";
-import { codeParts, listed, supportLead, supportTable, supportWord } from "../lib/pythonSupport";
+import { codeParts, listed, type SupportRow, supportLead, supportTable, supportWord } from "../lib/pythonSupport";
 import { scrollable } from "../lib/scrollable";
 
 // `eol`: the Pythons past end of life, for maintainers; otherwise the supported ones, for users.
@@ -10,6 +10,20 @@ const support = $derived(guidance.pythonSupport);
 const table = $derived(support && supportTable(support, eol));
 const label = (id: string) => guidance.platforms.find((p) => p.id === id)?.label ?? id;
 const several = $derived(new Set(table?.rows.map((r) => r.platform)).size > 1);
+// A package with the same result on every system takes one row, so the grid shows only where systems differ.
+const rows = $derived.by(() => {
+  const out: SupportRow[] = []; // platform "" is every system
+  for (const package_ of new Set(table?.rows.map((r) => r.package))) {
+    const mine = table?.rows.filter((r) => r.package === package_) ?? [];
+    const first = mine[0];
+    const same = (py: string) =>
+      mine.every((r) => r.cells.has(py) && r.cells.get(py)?.status === first?.cells.get(py)?.status);
+    if (several && first && table?.pythons.every(same)) out.push({ ...first, platform: "" });
+    else out.push(...mine);
+  }
+  return out;
+});
+const where = (platform: string) => (platform ? label(platform) : "every system");
 const heading = $derived(eol ? "End-of-life Pythons" : "Python versions");
 const id = $derived(eol ? "eol-python" : "python-support");
 const tone = { pass: "better", fail: "worse", undeclared: "undeclared" } as const;
@@ -38,13 +52,13 @@ const tone = { pass: "better", fail: "worse", undeclared: "undeclared" } as cons
           </tr>
         </thead>
         <tbody>
-          {#each table.rows as row (`${row.package} ${row.platform}`)}
+          {#each rows as row (`${row.package} ${row.platform}`)}
             <tr>
-              <th scope="row"><code>{row.package}</code>{#if several}{" "}<span class="quiet">{label(row.platform)}</span>{/if}</th>
+              <th scope="row"><code>{row.package}</code>{#if several}{" "}<span class="quiet">{where(row.platform)}</span>{/if}</th>
               {#each table.pythons as py (py)}
                 {@const r = row.cells.get(py)}
                 <td>
-                  {#if r?.status === "fail"}<a href={r.run} class={tone[r.status]} aria-label="{row.package}{several ? `, ${label(row.platform)}` : ''}, Python {py}: {supportWord(r.status)}">{supportWord(r.status)}</a>
+                  {#if r?.status === "fail"}<a href={r.run} class={tone[r.status]} aria-label="{row.package}{several ? `, ${where(row.platform)}` : ''}, Python {py}: {supportWord(r.status)}">{supportWord(r.status)}</a>
                   {:else if r}<span class={tone[r.status]}>{supportWord(r.status)}</span>
                   {:else}<span class="quiet" aria-hidden="true">–</span><span class="sr">not checked</span>{/if}
                 </td>

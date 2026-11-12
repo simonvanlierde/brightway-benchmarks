@@ -20,4 +20,5 @@ the old one's status to `superseded by 0007`, naming the new record's number.
 - [0002. A tested setup and benchmark evidence on the homepage](0002-setup-and-benchmark-homepage.md): accepted; amended by 0003
 - [0003. Two pages, dated install sets, and no asv pages](0003-two-pages-and-no-asv-pages.md): accepted; amended by 0004 and 0005
 - [0004. Stories outside the masthead](0004-stories-outside-the-masthead.md): superseded by 0005
-- [0005. Findings in the masthead](0005-findings-in-the-masthead.md): accepted
+- [0005. Findings in the masthead](0005-findings-in-the-masthead.md): accepted; amended by 0006
+- [0006. Findings carries the write-ups; Setup and the footer drop what it reaches](0006-footer-and-setup-without-findings.md): accepted

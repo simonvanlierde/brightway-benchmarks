@@ -475,7 +475,7 @@ def test_a_finding_opens_its_history_or_stops_the_export(
             "text": "X.",
             "benchmark": bench["id"],
             "params": ["ecoinvent", "IterativeLCA"],
-            "url": "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/docs/findings.md#d",
+            "url": "https://simonvanlierde.com/brightway-benchmarks/findings/#d",
         }
     ]  # the finding about a group this export lacks is left out
     for params, error in [

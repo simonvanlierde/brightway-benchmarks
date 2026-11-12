@@ -2,33 +2,21 @@
 import type { BenchmarkIndex } from "../lib/contract";
 import { type View, writeView } from "../lib/history";
 
-// `wide`: two columns, for the Benchmarks overview; Setup's narrower column lists them.
-// `shownElsewhere`: views the page already shows, such as Setup's solver comparison; a finding about one is left out.
 let {
   index,
   follow,
-  wide = false,
-  shownElsewhere = [],
   all,
 }: {
   index: BenchmarkIndex;
   follow: (event: MouseEvent, view: View) => void;
-  wide?: boolean;
-  shownElsewhere?: View[];
   /** The findings page: these cards are its preview. */
   all?: string | undefined;
 } = $props();
-const same = (f: { benchmark: string; params: string[] }, v: View) =>
-  v.bench === f.benchmark && v.params.join("\n") === f.params.join("\n");
-const shown = $derived(
-  (index.findings ?? []).filter(
-    (f) => index.benchmarks.some((b) => b.id === f.benchmark) && !shownElsewhere.some((v) => same(f, v)),
-  ),
-);
+const shown = $derived((index.findings ?? []).filter((f) => index.benchmarks.some((b) => b.id === f.benchmark)));
 </script>
 
 {#if shown.length}
-  <section class="findings" class:wide aria-labelledby="findings-heading">
+  <section class="findings wide" aria-labelledby="findings-heading">
     <h2 id="findings-heading">What the benchmarks show</h2>
     <ul>
       {#each shown as f (f.title)}

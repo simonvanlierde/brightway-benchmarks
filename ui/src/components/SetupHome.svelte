@@ -9,12 +9,10 @@ import {
   latestChanges,
   noiseText,
   percentRange,
-  readView,
   type View,
   writeView,
 } from "../lib/history";
 import { scrollable } from "../lib/scrollable";
-import Findings from "./Findings.svelte";
 import InstallSet from "./InstallSet.svelte";
 import PythonSupport from "./PythonSupport.svelte";
 
@@ -27,7 +25,6 @@ let {
   follow,
   story,
   name,
-  findings,
 }: {
   guidance: Guidance | undefined;
   ready: boolean;
@@ -38,8 +35,6 @@ let {
   story?: string;
   /** The site's display name, as the masthead shows it. */
   name: string;
-  /** The findings page, for the cards' "All findings" link. */
-  findings?: string;
 } = $props();
 const chosen = $derived(guidance?.checks.find((c) => c.id === view.check));
 const platform = $derived(
@@ -89,8 +84,6 @@ const moves = $derived(
   ].filter((rows) => rows.length > 0),
 );
 const comparison = $derived(guidance?.solverComparison);
-// The findings below leave out the comparison above: one fact, one set of numbers on the page.
-const compared = $derived(comparison?.rows.map((r) => readView(new URL(r.href, "https://x/").search)) ?? []);
 const largest = $derived(Math.max(0, ...(comparison?.rows.map((r) => r.value) ?? [])));
 // The intro quotes the table's own figures, so the two never disagree.
 const slowest = $derived(comparison?.rows.find((r) => r.label === "SuperLU"));
@@ -156,12 +149,15 @@ $effect(() => {
             </tbody>
           </table>
         </div>
-        <dl class="check-kinds">
-          {#each columns as col (col.label)}
-            <dt>{col.label}</dt>
-            <dd>{col.description ?? col.coverage}</dd>
-          {/each}
-        </dl>
+        <details class="check-kinds-details">
+          <summary>What each check covers</summary>
+          <dl class="check-kinds">
+            {#each columns as col (col.label)}
+              <dt>{col.label}</dt>
+              <dd>{col.description ?? col.coverage}</dd>
+            {/each}
+          </dl>
+        </details>
       </section>
     {:else if !ready}<p class="empty" aria-live="polite">Loading tested setups…</p>
     {:else}<section><h2>Explore the available evidence</h2><p class="coverage-text">Setup guidance is unavailable. Benchmark histories and release changes remain available.</p><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Open the benchmarks</a></section>{/if}
@@ -178,8 +174,6 @@ $effect(() => {
     {:else if guidance}
       <p class="measurement-note solver-pending">The solver comparison is being measured again. <a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Compare solvers in the benchmarks</a>.</p>
     {/if}
-
-    <Findings {index} {follow} shownElsewhere={compared} all={findings} />
 
     <section class="release-brief" aria-labelledby="release-brief-heading">
       <h2 id="release-brief-heading">What changed in the latest releases</h2><p>Changes beyond measured noise in each package's latest release.</p>

@@ -19,6 +19,8 @@ test("a rail group is named for its package, and filtering announces the count",
 test("the masthead is one short row at tablet width", async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 900 });
   await page.goto("?page=explorer");
+  // The masthead drawn before the app runs is replaced when it mounts; measure the app's.
+  await page.locator("#main").waitFor();
   const box = await page.locator("header.top").boundingBox();
   expect(box?.height).toBeLessThan(100);
 });

@@ -300,11 +300,11 @@ export interface ChangeGroup {
   rows: LatestChange[];
 }
 
-/** ROWS gathered per benchmark and machine, in the order each first appears; rows keep their order. */
+/** ROWS gathered per benchmark, machine, measure and direction, in the order each first appears; rows keep their order. */
 export function byBenchmark(rows: LatestChange[]): ChangeGroup[] {
   const out = new Map<string, ChangeGroup>();
   for (const row of rows) {
-    const key = `${row.bench.id}/${row.change.machine}`;
+    const key = `${row.bench.id}/${row.change.machine}/${row.change.measure}/${row.way}`;
     const found = out.get(key);
     if (found) found.rows.push(row);
     else out.set(key, { bench: row.bench, group: row.group, rows: [row] });

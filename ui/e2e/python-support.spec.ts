@@ -124,3 +124,16 @@ test("on a phone the table breaks only between words and the page does not scrol
   );
   expect(split).toEqual([]);
 });
+
+test("a link to the Python table lands on it even when the index loads after the guidance", async ({ page }) => {
+  // In production guidance.json is the smaller file and usually arrives first.
+  await page.route("**/data/index.json", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    await route.continue();
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("?page=explorer#python-support");
+  const section = page.locator("#python-support");
+  await section.waitFor();
+  await expect.poll(async () => (await section.boundingBox())?.y ?? -1).toBeLessThan(200);
+});

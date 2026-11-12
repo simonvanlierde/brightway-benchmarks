@@ -692,23 +692,26 @@ test("Setup names the Python probe under the selects and links the full table on
   await expect(page.locator("#python-support")).toBeInViewport();
 });
 
-test("regressions fold environments into one row, and improvements stay closed until asked for", async ({ page }) => {
+test("regressions fold cases into one row, and improvements stay closed until asked for", async ({ page }) => {
   await page.goto("?page=explorer");
   const gains = page.locator("details.gains");
-  await expect(gains.locator(":scope > summary h3")).toHaveText("Improvements");
+  await expect(page.locator("#gains-h")).toHaveText("Improvements");
   await expect(gains).not.toHaveAttribute("open", "");
   await expect(gains.locator("table")).toBeHidden();
   await gains.locator(":scope > summary").click();
   await expect(gains.locator("table")).toBeVisible();
-  // One row per benchmark and machine: a row with several environments says how many.
+  // One row per benchmark, machine and measure: a row with several cases says how many.
   const rows = page.locator(".latest-table:not(.gains-table) tbody tr");
   const folded = page.locator(".latest-table:not(.gains-table) details.cases summary");
   await expect(rows.first()).toBeVisible();
-  await expect(folded.first()).toHaveText(/^[2-9]\d* environments$/);
+  await expect(folded.first()).toHaveText(/^[2-9]\d* cases$/);
   // The Better filter opens the improvements by itself.
   await page.getByRole("button", { name: /^Better/ }).click();
   await expect(page.locator("details.gains")).toHaveAttribute("open", "");
   await expect(page.locator("details.gains .gains-table")).toBeVisible();
+  // Back to All changes: the improvements stay open, as the reader left them.
+  await page.getByRole("button", { name: /^All changes/ }).click();
+  await expect(page.locator("details.gains")).toHaveAttribute("open", "");
 });
 
 test("on a phone, a check chosen in the list brings its install command into view", async ({ page }) => {

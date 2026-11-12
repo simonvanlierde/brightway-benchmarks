@@ -39,14 +39,15 @@ let doc = (await compiledContent())
   )
   // A wide table scrolls in its own box, as the viewer's do, so the page never scrolls sideways.
   // Each box is named after its section, so no two regions share a label.
-  .replace(/<h3 id="[^"]*">([\s\S]*?)<\/h3>|<table>/g, (match, heading) => {
+  .replace(/<h[23] id="[^"]*">([\s\S]*?)<\/h[23]>|<table>/g, (match, heading) => {
     if (heading !== undefined) {
       section = heading.replace(/<[^>]+>/g, "");
       count = 0;
       return match;
     }
     count += 1;
-    return `<div class="scroll" role="region" tabindex="0" aria-label="${section.replaceAll('"', "&quot;")}, table ${count}"><table>`;
+    const name = `${section.replaceAll('"', "&quot;")}, table${count > 1 ? ` ${count}` : ""}`;
+    return `<div class="scroll" role="region" tabindex="0" aria-label="${name}"><table>`;
   })
   .replace(/<\/table>/g, "</table></div>");
 const at = (f: Finding) => doc.indexOf(`<h3 id="${f.doc}"`);
@@ -62,8 +63,9 @@ for (const f of findings) {
     f.profile && `<a href="${attr(profile(f.profile))}">Profile</a>`,
   ].filter(Boolean);
   doc = doc.replace(
-    new RegExp(`(<h3 id="${f.doc}"[^>]*>[\\s\\S]*?</h3>)`),
-    `$1<p class="finding-links">${links.join("")}</p>`,
+    new RegExp(`<h3 id="${f.doc}"[^>]*>[\\s\\S]*?</h3>`),
+    // A function, so a "$" in a link is not read as a replacement pattern.
+    (heading) => `${heading}<p class="finding-links">${links.join("")}</p>`,
   );
 }
 

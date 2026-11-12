@@ -31,7 +31,7 @@ let {
 const chosen = $derived(guidance?.checks.find((c) => c.id === view.check));
 // With no platform in the address, start on the visitor's own system; the select still changes it.
 const ua =
-  (navigator as Navigator & { userAgentData?: { platform: string } }).userAgentData?.platform ?? navigator.platform;
+  (navigator as Navigator & { userAgentData?: { platform: string } }).userAgentData?.platform || navigator.platform;
 const detected = /win/i.test(ua) ? "windows" : /mac/i.test(ua) ? "macos" : /linux|x11/i.test(ua) ? "linux" : undefined;
 const platform = $derived(
   guidance?.platforms.find((p) => p.id === (chosen?.platform ?? view.platform ?? detected)) ?? guidance?.platforms[0],

@@ -49,6 +49,11 @@ const better = $derived(packageChanges.filter((r) => r.way === "better").length)
 const flagged = $derived(byBenchmark(filtered.filter((r) => r.way !== "better")));
 const gains = $derived(byBenchmark(filtered.filter((r) => r.way === "better")));
 const gainCases = $derived(gains.reduce((n, g) => n + g.rows.length, 0));
+// Choosing Better opens the improvements; it never closes what the reader opened.
+let gainsBox = $state<HTMLDetailsElement>();
+$effect(() => {
+  if (direction === "better" && gainsBox) gainsBox.open = true;
+});
 const narrowed = $derived(packageId !== "" || direction !== "all");
 const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b);
 </script>
@@ -114,7 +119,7 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
                       {#if g.rows.length === 1}{row.env}
                       {:else}
                         <details class="cases">
-                          <summary>{g.rows.length} environments</summary>
+                          <summary>{g.rows.length} cases</summary>
                           <ul>{#each g.rows as r, i (i)}<li>{percent(r.change.ratio)} · {r.env}{#if r.params.join() !== row.params.join()} · {r.params.join(", ")}{/if} <span class="quiet">beyond {noiseText(r.change)} noise</span></li>{/each}</ul>
                         </details>
                       {/if}
@@ -129,8 +134,9 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
           </div>
           {/if}
           {#if gains.length}
-          <details class="gains" open={direction === "better"}>
-          <summary><h3 id="gains-h">Improvements</h3> <span class="quiet">{gains.length} {gains.length === 1 ? "benchmark" : "benchmarks"}, {gainCases} {gainCases === 1 ? "case" : "cases"}</span></summary>
+          <h3 id="gains-h">Improvements</h3>
+          <details class="gains" bind:this={gainsBox}>
+          <summary>{gains.length} {gains.length === 1 ? "benchmark" : "benchmarks"}, {gainCases} improved {gainCases === 1 ? "case" : "cases"}</summary>
           <div class="scroll gap" role="region" aria-labelledby="gains-h" use:scrollable>
             <table class="latest-table gains-table responsive-table">
               <caption>

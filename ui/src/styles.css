@@ -1772,19 +1772,14 @@ table.check-grid td > span.undeclared {
 }
 /* Improvements fold behind their count: regressions are what a maintainer opens the page for. */
 .view details.gains {
-  margin-top: 24px;
+  margin-top: 4px;
 }
 .view details.gains > summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 12px;
   min-height: 44px;
+  align-content: center;
   cursor: pointer;
-}
-.view details.gains > summary h3 {
-  display: inline;
-  margin: 0;
+  color: var(--accent);
+  font-size: var(--text-evidence);
 }
 .view .solver-evidence tbody th a {
   display: inline-block;

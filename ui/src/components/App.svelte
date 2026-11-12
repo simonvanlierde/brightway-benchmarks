@@ -57,7 +57,7 @@ let {
 const story = $derived(staticHref(home, "solver-choice"));
 // A link such as Setup's "All Python versions" names a section of the overview, which draws after the data loads.
 $effect(() => {
-  if (view.page === "explorer" && !view.bench && guidance && location.hash)
+  if (view.page === "explorer" && !view.bench && index && guidance && location.hash)
     tick().then(() => document.getElementById(location.hash.slice(1))?.scrollIntoView());
 });
 const findingsPage = $derived(staticHref(home, "findings"));

@@ -8,19 +8,15 @@ import { gzipSync } from "node:zlib";
 const VIEWER_BUDGET_KB = 182;
 // /findings/ carries docs/findings.md in full, about 9 KB of it, and grows with each write-up.
 const STATIC_BUDGET_KB = 28;
-// The first search loads Pagefind's script, worker and WebAssembly (about 85 KB) and its index, which
-// grows with the static pages. Pagefind's own UI bundles are built beside them but never loaded.
-const SEARCH_BUDGET_KB = 120;
+// The first search loads Pagefind's script, worker and WebAssembly (about 85 KB), its index and up to five
+// pages' fragments, which grow with the static pages. Pagefind's own UI bundles are built beside them but never loaded.
+const SEARCH_BUDGET_KB = 130;
 const dist = fileURLToPath(new URL("../dist/", import.meta.url));
 const name = (file) => relative(dist, file).replaceAll("\\", "/");
 
-function files(dir, all = false) {
+function files(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
-    e.isDirectory()
-      ? !all && ["data", "pagefind"].includes(e.name)
-        ? []
-        : files(join(dir, e.name), all)
-      : [join(dir, e.name)],
+    e.isDirectory() ? (["data", "pagefind"].includes(e.name) ? [] : files(join(dir, e.name))) : [join(dir, e.name)],
   );
 }
 
@@ -48,10 +44,18 @@ for (const page of shipped.filter((file) => file.endsWith(".html"))) {
 }
 const pagefind = join(dist, "pagefind");
 if (existsSync(pagefind)) {
-  const search = files(pagefind, true).filter((f) =>
+  const size = (file) => gzipSync(readFileSync(file)).length;
+  const all = files(pagefind);
+  const loaded = all.filter((f) =>
     /\/(pagefind\.js|pagefind-worker\.js|pagefind-entry\.json|wasm\.en\.pagefind|[^/]+\.pf_meta|index\/[^/]+)$/.test(f),
   );
-  const total = search.reduce((sum, file) => sum + gzipSync(readFileSync(file)).length, 0) / 1024;
+  // Each result shown fetches its page's fragment; App.svelte shows at most five pages.
+  const fragments = all
+    .filter((f) => /\/fragment\/[^/]+$/.test(f))
+    .map(size)
+    .sort((a, b) => b - a)
+    .slice(0, 5);
+  const total = (loaded.reduce((sum, file) => sum + size(file), 0) + fragments.reduce((a, b) => a + b, 0)) / 1024;
   console.log(`size: first search ${total.toFixed(1)} KB gzipped, budget ${SEARCH_BUDGET_KB} KB`);
   failed ||= total > SEARCH_BUDGET_KB;
 }

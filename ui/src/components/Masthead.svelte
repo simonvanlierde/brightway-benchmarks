@@ -1,6 +1,7 @@
 <script lang="ts">
 // The viewer's masthead and the static pages' one. The static pages render it without script:
 // their search is a form that opens the Benchmarks page.
+import { flushSync } from "svelte";
 import LogoMark from "./LogoMark.svelte";
 
 interface Hit {
@@ -42,20 +43,31 @@ let {
       benchmarks: Hit[];
       more?: { count: number; href: string; onclick: (e: MouseEvent) => void } | undefined;
       pages: Hit[];
+      /** Pagefind has not answered the current words yet. */
+      pending: boolean;
     };
   };
 } = $props();
 
+// The results for the words in the field, and how many.
+const r = $derived(search?.value.trim() ? search.results : undefined);
+const total = $derived(r ? r.benchmarks.length + r.pages.length : 0);
 // Results show while the search has focus; Escape hides them until the next keystroke.
 let dismissed = $state(false);
 let form = $state<HTMLFormElement>();
 function keys(e: KeyboardEvent) {
   if (e.key === "Escape") {
+    // A search field clears itself on Escape; keep the words, which also filter the catalogue.
+    e.preventDefault();
     dismissed = true;
     document.getElementById("benchmark-search")?.focus();
     return;
   }
   if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  // Show the list now, so its links can take focus below.
+  flushSync(() => {
+    dismissed = false;
+  });
   const stops = [...(form?.querySelectorAll<HTMLElement>("#benchmark-search, .search-results a") ?? [])];
   const at = stops.indexOf(document.activeElement as HTMLElement);
   const next = stops[Math.max(0, Math.min(stops.length - 1, at + (e.key === "ArrowDown" ? 1 : -1)))];
@@ -88,14 +100,14 @@ function picked(e: MouseEvent, hit: { onclick?: (e: MouseEvent) => void }) {
         {@render magnifier()}
       </button>
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions: arrow keys move between the field and its results -->
-      <form class="masthead-search" id="masthead-search" class:open={search.open} role="search" onsubmit={search.submit} onkeydown={keys} bind:this={form}>
+      <!-- action and name: Enter before the app has mounted reloads with the words as ?q=, which the app reads. -->
+      <form class="masthead-search" id="masthead-search" class:open={search.open} role="search" action={home} method="get" onsubmit={search.submit} onkeydown={keys} bind:this={form}>
         <label for="benchmark-search">Search</label>
-        <input id="benchmark-search" type="search" autocomplete="off" aria-describedby="search-count" value={search.value} oninput={(e) => { dismissed = false; search.input(e.currentTarget.value); }} placeholder="Benchmarks and findings" />
-        {#if search.results && search.value.trim()}
-          {@const r = search.results}
-          {@const total = r.benchmarks.length + r.pages.length}
+        <input id="benchmark-search" name="q" type="search" autocomplete="off" aria-describedby="search-count" value={search.value} oninput={(e) => { dismissed = false; search.input(e.currentTarget.value); }} placeholder="Benchmarks and findings" />
+        <!-- Always present, so screen readers announce its changes; quiet until Pagefind has answered. -->
+        <p class="sr" id="search-count" role="status">{r && !r.pending ? (total ? `${r.more?.count ?? r.benchmarks.length} benchmarks, ${r.pages.length} sections. Arrow down to the results.` : "No results") : ""}</p>
+        {#if r}
           <div class="search-results" class:dismissed>
-            <p class="sr" id="search-count" role="status">{total ? `${r.more?.count ?? r.benchmarks.length} benchmarks, ${r.pages.length} sections. Arrow down to the results.` : "No results"}</p>
             {#if r.benchmarks.length}
               <h2>Benchmarks</h2>
               <ul>
@@ -114,7 +126,7 @@ function picked(e: MouseEvent, hit: { onclick?: (e: MouseEvent) => void }) {
                 {/each}
               </ul>
             {/if}
-            {#if !total}<p class="hit-none">Nothing matches “{search.value.trim()}”.</p>{/if}
+            {#if !total && !r.pending}<p class="hit-none">Nothing matches “{search.value.trim()}”.</p>{/if}
           </div>
         {/if}
       </form>

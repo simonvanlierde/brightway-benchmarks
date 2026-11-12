@@ -61,7 +61,9 @@ test("the search form on a static page submits under the policy", async ({ page 
   await expect(
     page
       .locator(".search-results")
-      .getByRole("link", { name: /What the benchmarks found|story/i })
+      .getByRole("list")
+      .filter({ has: page.locator('a[href*="/findings/"], a[href*="/stories/"], a[href*="/about/"]') })
+      .getByRole("link")
       .first(),
   ).toBeVisible();
   await page.waitForLoadState("networkidle");

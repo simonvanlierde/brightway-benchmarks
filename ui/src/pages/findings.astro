@@ -65,23 +65,21 @@ for (const f of findings) {
   doc = doc.replace(
     new RegExp(`<h3 id="${f.doc}"[^>]*>[\\s\\S]*?</h3>`),
     // A function, so a "$" in a link is not read as a replacement pattern.
-    (heading) => `${heading}<p class="finding-links">${links.join("")}</p>`,
+    (heading) => `${heading}<p class="finding-links" data-pagefind-ignore>${links.join("")}</p>`,
   );
 }
 
 // Each package is a top-level section of the write-up; a headline goes under the one its section is in.
-const packages = [...doc.matchAll(/<h2 id="([^"]+)">([\s\S]*?)<\/h2>/g)].map((m) => ({
-  id: m[1] ?? "",
-  name: (m[2] ?? "").replace(/<[^>]+>/g, ""),
-  at: m.index,
-}));
+const headings = (tag: "h2" | "h3") =>
+  [...doc.matchAll(new RegExp(`<${tag} id="([^"]+)"[^>]*>([\\s\\S]*?)</${tag}>`, "g"))].map((m) => ({
+    id: m[1] ?? "",
+    name: (m[2] ?? "").replace(/<[^>]+>/g, ""),
+    at: m.index,
+  }));
+const packages = headings("h2");
 const packageOf = (f: Finding) => packages.findLast((p) => p.at < at(f));
 // The sidebar: every write-up section under its package.
-const sections = [...doc.matchAll(/<h3 id="([^"]+)"[^>]*>([\s\S]*?)<\/h3>/g)].map((m) => ({
-  id: m[1] ?? "",
-  name: (m[2] ?? "").replace(/<[^>]+>/g, ""),
-  at: m.index,
-}));
+const sections = headings("h3");
 const outline = packages.map((p, i) => ({
   ...p,
   sections: sections.filter((s) => s.at > p.at && s.at < (packages[i + 1]?.at ?? Number.POSITIVE_INFINITY)),
@@ -129,7 +127,7 @@ const headlines = packages
             <li>
               <h4><a href={f.story ? story(f) : `#${f.doc}`}>{f.title}</a></h4>
               <p>{f.text}</p>
-              <p class="finding-links">
+              <p class="finding-links" data-pagefind-ignore>
                 {f.story && <a href={`#${f.doc}`}>Write-up<span class="sr"> on {f.title}</span></a>}
                 {view(f) && <a href={view(f)}>Open the history<span class="sr"> for {f.title}</span></a>}
                 {f.profile && <a href={profile(f.profile)}>Profile<span class="sr"> for {f.title}</span></a>}
@@ -211,6 +209,25 @@ const headlines = packages
     align-items: center;
     min-height: 44px;
   }
+  .writeup-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 18px;
+    margin: 48px 0 0;
+    padding: 6px 0;
+    border-block: 1px solid var(--line);
+    font-size: var(--text-evidence);
+  }
+  .writeup-nav span {
+    color: var(--ink-2);
+    font-weight: 650;
+  }
+  .writeup-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
   /* Wide screens: a sticky outline of the write-ups beside the page, as Benchmarks has its catalogue. */
   .findings-rail {
     display: none;
@@ -274,25 +291,6 @@ const headlines = packages
     .finding-list li {
       padding-top: 10px;
     }
-  }
-  .writeup-nav {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0 18px;
-    margin: 48px 0 0;
-    padding: 6px 0;
-    border-block: 1px solid var(--line);
-    font-size: var(--text-evidence);
-  }
-  .writeup-nav span {
-    color: var(--ink-2);
-    font-weight: 650;
-  }
-  .writeup-nav a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
   }
   .writeups {
     margin-top: 24px;

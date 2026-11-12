@@ -104,7 +104,9 @@ it("budgets the first search apart, without Pagefind's unused UI bundles", () =>
   let result = run(dir);
   expect(result.status, result.stdout).toBe(0);
   expect(result.stdout).toMatch(new RegExp(`first search \\d+\\.\\d KB gzipped, budget ${SEARCH} KB`));
-  writeFileSync(join(dir, "dist/pagefind/index/en_1.pf_index"), content(24));
+  // A fragment counts too: each result shown fetches one.
+  mkdirSync(join(dir, "dist/pagefind/fragment"));
+  writeFileSync(join(dir, "dist/pagefind/fragment/en_1.pf_fragment"), content(24));
   result = run(dir);
   expect(result.status).toBe(1);
 });

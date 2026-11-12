@@ -367,6 +367,7 @@ test("a link to another page moves keyboard focus to that page", async ({ page }
 test("the masthead search lists benchmarks and findings, and opens the first match", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("./");
+  await page.locator("#main").waitFor();
   const search = page.getByRole("searchbox", { name: "Search" });
   const results = page.locator(".search-results");
   // Words match in any order, and typing on Setup stays on Setup.
@@ -385,6 +386,7 @@ test("the masthead search lists benchmarks and findings, and opens the first mat
 test("the search results take the arrow keys and close on Escape", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("./");
+  await page.locator("#main").waitFor();
   const search = page.getByRole("searchbox", { name: "Search" });
   await search.fill("multilca");
   const first = page.locator(".search-results a").first();
@@ -395,11 +397,51 @@ test("the search results take the arrow keys and close on Escape", async ({ page
   await expect(search).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(page.locator(".search-results")).toBeHidden();
+  // Escape hides the list but keeps the words; the arrow key brings the list back.
+  await expect(search).toHaveValue("multilca");
+  await search.press("ArrowDown");
+  await expect(first).toBeFocused();
+});
+
+test("Enter does not open a page hit left from the previous words", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("./");
+  await page.locator("#main").waitFor();
+  const search = page.getByRole("searchbox", { name: "Search" });
+  await search.fill("solver");
+  await expect(page.locator('.search-results a[href*="/stories/"]').first()).toBeVisible();
+  // No benchmark matches, and Pagefind has not answered yet: Enter must not open a "solver" hit.
+  await search.fill("zzzqqq");
+  await search.press("Enter");
+  await expect(page.locator(".search-results").getByText("Nothing matches")).toBeVisible();
+  await expect(page).not.toHaveURL(/stories|findings/);
+});
+
+test("the search's status line is in the page before anyone types, and waits for Pagefind", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("./");
+  await page.locator("#main").waitFor();
+  const status = page.locator("#search-count");
+  await expect(status).toHaveAttribute("role", "status");
+  await expect(status).toHaveText("");
+  await page.getByRole("searchbox", { name: "Search" }).fill("solver");
+  await expect(status).toHaveText(/\d+ benchmarks, [1-9]\d* sections/);
+});
+
+test("a page hit's excerpt leaves out the hidden link text", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("./");
+  await page.locator("#main").waitFor();
+  await page.getByRole("searchbox", { name: "Search" }).fill("score");
+  const excerpts = page.locator(".search-results .hit-excerpt");
+  await expect(excerpts.first()).toBeVisible();
+  await expect(excerpts.filter({ hasText: /Open the history|Write-up on/ })).toHaveCount(0);
 });
 
 test("the catalogue on Benchmarks follows the search", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("?page=explorer");
+  await page.locator("#main").waitFor();
   const search = page.getByRole("searchbox", { name: "Search" });
   const catalogue = page.getByRole("navigation", { name: "Benchmarks" });
   await search.fill("MultiLCA");
@@ -412,6 +454,7 @@ for (const width of [390, 1440]) {
   test(`search keeps results visible and typing focused at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("./");
+    await page.locator("#main").waitFor();
     // A phone keeps the search behind an icon.
     if (width < 600) await page.getByRole("button", { name: "Show the search" }).click();
     const search = page.getByRole("searchbox", { name: "Search" });

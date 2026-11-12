@@ -72,6 +72,11 @@ test("a wide findings page has an outline of every write-up beside it", async ({
   for (const f of listed) await expect(outline.locator(`a[href="#${f.doc}"]`), f.doc).toHaveCount(1);
   await page.locator(".writeups h3").nth(4).scrollIntoViewIfNeeded();
   await expect(outline.getByRole("link", { name: "Headlines" })).toBeInViewport();
+  // The outline replaces the package bar; a narrow page keeps the bar instead.
+  await expect(page.getByRole("navigation", { name: "Write-ups by package" })).toBeHidden();
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect(outline).toBeHidden();
+  await expect(page.getByRole("navigation", { name: "Write-ups by package" })).toBeVisible();
 });
 
 test("Benchmarks' intro links to all findings", async ({ page }) => {

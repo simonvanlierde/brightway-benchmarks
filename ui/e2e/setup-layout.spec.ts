@@ -39,3 +39,14 @@ test("desktop check help shares a row and uses the column labels", async ({ page
     "Upstream test suites",
   ]);
 });
+
+test("the check grid never scrolls vertically", async ({ page }) => {
+  for (const width of [1280, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("?platform=linux");
+    const grid = page.locator(".scroll.desktop-checks");
+    await grid.locator(".check-grid").waitFor();
+    const [scroll, client] = await grid.evaluate((e) => [e.scrollHeight, e.clientHeight]);
+    expect(scroll, `${width}px`).toBeLessThanOrEqual(client);
+  }
+});

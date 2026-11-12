@@ -271,9 +271,6 @@ function toggleSearch() {
   if (searchOpen) tick().then(() => document.getElementById("benchmark-search")?.focus());
 }
 // The masthead's search lists benchmarks and the static pages' sections as you type; Enter opens the first.
-function searchFor(text: string) {
-  search = text;
-}
 function openFirst(e: SubmitEvent) {
   e.preventDefault();
   const first = matching[0];
@@ -285,7 +282,7 @@ const matching = $derived.by(() => {
   const words = search.toLowerCase().split(/\s+/).filter(Boolean);
   return (
     index?.benchmarks.filter((b) => {
-      const g = index?.groups.find((x) => x.id === b.group);
+      const g = groupOf(b);
       const text = `${b.name} ${labelOf(b)} ${g?.label ?? ""} ${g?.name ?? ""}`.toLowerCase();
       return words.every((w) => text.includes(w));
     }) ?? []
@@ -310,11 +307,14 @@ interface PageData extends PageSection {
 let pagefind: Promise<Pagefind | undefined> | undefined;
 // A runtime URL: the bundler must not look for Pagefind, which is written after it runs.
 const loadPagefind = (url: string): Promise<Pagefind> => import(/* @vite-ignore */ url);
-let pageHits = $state<(PageSection & { page: string })[]>([]);
+// The hits name the words they answer: while Pagefind waits out its debounce, the last words' hits are not shown.
+let pageResult = $state<{ text: string; hits: (PageSection & { page: string })[] }>({ text: "", hits: [] });
+const pagesSettled = $derived(pageResult.text === search.trim());
+const pageHits = $derived(pagesSettled ? pageResult.hits : []);
 $effect(() => {
   const text = search.trim();
   if (!text) {
-    pageHits = [];
+    pageResult = { text, hits: [] };
     return;
   }
   pagefind ??= loadPagefind(`${import.meta.env.BASE_URL}pagefind/pagefind.js`).then(
@@ -326,16 +326,20 @@ $effect(() => {
   );
   let stale = false;
   pagefind.then(async (pf) => {
-    const found = await pf?.debouncedSearch(text);
+    // Without an index (`pnpm dev`, or a failed load) the pages have nothing to add.
+    const found = pf ? await pf.debouncedSearch(text) : { results: [] };
     if (!found || stale) return;
     const pages = await Promise.all(found.results.slice(0, 5).map((r) => r.data()));
     if (stale) return;
     // A page's best sections, not the page itself, when it has headings to land on.
-    pageHits = pages
-      .flatMap((d) =>
-        (d.sub_results.length ? d.sub_results.slice(0, 3) : [d]).map((x) => ({ ...x, page: d.meta.title })),
-      )
-      .slice(0, 6);
+    pageResult = {
+      text,
+      hits: pages
+        .flatMap((d) =>
+          (d.sub_results.length ? d.sub_results.slice(0, 3) : [d]).map((x) => ({ ...x, page: d.meta.title })),
+        )
+        .slice(0, 6),
+    };
   });
   return () => {
     stale = true;
@@ -346,6 +350,7 @@ $effect(() => {
   if (handedOver) document.getElementById("benchmark-search")?.focus();
 });
 const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => (index ? benchLabel(index, b) : b.name);
+const groupOf = (b: BenchmarkIndex["benchmarks"][number]) => index?.groups.find((g) => g.id === b.group);
 // A name shared by several packages ("MultiLCA" in bw2calc and bw2calc (conda-forge)) says which one it is.
 const repeated = $derived(
   new Set((index?.benchmarks ?? []).map(labelOf).filter((l, _, all) => all.indexOf(l) !== all.lastIndexOf(l))),
@@ -417,16 +422,17 @@ $effect(() => {
     value: search,
     open: searchOpen,
     toggle: toggleSearch,
-    input: searchFor,
+    input: (text: string) => (search = text),
     submit: openFirst,
     results: {
       benchmarks: matching.slice(0, 6).map((b) => {
         const next = { bench: b.id, params: [] };
-        const g = index?.groups.find((x) => x.id === b.group);
+        const g = groupOf(b);
         return { href: writeView(next), title: labelOf(b), detail: g?.label ?? g?.name ?? "", onclick: (e: MouseEvent) => follow(e, next) };
       }),
       more: matching.length > 6 ? { count: matching.length, href: writeView({ page: "explorer", params: [] }), onclick: (e: MouseEvent) => follow(e, { page: "explorer", params: [] }) } : undefined,
       pages: pageHits.map((h) => ({ href: h.url, title: h.title, detail: h.page, excerpt: h.excerpt })),
+      pending: !pagesSettled,
     },
   }}
 />

@@ -25,6 +25,7 @@ def background() -> tuple[System, dict[str, int]]:
     fresh_solver=False,
     version=f"{profile_version()}-heating{heating.VERSION}",
     timeout=900,
+    repeat=(1, 3, 120.0),
 )
 def traverse_heating(size: str, option: str, max_calc: int) -> BenchSetup:
     if size != "bafu":

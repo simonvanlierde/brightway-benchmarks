@@ -32,9 +32,10 @@ def calculation_count(traversal: NewNodeEachVisitGraphTraversal) -> float:
     track={"calculation_count": calculation_count},
     asv="Traversal",
     fresh_solver=False,
+    repeat=(1, 3, 120.0),
 )
 def traverse(size: str, max_calc: int) -> BenchSetup:
-    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, timeout=900)  # asv's default
+    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, timeout=900, factorizations=min(max_calc, 16))
     inventory, methods, refs, _ = packages(size)
     lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]])
     lca.lci()

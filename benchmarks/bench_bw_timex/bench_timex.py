@@ -81,7 +81,7 @@ def foreground(steps: int) -> dict:
     error="static_score_error",
     asv="TimelineLCI",
     timeout=1800,
-    repeat=(1, 5, 600),
+    repeat=(1, 3, 180.0),
 )
 def lci(size: str, steps: int) -> BenchSetup:
     modified = build_background(size)

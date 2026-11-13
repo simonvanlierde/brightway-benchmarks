@@ -63,7 +63,7 @@ def sweep_reference(size: str, n: int) -> list[list[float]]:
 VERSION = f"{profile_version()}-heating{heating.VERSION}"  # asv history key: the generator and the foreground
 
 
-@bench({"size": SIZES}, error="relative_error", asv="HeatingMulti", timeout=900, version=VERSION)
+@bench({"size": SIZES}, error="relative_error", asv="HeatingMulti", timeout=900, repeat=(1, 3, 120.0), version=VERSION)
 def heating_scores(size: str) -> BenchSetup:
     """Both options against the three EN 15804 methods with MultiLCA, the foreground loaded beside BAFU."""
     s, at = background(size)

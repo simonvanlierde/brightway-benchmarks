@@ -13,6 +13,7 @@ import inspect
 import os
 import warnings
 from importlib import metadata
+from pathlib import Path
 
 import bw2calc as bc
 import numpy as np
@@ -211,6 +212,12 @@ def condition_estimate(size: str) -> BenchSetup:
         os.environ.get("BWBENCH_SOLVER") or any(_installed(d) for d in ("pypardiso", "scikit-umfpack"))
     ):
         raise NotApplicable("the condition estimate is SciPy's alone: it runs in the SuperLU environment")
+    if size != "smoke":
+        hashes = Path(__file__).resolve().parents[2] / "asv" / "bw2calc.hashes"
+        if hashes.is_file():
+            latest = hashes.read_text().splitlines()[-1].strip()
+            if bc.__version__ != latest:
+                raise NotApplicable(f"condition estimate only runs on bw2calc {latest}")
     skip_unless_factorizable(size, pardiso=False, timeout=1800)  # SuperLU factorizes, whatever bw2calc uses
     return system(size).condition_estimate, UNCHECKED
 

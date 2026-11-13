@@ -23,9 +23,9 @@ jobs:
       # The action sends the job's token on GitHub links, so GitHub's rate limit is not hit.
       - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
-          # The files.brightway.dev front page answers bots with 403. Its data files
-          # download fine and stay checked.
+          # The files.brightway.dev front page and RSC/doi.org answer bots with 403.
           args: >-
             --no-progress
             --exclude '^https://files\.brightway\.dev/$'
+            --exclude '^https://doi\.org/10\.1039/C2EE22653G$'
             './**/*.md' './**/*.html'

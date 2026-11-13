@@ -19,7 +19,7 @@ import numpy as np
 from scipy import sparse
 from scipy.sparse.linalg import cgs
 
-from bwbench import DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, first_time, knob
+from bwbench import BAFU_RTOL, DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, first_time, knob
 from bwbench.asv import classes
 from bwbench.bench import UNCHECKED, BenchSetup, NotApplicable, bench
 from bwbench.matrices import method_name, neumann_score
@@ -50,9 +50,11 @@ def reached_patch(cls: str) -> None:
         assert_reached()
 
 
-def rtol_for(cls: str) -> float:
+def rtol_for(cls: str, size: str = "") -> float:
     """The check's tolerance: direct solves for ``LCA``, iterative ones for the others."""
-    return DIRECT_RTOL if cls == "LCA" else ITERATIVE_RTOL
+    if cls != "LCA":
+        return ITERATIVE_RTOL
+    return BAFU_RTOL if size == "bafu" else DIRECT_RTOL
 
 
 def lca_class(name: str) -> type:
@@ -131,7 +133,7 @@ def first_score(size: str, cls: str) -> BenchSetup:
     )
     lca_cls = lca_class(cls)
     inventory, methods, refs, _ = packages(size)
-    rtol = rtol_for(cls)
+    rtol = rtol_for(cls, size)
 
     def run() -> float:
         lca = lca_cls(demand={0: 1}, data_objs=[inventory, methods[0]])
@@ -165,7 +167,7 @@ def redo_lci(size: str, cls: str) -> BenchSetup:
     )
     skip_known_crash(cls, calls_next=False)
     inventory, methods, refs, _ = packages(size)
-    rtol = rtol_for(cls)
+    rtol = rtol_for(cls, size)
     lca = lca_class(cls)(demand={0: 1}, data_objs=[inventory, methods[0]])
     lca.lci(factorize=factorize)
     lca.lcia()
@@ -346,7 +348,7 @@ def iterations(size: str, iterations: int, cls: str) -> BenchSetup:
     if first_time("iterations", size, iterations, cls):  # the same draw (seed_override) every sample
         reached_patch(cls)
         # Product ids are 0 to n - 1, so bw2calc's matrix order is the id order of `scale`.
-        check(float(lca.score), neumann_score(lca, scale), rtol_for(cls), f"Monte Carlo score ({solver()})")
+        check(float(lca.score), neumann_score(lca, scale), rtol_for(cls, size), f"Monte Carlo score ({solver()})")
         if abs(lca.score - refs[0][0]) <= ITERATIVE_RTOL * abs(refs[0][0]):
             raise AssertionError("the Monte Carlo draw equals the static score: distributions were ignored")
 

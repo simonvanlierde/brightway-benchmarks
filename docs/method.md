@@ -138,7 +138,7 @@ These remain illustrative heating scenarios, not forecasts or household purchasi
 The reference is an independent Neumann series with no factorization. The bw2calc and traversal
 cases use the expanded source factors and the foreground together. The bw_timex case uses the
 matrices bw2data actually stores, accounting for its processing precision. Every native score must
-match within `DIRECT_RTOL` (1e-9); an error outside that tolerance fails the case.
+match within `DIRECT_RTOL` (1e-9), or `BAFU_RTOL` (1e-6) for BAFU 2025; an error outside that tolerance fails the case.
 
 ## How the results stay reproducible
 

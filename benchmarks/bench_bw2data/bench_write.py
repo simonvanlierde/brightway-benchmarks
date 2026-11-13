@@ -10,7 +10,7 @@ removal cost.
 import uuid
 from collections.abc import Iterator
 
-from bwbench import BW2DATA_RTOL, check, knob, temporary_brightway_dir
+from bwbench import BAFU_RTOL, BW2DATA_RTOL, check, knob, temporary_brightway_dir
 
 temporary_brightway_dir()
 
@@ -37,7 +37,7 @@ def fresh_project(size: str) -> tuple[dict, System]:
     return tech, synthetic
 
 
-def score_error(synthetic: System) -> float:
+def score_error(synthetic: System, size: str = "") -> float:
     """Check that the written database gives the reference score.
 
     bw2calc only loads the matrices: the solve is a Neumann series, which needs no
@@ -54,15 +54,14 @@ def score_error(synthetic: System) -> float:
     order = [lca.dicts.product[ids[f"p{i}"]] for i in range(synthetic.profile.products)]
     scale = np.empty(len(order))
     scale[order] = synthetic.scale
-    return check(
-        neumann_score(lca, scale), synthetic.float32_reference(), BW2DATA_RTOL, f"bw2data {bd.__version__} score"
-    )
+    rtol = BAFU_RTOL if size == "bafu" else BW2DATA_RTOL
+    return check(neumann_score(lca, scale), synthetic.float32_reference(), rtol, f"bw2data {bd.__version__} score")
 
 
 @bench({"size": WRITE_SIZES}, error="score_error", asv="DatabaseWrite", peakmem=True, timeout=1800, repeat=(1, 5, 1200))
 def write(size: str) -> Iterator[BenchSetup]:
     tech, synthetic = fresh_project(size)
-    yield lambda: bd.Database("synth").write(tech), lambda _: score_error(synthetic)
+    yield lambda: bd.Database("synth").write(tech), lambda _: score_error(synthetic, size)
     bd.projects.delete_project(delete_dir=True)
 
 

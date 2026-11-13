@@ -11,7 +11,7 @@ import functools
 
 import bw2calc as bc
 
-from bwbench import DIRECT_RTOL, bafu, check_table, first_time, heating, knob
+from bwbench import BAFU_RTOL, bafu, check_table, first_time, heating, knob
 from bwbench.asv import classes
 from bwbench.bench import BenchSetup, NotApplicable, bench
 from bwbench.matrices import System, load, method_name
@@ -84,7 +84,7 @@ def heating_scores(size: str) -> BenchSetup:
     def against_reference(scores: dict) -> float:
         assert_reached()
         table = [[float(scores[(method_name(m), name)]) for m in range(len(methods))] for name in demands]
-        return check_table(table, multi_reference(size), DIRECT_RTOL, "heating score")
+        return check_table(table, multi_reference(size), BAFU_RTOL, "heating score")
 
     if first_time("heating_scores", size):  # also the warm-up before the first timed call
         against_reference(run())
@@ -150,7 +150,7 @@ def heating_sweep(size: str, scenarios: int, variant: str) -> BenchSetup:
 
     def against_reference(rows: list[list[float]]) -> float:
         assert_reached()
-        return check_table(rows, sweep_reference(size, scenarios), DIRECT_RTOL, f"heating {variant} score")
+        return check_table(rows, sweep_reference(size, scenarios), BAFU_RTOL, f"heating {variant} score")
 
     if first_time("heating_sweep", size, scenarios, variant):  # also the warm-up before the first timed call
         against_reference(run())

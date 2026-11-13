@@ -30,6 +30,9 @@ for _var in PINNED:
 # pivot, which costs digits; the checks then report it, as they would on real data.
 DIRECT_RTOL = 1e-9  # direct solvers in float64 (measured: about 2e-16 to 4e-16)
 ITERATIVE_RTOL = 1e-6  # bw2calc's iterative classes stop at a relative residual near 1e-8
+# BAFU 2025 has a 1-norm condition estimate of ~9.4e21 (docs/findings.md), so unrefined direct
+# solves (SuperLU: up to 6.5e-7) and float32-rounded Neumann solves (bw2data: 2.63e-9) lose digits.
+BAFU_RTOL = 1e-6
 # bw2data's processed arrays hold amounts as float32 (bw_processing #112): against the float64
 # reference its score is off by 3e-9 at smoke size and 5.7e-8 at the ecoinvent size, so its
 # checks use `System.float32_reference`, which it matches to about 1e-15.

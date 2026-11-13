@@ -78,7 +78,7 @@ pybcj==1.0.8
 pycryptodomex==3.24.2
 pydantic==2.14.3
 pydantic-core==2.50.4
-pydantic-settings==2.16.2
+pydantic-settings==2.16.3
 pyecospold==4.0.1
 pygments==2.21.0
 pyparsing==3.3.3
@@ -105,7 +105,7 @@ stack-data==0.6.3
 stats-arrays==4.0
 structlog==26.1.0
 tabulate==0.10.0
-texttable==1.7.2
+texttable==1.7.3
 threadpoolctl==3.8.0
 tqdm==4.70.1
 traitlets==5.16.1

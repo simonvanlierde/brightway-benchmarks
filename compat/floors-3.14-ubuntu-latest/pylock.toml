@@ -22,9 +22,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/4f/d3/a8b22fa575b297c
 
 [[packages]]
 name = "argon2-cffi-bindings"
-version = "26.1.0"
-sdist = { url = "https://files.pythonhosted.org/packages/0b/43/bb8b6e8708d49a5ab36781333af092d9f483b198a2710d01281204640055/argon2_cffi_bindings-26.1.0.tar.gz", upload-time = 2026-08-20T07:44:22Z, size = 1790807, hashes = { sha256 = "63505c71542a44b68b1e38060450fb006404170da375feb31af153e7f9c6205d" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/6f/86/5363df11b86d02cf3662208e7406496327649cc90eb365bf6f4e8a54a41f/argon2_cffi_bindings-26.1.0-cp310-abi3-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", upload-time = 2026-08-20T07:32:45Z, size = 26597, hashes = { sha256 = "27f1821903e2ceadcb88ec2b45ef190897b7682449c772f4d9b53e42c520cf29" } }]
+version = "26.2.0"
+sdist = { url = "https://files.pythonhosted.org/packages/76/3b/f7bd1daac24c7017b6d09d05c56bb3f71aaae76b2ac4234ed2c00e0dd2d2/argon2_cffi_bindings-26.2.0.tar.gz", upload-time = 2026-11-13T07:16:40Z, size = 1792536, hashes = { sha256 = "f21ab89bb9850f32b9ca038d9961424bb0d3669d579cbbbfed068cffa6fc0643" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/7a/82/a9226c27133c26c7892ebc7b174304f81774a78c5b1e97a96e3c15b2cba8/argon2_cffi_bindings-26.2.0-cp310-abi3-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl", upload-time = 2026-11-13T07:15:56Z, size = 26650, hashes = { sha256 = "2d475baecbcb506e40ab1cb05a84c9cc913a8950061a4045fd0ec0eb54aa7fa2" } }]
 
 [[packages]]
 name = "arrow"
@@ -421,8 +421,8 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/2c/f7/021d590d52c1ac2
 
 [[packages]]
 name = "mkl"
-version = "2026.2.0"
-wheels = [{ url = "https://files.pythonhosted.org/packages/dc/51/3447e212ae3b09f3da7f0ae1b834aa452b8114cfffbb7a8f702715cb3706/mkl-2026.2.0-py2.py3-none-manylinux_2_28_x86_64.whl", upload-time = 2026-10-16T12:37:17Z, size = 221067932, hashes = { sha256 = "eaab1875ce9f47ab3c66d5632cef06baf768c05781f2f28847bdbc4343500ed7" } }]
+version = "2026.2.1"
+wheels = [{ url = "https://files.pythonhosted.org/packages/e9/31/53bb8fd1098caaf2c634cae75a1abbc1d3c67089a085afa38eeea79f7ea7/mkl-2026.2.1-py2.py3-none-manylinux_2_28_x86_64.whl", upload-time = 2026-11-12T15:02:49Z, size = 229090670, hashes = { sha256 = "76322a3abf512594ab7b4e82cb72df91e4e5d195498769aa8b292373c1ddd6d1" } }]
 
 [[packages]]
 name = "mkl-service"

@@ -28,9 +28,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/4f/d3/a8b22fa575b297c
 
 [[packages]]
 name = "argon2-cffi-bindings"
-version = "26.1.0"
-sdist = { url = "https://files.pythonhosted.org/packages/0b/43/bb8b6e8708d49a5ab36781333af092d9f483b198a2710d01281204640055/argon2_cffi_bindings-26.1.0.tar.gz", upload-time = 2026-08-20T07:44:22Z, size = 1790807, hashes = { sha256 = "63505c71542a44b68b1e38060450fb006404170da375feb31af153e7f9c6205d" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/e7/d2/0ae991f1b2181e5be49007c574710a800ad36c2978683addb3e67c474e55/argon2_cffi_bindings-26.1.0-cp310-abi3-macosx_11_0_arm64.whl", upload-time = 2026-08-20T07:32:43Z, size = 25521, hashes = { sha256 = "21ca0396fe5ec995dd54431c32698189666f9224810acfa752e50d2bd94d9df2" } }]
+version = "26.2.0"
+sdist = { url = "https://files.pythonhosted.org/packages/76/3b/f7bd1daac24c7017b6d09d05c56bb3f71aaae76b2ac4234ed2c00e0dd2d2/argon2_cffi_bindings-26.2.0.tar.gz", upload-time = 2026-11-13T07:16:40Z, size = 1792536, hashes = { sha256 = "f21ab89bb9850f32b9ca038d9961424bb0d3669d579cbbbfed068cffa6fc0643" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/b4/21/d0e756a1b47b2674aec2919aa81096bb4143c9e3b912b9fe9e11d66bebc5/argon2_cffi_bindings-26.2.0-cp310-abi3-macosx_11_0_arm64.whl", upload-time = 2026-11-13T07:15:53Z, size = 24273, hashes = { sha256 = "5ec171ae5e52691b5f111d815cb656a8142bedc1408c3db904d1a11df44604ca" } }]
 
 [[packages]]
 name = "arrow"

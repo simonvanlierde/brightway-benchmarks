@@ -22,9 +22,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/4f/d3/a8b22fa575b297c
 
 [[packages]]
 name = "argon2-cffi-bindings"
-version = "26.1.0"
-sdist = { url = "https://files.pythonhosted.org/packages/0b/43/bb8b6e8708d49a5ab36781333af092d9f483b198a2710d01281204640055/argon2_cffi_bindings-26.1.0.tar.gz", upload-time = 2026-08-20T07:44:22Z, size = 1790807, hashes = { sha256 = "63505c71542a44b68b1e38060450fb006404170da375feb31af153e7f9c6205d" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/6d/3a/0cc14a05810e6add9bce5e87693334baa2222de5f647fa31781885b6573f/argon2_cffi_bindings-26.1.0-cp310-abi3-win_amd64.whl", upload-time = 2026-08-20T07:32:51Z, size = 25730, hashes = { sha256 = "2c36ff87b5dfaa477d0bd51e9d7f6abdae7c8955d2983c97419085d842154b3e" } }]
+version = "26.2.0"
+sdist = { url = "https://files.pythonhosted.org/packages/76/3b/f7bd1daac24c7017b6d09d05c56bb3f71aaae76b2ac4234ed2c00e0dd2d2/argon2_cffi_bindings-26.2.0.tar.gz", upload-time = 2026-11-13T07:16:40Z, size = 1792536, hashes = { sha256 = "f21ab89bb9850f32b9ca038d9961424bb0d3669d579cbbbfed068cffa6fc0643" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/d8/20/9c2ba6433cb58297b1bc8b14bfb5a703c8dccdee16c99c76ddfb66082aa4/argon2_cffi_bindings-26.2.0-cp310-abi3-win_amd64.whl", upload-time = 2026-11-13T07:16:03Z, size = 25783, hashes = { sha256 = "d2d4ae065e7cce4b286d3eb7c59128bfd11f8e407863b88629e9d391b864a3df" } }]
 
 [[packages]]
 name = "arrow"
@@ -424,8 +424,8 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/2c/f7/021d590d52c1ac2
 
 [[packages]]
 name = "mkl"
-version = "2026.2.0"
-wheels = [{ url = "https://files.pythonhosted.org/packages/31/bc/0e8380d982d353bad1f01d4828830563e53d309eeb38d5be3d6f519d83cb/mkl-2026.2.0-py2.py3-none-win_amd64.whl", upload-time = 2026-10-16T12:33:55Z, size = 185172289, hashes = { sha256 = "5f2c187f0dda47efa19c1922cb3c8815924b8e5ed1613d28a3a69ec2327d4045" } }]
+version = "2026.2.1"
+wheels = [{ url = "https://files.pythonhosted.org/packages/47/db/8cad265c49b425e51dda3ba2fe7397f51ad0604cae0f5a129dfbc7f2ee92/mkl-2026.2.1-py2.py3-none-win_amd64.whl", upload-time = 2026-11-12T15:03:42Z, size = 185223117, hashes = { sha256 = "96f9ee6a5f101801c56225bd6b7a4a82c95d3da1268d7bf952fa07d09992a619" } }]
 
 [[packages]]
 name = "mkl-service"
@@ -497,11 +497,6 @@ name = "numpy"
 version = "2.1.0"
 sdist = { url = "https://files.pythonhosted.org/packages/54/a4/f8188c4f3e07f7737683588210c073478abcb542048cf4ab6fedad0b458a/numpy-2.1.0.tar.gz", upload-time = 2024-08-18T22:13:47Z, size = 18868922, hashes = { sha256 = "7dc90da0081f7e1da49ec4e398ede6a8e9cc4f5ebe5f9e06b443ed889ee9aaa2" } }
 wheels = [{ url = "https://files.pythonhosted.org/packages/23/4b/e30a3132478c69df3e3e587fa87dcbf2660455daec92d8d52e7028a92554/numpy-2.1.0-cp313-cp313-win_amd64.whl", upload-time = 2024-08-18T22:09:48Z, size = 12560212, hashes = { sha256 = "de844aaa4815b78f6023832590d77da0e3b6805c644c33ce94a1e449f16d6ab5" } }]
-
-[[packages]]
-name = "onemkl-license"
-version = "2026.2.0"
-wheels = [{ url = "https://files.pythonhosted.org/packages/61/fb/0e80b495cd359d737d1a6b427387ea5f9af54d6444e6d8306330076b8c0b/onemkl_license-2026.2.0-py2.py3-none-win_amd64.whl", upload-time = 2026-10-16T12:34:16Z, size = 54912, hashes = { sha256 = "971d94a133e2f10184a3be19604d7150de92b8b4631182e28eccd9c573e8a06f" } }]
 
 [[packages]]
 name = "openpyxl"

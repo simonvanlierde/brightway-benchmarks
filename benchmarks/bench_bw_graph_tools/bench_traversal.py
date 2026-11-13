@@ -35,7 +35,9 @@ def calculation_count(traversal: NewNodeEachVisitGraphTraversal) -> float:
     repeat=(1, 3, 120.0),
 )
 def traverse(size: str, max_calc: int) -> BenchSetup:
-    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, timeout=900, factorizations=min(max_calc, 16))
+    # Exiobase fans out to 16 depth-1 nodes even at max_calc=2 (2+ calls > 900s without PyPardiso).
+    factorizations = 30 if size == "exiobase" else (6 if max_calc > 2 else 2)
+    skip_unless_factorizable(size, pardiso=bc.PYPARDISO, timeout=900, factorizations=factorizations)
     inventory, methods, refs, _ = packages(size)
     lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]])
     lca.lci()

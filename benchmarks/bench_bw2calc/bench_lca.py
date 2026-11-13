@@ -124,7 +124,14 @@ def score_of(scores: object, method: tuple, demand: str) -> float:
 # iterative classes never start from the answer of the last call.
 
 
-@bench({"size": SIZES, "cls": CLASSES}, error="relative_error", asv="SingleScore", timeout=600, peakmem=True)
+@bench(
+    {"size": SIZES, "cls": CLASSES},
+    error="relative_error",
+    asv="SingleScore",
+    timeout=600,
+    repeat=(1, 3, 120.0),
+    peakmem=True,
+)
 def first_score(size: str, cls: str) -> BenchSetup:
     """One demand, one method: build the matrices, factorize, solve, characterize."""
     # The setup solves once before the timed call; JacobiGMRESLCA solves by GMRES, not LU.
@@ -327,7 +334,7 @@ def scores(size: str, demands: int, variant: str) -> BenchSetup:
     asv="MonteCarlo",
     fresh_solver=False,
     timeout=1800,
-    repeat=(1, 5, 600),
+    repeat=(1, 3, 120.0),
 )
 def iterations(size: str, iterations: int, cls: str) -> BenchSetup:
     """``iterations`` Monte Carlo draws after the first score.

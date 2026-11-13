@@ -58,7 +58,9 @@ def score_error(synthetic: System, size: str = "") -> float:
     return check(neumann_score(lca, scale), synthetic.float32_reference(), rtol, f"bw2data {bd.__version__} score")
 
 
-@bench({"size": WRITE_SIZES}, error="score_error", asv="DatabaseWrite", peakmem=True, timeout=1800, repeat=(1, 5, 1200))
+@bench(
+    {"size": WRITE_SIZES}, error="score_error", asv="DatabaseWrite", peakmem=True, timeout=1800, repeat=(1, 3, 180.0)
+)
 def write(size: str) -> Iterator[BenchSetup]:
     tech, synthetic = fresh_project(size)
     yield lambda: bd.Database("synth").write(tech), lambda _: score_error(synthetic, size)

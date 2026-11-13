@@ -37,7 +37,7 @@ def background() -> tuple[System, dict[str, int]]:
     error="static_score_error",
     version=f"{profile_version()}-heating{heating.VERSION}",
     timeout=1800,
-    repeat=(1, 5, 600),
+    repeat=(1, 3, 180.0),
 )
 def heating_lci(size: str, option: str) -> BenchSetup:
     if size != "bafu":

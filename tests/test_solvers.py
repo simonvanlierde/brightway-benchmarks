@@ -2,6 +2,7 @@
 
 import sys
 import types
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -98,3 +99,38 @@ def test_by_column_solves_each_column_of_a_2d_right_hand_side():
     b = np.array([[2.0, 4.0], [9.0, 6.0]])
     np.testing.assert_allclose(solve(b), np.linalg.solve(a, b))
     np.testing.assert_allclose(solve(np.array([2.0, 9.0])), [1.0, 2.0])
+
+
+def test_accelerate_off_macos_is_not_applicable(monkeypatch: pytest.MonkeyPatch):
+    """Timecase turns NotImplementedError into the arm's missing reason."""
+    monkeypatch.setattr(sys, "platform", "linux")
+    solvers.accelerate_library.cache_clear()
+    with pytest.raises(NotImplementedError, match="macOS only"):
+        solvers.accelerate(A)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="shell-script stand-in")
+def test_accelerate_names_the_compile_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """An SDK without SparseFactorizationLU: the reason is cc's error line, not its last line."""
+    (tmp_path / "accelerate.c").write_text("")
+    cc = tmp_path / "bin" / "cc"
+    cc.parent.mkdir()
+    cc.write_text(
+        "#!/bin/sh\necho \"accelerate.c:23:23: error: use of undeclared identifier 'SparseFactorizationLU'\" >&2\n"
+        "echo '1 error generated.' >&2\nexit 1\n"
+    )
+    cc.chmod(0o755)
+    monkeypatch.setenv("PATH", str(cc.parent))
+    monkeypatch.setattr(sys, "platform", "darwin")
+    monkeypatch.setattr(solvers, "ACCELERATE_C", tmp_path / "accelerate.c")
+    solvers.accelerate_library.cache_clear()
+    with pytest.raises(
+        RuntimeError, match=r"cc could not build accelerate.c: .*undeclared identifier 'SparseFactorizationLU'"
+    ):
+        solvers.accelerate_library()
+    assert not list(tmp_path.glob("*.dylib")) + list(tmp_path.glob("*.tmp"))
+    solvers.accelerate_library.cache_clear()
+
+
+def test_accelerate_is_a_patchable_solver():
+    assert "accelerate" in solvers.FACTORIZERS

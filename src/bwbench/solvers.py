@@ -1,13 +1,19 @@
 """Sparse solvers bw2calc does not pick itself, patched in where it binds its own.
 
 ``BWBENCH_SOLVER`` names one for the bw2calc suite (asv's ``klu`` and ``umfpack-T``
-environments); ``scripts/solver_lci.py`` patches them in by hand. Brightway is imported only
-by the functions that patch it, so the module itself loads on a host without Brightway.
+environments, ``bwbench compare``'s ``accelerate`` arm); ``scripts/solver_lci.py`` patches them
+in by hand. Brightway is imported only by the functions that patch it, so the module itself
+loads on a host without Brightway.
 """
 
+import ctypes
+import functools
 import os
+import subprocess
 import sys
+import weakref
 from collections.abc import Callable
+from pathlib import Path
 
 import numpy as np
 from scipy import sparse
@@ -41,7 +47,70 @@ def klu(a: sparse.spmatrix) -> Solve:
     return lambda b: k.solve(np.asarray(b, dtype=np.float64))
 
 
-FACTORIZERS: dict[str, Callable[[sparse.spmatrix], Solve]] = {"umfpack-T": umfpack_transposed, "klu": klu}
+ACCELERATE_C = Path(__file__).with_name("accelerate.c")
+
+
+@functools.cache
+def accelerate_library() -> ctypes.CDLL:
+    """``accelerate.c``, compiled beside itself on first use (and again when it changes) and loaded.
+
+    It needs macOS with the Xcode Command Line Tools and the macOS 15.5 SDK or newer.
+    """
+    if sys.platform != "darwin":
+        msg = "Apple Accelerate is macOS only"
+        raise NotImplementedError(msg)  # timecase reports the arm as missing with this reason
+    lib = ACCELERATE_C.with_suffix(".dylib")
+    if not lib.exists() or lib.stat().st_mtime < ACCELERATE_C.stat().st_mtime:
+        tmp = lib.with_suffix(f".{os.getpid()}.tmp")  # then a rename: no other process loads half a file
+        cc = ["cc", "-O2", "-shared", "-framework", "Accelerate", str(ACCELERATE_C), "-o", str(tmp)]
+        try:
+            proc = subprocess.run(cc, capture_output=True, text=True, check=False)  # noqa: S603 - Apple's cc
+        except FileNotFoundError:
+            proc = subprocess.CompletedProcess(cc, 127, "", "cc not found: install the Xcode Command Line Tools")
+        if proc.returncode:
+            lines = proc.stderr.strip().splitlines()
+            why = next((line for line in lines if "error" in line), lines[-1] if lines else f"exit {proc.returncode}")
+            msg = f"cc could not build {ACCELERATE_C.name}: {why}"
+            raise RuntimeError(msg)
+        tmp.replace(lib)
+    c = ctypes.CDLL(str(lib))
+    c.bw_factor.restype = ctypes.c_void_p
+    c.bw_factor.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
+    c.bw_solve.restype = None
+    c.bw_solve.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+    c.bw_free.restype = None
+    c.bw_free.argtypes = [ctypes.c_void_p]
+    return c
+
+
+def accelerate(a: sparse.spmatrix) -> Solve:
+    """Factorize A with Apple Accelerate's sparse LU (threshold partial pivoting), through ``accelerate.c``."""
+    lib = accelerate_library()
+    m = sparse.csc_matrix(a)
+    m.sum_duplicates()  # sorted, unique row indices, as Accelerate expects
+    n = m.shape[0]
+    colptr, rows = m.indptr.astype(np.int64), m.indices.astype(np.int32)
+    vals = np.ascontiguousarray(m.data, dtype=np.float64)
+    status = ctypes.c_int(0)
+    f = lib.bw_factor(n, colptr.ctypes.data, rows.ctypes.data, vals.ctypes.data, ctypes.byref(status))
+    if not f:
+        msg = f"Accelerate's sparse LU failed: SparseStatus_t {status.value}"
+        raise RuntimeError(msg)
+
+    def solve(b: np.ndarray) -> np.ndarray:
+        x = np.array(b, dtype=np.float64)  # a copy: the solve overwrites it
+        lib.bw_solve(f, n, x.ctypes.data)
+        return x
+
+    weakref.finalize(solve, lib.bw_free, f)
+    return solve
+
+
+FACTORIZERS: dict[str, Callable[[sparse.spmatrix], Solve]] = {
+    "umfpack-T": umfpack_transposed,
+    "klu": klu,
+    "accelerate": accelerate,
+}
 CALLS = [0]  # factorizations through the patch; 0 after a run means bw2calc bypassed it
 
 

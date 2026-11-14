@@ -9,7 +9,8 @@ environment from conda-forge. Then the arms run in interleaved rounds (``bwbench
 each call in a fresh process (``bwbench.timecase``). An arm that cannot be installed or run
 here is recorded as missing, with the reason. The comparisons:
 
-- ``solvers``: UMFPACK and PyPardiso against SuperLU in one environment, by hiding the others.
+- ``solvers``: UMFPACK and PyPardiso against SuperLU in one environment, by hiding the others,
+  and on macOS Apple Accelerate's sparse LU, patched into bw2calc (``bwbench.solvers``).
 - ``install-path``: bw2calc from conda-forge (pixi) against PyPI (uv).
 - ``python``: Python 3.12, 3.14 and 3.15 against 3.13.
 - ``bw2calc-release``, ``bw2data-release``: the latest release against the one before, on
@@ -18,7 +19,8 @@ here is recorded as missing, with the reason. The comparisons:
 Every arm other than the solvers' runs SuperLU, so its ratio is the install's, the
 interpreter's or the release's, not a solver change. It runs from a checkout or as installed
 (``uvx --from git+https://github.com/simonvanlierde/brightway-benchmarks bwbench compare``),
-which carries the cases in ``bwbench/cases``. It needs ``uv``, and ``pixi`` for ``install-path``.
+which carries the cases in ``bwbench/cases``. It needs ``uv``, ``pixi`` for ``install-path``, and
+on macOS the Xcode Command Line Tools for the Accelerate arm.
 
 Exit codes: 0 written (or valid), 1 a file has problems (validate), 2 usage error, 3 could not run.
 """
@@ -53,6 +55,7 @@ from bwbench.ratios import (
     problems,
     ratio_seed,
 )
+from bwbench.solvers import FACTORIZERS
 from bwbench.timecase import BENCHMARKS
 
 PACKAGE = Path(__file__).resolve().parent
@@ -75,12 +78,17 @@ class Env:
 
 @dataclass(frozen=True)
 class Arm:
-    """One side of a comparison: an environment, the modules hidden in it, the solver it must use."""
+    """One side of a comparison: an environment, the modules hidden in it, the solver it must use.
+
+    A ``solver`` in ``bwbench.solvers.FACTORIZERS`` is patched into bw2calc; ``missing`` says why
+    the arm cannot run on this system.
+    """
 
     name: str
     env: Env
     hide: tuple[str, ...] = SOLVERS
     solver: str = "superlu"
+    missing: str | None = None
 
 
 @dataclass(frozen=True)
@@ -117,6 +125,12 @@ def comparisons(system: str, latest: dict[str, str]) -> dict[str, Comparison]:
             (
                 Arm("umfpack", solvers, hide=("pypardiso",), solver="umfpack"),
                 Arm("pypardiso", solvers, hide=(), solver="pypardiso"),
+                Arm(
+                    "accelerate",
+                    solvers,
+                    solver="accelerate",
+                    missing=None if system == "Darwin" else "Apple Accelerate is macOS only",
+                ),
             ),
         ),
         "install-path": Comparison(
@@ -246,7 +260,7 @@ def stage(work: Path) -> Path:
     bwbench runs in (uvx's NumPy, say), which would shadow the arm's own.
     """
     dest = work / "src" / "bwbench"
-    skip = shutil.ignore_patterns("__pycache__")
+    skip = shutil.ignore_patterns("__pycache__", "*.dylib")  # the Accelerate library builds anew there
     shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(PACKAGE, dest, ignore=skip)
     if not (dest / "cases").is_dir():  # a checkout: the cases sit beside src/
@@ -260,6 +274,7 @@ def time_arm(arm: Arm, built: Built, case: str, params: dict, repeats: int, work
     env = os.environ | {
         "PYTHONPATH": os.pathsep.join([str(src), str(src / "bwbench" / "cases")]),
         "BWBENCH_HIDE": ",".join(arm.hide),
+        "BWBENCH_SOLVER": arm.solver if arm.solver in FACTORIZERS else "",
         "PYTHONUTF8": "1",
     }
     args = [str(built.python), "-m", "bwbench.timecase", case, json.dumps(params), str(repeats)]
@@ -300,7 +315,7 @@ def measure(c: Comparison, built: dict[Env, Built], rounds: int, repeats: int, s
             "versions": {},
             "fingerprint": built[a.env].fingerprint,
             "seconds": [],
-            "missing": built[a.env].failed,
+            "missing": a.missing or built[a.env].failed,
         }
         for a in arms
     }

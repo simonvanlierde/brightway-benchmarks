@@ -64,7 +64,8 @@ def test_patched_solver_environments_name_a_known_solver_and_install_it():
     installs = {"klu": "pyklu", "umfpack-T": "scikit-umfpack"}
     include = json.loads((ASV / "bw2calc.json").read_text())["include"]
     patched = [e for e in include if "BWBENCH_SOLVER" in e.get("env", {})]
-    assert {e["env"]["BWBENCH_SOLVER"] for e in patched} == set(FACTORIZERS)
+    # Accelerate is macOS only, and asv runs in the Linux box: bwbench compare times it instead.
+    assert {e["env"]["BWBENCH_SOLVER"] for e in patched} == set(FACTORIZERS) - {"accelerate"}
     for e in patched:
         assert installs[e["env"]["BWBENCH_SOLVER"]] in e["req"]
 

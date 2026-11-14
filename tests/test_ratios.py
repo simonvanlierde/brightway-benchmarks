@@ -342,3 +342,49 @@ def test_timecase_names_the_solver_only_when_bw2calc_says(
 
     monkeypatch.setitem(sys.modules, "bw2calc", types.SimpleNamespace(**attrs))
     assert timecase.solver() == expected
+
+
+def test_the_accelerate_arm_runs_on_macos_and_is_missing_elsewhere():
+    mac = {a.name: a for a in compare.comparisons("Darwin", {})["solvers"].candidates}
+    assert (mac["accelerate"].solver, mac["accelerate"].missing) == ("accelerate", None)
+    assert set(mac["accelerate"].hide) == {"pypardiso", "scikits.umfpack"}  # bw2calc's own pick is SuperLU
+    for system in ("Linux", "Windows"):
+        arm = compare.comparisons(system, {})["solvers"].candidates[-1]
+        assert (arm.name, arm.missing) == ("accelerate", "Apple Accelerate is macOS only")
+
+
+def test_an_arm_missing_on_this_system_is_recorded_not_timed(monkeypatch: pytest.MonkeyPatch):
+    doc, calls = result(monkeypatch)
+    assert "accelerate" not in calls
+    c = doc["comparisons"][0]
+    assert c["arms"]["accelerate"]["missing"] == "Apple Accelerate is macOS only"
+    assert {r["candidate"]: r["missing"] for r in c["ratios"]}["accelerate"] == "candidate missing"
+    assert problems(doc) == []
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="shell-script stand-ins")
+@pytest.mark.parametrize(("solver", "patched"), [("accelerate", "accelerate"), ("superlu", "")])
+def test_a_patched_arm_sets_its_solver_and_the_others_clear_it(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, solver: str, patched: str
+):
+    """A BWBENCH_SOLVER left in the caller's environment must not patch the SuperLU arm."""
+    monkeypatch.setenv("BWBENCH_SOLVER", "klu")
+    line = '{"seconds": [1.0], "solver": "%s", "versions": {}, "missing": null}\\n'
+    body = f"printf '{line}' \"${{BWBENCH_SOLVER:-superlu}}\""
+    built = compare.Built(python=script(tmp_path / "python", body))
+    arm = compare.Arm(solver, ARM.env, solver=solver)
+    out = compare.time_arm(arm, built, "bench_lca.SingleScore.time_first_score", {}, 1, tmp_path)
+    assert (out["missing"], out["solver"]) == (None, patched or "superlu")
+
+
+def test_timecase_names_a_patched_solver_once_bw2calc_called_it(monkeypatch: pytest.MonkeyPatch):
+    import types  # noqa: PLC0415
+
+    from bwbench import solvers, timecase  # noqa: PLC0415
+
+    monkeypatch.setitem(sys.modules, "bw2calc", types.SimpleNamespace(PYPARDISO=False))
+    monkeypatch.setenv("BWBENCH_SOLVER", "accelerate")
+    monkeypatch.setattr(solvers, "CALLS", [0])
+    assert timecase.solver() == "superlu"  # never reached: time_arm then reports the mismatch
+    solvers.CALLS[0] = 1
+    assert timecase.solver() == "accelerate"

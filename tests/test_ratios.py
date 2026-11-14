@@ -189,6 +189,12 @@ def ratio_of(doc: dict, name: str = "umfpack") -> dict:
         (lambda d: d["comparisons"][0]["arms"]["umfpack"].update(missing="gone"), "a ratio from a missing arm"),
         (lambda d: d["comparisons"][0].update(baseline="klu"), "baseline 'klu' is not an arm"),
         (lambda d: d["comparisons"][0].update(case="first score"), "does not match"),
+        (lambda d: d["comparisons"][0]["arms"]["umfpack"].update(missing="", seconds=[]), "should be non-empty"),
+        (lambda d: ratio_of(d).update(missing="", ratio=None, ci95=None, seconds=None), "should be non-empty"),
+        (lambda d: d.update(machine="box \u202egpj.exe"), r"machine: 'box \u202egpj.exe' does not match"),
+        (lambda d: ratio_of(d).update(candidate="umf\u200bpack"), "does not match"),
+        (lambda d: d["fingerprint"].update(cpu_model="CPU\x1b[2J"), "fingerprint/cpu_model: control or format"),
+        (lambda d: d["comparisons"][0]["arms"]["superlu"]["versions"].update({"bw\u2066": "1"}), "U+2066"),
     ],
 )
 def test_validator_names_each_problem(monkeypatch: pytest.MonkeyPatch, change: Callable[[dict], object], expected: str):
@@ -412,3 +418,16 @@ def test_a_run_without_any_ratio_fails(monkeypatch: pytest.MonkeyPatch, tmp_path
     assert compare.main(["compare", "-o", str(out), "--work", str(tmp_path / "w"), "--machine", "test"]) == 4
     assert {r["missing"] for r in json.loads(out.read_text())["comparisons"][0]["ratios"]} == {"baseline missing"}
     assert "exit codes" in compare.parser().format_help().lower()
+
+
+def test_the_schema_refuses_every_control_and_format_character_it_can_name():
+    """The schema's text pattern covers Cc and Cf in the Basic Multilingual Plane; problems() covers the rest."""
+    import re  # noqa: PLC0415
+    import unicodedata  # noqa: PLC0415
+
+    pattern = re.compile(
+        json.loads(compare.SRC.joinpath("bwbench", "ratios.schema.json").read_text())["$defs"]["text"]["pattern"]
+    )
+    hidden = [chr(i) for i in range(0x10000) if unicodedata.category(chr(i)) in {"Cc", "Cf"}]
+    assert [f"U+{ord(c):04X}" for c in hidden if pattern.search(f"a{c}b")] == []
+    assert pattern.search("GitHub ubuntu24 ½ µ")

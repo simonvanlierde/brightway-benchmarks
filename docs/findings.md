@@ -9,7 +9,8 @@ package's own change ([method](method.md)).
 These synthetic histories use generator v5, which runs close to real ecoinvent. A SuperLU score
 takes 4.98 s against a 3.66 s factorization of the real matrix, and UMFPACK on reference BLAS
 2.54 s against 1.78 s. Each solver's score takes 1.4 to 1.6 times as long as its real
-factorization, and a score also builds the matrices and solves them. On generator v4 it was 4 to
+factorization. Building and solving take far less than that gap, so the synthetic matrix still
+takes longer to factorize than the real one. On generator v4 it was 4 to
 7.6 times, as its factors filled about three times as much
 ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
 

@@ -286,7 +286,8 @@ temporary folder, and runs them on your machine, outside any container. You need
 installs only on x86_64; elsewhere its arm is missing too, which is a result, not an error.
 
 1. Plug a laptop in, set its performance power mode and close other work.
-2. Run the solvers comparison. It takes about 10 to 20 minutes at 20 rounds:
+2. Run the solvers comparison. At 20 rounds it takes about a minute, plus the downloads on
+   the first run:
 
    ```sh
    uvx --from git+https://github.com/simonvanlierde/brightway-benchmarks bwbench compare --machine "Apple M3 Pro" -o result.json

@@ -32,7 +32,7 @@ LEVEL = 0.95
 RTOL = 1e-6  # a stored ratio against the one recomputed from the stored seconds (JSON keeps 17 digits)
 
 CONTRIBUTED = re.compile(r"(?:^|/)ratios/contributed/([a-z0-9][a-z0-9-]*)/(\d{4}-\d{2}-\d{2})\.json$")
-MAX_BYTES = 256 * 1024  # every comparison at 20 rounds is about 40 KiB
+MAX_BYTES = 256 * 1024  # the solvers comparison at 20 rounds is about 5 KiB
 # Labels a machine's own name gives: a domain name, a macOS default computer name ("Ada's
 # MacBook Pro"), a Windows default one (DESKTOP-4F2K9QX).
 # shortcut: only these defaults; a custom host name passes, and the pull request review catches it.

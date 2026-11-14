@@ -55,12 +55,12 @@ from bwbench.ratios import (
     problems,
     ratio_seed,
 )
-from bwbench.solvers import FACTORIZERS
 from bwbench.timecase import BENCHMARKS
 
 PACKAGE = Path(__file__).resolve().parent
 PROBE = PACKAGE / "fingerprint.py"
 SOLVERS = ("pypardiso", "scikits.umfpack")  # what bw2calc picks over SuperLU when it can import it
+PICKED = ("superlu", "umfpack", "pypardiso")  # bw2calc's own; an arm's other solver is patched in
 TIMEOUT = 900  # seconds for one install or one timed process
 FIRST_SCORE = ("bench_lca.SingleScore.time_first_score", {"size": "smoke", "cls": "LCA"})
 WRITE = ("bench_write.DatabaseWrite.time_write", {"size": "smoke"})
@@ -80,7 +80,7 @@ class Env:
 class Arm:
     """One side of a comparison: an environment, the modules hidden in it, the solver it must use.
 
-    A ``solver`` in ``bwbench.solvers.FACTORIZERS`` is patched into bw2calc; ``missing`` says why
+    A ``solver`` bw2calc does not pick itself is patched in (``bwbench.solvers``); ``missing`` says why
     the arm cannot run on this system.
     """
 
@@ -274,7 +274,7 @@ def time_arm(arm: Arm, built: Built, case: str, params: dict, repeats: int, work
     env = os.environ | {
         "PYTHONPATH": os.pathsep.join([str(src), str(src / "bwbench" / "cases")]),
         "BWBENCH_HIDE": ",".join(arm.hide),
-        "BWBENCH_SOLVER": arm.solver if arm.solver in FACTORIZERS else "",
+        "BWBENCH_SOLVER": "" if arm.solver in PICKED else arm.solver,
         "PYTHONUTF8": "1",
     }
     args = [str(built.python), "-m", "bwbench.timecase", case, json.dumps(params), str(repeats)]

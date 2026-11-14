@@ -388,3 +388,11 @@ def test_timecase_names_a_patched_solver_once_bw2calc_called_it(monkeypatch: pyt
     assert timecase.solver() == "superlu"  # never reached: time_arm then reports the mismatch
     solvers.CALLS[0] = 1
     assert timecase.solver() == "accelerate"
+
+
+def test_compare_imports_without_numpy():
+    """The compare command runs where only the arms have NumPy (the ratios workflow's uv run --no-project)."""
+    import subprocess  # noqa: PLC0415
+
+    code = "import sys; sys.modules['numpy'] = None; import bwbench.compare"
+    subprocess.run([sys.executable, "-c", code], check=True)

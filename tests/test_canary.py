@@ -30,9 +30,11 @@ def test_run_writes_samples_medians_and_a_fingerprint(tmp_path: Path, monkeypatc
     assert problems(record["fingerprint"]) == []
 
 
-def test_the_workloads_are_hashed():
+def test_the_workloads_are_hashed(monkeypatch: pytest.MonkeyPatch):
     """An edit to a workload starts a new history; this pins the shipped ones."""
-    assert canary.workload_sha() == canary.workload_sha()
+    before = canary.workload_sha()
+    monkeypatch.setitem(canary.WORKLOADS, "interpreter", canary.memory)
+    assert canary.workload_sha() != before
     assert set(canary.WORKLOADS) == {"interpreter", "memory"}
 
 

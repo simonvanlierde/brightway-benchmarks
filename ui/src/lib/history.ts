@@ -373,10 +373,11 @@ export function benchLabel(index: BenchmarkIndex, bench: Benchmark): string {
 
 /**
  * The two pages: Setup ("home") and Benchmarks ("explorer"). Older links keep working: the
- * compatibility view is part of Setup, and release changes open the Benchmarks overview.
+ * compatibility view is part of Setup, and release changes open the Benchmarks overview. The
+ * comparisons across machines ("compare") are part of Benchmarks.
  */
 export function pageOf(view: View): "home" | "explorer" {
-  if (view.bench || view.page === "explorer" || view.page === "changes") return "explorer";
+  if (view.bench || view.page === "explorer" || view.page === "changes" || view.page === "compare") return "explorer";
   if (!view.page && (view.group || view.direction)) return "explorer";
   return "home";
 }

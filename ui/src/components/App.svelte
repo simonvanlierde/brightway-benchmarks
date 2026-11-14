@@ -8,7 +8,9 @@ import {
   type Guidance,
   loadGuidance,
   loadIndex,
+  loadRatios,
   loadReport,
+  type Ratios,
   type Report,
 } from "../lib/contract";
 import { envNotes, solverLinks } from "../lib/environments";
@@ -36,6 +38,7 @@ import {
 } from "../lib/history";
 import { staticHref, VIEWER_PAGES } from "../lib/pages";
 import { scrollable } from "../lib/scrollable";
+import Comparisons from "./Comparisons.svelte";
 import Masthead from "./Masthead.svelte";
 import PythonSupport from "./PythonSupport.svelte";
 import ReleaseChanges from "./ReleaseChanges.svelte";
@@ -61,6 +64,7 @@ $effect(() => {
     tick().then(() => document.getElementById(location.hash.slice(1))?.scrollIntoView());
 });
 const findingsPage = $derived(staticHref(home, "findings"));
+const compareView: View = { page: "compare", params: [] };
 
 // Fetched once a benchmark is chosen, so the start page does not load Plot. A failed fetch is forgotten,
 // so the next benchmark tries again: after a deploy the old chunk is gone and only a reload finds the new one.
@@ -78,6 +82,13 @@ let error = $state<string>();
 let guidance = $state<Guidance>();
 let guidanceReady = $state(false);
 let guidanceError = $state<string>();
+let ratios = $state<Ratios>();
+let ratiosReady = $state(false);
+let ratiosError = $state<string>();
+// The method's section on the ratios, from the data's own Method link.
+const methodHash = $derived(
+  index?.project.links?.find((l) => l.name === "Method")?.url.replace(/(#.*)?$/, "#hosted-ratios"),
+);
 let errorKind = $state<ContractError["kind"]>("invalid");
 let view = $state<View>(readView(location.search, location.hash));
 let reports = $state<Map<string, BenchmarkReport>>();
@@ -118,6 +129,18 @@ $effect(() => {
     )
     .finally(() => {
       guidanceReady = true;
+    });
+  loadRatios(base)
+    .then(
+      (data) => {
+        ratios = data;
+      },
+      (reason: unknown) => {
+        ratiosError = String(reason);
+      },
+    )
+    .finally(() => {
+      ratiosReady = true;
     });
   const back = () => {
     view = readView(location.search, location.hash);
@@ -191,7 +214,7 @@ function fetched(r: Report): Promise<BenchmarkReport> {
 let overview = $state(new Map<string, BenchmarkReport>());
 const requested = new Set<string>();
 $effect(() => {
-  if (!index || page !== "explorer" || bench) return;
+  if (!index || page !== "explorer" || bench || view.page === "compare") return;
   const cases = new Map(index.cases.map((c) => [c.id, c.benchmark]));
   const moved = new Set((index.changes ?? []).map((c) => cases.get(c.case)));
   const groups = new Set(index.benchmarks.filter((b) => moved.has(b.id)).map((b) => b.group));
@@ -394,7 +417,7 @@ const siteName = $derived(
     : (index?.project.name ?? "Brightway Benchmarks"),
 );
 $effect(() => {
-  document.title = `${bench ? labelOf(bench) : { home: "Setup", explorer: "Benchmarks" }[page]} · ${siteName}`;
+  document.title = `${bench ? labelOf(bench) : view.page === "compare" ? "Across machines" : { home: "Setup", explorer: "Benchmarks" }[page]} · ${siteName}`;
 });
 </script>
 
@@ -498,13 +521,19 @@ $effect(() => {
     <main class="view" id="main" tabindex="-1">
       {#if guidanceError && page === "home"}<div class="empty" role="status"><p>Setup guidance could not be loaded. Benchmark histories remain available.</p>{@render technical(guidanceError)}</div>{/if}
       {#if page === "home"}
-        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} name={siteName} findings={findingsPage} />
+        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} name={siteName} findings={findingsPage} {ratios} />
+      {:else if !bench && view.page === "compare"}
+        <Comparisons {ratios} ready={ratiosReady} error={ratiosError} method={methodHash} />
       {:else if !bench}
         {#if view.bench}<p class="empty" role="status">This benchmark is not in the current data. Choose one from the catalogue.</p>{/if}
-        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Open a change or a benchmark from the catalogue for its history, or read <a href={findingsPage}>what the benchmarks found</a>.</p></header>
-        {#if guidance?.solverComparison}<SolverComparison comparison={guidance.solverComparison} {story} />{/if}
-        <ReleaseChanges {index} {view} {go} {follow} loaded={overview} />
-        {#if guidance}<PythonSupport {guidance} /><PythonSupport {guidance} eol />{/if}
+        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Open a change or a benchmark from the catalogue for its history, or read <a href={findingsPage}>what the benchmarks found</a>.{#if ratios || !ratiosReady}{" "}To see whether a choice holds on other machines, <a href={writeView(compareView)} onclick={(e) => follow(e, compareView)}>compare it across machines</a>.{/if}</p></header>
+        <!-- The solver section sits above the release changes: wait for guidance, so they do not jump down. -->
+        {#if !guidanceReady}<div class="skeleton" aria-busy="true"></div>
+        {:else}
+          {#if guidance?.solverComparison}<SolverComparison comparison={guidance.solverComparison} {story} />{/if}
+          <ReleaseChanges {index} {view} {go} {follow} loaded={overview} />
+          {#if guidance}<PythonSupport {guidance} /><PythonSupport {guidance} eol />{/if}
+        {/if}
 
       {:else}
         <header class="bench-header">

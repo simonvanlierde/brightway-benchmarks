@@ -291,6 +291,7 @@ describe("page routing", () => {
   it("keeps legacy histories, overview filters and the compatibility anchor", () => {
     expect(pageOf({ params: [], bench: "known-bench" })).toBe("explorer");
     expect(pageOf({ params: [], direction: "worse" })).toBe("explorer");
+    expect(pageOf({ params: [], page: "compare" })).toBe("explorer"); // the comparisons sit under Benchmarks
     expect(pageOf({ params: [], page: "home" })).toBe("home");
     expect(pageOf({ params: [], page: "unknown" })).toBe("home");
     // Compatibility is part of Setup now, and release changes open the Benchmarks overview.

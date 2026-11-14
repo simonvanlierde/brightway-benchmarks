@@ -35,6 +35,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   releases. Each result file is attested and published on the `ratios` branch, one folder per run
   (`hosted/<YYYY-MM-DD>-<run id>/<OS>.json`). The same measurement runs anywhere as
   `bwbench compare`, and `bwbench validate` checks a result file ([method](docs/method.md#hosted-ratios)).
+- An "Across machines" view under Benchmarks shows those ratios one row per machine, with the
+  95% interval drawn around 1 and a summary per choice over the reference and hosted machines: the
+  range where they agree, or "Differs between machines" when they do not ([decision 0007](docs/decisions/0007-comparisons-across-machines.md)).
 - Contributed runs: anyone can time the solvers on their own machine with
   `uvx --from git+https://github.com/simonvanlierde/brightway-benchmarks bwbench compare` and add
   the result file by pull request to `ratios/contributed/`. The `contributed` workflow runs

@@ -44,8 +44,12 @@ HOST_LIKE = re.compile(
     r"^[\w-]+(\.[\w-]+)+$|\.(local|lan|home|internal)$|'s[ -](macbook|imac|mac)|^(desktop|laptop)-[a-z0-9]{7}$",
     re.IGNORECASE,
 )
-# A home folder in the file's text, where a Windows backslash is escaped as \\.
-USER_FOLDER = re.compile(r"/Users/[^/\s\"]|/home/[^/\s\"]|[A-Za-z]:\\\\Users\\\\")
+# A home folder, with either separator; in a file's JSON text a backslash is escaped as \\.
+# /home/linuxbrew (Homebrew on Linux) and /Users/Shared are no one's home.
+USER_FOLDER = re.compile(
+    r"[A-Za-z]:[\\/]+Users[\\/]+[^\\/\s\"]+|/home/(?!linuxbrew\b)[^/\s\"]+|/Users/(?!Shared\b)[^/\s\"]+|/root(?=/)",
+    re.IGNORECASE,
+)
 
 
 def interleave(arms: list[str], rounds: int, rng: random.Random) -> list[list[str]]:
@@ -201,7 +205,7 @@ def contribution_problems(path: Path, doc: dict) -> list[str]:
     if HOST_LIKE.search(machine):
         found.append(f"machine {machine!r} looks like a host name; use a label such as the CPU model")
     if USER_FOLDER.search(path.read_text(encoding="utf-8")):
-        found.append("names a user folder (/Users/..., /home/... or C:\\Users\\...); replace it with ~")
+        found.append("names a user folder (/Users/..., /home/..., /root/... or C:\\Users\\...); replace it with ~")
     if (size := path.stat().st_size) > MAX_BYTES:
         found.append(f"{size // 1024} KiB, more than {MAX_BYTES // 1024} KiB")
     return found

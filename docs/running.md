@@ -316,7 +316,7 @@ installs only on x86_64; elsewhere its arm is missing too, which is a result, no
 
 The file records the CPU model, OS, kernel, Python, BLAS and the installed versions, never a
 host name or user name. Read it before you push: a `missing` reason holds the last lines of an
-installer's error, with your home folder written as `~`.
+installer's error, with your home folder and any other user folder written as `~`.
 
 ## Publish the synthetic inputs
 

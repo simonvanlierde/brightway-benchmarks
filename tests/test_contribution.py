@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from bwbench import compare
-from bwbench.ratios import contribution_problems
+from bwbench.ratios import USER_FOLDER, contribution_problems
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -128,3 +128,47 @@ def test_stage_refuses_to_overwrite_the_package_it_runs_from(tmp_path: Path, mon
     with pytest.raises(RuntimeError, match="inside"):
         compare.stage(tmp_path)
     assert (staged / "timecase.py").is_file()
+
+
+@pytest.mark.parametrize(
+    ("home", "text", "gone"),
+    [
+        (None, "C:\\Users\\ADALIN~1\\AppData\\Local\\Temp\\x failed", "ADALIN"),
+        (None, "C:/Users/adalovelace/x failed", "adalovelace"),
+        (None, "c:\\\\users\\\\adalovelace\\\\x failed", "adalovelace"),
+        (None, "/home/adalovelace/x failed", "adalovelace"),
+        (None, "/Users/adalovelace/x failed", "adalovelace"),
+        ("/srv/AdaLovelace", "/srv/adalovelace/x failed", "adalovelace"),
+    ],
+)
+def test_tail_hides_user_folders(monkeypatch: pytest.MonkeyPatch, home: str | None, text: str, gone: str):
+    if home is not None:
+        monkeypatch.setattr(Path, "home", lambda: Path(home))
+    out = compare._tail(subprocess.CompletedProcess([], 1, "", text))  # noqa: SLF001
+    assert gone.lower() not in out.lower()
+    assert "~" in out
+    assert not USER_FOLDER.search(json.dumps(out))
+
+
+def test_tail_keeps_paths_when_home_is_the_root(monkeypatch: pytest.MonkeyPatch):
+    """`docker run --user` with no passwd entry gives HOME=/."""
+    monkeypatch.setattr(Path, "home", lambda: Path("/"))
+    proc = subprocess.CompletedProcess([], 1, "", "/usr/bin/python: /opt/x failed")
+    assert compare._tail(proc) == "/usr/bin/python: /opt/x failed"  # noqa: SLF001
+
+
+@pytest.mark.parametrize(
+    ("text", "user"),
+    [
+        ("C:/Users/ada/x", True),
+        ("C:\\\\Users\\\\ada\\\\x", True),
+        ("/root/.cache/uv", True),
+        ("/home/ada/x", True),
+        ("/Users/ada/x", True),
+        ("/home/linuxbrew/.linuxbrew/bin/python3", False),
+        ("/Users/Shared/bw/x", False),
+        ("~/.cache/uv", False),
+    ],
+)
+def test_user_folder_matches_what_redaction_leaves(text: str, *, user: bool):
+    assert bool(USER_FOLDER.search(text)) is user

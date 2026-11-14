@@ -31,6 +31,7 @@ import json
 import os
 import platform
 import random
+import re
 import shutil
 import signal
 import statistics
@@ -46,6 +47,7 @@ from bwbench.fingerprint import fingerprint
 from bwbench.ratios import (
     FORMAT,
     RESAMPLES,
+    USER_FOLDER,
     bootstrap_interval,
     contribution_problems,
     geometric_mean_ratio,
@@ -152,8 +154,24 @@ def _run(args: list[str], cwd: Path, **kw: object) -> subprocess.CompletedProces
         return subprocess.CompletedProcess(args, -1, "", f"timed out after {TIMEOUT} s")
 
 
+def _redact(text: str) -> str:
+    r"""TEXT with the home folder and every user folder (``USER_FOLDER``) replaced by ``~``.
+
+    Either separator and any case, so Windows short names from TEMP (``C:\Users\ADALIN~1``)
+    and ``C:/Users/ada`` go too. A home of ``/`` (``docker run --user`` without a passwd entry)
+    is no user's folder and stays.
+    """
+    home = Path.home()
+    folders = [USER_FOLDER.pattern]
+    if home.parent != home:
+        parts = [re.escape(p) for p in re.split(r"[\\/]+", str(home).strip("\\/"))]
+        lead = r"[\\/]+" if str(home)[:1] in "\\/" else ""
+        folders.insert(0, lead + r"[\\/]+".join(parts) + r"(?![^\\/\s\"'])")
+    return re.sub("|".join(folders), "~", text, flags=re.IGNORECASE)
+
+
 def _tail(proc: subprocess.CompletedProcess[str], lines: int = 5) -> str:
-    text = (proc.stderr or proc.stdout).strip().replace(str(Path.home()), "~").splitlines()
+    text = _redact((proc.stderr or proc.stdout).strip()).splitlines()
     return " / ".join(text[-lines:]) or f"exit {proc.returncode}"
 
 

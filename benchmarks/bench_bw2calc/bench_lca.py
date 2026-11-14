@@ -9,6 +9,7 @@ the history next to a fast one. Each setup also solves once before the timed cal
 first loads) stay out of the first sample.
 """
 
+import functools
 import inspect
 import os
 import warnings
@@ -19,6 +20,8 @@ import bw2calc as bc
 import numpy as np
 from scipy import sparse
 from scipy.sparse.linalg import cgs
+from scipy.special import ndtri
+from scipy.stats import qmc
 
 from bwbench import BAFU_RTOL, DIRECT_RTOL, ITERATIVE_RTOL, check, check_table, first_time, knob
 from bwbench.asv import classes
@@ -374,6 +377,111 @@ def iterations(size: str, iterations: int, cls: str) -> BenchSetup:
     def finite(score: float) -> None:
         if not np.isfinite(score):
             raise AssertionError("non-finite Monte Carlo score")
+
+    return run, finite
+
+
+class NormalDraws:
+    """The synthetic inputs' normal laws, driven by IID uniforms or a scrambled Sobol sequence."""
+
+    def __init__(self, loc: np.ndarray, scale: np.ndarray, sampler: str, seed: int = 1) -> None:
+        self.loc, self.scale, self.sampler, self.seed = loc, scale, sampler, seed
+        self.reset()
+
+    def reset(self) -> None:
+        self.engine = (
+            qmc.Sobol(self.loc.size, scramble=True, rng=self.seed)
+            if self.sampler == "sobol"
+            else np.random.default_rng(self.seed)
+        )
+
+    def __next__(self) -> np.ndarray:
+        uniforms = self.engine.random(1)[0] if self.sampler == "sobol" else self.engine.random(self.loc.size)
+        # An exact zero has an infinite normal quantile; keep endpoint draws finite.
+        uniforms = np.clip(uniforms, np.nextafter(0.0, 1.0), np.nextafter(1.0, 0.0))
+        return self.loc + self.scale * ndtri(uniforms)
+
+
+def sampled_lca(size: str, cls: str, sampler: str) -> tuple[object, NormalDraws, np.ndarray, float]:
+    import bw_processing as bwp  # noqa: PLC0415 - Brightway runs only in the benchmark container
+
+    inventory, methods, refs, scale = packages(size, uncertain=True)
+    distributions = inventory.get_resource("technosphere.distributions")[0]
+    if not np.isin(distributions["uncertainty_type"], [0, 3]).all():
+        raise NotApplicable("the QMC comparison supports the synthetic normal input distributions only")
+    mask = distributions["uncertainty_type"] == 3
+    if not 0 < int(mask.sum()) <= qmc.Sobol.MAXDIM:
+        raise NotApplicable("the uncertain exchange count exceeds the Sobol dimension limit or is zero")
+    normals = distributions[mask]
+    samples = NormalDraws(normals["loc"], normals["scale"], sampler)
+    override = bwp.create_datapackage()
+    override.add_dynamic_vector(
+        matrix="technosphere_matrix",
+        interface=samples,
+        indices_array=inventory.get_resource("technosphere.indices")[0][mask],
+        flip_array=inventory.get_resource("technosphere.flip")[0][mask],
+    )
+    lca = lca_class(cls)(demand={0: 1}, data_objs=[inventory, methods[0], override])
+    lca.lci()
+    lca.lcia()
+    return lca, samples, scale, refs[0][0]
+
+
+@functools.lru_cache(maxsize=4)
+def mean_reference(size: str) -> float:
+    """Mean of 4096 independently seeded plain Monte Carlo scores, not an exact expectation."""
+    inventory, methods, _, _ = packages(size, uncertain=True)
+    lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]], use_distributions=True, seed_override=97)
+    lca.lci()
+    lca.lcia()
+    scores = []
+    for _ in range(4096):
+        next(lca)
+        scores.append(float(lca.score))
+    reference = float(np.mean(scores))
+    if not np.isfinite(reference) or reference == 0:
+        raise AssertionError("non-finite or zero Monte Carlo mean reference")
+    return reference
+
+
+@bench(
+    {"size": MC_SIZES, "draws": [16, 64, 256], "cls": CLASSES, "sampler": ["random", "sobol"]},
+    asv="MonteCarloConvergence",
+    track={"relative_mean_error": lambda result: abs(float(np.mean(result[0])) / result[1] - 1)},
+    fresh_solver=False,
+    timeout=1800,
+    repeat=(1, 3, 120.0),
+)
+def convergence(size: str, draws: int, cls: str, sampler: str) -> BenchSetup:
+    """IID and Sobol draws on the same smoke model, with error against a 4096-draw MC mean.
+
+    Normal inverse transforms happen inside the timed call for both samplers. Powers of two
+    preserve Sobol balance. The reference is an empirical comparison, not a correctness oracle.
+    """
+    if size != "smoke":
+        raise NotApplicable("the QMC convergence comparison runs at smoke size only")
+    skip_known_crash(cls, calls_next=True)
+    reference = mean_reference(size)
+    lca, samples, scale, static = sampled_lca(size, cls, sampler)
+    next(lca)
+    if first_time("convergence", size, draws, cls, sampler):
+        reached_patch(cls)
+        check(float(lca.score), neumann_score(lca, scale), rtol_for(cls, size), "sampled Monte Carlo score")
+        if abs(lca.score - static) <= ITERATIVE_RTOL * abs(static):
+            raise AssertionError("the sampled draw equals the static score: the interface was ignored")
+    # Matrix construction and warm-up consumed points; the measured block must start at point zero.
+    samples.reset()
+    scores = np.empty(draws)
+
+    def run() -> tuple[np.ndarray, float]:
+        for i in range(draws):
+            next(lca)
+            scores[i] = float(lca.score)
+        return scores, reference
+
+    def finite(result: tuple[np.ndarray, float]) -> None:
+        if not np.isfinite(result[0]).all():
+            raise AssertionError("non-finite sampled Monte Carlo score")
 
     return run, finite
 

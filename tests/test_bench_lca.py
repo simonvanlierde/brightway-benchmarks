@@ -145,3 +145,64 @@ def test_condition_estimate_runs_in_the_superlu_environment_only(
     monkeypatch.setenv("BWBENCH_SOLVER", "klu")
     with pytest.raises(NotApplicable, match="SuperLU environment"):
         bench_lca.condition_estimate.prepare(size="smoke")
+
+
+def test_qmc_draws_use_the_complete_scrambled_sobol_block(bench_lca: types.ModuleType):
+    from scipy.special import ndtri  # noqa: PLC0415
+    from scipy.stats import qmc  # noqa: PLC0415
+
+    loc, scale = np.array([2.0, -3.0]), np.array([0.2, 0.3])
+    draws = bench_lca.NormalDraws(loc, scale, "sobol", seed=7)
+    actual = np.array([next(draws) for _ in range(16)])
+    expected = loc + scale * ndtri(qmc.Sobol(2, scramble=True, rng=7).random_base2(4))
+    np.testing.assert_allclose(actual, expected, rtol=1e-14, atol=1e-14, strict=True)
+    draws.reset()
+    np.testing.assert_allclose(next(draws), expected[0], rtol=1e-14, atol=1e-14, strict=True)
+
+
+def test_qmc_convergence_checks_the_draw_and_tracks_error_without_more_sampling(
+    bench_lca: types.ModuleType, monkeypatch: pytest.MonkeyPatch
+):
+    draws = bench_lca.NormalDraws(np.array([2.0]), np.array([0.2]), "sobol", seed=1)
+
+    class SampleLCA:
+        score = 0.0
+
+        def __next__(self):
+            self.score = float(next(draws)[0])
+
+    lca = SampleLCA()
+    next(lca)  # setup has already consumed a sample
+    checked = []
+    monkeypatch.setattr(bench_lca, "sampled_lca", lambda *_: (lca, draws, np.ones(1), 1.0))
+    monkeypatch.setattr(bench_lca, "mean_reference", lambda _: 2.0)
+    monkeypatch.setattr(bench_lca, "neumann_score", lambda *_: lca.score)
+    monkeypatch.setattr(bench_lca, "reached_patch", lambda _: checked.append(True))
+    prepared = bench_lca.convergence.prepare(size="smoke", draws=16, cls="LCA", sampler="sobol")
+    result = prepared()
+    prepared.verify(result)
+    assert checked
+    expected = bench_lca.NormalDraws(np.array([2.0]), np.array([0.2]), "sobol", seed=1)
+    np.testing.assert_allclose(result[0], [next(expected)[0] for _ in range(16)], rtol=1e-14, atol=1e-14)
+    error = bench_lca.convergence.track["relative_mean_error"](result)
+    assert error == pytest.approx(abs(np.mean(result[0]) / 2.0 - 1), rel=1e-14, abs=1e-14)
+
+
+def test_qmc_skips_other_sizes_before_building_a_reference(
+    bench_lca: types.ModuleType, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(bench_lca, "mean_reference", lambda _: pytest.fail("unexpected reference build"))
+    with pytest.raises(NotApplicable, match="smoke size only"):
+        bench_lca.convergence.prepare(size="mc100k", draws=16, cls="LCA", sampler="sobol")
+
+
+@pytest.mark.parametrize("types_", [[0], [4], [3] * 21202])
+def test_qmc_rejects_unsupported_distribution_shapes(
+    bench_lca: types.ModuleType, monkeypatch: pytest.MonkeyPatch, types_: list[int]
+):
+    monkeypatch.setitem(sys.modules, "bw_processing", types.ModuleType("bw_processing"))
+    distribution = np.array([(n,) for n in types_], dtype=[("uncertainty_type", "u1")])
+    inventory = types.SimpleNamespace(get_resource=lambda _: (distribution, {}))
+    monkeypatch.setattr(bench_lca, "packages", lambda *_args, **_kwargs: (inventory, [], [], np.ones(1)))
+    with pytest.raises(NotApplicable, match=r"normal input|dimension limit"):
+        bench_lca.sampled_lca("smoke", "LCA", "sobol")

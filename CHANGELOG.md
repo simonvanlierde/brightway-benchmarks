@@ -38,6 +38,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A nightly canary on the benchmark machine: a fixed workload whose drift is the machine's, kept
   apart from the histories (`just canary`, `just canary-check`,
   [running](docs/running.md#the-nightly-canary)).
+- `MonteCarloConvergence` compares IID and scrambled Sobol sampling on the smoke model at 16, 64
+  and 256 draws. Its error uses an independent 4096-draw Monte Carlo mean
+  ([benchmark](benchmarks/bench_bw2calc/bench_lca.py)).
 - A Python support probe outside the asv harness (`scripts/py_probe.py`, the `python-probe`
   workflow): install, import and one score on Python 3.11 to 3.15 daily on three operating
   systems, and on 3.9 and 3.10 weekly on Linux ([running](docs/running.md#which-pythons-work)). A

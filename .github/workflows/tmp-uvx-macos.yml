@@ -1,0 +1,34 @@
+name: tmp-uvx-macos
+
+on:
+  push:
+    branches: [feat-contributed-runs]
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  uvx:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: false
+          version: "0.13.6"
+      - run: brew install suite-sparse swig
+      - shell: bash
+        env:
+          UV_EXCLUDE_NEWER: 1 week
+        run: |-
+          url="git+https://github.com/simonvanlierde/brightway-benchmarks@feat-contributed-runs"
+          uvx --from "$url" bwbench compare --rounds 3 --repeats 1 --machine "GitHub macos-15" -o result.json
+          day=$(python3 -c "import json; print(json.load(open('result.json'))['created'][:10])")
+          mkdir -p ratios/contributed/github-macos-15
+          cp result.json "ratios/contributed/github-macos-15/$day.json"
+          uvx --from "$url" bwbench validate --contribution "ratios/contributed/github-macos-15/$day.json"
+          cat result.json

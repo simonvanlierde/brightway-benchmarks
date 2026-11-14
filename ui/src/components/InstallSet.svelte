@@ -25,6 +25,17 @@ let {
   pythonNote?: { text: string; href: string } | undefined;
 } = $props();
 
+// A command line's words, each flag kept with the word after it ("-c URL"), so the two wrap together.
+function wordsOf(line: string): string[] {
+  const out: string[] = [];
+  for (const word of line.split(" ")) {
+    const last = out.at(-1);
+    if (last?.startsWith("-") && !last.includes(" ") && !word.startsWith("-")) out[out.length - 1] = `${last} ${word}`;
+    else out.push(word);
+  }
+  return out;
+}
+
 function stored(): Manager {
   try {
     const value = localStorage.getItem(KEY);
@@ -130,13 +141,13 @@ async function copy(text: string, what: string) {
     {@const suites = qualifications.find((c) => c.kind === "suites" && c !== source && c.status !== "success")}
     <ul class="result-line" aria-label="Check results on {platform}">
       {#each qualifications as c (c.id)}
-        <li><a class={statusTone(c.status)} href={c.run} title="Open the check's run">{statusLabel(c.status)}</a> {c.kind === "smoke" ? "Smoke calculations · " : ""}{c.label} · Python {c.python}</li>
+        <li><a class={statusTone(c.status)} href={c.run} title="Open the check's run">{statusLabel(c.status)}</a> {c.kind === "smoke" ? "Small test calculations · " : ""}{c.label} · Python {c.python}</li>
       {/each}
     </ul>
     {#if source.status !== "success"}<p class="saved-warning">The latest run of {source.label} did not pass; this is the set that passed on {dateLabel(saved.date)}.</p>{/if}
     {#if source.caveats.length}<ul class="caveats">{#each source.caveats as caveat (caveat)}<li>{caveat}</li>{/each}</ul>{/if}
     <div class="install-command">
-      <pre><code>{install.command}</code></pre>
+      <pre><code>{@render words(install.command)}</code></pre>
       <button type="button" class="copy" onclick={() => copy(install.command, "command")}>Copy</button>
     </div>
     <p class="install-meta">
@@ -150,7 +161,7 @@ async function copy(text: string, what: string) {
       <details class="new-project">
         <summary>No project yet? Create one</summary>
         <p>With uv installed, run these in the folder where you keep your projects. They create <code>brightway-project</code> with Python {source.python} and add this tested set.</p>
-        <div class="install-command"><pre><code>{projectSetup}</code></pre><button type="button" class="copy" onclick={() => copy(projectSetup, "project setup")}>Copy project setup</button></div>
+        <div class="install-command"><pre><code>{@render words(projectSetup)}</code></pre><button type="button" class="copy" onclick={() => copy(projectSetup, "project setup")}>Copy project setup</button></div>
       </details>
     {/if}
     <details class="package-pins">
@@ -169,3 +180,6 @@ async function copy(text: string, what: string) {
     <p class="no-saved">No {manager} set has passed on {platform} on Python {selected.python}. Choose another package manager or check.</p>
   {/if}
 </section>
+
+<!-- Each word in a box of its own, so a line breaks at a space and never inside a flag such as -c. -->
+{#snippet words(text: string)}{#each text.split("\n") as line, l (l)}{l ? "\n" : ""}{#each wordsOf(line) as word, i (i)}{i ? " " : ""}<span class="word">{word}</span>{/each}{/each}{/snippet}

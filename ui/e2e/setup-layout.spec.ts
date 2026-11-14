@@ -50,3 +50,38 @@ test("the check grid never scrolls vertically", async ({ page }) => {
     expect(scroll, `${width}px`).toBeLessThanOrEqual(client);
   }
 });
+
+test("on a phone the install command wraps at spaces, never inside a flag", async ({ page }) => {
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("?platform=linux");
+    const command = page.locator(".install-set > .install-command code");
+    await command.waitFor();
+    // Each flag starts a box, and its first characters ("-c h") sit on one line.
+    const flags = await command.locator(".word").evaluateAll((words) =>
+      words
+        .filter((w) => w.textContent?.startsWith("-"))
+        .map((w) => {
+          const range = document.createRange();
+          const text = w.firstChild as Text;
+          range.setStart(text, 0);
+          range.setEnd(text, Math.min(4, text.length));
+          return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+        }),
+    );
+    expect(flags.length).toBeGreaterThan(0);
+    expect(flags.every((lines) => lines === 1)).toBe(true);
+    // The words are the command's own, so selecting and copying it by hand gives the same text.
+    const text = await command.textContent();
+    expect(text).toMatch(/ -c https:/);
+  }
+});
+
+test("Setup's heading and intro draw before the viewer's script runs, and only on Setup", async ({ page }) => {
+  await page.route("**/_astro/App.*.js", (route) => route.abort());
+  await page.goto("./");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("A tested Brightway setup");
+  await expect(page.locator(".home-intro p")).toContainText("Which Brightway packages work together");
+  await page.goto("?page=explorer");
+  await expect(page.locator(".home-intro")).toHaveCount(0);
+});

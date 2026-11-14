@@ -9,7 +9,14 @@ import pytest
 
 REPOSITORY = Path(__file__).resolve().parents[1]
 ASSETS = ("favicon.svg", "favicon.ico", "apple-touch-icon.png", "og.png")
-PAGES = ("index.html", "about/index.html", "findings/index.html", "stories/solver-choice/index.html", "sitemap.xml")
+PAGES = (
+    "index.html",
+    "about/index.html",
+    "findings/index.html",
+    "stories/solver-choice/index.html",
+    "sitemap.xml",
+    "404.html",
+)
 
 
 def copy_viewer(tmp_path: Path, missing: str | None = None) -> subprocess.CompletedProcess[str]:
@@ -20,7 +27,7 @@ def copy_viewer(tmp_path: Path, missing: str | None = None) -> subprocess.Comple
             (dist / name).write_text(f"fixture: {name}")
     workflow = (REPOSITORY / ".github/workflows/site.yml").read_text()
     start = workflow.index("          mkdir -p site/ui\n")
-    end = workflow.index("          uvx ", start)
+    end = workflow.index("\n\n", start)  # the step ends at the blank line before the next
     commands = textwrap.dedent(workflow[start:end])
     return subprocess.run(
         ["/bin/bash", "-e", "-c", commands],

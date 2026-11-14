@@ -8,12 +8,13 @@ import Head from "../pages/_Head.astro";
 interface Props {
   title: string;
   description: string;
-  canonical: string;
+  /** Left out on a page that should not be found (404): neither search engines nor the site's search index it. */
+  canonical?: string;
   image?: string;
   imageAlt?: string;
   mainClass: string;
   /** This page, as the nav and the footer name it. */
-  current: StaticPageId;
+  current?: StaticPageId;
 }
 const { mainClass, current, ...head } = Astro.props;
 const page = STATIC_PAGES.find((p) => p.id === current);
@@ -34,10 +35,10 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
         ...VIEWER_PAGES.map(({ id, text }) => ({ href: viewerHref(home, id), text, current: false })),
         { href: staticHref(home, "findings"), text: "Findings", current: page?.under === "findings" },
         // A page outside the three (About) still names itself, as the current one.
-        ...(page && !page.under ? [{ href: staticHref(home, current), text: page.text, current: true }] : []),
+        ...(page && current && !page.under ? [{ href: staticHref(home, current), text: page.text, current: true }] : []),
       ]}
     />
-    <main class={`static-page ${mainClass}`} id="main" tabindex="-1" data-pagefind-body>
+    <main class={`static-page ${mainClass}`} id="main" tabindex="-1" data-pagefind-body={head.canonical ? "" : undefined}>
       <slot />
       <p class="back" data-pagefind-ignore><a href={home}>Back to Setup</a>, where the tested install sets are.</p>
     </main>

@@ -107,3 +107,14 @@ for (const colorScheme of ["light", "dark"] as const) {
     expect(result.violations.map((v) => v.id)).toEqual([]);
   });
 }
+
+test("an unknown address gets the site's 404 page, with the way back to the main pages", async ({ page }) => {
+  const response = await page.goto("/no-such-page/");
+  expect(response?.status()).toBe(404);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("This page does not exist");
+  const main = page.getByRole("main");
+  for (const name of ["Setup", "Benchmarks", "Findings"])
+    await expect(main.getByRole("link", { name, exact: true })).toBeVisible();
+  expect(await page.locator('meta[name="robots"]').getAttribute("content")).toBe("noindex");
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});

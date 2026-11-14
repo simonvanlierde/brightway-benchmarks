@@ -3,11 +3,11 @@ import type { BenchmarkIndex, BenchmarkReport } from "../lib/contract";
 import {
   benchLabel,
   byBenchmark,
+  changeRange,
   type LatestChange,
   latestChanges,
   noiseText,
   percent,
-  percentRange,
   seriesOf,
   type View,
   writeView,
@@ -48,6 +48,8 @@ const worse = $derived(packageChanges.filter((r) => r.way === "worse").length);
 const better = $derived(packageChanges.filter((r) => r.way === "better").length);
 const flagged = $derived(byBenchmark(filtered.filter((r) => r.way !== "better")));
 const gains = $derived(byBenchmark(filtered.filter((r) => r.way === "better")));
+// The filter buttons count cases; the captions reconcile them with the rows, which fold a benchmark's cases.
+const flaggedCases = $derived(flagged.reduce((n, g) => n + g.rows.length, 0));
 const gainCases = $derived(gains.reduce((n, g) => n + g.rows.length, 0));
 // Choosing Better opens the improvements; it never closes what the reader opened.
 let gainsBox = $state<HTMLDetailsElement>();
@@ -86,7 +88,7 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
           <div class="scroll gap" role="region" aria-labelledby="flagged-h" use:scrollable>
             <table class="latest-table responsive-table">
               <caption>
-                Largest first, each beside the noise it exceeded; one row per benchmark and machine.
+                {flaggedCases} {flaggedCases === 1 ? "case" : "cases"} in {flagged.length} {flagged.length === 1 ? "row" : "rows"}, one per benchmark and machine, largest first, each beside the noise it exceeded.
               </caption>
               <thead>
                 <tr>
@@ -111,7 +113,7 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
                       {#if row.params.length}<br /><span class="quiet">{row.params.join(", ")}</span>{/if}
                     </th>
                     <td class="num" data-label="Change">
-                      <span class="delta {row.way}">{percentRange(g.rows)} {row.way}</span>
+                      <span class="delta {row.way}">{changeRange(g.rows)}</span>
                       {#if g.rows.length === 1}<br /><span class="quiet">beyond {noiseText(row.change)} noise</span>{/if}
                     </td>
                     <td data-label="History"><Sparkline points={history(row)} mark={row.change.commit} /></td>
@@ -163,7 +165,7 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
                         <a href={writeView(next)} onclick={(e) => follow(e, next)} title={g.bench.name}>{labelOf(g.bench)}</a>
                       </th>
                       <td class="num" data-label="Change">
-                        <span class="delta better">{percentRange(g.rows)} better</span>
+                        <span class="delta better">{changeRange(g.rows)}</span>
                       </td>
                       <td data-label="History"><Sparkline points={history(top)} mark={top.change.commit} /></td>
                       <td class="wrap" data-label="Cases">

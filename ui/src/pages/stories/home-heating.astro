@@ -1,6 +1,7 @@
 ---
 import StoryBars from "../../components/StoryBars.astro";
 import StaticPage from "../../layouts/StaticPage.astro";
+import { published } from "../../lib/build-data";
 import { viewerHref } from "../../lib/story-links";
 
 const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
@@ -14,7 +15,9 @@ const rows = [
   ["Foreground emissions", 2.2, 37.0],
 ] as const;
 const totals = { pump: 23.2, gas: 49.4 };
-const timed = (group: string, bench: string) => viewerHref(home, group, bench, []);
+// No link until the data has the benchmark: the viewer would only say it is not there.
+const timed = (group: string, bench: string) =>
+  published(group, bench) ? viewerHref(home, group, bench, []) : undefined;
 const charts = [
   [
     "Home heating, MultiLCA",
@@ -80,7 +83,9 @@ const charts = [
   <p>The <code>bw_graph_tools</code> case traces each option's supply chain, stopping at either its calculation budget or a contribution below 0.1% of the score. The budget is either two or one hundred calculations, so it does not attribute the complete score. The <code>bw_timex</code> case spreads the complete per-heat inventory, including allocated equipment, evenly over twenty years. Its background stays unchanged, so it tests timeline expansion without forecasting future energy supply.</p>
   <p>The benchmark charts that run on this model, each with its release history:</p>
   <ul class="chart-links">
-    {charts.map(([name, href, what]) => <li><a href={href}>{name}</a>: {what}.</li>)}
+    {charts.map(([name, href, what]) => (
+      <li>{href ? <a href={href}>{name}</a> : name}: {what}.{!href && <span class="quiet"> Its timings are not published yet.</span>}</li>
+    ))}
   </ul>
   <h2>Where the defaults come from</h2>
   <p>The seasonal coefficient of performance (COP), useful heat divided by electricity consumed, is fixed at 3.0 by default. <a href="https://doi.org/10.1039/C2EE22653G">Staffell et al. (2012)</a> review performance across installations and climates; they do not establish 3.0 as a universal Dutch average. The annual useful-heat demand is a round benchmark assumption. <a href="https://www.cbs.nl/nl-nl/longread/aanvullende-statistische-diensten/2026/de-energierekening-januari-2026?onepage=true">CBS's January 2026 report</a> measures and projects household gas consumption, not delivered space heat, so it does not directly support that default.</p>

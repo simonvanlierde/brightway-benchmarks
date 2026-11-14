@@ -45,7 +45,7 @@ test("switching between Setup and Benchmarks moves neither the page nor the mast
   const measure = async (path: string) => {
     await page.goto(path);
     await page.locator("#main").waitFor();
-    await page.locator(".view h2").first().waitFor();
+    await page.locator(".view h1").first().waitFor();
     return page.evaluate(() => [
       document.documentElement.clientWidth,
       ...[...document.querySelectorAll(".primary-nav a")].map((a) => Math.round(a.getBoundingClientRect().x)),

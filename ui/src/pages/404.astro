@@ -1,0 +1,21 @@
+---
+import StaticPage from "../layouts/StaticPage.astro";
+import { staticHref, viewerHref } from "../lib/pages";
+
+// GitHub Pages serves this for any address it does not have, at that address, so every link is absolute.
+const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
+---
+
+<StaticPage
+  mainClass="not-found"
+  title="Page not found · Brightway Benchmarks"
+  description="This address has no page. Setup, Benchmarks and Findings are the site's main pages."
+>
+  <h1>This page does not exist</h1>
+  <p class="lede">The address may be mistyped, or the page may have moved. These are the site's main pages:</p>
+  <ul>
+    <li><a href={viewerHref(home, "home")}>Setup</a>: a tested set of Brightway packages for your operating system.</li>
+    <li><a href={viewerHref(home, "explorer")}>Benchmarks</a>: how fast each release runs, and what changed.</li>
+    <li><a href={staticHref(home, "findings")}>Findings</a>: what the benchmarks found, with the evidence.</li>
+  </ul>
+</StaticPage>

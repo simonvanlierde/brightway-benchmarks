@@ -122,6 +122,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Setup marks the selected check cell with a fill and a bottom bar, so a keyboard user can tell it from
   the focused cell, which keeps the outline.
 - The viewer footer links the home-heating case beside the solver story.
+- Site polish: Findings and the stories link a benchmark's history only when the published data has
+  it, and say so otherwise. An unknown address gets a 404 page with links to Setup, Benchmarks and
+  Findings. Setup draws its heading and intro before the viewer's script, so a phone shows them
+  about 2 s sooner. Changes past twice or half read "about 5 times faster", the install command
+  wraps at spaces only, phone charts keep their marker shapes, each page's title is its one h1,
+  and an empty search links the catalogue.
 
 ## [0.2.0] - 2026-11-01
 

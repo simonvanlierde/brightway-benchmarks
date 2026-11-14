@@ -7,7 +7,8 @@ in the shapes ui/schema/ gives. An environment's name drops its stack hash, so a
 id across releases, and a commit gets one value per environment, on the stack ``pick`` chooses.
 ``time`` cases become latency in ns, with the samples' quartiles as bounds where they hold the value;
 ``peakmemory`` cases become peak memory in bytes. Other types, failed and skipped cases are left
-out, and so is a benchmark whose parameters don't match benchmarks.json, with one warning.
+out, and so is a benchmark whose parameters don't match benchmarks.json, with one warning, and a
+result whose benchmark version differs from benchmarks.json's (an older generator version).
 
 The index also lists ``changes``, found here so the UI computes none. Along each series (one case
 on one machine in one measure, oldest commit first) two methods run:
@@ -36,7 +37,17 @@ from urllib.parse import quote
 
 from export_guidance import PUBLIC_BASE
 from output_path import output_path
-from release_changes import NOISE_FLOOR, NOISE_TIMES, SHA, STACK, current_stack, noise_threshold, pick, releases
+from release_changes import (
+    NOISE_FLOOR,
+    NOISE_TIMES,
+    SHA,
+    STACK,
+    current_rows,
+    current_stack,
+    noise_threshold,
+    pick,
+    releases,
+)
 from release_changes import spread as release_spread
 
 REPO = "https://github.com/simonvanlierde/brightway-benchmarks"
@@ -81,14 +92,20 @@ def slug(name: str) -> str:
     return f"{words or 'x'}-{hashlib.sha256(name.encode()).hexdigest()[:12]}"
 
 
-def runs(folder: Path) -> dict[tuple[str, str], list[dict]]:
-    """(machine, commit) -> one result file per environment, on the stack that wins."""
+def runs(folder: Path, info: dict) -> dict[tuple[str, str], list[dict]]:
+    """(machine, commit) -> one result file per environment, on the stack that wins.
+
+    Only current cases count (``current_rows``), so a file with none is no candidate: a stack whose
+    results are all of an older version never beats one that has current results.
+    """
     current = current_stack(folder.name)
     found: dict[tuple[str, str], dict[str, dict[str, dict]]] = {}
     for path in folder.glob("*/*-*.json"):
-        data = json.loads(path.read_text())
+        data = current_rows(json.loads(path.read_text()), info)
         if not SHA.fullmatch(data["commit_hash"]):  # it becomes part of a report's path
             sys.exit(f"export_ui: {path}: commit_hash is not a full hash")
+        if not data["results"]:
+            continue
         stack = STACK.search(data["env_name"])
         env = found.setdefault((path.parent.name, data["commit_hash"]), {}).setdefault(
             STACK.sub("", data["env_name"]), {}
@@ -529,7 +546,7 @@ def export(results: Path, out: Path) -> dict:
         info = {k: v for k, v in json.loads(meta.read_text()).items() if isinstance(v, dict)}  # skips "version"
         dates: dict[str, int] = {}
         found: list[tuple[str, str, dict]] = []  # (machine id, commit, report)
-        for (machine, commit), files in sorted(runs(meta.parent).items()):
+        for (machine, commit), files in sorted(runs(meta.parent, info).items()):
             report = catalog.report(subject, files, info)
             if not report:
                 continue

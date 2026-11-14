@@ -758,8 +758,9 @@ test("Setup nudges link the largest regression and improvement, and Benchmarks' 
   if (!worst || !best) throw new Error("fixture lacks a regression or an improvement");
   await page.goto("?page=home&platform=linux");
   const nudges = page.locator(".nudges li");
-  await expect(nudges).toHaveCount(4);
+  await expect(nudges).toHaveCount(5);
   await expect(nudges.nth(0)).toContainText("Which solver to install");
+  await expect(nudges.nth(3)).toContainText("Does it hold on your machine?");
   await expect(nudges.nth(1).locator(".worse")).toBeVisible();
   await expect(nudges.nth(2).locator(".better")).toBeVisible();
   for (const [at, row] of [

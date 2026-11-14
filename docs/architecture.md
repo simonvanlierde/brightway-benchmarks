@@ -85,7 +85,7 @@ page, the about page and the stories (pages in [`ui/src/pages/`](../ui/src/pages
 the JSON at runtime. [`ui/scripts/size.mjs`](../ui/scripts/size.mjs) holds the size budget.
 
 The [site workflow](../.github/workflows/site.yml) checks out `main`, `results` and `compat`, runs
-`just site` and `just ui-data`, builds the viewer and publishes everything on GitHub Pages at
+`just site` (which fetches the `ratios` branch too) and `just ui-data`, builds the viewer and publishes everything on GitHub Pages at
 <https://simonvanlierde.com/brightway-benchmarks/>. It runs daily and when the viewer or its data
 scripts change on `main`.
 
@@ -99,7 +99,8 @@ All of them are in [`.github/workflows/`](../.github/workflows/).
 - Scheduled: `compat` (nightly), `python-probe` (daily, plus the end-of-life Pythons on Mondays;
   [running](running.md#which-pythons-work)), `smoke` and `cold-install` (weekly, an install of a
   tested set in a clean container), `links` (weekly web link check), `fair` (weekly),
-  `advisories`, `scorecard`.
+  `advisories`, `scorecard`, `ratios` (weekly interleaved ratios on three OSes, attested, onto the
+  `ratios` branch; [method](method.md#hosted-ratios)).
 - Manual: `noise-hosted` (the noise floor on a hosted runner) and `solvers-macos` (the solver
   comparison on an Apple Silicon runner).
 - `release` makes the GitHub release when a `vX.Y.Z` tag is pushed.

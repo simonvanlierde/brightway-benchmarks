@@ -1,7 +1,7 @@
 name: site
 
-# Builds the viewer and its data from the `results` and `compat` branches and publishes them on
-# GitHub Pages.
+# Builds the viewer and its data from the `results`, `compat` and `ratios` branches and publishes
+# them on GitHub Pages.
 # Daily after the nightly compat run (03:41 UTC, a few minutes), so the compatibility checks
 # stay current; GitHub often starts it hours late. A push to main that changes the viewer or
 # the scripts that write its data also rebuilds it, so a merged UI change goes live at once.
@@ -17,6 +17,8 @@ on:
       - "ui/**"
       - "scripts/export_ui.py"
       - "scripts/export_guidance.py"
+      - "scripts/export_ratios.py"
+      - "ratios/contributed/**"
       - "scripts/probe_site.py"
       - "scripts/release_changes.py"
       - "scripts/change_points.py"

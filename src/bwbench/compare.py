@@ -17,8 +17,9 @@ or more before the run started, one cutoff for uv and pixi alike. The comparison
   macOS and Windows only (the benchmark node has the full histories on Linux).
 
 Every arm other than the solvers' runs SuperLU, so its ratio is the install's, the
-interpreter's or the release's, not a solver change. Run it from a checkout: the cases live in
-``benchmarks/``. It needs ``uv``, and ``pixi`` for ``install-path``.
+interpreter's or the release's, not a solver change. It runs from a checkout or as installed
+(``uvx --from git+https://github.com/simonvanlierde/brightway-benchmarks bwbench compare``),
+which carries the cases in ``bwbench/cases``. It needs ``uv``, and ``pixi`` for ``install-path``.
 
 Exit codes: 0 written (or valid), 1 a file has problems (validate), 2 usage error, 3 could not
 run, 4 written, but no ratio has a value (every comparison lacks an arm; the file says why).
@@ -32,6 +33,7 @@ import json
 import os
 import platform
 import random
+import re
 import shutil
 import signal
 import statistics
@@ -41,22 +43,28 @@ import tempfile
 import unicodedata
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from importlib import metadata
 from pathlib import Path
 
 from bwbench.fingerprint import fingerprint
 from bwbench.ratios import (
     FORMAT,
     RESAMPLES,
+    USER_FOLDER,
     bootstrap_interval,
+    contribution_file_problems,
+    contribution_problems,
     geometric_mean_ratio,
     interleave,
     problems,
     ratio_seed,
+    slug,
 )
 from bwbench.timecase import BENCHMARKS
 
-SRC = Path(__file__).resolve().parents[1]
-PROBE = SRC / "bwbench" / "fingerprint.py"
+PACKAGE = Path(__file__).resolve().parent
+PROBE = PACKAGE / "fingerprint.py"
+STAGE = ".bwbench-stage"  # the arms' copy of this package, in the --work folder
 SOLVERS = ("pypardiso", "scikits.umfpack")  # what bw2calc picks over SuperLU when it can import it
 TIMEOUT = 900  # seconds for one install or one timed process
 CUTOFF_AGE = timedelta(weeks=1)  # every arm installs releases at least this old, as the project's uv.lock does
@@ -152,8 +160,24 @@ def _run(args: list[str], cwd: Path, **kw: object) -> subprocess.CompletedProces
         return subprocess.CompletedProcess(args, -1, "", f"timed out after {TIMEOUT} s")
 
 
+def _redact(text: str) -> str:
+    r"""TEXT with the home folder and every user folder (``USER_FOLDER``) replaced by ``~``.
+
+    Either separator and any case, so Windows short names from TEMP (``C:\Users\ADALIN~1``)
+    and ``C:/Users/ada`` go too. A home of ``/`` (``docker run --user`` without a passwd entry)
+    is no user's folder and stays.
+    """
+    home = Path.home()
+    folders = [USER_FOLDER.pattern]
+    if home.parent != home:
+        parts = [re.escape(p) for p in re.split(r"[\\/]+", str(home).strip("\\/"))]
+        lead = r"[\\/]+" if str(home)[:1] in "\\/" else ""
+        folders.insert(0, lead + r"[\\/]+".join(parts) + r"(?![^\\/\s\"'])")
+    return re.sub("|".join(folders), "~", text, flags=re.IGNORECASE)
+
+
 def _tail(proc: subprocess.CompletedProcess[str], lines: int = 5) -> str:
-    text = (proc.stderr or proc.stdout).strip().splitlines()
+    text = _redact((proc.stderr or proc.stdout).strip()).splitlines()
     return " / ".join(text[-lines:]) or f"exit {proc.returncode}"
 
 
@@ -246,10 +270,30 @@ def _build_pixi(env: Env, folder: Path, cutoff: str) -> Built:
     return Built(python=py, lock=folder / "pixi.lock")
 
 
+def stage(work: Path) -> Path:
+    """Copy this package, with the cases in ``bwbench/cases``, to WORK/.bwbench-stage: the arms' import path.
+
+    Only this package: the folder it is installed in also holds the packages of the environment
+    bwbench runs in (uvx's NumPy, say), which would shadow the arm's own. The folder name is one
+    no checkout has, so ``--work .`` in a checkout leaves its ``src/bwbench`` alone.
+    """
+    dest = work.resolve() / STAGE / "bwbench"
+    if PACKAGE.is_relative_to(dest) or dest.is_relative_to(PACKAGE):
+        msg = f"cannot stage into {dest.as_posix()!r}: bwbench runs from inside it"
+        raise RuntimeError(msg)
+    skip = shutil.ignore_patterns("__pycache__")
+    shutil.rmtree(dest, ignore_errors=True)
+    shutil.copytree(PACKAGE, dest, ignore=skip)
+    if not (dest / "cases").is_dir():  # a checkout: the cases sit beside src/
+        shutil.copytree(BENCHMARKS, dest / "cases", ignore=skip)
+    return dest.parent
+
+
 def time_arm(arm: Arm, built: Built, case: str, params: dict, repeats: int, work: Path) -> dict:
     """One fresh process of ARM timing CASE: the worker's JSON object, or ``{"missing": why}``."""
+    src = work / STAGE  # from stage()
     env = os.environ | {
-        "PYTHONPATH": os.pathsep.join([str(SRC), str(BENCHMARKS)]),
+        "PYTHONPATH": os.pathsep.join([str(src), str(src / "bwbench" / "cases")]),
         "BWBENCH_HIDE": ",".join(arm.hide),
         "PYTHONUTF8": "1",
     }
@@ -340,6 +384,7 @@ def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, mac
     OUT is written again after each comparison, so a run stopped partway keeps the ones it finished.
     """
     work.mkdir(parents=True, exist_ok=True)
+    stage(work)
     now = datetime.now(UTC)
     created = now.isoformat(timespec="seconds").replace("+00:00", "Z")
     cutoff = (now - CUTOFF_AGE).isoformat(timespec="seconds").replace("+00:00", "Z")
@@ -357,7 +402,7 @@ def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, mac
                 )
                 built[a.env] = build(a.env, work / f"env{len(built)}", cutoff)
     seed = random.SystemRandom().randrange(2**32)
-    head = os.environ.get("GITHUB_SHA") or os.environ.get("BWBENCH_COMMIT") or _git_head()  # box.sh sets BWBENCH_COMMIT
+    head = os.environ.get("GITHUB_SHA") or os.environ.get("BWBENCH_COMMIT") or _commit()  # box.sh sets BWBENCH_COMMIT
     run = None
     if os.environ.get("GITHUB_RUN_ID"):
         env = os.environ
@@ -385,20 +430,37 @@ def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, mac
     return doc
 
 
-def _git_head() -> str | None:
+def _commit() -> str | None:
+    """This repository's commit: uv's record of a git install (``uvx --from git+...``), else the checkout's HEAD."""
+    with contextlib.suppress(metadata.PackageNotFoundError, TypeError, KeyError, ValueError):
+        record = metadata.distribution("brightway-benchmarks").read_text("direct_url.json")
+        return json.loads(record)["vcs_info"]["commit_id"]  # ty: ignore[invalid-argument-type]
     git = shutil.which("git")
     if git is None:
         return None
-    proc = _run([git, "rev-parse", "HEAD"], SRC)
+    # Only when this package is the checkout's src/bwbench, not a copy installed inside another project.
+    top = _run([git, "rev-parse", "--show-toplevel"], PACKAGE)
+    if top.returncode or Path(top.stdout.strip()).resolve() != PACKAGE.parents[1].resolve():
+        return None
+    proc = _run([git, "rev-parse", "HEAD"], PACKAGE)
     return proc.stdout.strip() if proc.returncode == 0 else None
 
 
-def validate(files: list[Path]) -> int:
-    """1 if any of FILES is not a valid result file, with each problem on stderr."""
+def validate(files: list[Path], *, contribution: bool = False) -> int:
+    """1 if any of FILES is not a valid result file (with CONTRIBUTION: contribution), each problem on stderr."""
     bad = 0
     for path in files:
+        # Before any read: a link to /dev/zero would never finish.
+        if contribution and (found := contribution_file_problems(path)):
+            for p in found:
+                print(f"{path.as_posix()}: {p}", file=sys.stderr)
+            bad += 1
+            continue
         try:
-            found = problems(json.loads(path.read_text(encoding="utf-8")))
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            found = problems(doc)
+            if contribution:
+                found += contribution_problems(path, doc if isinstance(doc, dict) else {})
         except (OSError, ValueError) as e:
             found = [f"cannot read: {e}"]
         for p in found:
@@ -440,8 +502,17 @@ def parser() -> argparse.ArgumentParser:
         type=Path,
         help="where the environments go, each arm's folder emptied first (default: a temporary folder, removed)",
     )
-    v = sub.add_parser("validate", help="check result files", epilog="example: bwbench validate ratios.json")
+    v = sub.add_parser(
+        "validate",
+        help="check result files",
+        epilog="example: bwbench validate --contribution ratios/contributed/apple-m3-pro/2026-11-14.json",
+    )
     v.add_argument("files", nargs="+", type=Path)
+    v.add_argument(
+        "--contribution",
+        action="store_true",
+        help="also check what a file in ratios/contributed/ needs: its path, tier 'contributed', no host or user names",
+    )
     return p
 
 
@@ -453,21 +524,28 @@ def parse(argv: list[str] | None) -> argparse.Namespace:
     return args
 
 
+def label_problem(label: str) -> str | None:
+    """Why LABEL can't be a --machine label, or None."""
+    if any(unicodedata.category(c) in {"Cc", "Cf"} for c in label) or not 0 < len(label) <= 100:  # as ratios.py
+        return "--machine must be 1 to 100 characters, with no control or format character"
+    if not slug(label):
+        return f"--machine {label!r} needs ASCII letters or digits: its folder name keeps only those"
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run ``bwbench`` with ARGV; the exit code."""
     for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8", newline="\n")  # ty: ignore[unresolved-attribute]
     args = parse(argv)
     if args.command == "validate":
-        return validate(args.files)
+        return validate(args.files, contribution=args.contribution)
     if args.rounds < 2 or args.repeats < 1:
         parser().error("--rounds must be at least 2 and --repeats at least 1")
     if {"bw2calc-release", "bw2data-release"} & set(args.ids) and platform.system() not in {"Darwin", "Windows"}:
         parser().error("the release comparisons run on macOS and Windows only")
-    label = args.machine
-    hidden = label is not None and any(unicodedata.category(c) in {"Cc", "Cf"} for c in label)  # as ratios.py refuses
-    if label is not None and (hidden or not 0 < len(label) <= 100):
-        parser().error("--machine must be 1 to 100 characters, with no control or format character")
+    if args.machine is not None and (problem := label_problem(args.machine)):
+        parser().error(problem)
     try:
         if args.work is None:
             with tempfile.TemporaryDirectory(prefix="bwbench-compare-") as tmp:

@@ -426,7 +426,7 @@ def test_the_schema_refuses_every_control_and_format_character_it_can_name():
     import unicodedata  # noqa: PLC0415
 
     pattern = re.compile(
-        json.loads(compare.SRC.joinpath("bwbench", "ratios.schema.json").read_text())["$defs"]["text"]["pattern"]
+        json.loads(compare.PACKAGE.joinpath("ratios.schema.json").read_text())["$defs"]["text"]["pattern"]
     )
     hidden = [chr(i) for i in range(0x10000) if unicodedata.category(chr(i)) in {"Cc", "Cf"}]
     assert [f"U+{ord(c):04X}" for c in hidden if pattern.search(f"a{c}b")] == []

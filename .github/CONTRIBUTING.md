@@ -83,6 +83,12 @@ The packages under test are not dependencies. Their releases are listed in
 `asv/<package>.hashes`, and the dependencies they run on are fixed in
 `asv/<package>.stack.txt`, which only a person moves ([docs/method.md](../docs/method.md#how-the-results-stay-reproducible)).
 
+## Contribute a run
+
+A result file of solver ratios from your own machine goes in `ratios/contributed/` by pull
+request. [docs/running.md](../docs/running.md#contribute-a-run) has the steps, and the
+`contributed` workflow checks the file.
+
 ## Commits and pull requests
 
 `main` takes changes only through a pull request. Write commit subjects as

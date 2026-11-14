@@ -235,8 +235,8 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
                 "params": [
                     {
                         "name": about["labels"]["params"].get(k, k),
-                        "value": v,
-                        "note": about.get("values", {}).get(k, {}).get(v),
+                        "value": str(v),
+                        "note": about.get("values", {}).get(k, {}).get(str(v)),
                     }
                     for k, v in first["params"].items()
                 ],

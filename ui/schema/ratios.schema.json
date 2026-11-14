@@ -30,7 +30,7 @@
             "pattern": "^https://",
             "description": "The workflow run that wrote a hosted file, or null."
           },
-          "commit": { "type": "string" }
+          "commit": { "type": ["string", "null"], "description": "The commit that measured, or null outside a checkout." }
         }
       }
     },

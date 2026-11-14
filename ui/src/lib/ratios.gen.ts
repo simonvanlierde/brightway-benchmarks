@@ -28,7 +28,10 @@ export interface RatioComparisons {
      * The workflow run that wrote a hosted file, or null.
      */
     run: string | null;
-    commit: string;
+    /**
+     * The commit that measured, or null outside a checkout.
+     */
+    commit: string | null;
   }[];
   comparisons: {
     id: string;

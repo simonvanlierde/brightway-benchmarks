@@ -20,6 +20,14 @@ def module(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     return importlib.import_module("export_ratios")
 
 
+def export(module: ModuleType, ratios: Path | None, contributed: Path | None, out: Path) -> dict:
+    """MODULE.export's data, which must be what the page's schema accepts."""
+    data = module.export(ratios, contributed, out)
+    validator = Draft202012Validator(UI_SCHEMA, format_checker=Draft202012Validator.FORMAT_CHECKER)
+    assert [f"{list(e.absolute_path)}: {e.message}" for e in validator.iter_errors(data)] == []
+    return data
+
+
 def row(ratio: float | None, lo: float | None = None, hi: float | None = None, os: str = "Linux") -> dict:
     if ratio is None:
         return {"ratio": None, "ci95": None, "os": os}
@@ -87,13 +95,10 @@ def test_export_writes_one_row_per_machine_from_the_newest_file(module: ModuleTy
     (archive / "hosted/2026-11-07-99999999999").mkdir()
     (archive / "hosted/2026-11-07-99999999999/Linux.json").write_text(json.dumps(old), encoding="utf-8")
 
-    out = module.export(archive, None, tmp_path / "data")
+    out = export(module, archive, None, tmp_path / "data")
 
     written = json.loads((tmp_path / "data/ratios.json").read_text(encoding="utf-8"))
     assert written == out
-    assert (
-        list(Draft202012Validator(UI_SCHEMA, format_checker=Draft202012Validator.FORMAT_CHECKER).iter_errors(out)) == []
-    )
     assert [m["name"] for m in out["machines"]] == ["GitHub ubuntu26", "GitHub macos26", "GitHub win25-vs2026"]
     linux = out["machines"][0]
     assert linux["tier"] == "hosted"
@@ -137,7 +142,7 @@ def test_contributed_and_reference_rows_keep_their_folder_s_tier(module: ModuleT
     (contributed / "broken").mkdir()
     (contributed / "broken/2026-11-12.json").write_text('{"format": "bwbench-ratios/1"}')
 
-    out = module.export(archive, contributed, tmp_path / "data")
+    out = export(module, archive, contributed, tmp_path / "data")
 
     assert [(m["id"], m["tier"], m["name"]) for m in out["machines"]] == [
         ("reference", "reference", "Box"),
@@ -156,7 +161,7 @@ def test_no_ratio_files_write_nothing(module: ModuleType, tmp_path: Path):
 
 def test_the_ui_fixture_is_the_export_of_the_hosted_fixtures(module: ModuleType, tmp_path: Path):
     """ui/README.md says how to refresh ui/test/fixtures/real/ratios.json when this fails."""
-    out = module.export(hosted(tmp_path), None, tmp_path / "data")
+    out = export(module, hosted(tmp_path), None, tmp_path / "data")
     assert json.loads((ROOT / "ui/test/fixtures/real/ratios.json").read_text(encoding="utf-8")) == out
 
 
@@ -197,9 +202,23 @@ def test_a_file_that_breaks_the_export_is_skipped_with_a_warning(
     monkeypatch.setattr(module, "problems", problems)
     monkeypatch.setattr(module, "reason", crash)
 
-    out = module.export(None, contributed, tmp_path / "data")
+    out = export(module, None, contributed, tmp_path / "data")
 
     assert [m["name"] for m in out["machines"]] == ["good"]
     err = capsys.readouterr().err
     assert "bad-check/2026-11-12.json: KeyError" in err
     assert "skipped contributed/bad-build: TypeError: boom" in err
+
+
+def test_a_file_outside_a_checkout_with_integer_params_still_loads(module: ModuleType, tmp_path: Path):
+    linux = json.loads((HOSTED / "2026-11-14/Linux.json").read_text(encoding="utf-8"))
+    linux["source"]["commit"] = None
+    linux["comparisons"][0]["params"]["rounds"] = 2
+    (tmp_path / "contributed/lab").mkdir(parents=True)
+    doc = {**linux, "tier": "contributed", "machine": "Lab"}
+    (tmp_path / "contributed/lab/2026-11-12.json").write_text(json.dumps(doc), encoding="utf-8")
+
+    out = export(module, None, tmp_path / "contributed", tmp_path / "data")
+
+    assert out["machines"][0]["commit"] is None
+    assert {"name": "rounds", "value": "2", "note": None} in out["comparisons"][0]["params"]

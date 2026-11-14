@@ -198,3 +198,10 @@ def test_host_names_are_refused(machine: str):
 )
 def test_machine_labels_pass(machine: str):
     assert not HOST_LIKE.search(machine)
+
+
+def test_a_label_without_ascii_letters_or_digits_is_refused(capsys: pytest.CaptureFixture[str]):
+    with pytest.raises(SystemExit) as e:
+        compare.main(["compare", "-o", "x.json", "--machine", "\u82f9\u679c"])
+    assert e.value.code == 2
+    assert "ASCII letters or digits" in capsys.readouterr().err

@@ -54,6 +54,7 @@ from bwbench.ratios import (
     interleave,
     problems,
     ratio_seed,
+    slug,
 )
 from bwbench.timecase import BENCHMARKS
 
@@ -501,6 +502,8 @@ def main(argv: list[str] | None = None) -> int:
         parser().error("the release comparisons run on macOS and Windows only")
     if args.machine is not None and not 0 < len(args.machine) <= 100:
         parser().error("--machine must be 1 to 100 characters")
+    if args.machine is not None and not slug(args.machine):
+        parser().error(f"--machine {args.machine!r} needs ASCII letters or digits: its folder name keeps only those")
     try:
         if args.work is None:
             with tempfile.TemporaryDirectory(prefix="bwbench-compare-") as tmp:

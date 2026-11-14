@@ -294,7 +294,7 @@ installs only on x86_64; elsewhere its arm is missing too, which is a result, no
    ```
 
    Set `--machine` to a label for the machine, such as its CPU model, never its host name.
-   Without it, the CPU model is used. Add `install-path` to the command to time conda-forge
+   The label needs ASCII letters or digits, which name its folder. Without it, the CPU model is used. Add `install-path` to the command to time conda-forge
    against PyPI too; that needs [pixi](https://pixi.sh).
 3. Fork this repository, then copy the file to
    `ratios/contributed/<machine>/<date>.json`. `<machine>` is your label in lower case with

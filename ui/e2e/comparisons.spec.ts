@@ -47,7 +47,7 @@ test("Across machines reads one row per machine under each choice, with its summ
   const python = page.getByRole("region", { name: "Python version", exact: true });
   await expect(
     python.getByRole("rowgroup").filter({ hasText: "Python 3.12 against" }).locator(".ratio-summary"),
-  ).toHaveText("Depends on platform: faster on 1 machine, slower on 1");
+  ).toHaveText("Differs between machines: faster on 1 machine, slower on 1; no clear difference on 1");
   await page.screenshot({ path: `${shots}/comparisons-light.png`, fullPage: true });
   await accessible(page);
 });

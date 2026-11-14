@@ -9,10 +9,11 @@ its folder: a contributed file that claims another tier is skipped, as is one th
 ``bwbench.ratios.problems`` rejects, each with a warning. Writes OUT/ratios.json in the shape
 ui/schema/ratios.schema.json gives, or nothing when there are no files.
 
-Each candidate gets one row per machine that ran its comparison and a summary over the machines
-whose 95% interval leaves out 1: a range of speed-ups when they agree, "Depends on platform"
-when they do not. A range, not a pooled estimate: the machines differ on purpose. The summary is
-worked out here so the viewer computes none.
+Each candidate gets one row per machine that ran its comparison and a summary over the reference
+and hosted machines whose 95% interval leaves out 1: a range of speed-ups when they agree,
+"Differs between machines" when they do not, and how many showed no clear difference. Contributed
+machines count only when no other machine measured, and the text says so. A range, not a pooled
+estimate: the machines differ on purpose. The summary is worked out here so the viewer computes none.
 """
 
 import argparse
@@ -81,28 +82,32 @@ def _count(n: int, word: str) -> str:
 
 
 def summary(rows: list[dict]) -> dict:
-    """The range summary over ROWS (each with ratio, ci95 and os): direction and text."""
+    """The range summary over ROWS (each with ratio, ci95, os and tier): direction and text.
+
+    Only reference and hosted rows count; contributed ones only when no other machine measured.
+    """
     measured = [r for r in rows if r["ratio"] is not None]
-    clear = [(_clear(r["ratio"], r["ci95"]), r) for r in measured]
-    clear = [(way, r) for way, r in clear if way != "unclear"]
     if not measured:
         return {"direction": "none", "text": "Not measured on any machine"}
+    verified = [r for r in measured if r["tier"] != "contributed"]
+    note = "" if verified else " (contributed machines only, unverified)"
+    measured = verified or measured
+    clear = [(way, r) for r in measured if (way := _clear(r["ratio"], r["ci95"])) != "unclear"]
     if not clear:
-        return {"direction": "unclear", "text": f"No clear difference on {_count(len(measured), 'machine')}"}
+        return {"direction": "unclear", "text": f"No clear difference on {_count(len(measured), 'machine')}{note}"}
+    rest = f"; no clear difference on {len(measured) - len(clear)}" if len(clear) < len(measured) else ""
     ways = {way for way, _ in clear}
     if len(ways) > 1:
         faster = sum(way == "faster" for way, _ in clear)
-        return {
-            "direction": "mixed",
-            "text": f"Depends on platform: faster on {_count(faster, 'machine')}, slower on {len(clear) - faster}",
-        }
+        text = f"Differs between machines: faster on {_count(faster, 'machine')}, slower on {len(clear) - faster}"
+        return {"direction": "mixed", "text": text + rest + note}
     (way,) = ways
     factors = sorted(1 / r["ratio"] if way == "faster" else r["ratio"] for _, r in clear)
     low, high = times(factors[0]), times(factors[-1])
     span = low if low == high else f"{low[:-1] if low[-1] == high[-1] else low} to {high}"
-    on = f"{len(clear)} of {len(measured)} machines" if len(clear) < len(measured) else _count(len(clear), "machine")
     oses = len({r["os"] for _, r in clear})
-    return {"direction": way, "text": f"{span} {way} on {on}, {_count(oses, 'OS')}"}
+    text = f"{span} {way} on {_count(len(clear), 'machine')}, {_count(oses, 'OS')}"
+    return {"direction": way, "text": text + rest + note}
 
 
 def _read(path: Path, tier: str) -> dict | None:
@@ -179,6 +184,7 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
     """The page's data from each machine's (id, tier, file), comparisons in TITLES' order."""
     about = tomllib.loads(DESCRIPTIONS.read_text(encoding="utf-8"))
     out_machines = []
+    tier_of = {machine: tier for machine, tier, _ in machines}
     groups: dict[tuple, dict] = {}  # (id, case, params, baseline) -> comparison, machines in order
     for machine, tier, doc in machines:
         fp = doc["fingerprint"]
@@ -216,6 +222,7 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
                         "missing": reason(c, r),
                         "seconds": r["seconds"],
                         "_os": os_name,
+                        "_tier": tier_of[machine],
                         "_comparison": c,
                     }
                 )
@@ -225,7 +232,7 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
                 {
                     "name": name,
                     "label": _label(first, name, [r["_comparison"] for r in rows]),
-                    "summary": summary([{**r, "os": r["_os"]} for r in rows]),
+                    "summary": summary([{**r, "os": r["_os"], "tier": r["_tier"]} for r in rows]),
                     "rows": [{k: v for k, v in r.items() if not k.startswith("_")} for r in rows],
                 }
             )

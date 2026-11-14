@@ -36,8 +36,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (`hosted/<YYYY-MM-DD>-<run id>/<OS>.json`). The same measurement runs anywhere as
   `bwbench compare`, and `bwbench validate` checks a result file ([method](docs/method.md#hosted-ratios)).
 - An "Across machines" view under Benchmarks shows those ratios one row per machine, with the
-  95% interval drawn around 1 and a summary per choice: the range where the machines agree, or
-  "Depends on platform" when they do not ([decision 0007](docs/decisions/0007-comparisons-across-machines.md)).
+  95% interval drawn around 1 and a summary per choice over the reference and hosted machines: the
+  range where they agree, or "Differs between machines" when they do not ([decision 0007](docs/decisions/0007-comparisons-across-machines.md)).
 - Every result file carries an environment fingerprint (CPU, core type, kernel, SMT, governor,
   power profile, Python, BLAS, lock), and `just results-commit` refuses a new result without one.
   A file that keeps cells from a run in another environment lists that run's fingerprint under

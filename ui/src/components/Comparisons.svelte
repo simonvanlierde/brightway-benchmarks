@@ -49,7 +49,7 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
     <dt>Interval</dt>
     <dd>The ratio's 95% interval, drawn as a bar on a log scale. A bar that reaches the line at 1 shows no clear difference on that machine.</dd>
     <dt>Summary</dt>
-    <dd>Under each choice: the range over the machines where the difference is clear, or "Depends on platform" when they disagree.</dd>
+    <dd>Under each choice: the range over the reference and hosted machines where the difference is clear, or "Differs between machines" when they disagree, and how many show no clear difference. Contributed machines count only when no other machine measured the choice.</dd>
     <dt>Source</dt>
     <dd>Hosted rows ran in this project's weekly workflow, which signs each file. Contributed rows come from other people's machines and are not verified.{#if method}{" "}<a href={method}>How the ratios are measured</a>.{/if}</dd>
   </dl>

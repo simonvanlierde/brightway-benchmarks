@@ -28,10 +28,12 @@ def export(module: ModuleType, ratios: Path | None, contributed: Path | None, ou
     return data
 
 
-def row(ratio: float | None, lo: float | None = None, hi: float | None = None, os: str = "Linux") -> dict:
+def row(
+    ratio: float | None, lo: float | None = None, hi: float | None = None, os: str = "Linux", tier: str = "hosted"
+) -> dict:
     if ratio is None:
-        return {"ratio": None, "ci95": None, "os": os}
-    return {"ratio": ratio, "ci95": [lo, hi], "os": os}
+        return {"ratio": None, "ci95": None, "os": os, "tier": tier}
+    return {"ratio": ratio, "ci95": [lo, hi], "os": os, "tier": tier}
 
 
 def test_same_direction_is_a_range_of_speed_ups_over_the_clear_machines(module: ModuleType):
@@ -41,7 +43,10 @@ def test_same_direction_is_a_range_of_speed_ups_over_the_clear_machines(module: 
 
 def test_machines_with_no_clear_difference_count_as_measured_but_not_in_the_range(module: ModuleType):
     rows = [row(1.2, 1.1, 1.3), row(0.98, 0.9, 1.05, "Windows"), row(1.5, 1.4, 1.6, "Linux")]
-    assert module.summary(rows) == {"direction": "slower", "text": "1.20 to 1.50x slower on 2 of 3 machines, 1 OS"}
+    assert module.summary(rows) == {
+        "direction": "slower",
+        "text": "1.20 to 1.50x slower on 2 machines, 1 OS; no clear difference on 1",
+    }
 
 
 def test_one_clear_machine_is_one_value_not_a_range(module: ModuleType):
@@ -55,7 +60,17 @@ def test_directions_that_disagree_depend_on_the_platform(module: ModuleType):
     rows = [row(0.5, 0.4, 0.6, "Linux"), row(1.2, 1.1, 1.3, "Windows"), row(1.3, 1.2, 1.4, "Darwin")]
     assert module.summary(rows) == {
         "direction": "mixed",
-        "text": "Depends on platform: faster on 1 machine, slower on 2",
+        "text": "Differs between machines: faster on 1 machine, slower on 2",
+    }
+
+
+def test_contributed_rows_count_only_when_no_verified_machine_measured(module: ModuleType):
+    rows = [row(0.5, 0.45, 0.55), row(2.0, 1.8, 2.2, "Windows", "contributed"), row(0.4, 0.35, 0.45, tier="reference")]
+    assert module.summary(rows) == {"direction": "faster", "text": "2.00 to 2.50x faster on 2 machines, 1 OS"}
+    rows = [row(None), row(2.0, 1.8, 2.2, "Windows", "contributed"), row(1.0, 0.9, 1.1, tier="contributed")]
+    assert module.summary(rows) == {
+        "direction": "slower",
+        "text": "2.00x slower on 1 machine, 1 OS; no clear difference on 1 (contributed machines only, unverified)",
     }
 
 
@@ -152,6 +167,12 @@ def test_contributed_and_reference_rows_keep_their_folder_s_tier(module: ModuleT
         ("contributed/lab-laptop", "contributed", "Lab laptop"),
     ]
     assert out["machines"][-1]["run"] is None
+    # The contributed lab laptop has a row but no say in the summary.
+    pardiso = next(
+        k for c in out["comparisons"] if c["id"] == "solvers" for k in c["candidates"] if k["name"] == "pypardiso"
+    )
+    assert [r["machine"] for r in pardiso["rows"]][-1] == "contributed/lab-laptop"
+    assert pardiso["summary"]["text"].endswith("slower on 3 machines, 2 OSes")
 
 
 def test_no_ratio_files_write_nothing(module: ModuleType, tmp_path: Path):

@@ -183,7 +183,7 @@
           "label": "conda-forge (pixi) against PyPI (uv)",
           "summary": {
             "direction": "slower",
-            "text": "10% slower on 1 of 3 machines, 1 OS"
+            "text": "10% slower on 1 machine, 1 OS; no clear difference on 2"
           },
           "rows": [
             {
@@ -261,7 +261,7 @@
           "label": "Python 3.12 against Python 3.13",
           "summary": {
             "direction": "mixed",
-            "text": "Depends on platform: faster on 1 machine, slower on 1"
+            "text": "Differs between machines: faster on 1 machine, slower on 1; no clear difference on 1"
           },
           "rows": [
             {
@@ -316,7 +316,7 @@
           "label": "Python 3.14 against Python 3.13",
           "summary": {
             "direction": "slower",
-            "text": "3% slower on 1 of 3 machines, 1 OS"
+            "text": "3% slower on 1 machine, 1 OS; no clear difference on 2"
           },
           "rows": [
             {
@@ -371,7 +371,7 @@
           "label": "Python 3.15 against Python 3.13",
           "summary": {
             "direction": "faster",
-            "text": "4 to 9% faster on 2 of 3 machines, 2 OSes"
+            "text": "4 to 9% faster on 2 machines, 2 OSes; no clear difference on 1"
           },
           "rows": [
             {

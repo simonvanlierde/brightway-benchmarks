@@ -49,7 +49,10 @@ The `codspeed` workflow runs `benchmarks/codspeed` on each pull request and push
 [`benchmarks/descriptions.toml`](../benchmarks/descriptions.toml); it warns about a benchmark
 that has no entry there, so add one with each new benchmark.
 `just results-commit` refuses results that name this host or a name in
-`BWBENCH_PRIVATE_NAMES`. Result files do not record `BWBENCH_THREADS`, `BWBENCH_ROUNDS`,
+`BWBENCH_PRIVATE_NAMES`. It also refuses a new or changed result without an environment
+fingerprint, which `asv.sh` adds to each result file it writes
+([method](method.md#how-the-results-stay-reproducible)). Results committed before the fingerprint
+keep their place until a run rewrites them. Result files do not record `BWBENCH_THREADS`, `BWBENCH_ROUNDS`,
 `BWBENCH_CPUS` or `BWBENCH_MEM`, so don't commit runs made with values other than the defaults.
 
 ### Experimental solvers
@@ -71,6 +74,17 @@ build strings, the BLAS among them, to a `versions-*.txt` file.
 `just noise SUBJECT` runs the latest release of SUBJECT 10 times and prints each case's spread
 ([method.md](method.md#the-noise-floor)). Each sample's CPU time, wall time and context
 switches go to `rounds.jsonl`; `scripts/noise_summary.py` reads them.
+
+### The nightly canary
+
+`just canary` times a fixed workload in the box: a pure-Python loop and a 64 MiB memory copy,
+15 samples each, standard library only. Its code never changes, so a move in its time means the
+machine drifted, not Brightway. Each night writes `results/canary/<machine>/<time>.json` with the
+samples, their medians and the fingerprint. `just results-commit` puts it on the `results` branch,
+apart from the histories. `just canary-check` compares the newest night with up to 14 before it
+and exits 1 when a median moved by more than 3% or three times the earlier nights' spread. It
+also prints each fingerprint field that changed since the night before, such as a new kernel.
+The benchmark node's night queue runs all three once a night.
 
 #### Energy per operation
 
@@ -282,8 +296,9 @@ yours go under a machine name of their own.
    unsigned, and this repository asks for a `Signed-off-by` line
    ([CONTRIBUTING](../.github/CONTRIBUTING.md#sign-off-your-commits)), so run
    `git commit --amend -s` on the `results` branch. Then `git push origin results` and open a
-   pull request from your fork's `results` into this repository's `results`. Say in it which
-   CPU, memory and OS the machine has, and paste the `just noise` spread.
+   pull request from your fork's `results` into this repository's `results`. Each result's
+   fingerprint names the CPU and OS; say in the pull request how much memory the machine has,
+   and paste the `just noise` spread.
 
 ## Publish the synthetic inputs
 

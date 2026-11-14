@@ -81,6 +81,17 @@ noise subject runs="10":
     done
     uv run --no-project --with numpy==2.5.3 python scripts/noise_summary.py ".asv/noise/{{ subject }}"
 
+# Results go to results/canary/BWBENCH_MACHINE/, which no Brightway history reads; the night
+# queue runs it once a night on the benchmark node, then `just results-commit` and `just canary-check`.
+# The nightly canary: a fixed stdlib workload, so a move is the machine's (scripts/canary.py).
+canary:
+    scripts/box.sh python3 scripts/canary.py run "results/canary/${BWBENCH_MACHINE:?set BWBENCH_MACHINE to the results machine name}"
+
+# Exits 1 when a workload moved beyond the earlier nights' noise. Runs on the host: it only reads JSON.
+# The newest canary night against the ones before it, with fingerprint fields that changed.
+canary-check:
+    python3 scripts/canary.py check "results/canary/${BWBENCH_MACHINE:?set BWBENCH_MACHINE to the results machine name}"
+
 # After a new upstream release, follow docs/running.md ("Add a release").
 # Resolve SUBJECT's fixed stack (its latest release's dependencies at the cutoff) into asv/.
 stack subject:

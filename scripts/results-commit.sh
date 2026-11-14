@@ -10,7 +10,9 @@
 # values other than the defaults. Only asv's JSON, the lock files, pip freezes and the
 # bwbench-run records are copied, and no symlinks. The RO-Crate is
 # written again over the merged branch.
-# It refuses results that name this host, because they become public once pushed: asv.sh's
+# It refuses a result file that is new, or changed after the merge, without an environment
+# fingerprint (scripts/fingerprints.py), and results that name this host, because they
+# become public once pushed: asv.sh's
 # default (box-<slot>) never does, but a BWBENCH_MACHINE set by hand or results from before
 # that default can. Other names to refuse (an ssh alias, say) go in BWBENCH_PRIVATE_NAMES,
 # separated by spaces.
@@ -77,13 +79,18 @@ if git -C "$tree" diff --cached --quiet; then
 fi
 here=$(cd "$(dirname "$0")" && pwd)
 uv run --quiet --frozen --project "$here/.." python "$here/merge_results.py" "$tree"
-uv run --quiet --frozen --project "$here/.." python "$here/run_crate.py" "$tree"
 git -C "$tree" add -A
 # The merge can rebuild the committed files exactly; a new crate alone is nothing new.
 if git -C "$tree" diff --cached --quiet -- . ':!ro-crate-metadata.json'; then
     echo "results-commit: nothing new"
     exit 0
 fi
+# A result the merge leaves different from the branch must say what machine and environment
+# timed it (scripts/fingerprints.py). After the merge, so an old local file whose cells the
+# branch already holds does not block the commit.
+uv run --quiet --frozen --project "$here/.." python "$here/fingerprints.py" check "$tree" || exit 1
+uv run --quiet --frozen --project "$here/.." python "$here/run_crate.py" "$tree"
+git -C "$tree" add -A
 git -C "$tree" diff --cached --stat | tail -1
 # --no-verify: the repo's hooks lint code, and this branch holds data only (no hook config).
 git -C "$tree" commit -q --no-verify -m "results: $(date -u +%F) from $(git rev-parse --short HEAD)"

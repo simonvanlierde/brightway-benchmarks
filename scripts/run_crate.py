@@ -76,6 +76,7 @@ def crate(folder: Path) -> dict:
     ids = [p.relative_to(folder).as_posix() for p in files]
     kinds = {".json": "asv result", ".toml": "PEP 751 lock file of one asv environment", ".txt": "pip freeze"}
     record = "which bwbench commit wrote which file, by sha256"
+    canary = "one night of the machine's canary (scripts/canary.py)"
     named = {"machine.json": "asv machine description", "benchmarks.json": "asv benchmark list"}
     known = writers(folder)
     runs: dict[str, tuple[str, list[str]]] = {}  # commit: (generator version, files it wrote)
@@ -127,6 +128,8 @@ def crate(folder: Path) -> dict:
                     "@type": "File",
                     "description": record
                     if f.name.startswith("bwbench-run-")
+                    else canary
+                    if i.startswith("canary/")
                     else named.get(f.name, kinds.get(f.suffix, "")),
                 }
                 for i, f in zip(ids, files, strict=True)

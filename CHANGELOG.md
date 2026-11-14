@@ -31,6 +31,15 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Every result file carries an environment fingerprint (CPU, core type, kernel, SMT, governor,
+  power profile, Python, BLAS, lock), and `just results-commit` refuses a new result without one.
+  A file that keeps cells from a run in another environment lists that run's fingerprint under
+  `kept_fingerprints` ([method](docs/method.md#how-the-results-stay-reproducible)).
+- Result files keep each case's raw samples next to its median, so the noise rule can be rerun
+  from the `results` branch.
+- A nightly canary on the benchmark machine: a fixed workload whose drift is the machine's, kept
+  apart from the histories (`just canary`, `just canary-check`,
+  [running](docs/running.md#the-nightly-canary)).
 - `MonteCarloConvergence` compares IID and scrambled Sobol sampling on the smoke model at 16, 64
   and 256 draws. Its error uses an independent 4096-draw Monte Carlo mean
   ([benchmark](benchmarks/bench_bw2calc/bench_lca.py)).

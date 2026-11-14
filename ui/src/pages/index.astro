@@ -37,6 +37,7 @@ const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
     {/* Fetched while the viewer's script loads; `crossorigin` matches fetch()'s mode, so it reuses them. */}
     <link rel="preload" as="fetch" crossorigin href={`${data}index.json`} />
     <link rel="preload" as="fetch" crossorigin href={`${data}guidance.json`} />
+    <link rel="preload" as="fetch" crossorigin href={`${data}ratios.json`} />
   </head>
   <body>
     <App client:only="svelte" base={base} build={build} {home}>

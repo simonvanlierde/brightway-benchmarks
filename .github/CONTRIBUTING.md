@@ -35,12 +35,22 @@ runs every git hook over the whole repository, as the `checks` workflow does: ya
 zizmor and actionlint on the workflows, rumdl on the Markdown. The betterleaks hook for
 secrets runs only locally; on GitHub, secret scanning with push protection covers it.
 
-Both workflows must pass before a pull request can merge. The others run apart from a pull
-request:
+Six checks must pass before a pull request can merge: `git hooks` and `dependency review`
+from the `checks` workflow, `lint, types, tests` from `python`, `ui: lint, types, tests, build`
+from `ui`, `pull request title` from `pr-title` and `DCO sign-off` from `dco`
+([ruleset](rulesets/main-checks.json)). The other workflows:
 
 - `fuzz` runs the Atheris harness of `scripts/release_report.py` for 60 seconds on a pull
   request that touches it.
+- `contributed` runs `bwbench validate --contribution` on a pull request that adds a result file
+  under `ratios/contributed/`.
+- `cold-install` follows the README's install steps in a fresh container weekly, and on a pull
+  request that changes them.
 - `smoke` runs `just smoke` weekly, and `compat` runs `just compat` nightly.
+- `python-probe` installs, imports and scores Brightway on Python 3.11 to 3.15 daily, and on the
+  end-of-life Pythons on Mondays.
+- `advisories` audits `uv.lock` and the workflows again every Monday, `links` checks every web
+  link weekly, and `fair` scores the repository on fair-software.eu's recommendations weekly.
 - `site` rebuilds the history pages daily after `compat`, and by hand after new results.
 - `noise-hosted` and `solvers-macos` run by hand.
 - `ratios` runs `bwbench compare all` weekly on Linux, macOS and Windows runners, attests the

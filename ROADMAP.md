@@ -12,9 +12,6 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
   ([calibration](docs/generator-calibration.md)). The published histories still use v4, whose
   higher fill overstates direct-solver times. Rerun every minor line and update the findings
   and solver story ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
-- **Our own results UI,** replacing asv's pages: what changed in each release against the
-  measured noise, each benchmark's history, and comparisons across solvers and environments
-  ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).
 - **The synthetic inputs as a dataset** on Zenodo, one version per generator version, so the
   matrices and ecoSpold2 files can be used without running the generator. `just dataset` builds
   it ([running](docs/running.md#publish-the-synthetic-inputs)); nothing is deposited yet.

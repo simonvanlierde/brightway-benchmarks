@@ -40,6 +40,7 @@ import Masthead from "./Masthead.svelte";
 import PythonSupport from "./PythonSupport.svelte";
 import ReleaseChanges from "./ReleaseChanges.svelte";
 import SetupHome from "./SetupHome.svelte";
+import SetupIntro from "./SetupIntro.svelte";
 import SolverComparison from "./SolverComparison.svelte";
 
 type Axis = BenchmarkIndex["benchmarks"][number]["params"][number];
@@ -48,9 +49,12 @@ let {
   base,
   build,
   home = "/",
+  intro,
 }: {
   base: string;
   build?: { label: string; url: string };
+  /** Setup's title and intro as the page drew them before this script ran (index.astro), kept while the data loads. */
+  intro?: { title: string; intro: string } | undefined;
   /** The site's root, where the static pages live. */
   home?: string;
 } = $props();
@@ -438,6 +442,7 @@ $effect(() => {
         return { href: writeView(next), title: labelOf(b), detail: g?.label ?? g?.name ?? "", onclick: (e: MouseEvent) => follow(e, next) };
       }),
       more: matching.length > 6 ? { count: matching.length, href: writeView({ page: "explorer", params: [] }), onclick: (e: MouseEvent) => follow(e, { page: "explorer", params: [] }) } : undefined,
+      catalogue: { href: writeView({ page: "explorer", params: [] }), onclick: (e: MouseEvent) => { search = ""; follow(e, { page: "explorer", params: [] }); } },
       pages: pageResult.hits.map((h) => ({ href: h.url, title: h.title, detail: h.page, excerpt: h.excerpt })),
       pending: !pagesSettled,
     },
@@ -454,6 +459,7 @@ $effect(() => {
     </main>
   {:else if !index}
     <main class="view" id="main" tabindex="-1" aria-busy="true">
+      {#if page === "home" && intro}<div class="home-columns"><div class="setup-column"><SetupIntro {...intro} /></div></div>{/if}
       <p aria-live="polite">{page === "home" ? "Loading…" : "Loading the benchmarks…"}</p>
       <div class="skeleton"></div>
     </main>
@@ -501,14 +507,14 @@ $effect(() => {
         <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} name={siteName} findings={findingsPage} />
       {:else if !bench}
         {#if view.bench}<p class="empty" role="status">This benchmark is not in the current data. Choose one from the catalogue.</p>{/if}
-        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Open a change or a benchmark from the catalogue for its history, or read <a href={findingsPage}>what the benchmarks found</a>.</p></header>
+        <header class="overview-intro"><h1>Benchmarks</h1><p class="lede">How fast each Brightway release runs everyday LCA calculations. Open a change or a benchmark from the catalogue for its history, or read <a href={findingsPage}>what the benchmarks found</a>.</p></header>
         {#if guidance?.solverComparison}<SolverComparison comparison={guidance.solverComparison} {story} />{/if}
         <ReleaseChanges {index} {view} {go} {follow} loaded={overview} />
         {#if guidance}<PythonSupport {guidance} /><PythonSupport {guidance} eol />{/if}
 
       {:else}
         <header class="bench-header">
-          <h2>{labelOf(bench)}</h2>
+          <h1>{labelOf(bench)}</h1>
           {#if bench.description}<p class="bench-about">{bench.description}</p>{/if}
           {#each shownFindings as f (f.title)}<p class="bench-finding"><strong>Finding:</strong> {f.title}.{#if f.url}{" "}<a href={f.url}>Read the write-up<span class="sr"> on {f.title}</span></a>{/if}</p>{/each}
           <p class="bench-meta">
@@ -613,7 +619,7 @@ $effect(() => {
             </figcaption>
           </figure>
 
-          <h3 id="changes-h">Changes</h3>
+          <h2 id="changes-h" class="bench-changes">Changes</h2>
           {#if !exported}
             <p class="quiet">Changes were not exported with this data.</p>
           {:else if changes.length === 0}

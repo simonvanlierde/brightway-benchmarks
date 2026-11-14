@@ -80,11 +80,15 @@ jobs:
           cache: pnpm
           cache-dependency-path: ui/pnpm-lock.yaml
 
+      # The data first: the static pages link only the benchmarks it has (ui/src/lib/build-data.ts).
+      - run: uvx --from rust-just==1.58.0 just ui-data site/ui/data
+
       - run: pnpm install --frozen-lockfile && pnpm run build
         working-directory: ui
         env:
           UI_BASE: /brightway-benchmarks/ui/
           PUBLIC_DATA_URL: /brightway-benchmarks/ui/data/
+          UI_DATA_DIR: ${{ github.workspace }}/site/ui/data
 
       - run: |
           mkdir -p site/ui
@@ -95,7 +99,7 @@ jobs:
           cp -r ui/dist/findings site/findings
           cp -r ui/dist/stories site/stories
           cp ui/dist/sitemap.xml site/sitemap.xml
-          uvx --from rust-just==1.58.0 just ui-data site/ui/data
+          cp ui/dist/404.html site/404.html
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

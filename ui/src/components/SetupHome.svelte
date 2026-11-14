@@ -2,10 +2,11 @@
 import { tick } from "svelte";
 import type { BenchmarkIndex, Guidance } from "../lib/contract";
 import { dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/guidance";
-import { benchLabel, byBenchmark, format, latestChanges, percentRange, type View, writeView } from "../lib/history";
+import { benchLabel, byBenchmark, changeRange, format, latestChanges, type View, writeView } from "../lib/history";
 import { supportLead, supportTable } from "../lib/pythonSupport";
 import { scrollable } from "../lib/scrollable";
 import InstallSet from "./InstallSet.svelte";
+import SetupIntro from "./SetupIntro.svelte";
 
 let {
   guidance,
@@ -100,10 +101,7 @@ $effect(() => {
 
 <div class="home-columns">
   <div class="setup-column">
-    <header class="home-intro">
-      <h2>{guidance?.title ?? name}</h2>
-      <p>Every night we check that the latest <a href="https://docs.brightway.dev/en/latest/">Brightway</a> releases install and work together on Linux, macOS and Windows. {guidance?.intro ?? index.project.description ?? ""}</p>
-    </header>
+    <SetupIntro title={guidance?.title ?? name} intro={guidance?.intro ?? index.project.description ?? ""} />
     {#if guidance && platform}
       {#snippet platformChoice()}
         <label class="control-label" for="setup-platform">Operating system</label>
@@ -171,13 +169,13 @@ $effect(() => {
     <h2 id="nudges-heading">From the benchmarks</h2>
     <ul>
       {#if slowest && fastest}
-        <li><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Which solver to install</a><span>One score: {format(slowest.value, slowest.unit)} with SciPy's SuperLU, {format(fastest.value, fastest.unit)} with UMFPACK from conda-forge.</span></li>
+        <li><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Which solver to install</a><span>One score on a synthetic ecoinvent-sized database: {format(slowest.value, slowest.unit)} with SciPy's SuperLU, {format(fastest.value, fastest.unit)} with UMFPACK from conda-forge.</span></li>
       {/if}
       {#each moves as rows, i (i)}
         {@const row = rows[0]}
         {#if row}
           {@const next = { bench: row.bench.id, params: row.params, measure: row.change.measure, machine: row.change.machine }}
-          <li><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchLabel(index, row.bench)}</a><span><strong class={row.way}>{percentRange(rows)} {row.way}</strong> in {row.group.label ?? row.group.name} {row.to}</span></li>
+          <li><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchLabel(index, row.bench)}</a><span><strong class={row.way}>{changeRange(rows)}</strong> in {row.group.label ?? row.group.name} {row.to}</span></li>
         {/if}
       {/each}
       {#if findings}<li><a href={findings}>What the benchmarks found</a><span>Release regressions, fixes and the solver story, each with its write-up.</span></li>{/if}

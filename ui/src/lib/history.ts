@@ -312,12 +312,28 @@ export function byBenchmark(rows: LatestChange[]): ChangeGroup[] {
   return [...out.values()];
 }
 
-/** One benchmark's changes as Setup and Benchmarks both show them: "−80%", or "−79% to −80%" over ROWS, largest last. */
-export function percentRange(rows: LatestChange[]): string {
+/** How many times faster or slower RATIO is: 2.2, 5 or 19. */
+function times(ratio: number): string {
+  const factor = ratio < 1 ? 1 / ratio : ratio;
+  return factor >= 9.95 ? factor.toFixed(0) : String(Number(factor.toFixed(1)));
+}
+
+/**
+ * One benchmark's changes over ROWS (largest first) as Setup and Benchmarks both show them: "+12% worse",
+ * "−4% to −8% better", and once every row at least doubles or halves, "about 5 times faster" or
+ * "2.1 to 2.2 times slower", as the findings put it.
+ */
+export function changeRange(rows: LatestChange[]): string {
   const top = rows[0];
   const low = rows[rows.length - 1];
   if (!top || !low) return "";
-  return rows.length > 1 ? `${percent(low.change.ratio)} to ${percent(top.change.ratio)}` : percent(top.change.ratio);
+  const [a, b] = [low.change.ratio, top.change.ratio];
+  if (!rows.every((r) => r.change.ratio >= 2 || r.change.ratio <= 0.5)) {
+    return `${rows.length > 1 ? `${percent(a)} to ${percent(b)}` : percent(b)} ${top.way}`;
+  }
+  // Time is the one measure with a word for each way; peak memory keeps better and worse.
+  const word = top.change.measure === "latency" ? (b < 1 ? "faster" : "slower") : top.way;
+  return times(a) === times(b) ? `about ${times(b)} times ${word}` : `${times(a)} to ${times(b)} times ${word}`;
 }
 
 /** TEXT cut after each "." and "_", so a long dotted or snake_case name can break there (<wbr>). */

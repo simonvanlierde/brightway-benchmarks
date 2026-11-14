@@ -75,7 +75,7 @@ def test_missing_arms_are_left_out_never_counted_as_a_result(module: ModuleType)
 
 def test_row_verdicts(module: ModuleType):
     assert module.verdict(0.5, [0.4, 0.6]) == ("faster", "2.00x faster")
-    assert module.verdict(1.03, [1.01, 1.05]) == ("slower", "1.03x slower")
+    assert module.verdict(1.03, [1.01, 1.05]) == ("slower", "3% slower")
     assert module.verdict(1.0, [0.95, 1.0]) == ("unclear", "No clear difference")
     assert module.verdict(None, None) == ("missing", "Not measured")
 
@@ -240,3 +240,15 @@ def test_one_comparison_with_two_param_sets_gets_two_keys(module: ModuleType, tm
         "solvers-bench-lca-singlescore-time-first-score-cls-lca-size-smoke-superlu",
         "solvers-bench-lca-singlescore-time-first-score-cls-lca-size-medium-superlu",
     ]
+
+
+def test_small_differences_read_as_percentages_and_large_ones_as_whole_multiples(module: ModuleType):
+    assert module.verdict(0.9996, [0.9994, 0.9998]) == ("faster", "0.04% faster")
+    assert module.verdict(0.98, [0.97, 0.99]) == ("faster", "2% faster")
+    assert module.verdict(1.004, [1.002, 1.006]) == ("slower", "0.4% slower")
+    assert module.verdict(1000.4, [990.0, 1010.0]) == ("slower", "1000x slower")
+    assert module.verdict(1234.0, [1200.0, 1300.0]) == ("slower", "1234x slower")
+    assert module.summary([row(1.04, 1.02, 1.06), row(1.5, 1.4, 1.6, "Windows")]) == {
+        "direction": "slower",
+        "text": "4% to 1.50x slower on 2 machines, 2 OSes",
+    }

@@ -183,7 +183,7 @@
           "label": "conda-forge (pixi) against PyPI (uv)",
           "summary": {
             "direction": "slower",
-            "text": "1.10x slower on 1 of 3 machines, 1 OS"
+            "text": "10% slower on 1 of 3 machines, 1 OS"
           },
           "rows": [
             {
@@ -224,7 +224,7 @@
                 1.1112537586294176
               ],
               "verdict": "slower",
-              "text": "1.10x slower",
+              "text": "10% slower",
               "missing": null,
               "seconds": {
                 "baseline": 0.0043260999999858996,
@@ -272,7 +272,7 @@
                 0.9734491701607305
               ],
               "verdict": "faster",
-              "text": "1.05x faster",
+              "text": "5% faster",
               "missing": null,
               "seconds": {
                 "baseline": 0.0037204335000069477,
@@ -287,7 +287,7 @@
                 1.1766408358833274
               ],
               "verdict": "slower",
-              "text": "1.09x slower",
+              "text": "9% slower",
               "missing": null,
               "seconds": {
                 "baseline": 0.0016599585000278694,
@@ -316,7 +316,7 @@
           "label": "Python 3.14 against Python 3.13",
           "summary": {
             "direction": "slower",
-            "text": "1.03x slower on 1 of 3 machines, 1 OS"
+            "text": "3% slower on 1 of 3 machines, 1 OS"
           },
           "rows": [
             {
@@ -327,7 +327,7 @@
                 1.0505667811006474
               ],
               "verdict": "slower",
-              "text": "1.03x slower",
+              "text": "3% slower",
               "missing": null,
               "seconds": {
                 "baseline": 0.0037204335000069477,
@@ -371,7 +371,7 @@
           "label": "Python 3.15 against Python 3.13",
           "summary": {
             "direction": "faster",
-            "text": "1.04 to 1.09x faster on 2 of 3 machines, 2 OSes"
+            "text": "4 to 9% faster on 2 of 3 machines, 2 OSes"
           },
           "rows": [
             {
@@ -382,7 +382,7 @@
                 0.9819479814237373
               ],
               "verdict": "faster",
-              "text": "1.04x faster",
+              "text": "4% faster",
               "missing": null,
               "seconds": {
                 "baseline": 0.0037204335000069477,
@@ -412,7 +412,7 @@
                 0.928629812311747
               ],
               "verdict": "faster",
-              "text": "1.09x faster",
+              "text": "9% faster",
               "missing": null,
               "seconds": {
                 "baseline": 0.00428820000001906,

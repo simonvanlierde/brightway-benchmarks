@@ -48,8 +48,11 @@ REASON_CHARS = 200
 
 
 def times(x: float) -> str:
-    """X as a multiplier to three significant figures: 1.10, 2.44, 19.9."""
-    return f"{x:#.3g}".rstrip(".")
+    """Factor X (1 or more) in words: 0.04%, 0.4% and 4% below 1.1, then 2.44x, 19.9x, and 1230x from 100."""
+    if x < 1.1:  # noqa: PLR2004 - three figures would read 1.00x here
+        pct = (x - 1) * 100
+        return f"{pct:.1g}%" if pct < 0.1 else f"{pct:.1f}%" if pct < 2 else f"{pct:.0f}%"  # noqa: PLR2004
+    return f"{x:.0f}x" if x >= 100 else f"{x:#.3g}".rstrip(".") + "x"
 
 
 def _clear(ratio: float | None, ci95: list[float] | None) -> str:
@@ -70,7 +73,7 @@ def verdict(ratio: float | None, ci95: list[float] | None) -> tuple[str, str]:
     if way == "unclear":
         return way, "No clear difference"
     assert ratio is not None  # noqa: S101 - _clear said so
-    return way, f"{times(1 / ratio if way == 'faster' else ratio)}x {way}"
+    return way, f"{times(1 / ratio if way == 'faster' else ratio)} {way}"
 
 
 def _count(n: int, word: str) -> str:
@@ -95,12 +98,11 @@ def summary(rows: list[dict]) -> dict:
         }
     (way,) = ways
     factors = sorted(1 / r["ratio"] if way == "faster" else r["ratio"] for _, r in clear)
-    span = (
-        times(factors[0]) if times(factors[0]) == times(factors[-1]) else f"{times(factors[0])} to {times(factors[-1])}"
-    )
+    low, high = times(factors[0]), times(factors[-1])
+    span = low if low == high else f"{low[:-1] if low[-1] == high[-1] else low} to {high}"
     on = f"{len(clear)} of {len(measured)} machines" if len(clear) < len(measured) else _count(len(clear), "machine")
     oses = len({r["os"] for _, r in clear})
-    return {"direction": way, "text": f"{span}x {way} on {on}, {_count(oses, 'OS')}"}
+    return {"direction": way, "text": f"{span} {way} on {on}, {_count(oses, 'OS')}"}
 
 
 def _read(path: Path, tier: str) -> dict | None:

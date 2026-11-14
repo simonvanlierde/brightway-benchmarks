@@ -9,8 +9,11 @@ are not results (machine.json, benchmarks.json) are skipped.
 
 ``fingerprints.py check TREE`` (results-commit.sh): every JSON file staged as new or changed in
 the git worktree TREE, other than asv's machine.json and benchmarks.json and the RO-Crate, must
-carry a valid fingerprint (``bwbench.fingerprint.problems``). Files already committed are not
-checked again: results from before the fingerprint stay as they are until a run rewrites them.
+carry a valid fingerprint (``bwbench.fingerprint.problems``); an asv result (one with
+``result_columns``) must also name its lock. A ``kept_fingerprints`` list, which
+merge_results.py writes for cells kept from earlier runs, must hold only valid asv
+fingerprints or ``null``. Files already committed are not checked again: results from before
+the fingerprint stay as they are until a run rewrites them.
 
 Exit codes: 0 done, 1 a file could not be stamped or lacks a valid fingerprint, 2 usage error.
 """
@@ -61,10 +64,30 @@ def stamp(root: Path, files: list[Path]) -> int:
         if env not in done:
             locks = [path.parent / f"pylock.{env.name}.toml", path.parent / f"versions-{env.name}.txt"]
             lock = next((p for p in locks if p.is_file()), None)
-            args = [str(env / "bin" / "python"), "-I", str(PROBE), *([str(lock)] if lock else [])]
+            if lock is None:
+                print(f"fingerprints: {path}: no lock file for {env.name} beside it", file=sys.stderr)
+                status = 1
+                continue
+            args = [str(env / "bin" / "python"), "-I", str(PROBE), str(lock)]
             done[env] = json.loads(subprocess.run(args, capture_output=True, text=True, check=True).stdout)  # noqa: S603
         path.write_text(json.dumps(data | {"fingerprint": done[env]}))
     return status
+
+
+def file_problems(data: object) -> list[str]:
+    """What makes DATA's fingerprint, or its kept_fingerprints, not valid."""
+    if not isinstance(data, dict):
+        return ["not a JSON object"]
+    asv = "result_columns" in data
+    found = problems(data.get("fingerprint"), need_lock=asv)
+    if "kept_fingerprints" in data:
+        kept = data["kept_fingerprints"]
+        if not isinstance(kept, list):
+            found.append("kept_fingerprints is not a list")
+        else:
+            for i, fp in enumerate(kept):
+                found += [f"kept_fingerprints[{i}]: {p}" for p in problems(fp, need_lock=True) if fp is not None]
+    return found
 
 
 def check(tree: Path) -> int:
@@ -81,8 +104,8 @@ def check(tree: Path) -> int:
         if Path(name).name in NOT_RESULTS:
             continue
         try:
-            found = problems(json.loads((tree / name).read_text()).get("fingerprint"))
-        except (json.JSONDecodeError, AttributeError):
+            found = file_problems(json.loads((tree / name).read_text()))
+        except json.JSONDecodeError:
             found = ["not a JSON object"]
         if found:
             print(f"fingerprints: {name}: {'; '.join(found)}", file=sys.stderr)

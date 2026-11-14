@@ -62,6 +62,11 @@ def test_unknown_values_are_null_not_missing():
     assert problems(GOOD) == []
 
 
+def test_an_asv_result_needs_a_lock():
+    assert "no lock: the environment that ran it is unknown" in problems(GOOD, need_lock=True)
+    assert problems(GOOD | {"lock": {"name": "pylock.toml", "sha256": "0" * 64}}, need_lock=True) == []
+
+
 @given(st.sets(st.integers(0, 300), min_size=1))
 def test_cpu_lists_parse_as_linux_writes_them(cpus: set[int]):
     ranges, run = [], []
@@ -73,3 +78,15 @@ def test_cpu_lists_parse_as_linux_writes_them(cpus: set[int]):
     ranges.append(run)
     text = ",".join(f"{r[0]}-{r[-1]}" if len(r) > 1 else str(r[0]) for r in ranges)
     assert fpmod._cpus(text) == cpus  # noqa: SLF001
+
+
+@pytest.mark.parametrize(("core", "atom", "kind"), [("0-3", None, "performance"), (None, "0-3", "efficiency")])
+def test_a_hybrid_cpu_with_one_core_type_listed(
+    monkeypatch: pytest.MonkeyPatch, core: str | None, atom: str | None, kind: str
+):
+    """Linux can list only cpu_core or only cpu_atom, as when every E-core is offline."""
+    listed = {"cpu_core": core, "cpu_atom": atom}
+    monkeypatch.setattr(fpmod.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(fpmod, "_read", lambda path: listed.get(path.parent.name))
+    monkeypatch.setattr(fpmod, "_allowed", lambda: {0, 1})
+    assert fpmod._core_type() == kind  # noqa: SLF001

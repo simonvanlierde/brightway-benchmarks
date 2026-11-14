@@ -36,8 +36,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   measurement runs anywhere as `bwbench compare`, and `bwbench validate` checks a result file
   ([method](docs/method.md#hosted-ratios)).
 - Every result file carries an environment fingerprint (CPU, core type, kernel, SMT, governor,
-  power profile, Python, BLAS, lock), and `just results-commit` refuses a new result without one
-  ([method](docs/method.md#how-the-results-stay-reproducible)).
+  power profile, Python, BLAS, lock), and `just results-commit` refuses a new result without one.
+  A file that keeps cells from a run in another environment lists that run's fingerprint under
+  `kept_fingerprints` ([method](docs/method.md#how-the-results-stay-reproducible)).
 - Result files keep each case's raw samples next to its median, so the noise rule can be rerun
   from the `results` branch.
 - A nightly canary on the benchmark machine: a fixed workload whose drift is the machine's, kept

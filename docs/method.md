@@ -159,8 +159,10 @@ match within `DIRECT_RTOL` (1e-9), or `BAFU_RTOL` (1e-6) for BAFU 2025; an error
 - Each result file carries an environment fingerprint under `"fingerprint"`: CPU model, core
   type, kernel, SMT, cpufreq governor, power profile, Python, BLAS and the lock file's checksum
   ([`src/bwbench/fingerprint.py`](../src/bwbench/fingerprint.py)). A field the platform can't
-  tell is `null`. It describes the run that last wrote the file; a cell kept from an earlier
-  run has its own `started_at`.
+  tell is `null`; an asv result must name its lock. It describes the run that last wrote the
+  file; a cell kept from an earlier run has its own `started_at`, and when that run's
+  fingerprint differs, the file lists it under `"kept_fingerprints"` (`null` for a run from
+  before fingerprints).
 - Each result file keeps every sample beside the median (asv's `samples` column), so anyone
   can rerun the noise rule below on the `results` branch. Runs before this change kept none.
 - A nightly canary times a fixed workload on the benchmark machine, so drift in the machine

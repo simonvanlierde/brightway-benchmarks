@@ -23,6 +23,8 @@ Fields (all present, ``null`` where this platform cannot tell):
 - ``blas``: conda's ``libblas`` build where there is one (it names the BLAS variant), else
   NumPy's build-time BLAS as ``"<name> <version>"``; ``null`` without NumPy.
 - ``lock``: ``{"name": ..., "sha256": ...}`` of the lock file the environment was built from.
+  An asv result must name one (``problems(fp, need_lock=True)``); a file without a lock, such
+  as the canary's, may leave it ``null``.
 
 The CPU numbers this process is pinned to are left out on purpose: they would name a private
 slot. Standard library only, and Python 3.10 or newer, so any environment can run this file
@@ -120,7 +122,10 @@ def _core_type() -> str | None:
     if core is None and atom is None:
         return "uniform"
     allowed = _allowed()
-    kinds = {"performance" for _ in allowed & _cpus(core or "")} | {"efficiency" for _ in allowed & _cpus(atom or "")}
+    # Linux can list only one of the two, as when every E-core is offline.
+    kinds = {"performance" for _ in allowed & (_cpus(core) if core else set())} | {
+        "efficiency" for _ in allowed & (_cpus(atom) if atom else set())
+    }
     return kinds.pop() if len(kinds) == 1 else "mixed" if kinds else None
 
 
@@ -172,8 +177,11 @@ def fingerprint(lock: Path | None = None) -> dict:
     }
 
 
-def problems(fp: object) -> list[str]:
-    """What makes FP not a fingerprint of this version: missing or unknown fields, wrong types."""
+def problems(fp: object, *, need_lock: bool = False) -> list[str]:
+    """What makes FP not a fingerprint of this version: missing or unknown fields, wrong types.
+
+    With NEED_LOCK, a ``null`` lock is a problem too: an asv result must say what environment ran it.
+    """
     if not isinstance(fp, dict):
         return ["no fingerprint"]
     out = [f"missing field {k}" for k in FIELDS if k not in fp]
@@ -190,6 +198,8 @@ def problems(fp: object) -> list[str]:
         set(lock) != {"name", "sha256"} or not all(isinstance(v, str) for v in lock.values())
     ):
         out.append("lock is not {name, sha256}")
+    if need_lock and lock is None:
+        out.append("no lock: the environment that ran it is unknown")
     return out
 
 

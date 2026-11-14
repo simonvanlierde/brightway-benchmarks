@@ -26,7 +26,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from bwbench.bench import Bench
 
-BENCHMARKS = Path(__file__).resolve().parents[2] / "benchmarks"
+_HERE = Path(__file__).resolve().parent
+# Installed, the cases ship in the package (pyproject.toml); in a checkout they sit beside src/.
+BENCHMARKS = _HERE / "cases" if (_HERE / "cases").is_dir() else _HERE.parents[1] / "benchmarks"
 VERSIONS = ("bw2calc", "bw2data", "numpy", "scipy", "pypardiso", "mkl", "scikit-umfpack")
 
 

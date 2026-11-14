@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import math
 import random
+import re
 import statistics
 from collections import Counter
 from datetime import datetime
@@ -33,6 +34,18 @@ SCHEMA = Path(__file__).with_name("ratios.schema.json")
 RESAMPLES = 10_000
 LEVEL = 0.95
 RTOL = 1e-6  # a stored ratio against the one recomputed from the stored seconds (JSON keeps 17 digits)
+
+CONTRIBUTED = re.compile(r"(?:^|/)ratios/contributed/([a-z0-9][a-z0-9-]*)/(\d{4}-\d{2}-\d{2})\.json$")
+MAX_BYTES = 256 * 1024  # the solvers comparison at 20 rounds is about 5 KiB
+# Labels a machine's own name gives: a domain name, a macOS default computer name ("Ada's
+# MacBook Pro"), a Windows default one (DESKTOP-4F2K9QX).
+# shortcut: only these defaults; a custom host name passes, and the pull request review catches it.
+HOST_LIKE = re.compile(
+    r"^[\w-]+(\.[\w-]+)+$|\.(local|lan|home|internal)$|'s[ -](macbook|imac|mac)|^(desktop|laptop)-[a-z0-9]{7}$",
+    re.IGNORECASE,
+)
+# A home folder in the file's text, where a Windows backslash is escaped as \\.
+USER_FOLDER = re.compile(r"/Users/[^/\s\"]|/home/[^/\s\"]|[A-Za-z]:\\\\Users\\\\")
 
 
 def interleave(arms: list[str], rounds: int, rng: random.Random) -> list[list[str]]:
@@ -155,3 +168,40 @@ def _ratio_problems(where: str, r: dict, base: dict, cand: dict, rounds: int, bo
     if not (math.isclose(lo, w_lo, rel_tol=RTOL) and math.isclose(hi, w_hi, rel_tol=RTOL)):
         out.append(f"{where}: interval [{lo!r}, {hi!r}], but the seed gives [{w_lo!r}, {w_hi!r}]")
     return out
+
+
+def slug(machine: str) -> str:
+    """The folder name for a machine label: lower case, each run of other characters one dash."""
+    return re.sub(r"[^a-z0-9]+", "-", machine.lower()).strip("-")
+
+
+def contribution_problems(path: Path, doc: dict) -> list[str]:
+    """What keeps the file at PATH, holding DOC, out of ``ratios/contributed/``; empty when it may go in.
+
+    On top of ``problems``: the path is ``ratios/contributed/<slug of machine>/<date created>.json``,
+    the tier is ``contributed`` (only an attestation proves ``hosted``), the machine label is
+    not a default host name, no user folder appears, and the file is small and regular.
+    """
+    if path.is_symlink() or not path.is_file():
+        return [f"{path.as_posix()} is not a regular file"]
+    found = []
+    machine, day = str(doc.get("machine", "")), str(doc.get("created", ""))[:10]
+    m = CONTRIBUTED.search(path.as_posix())
+    if m is None:
+        found.append(
+            f"goes in ratios/contributed/<machine>/<YYYY-MM-DD>.json: ratios/contributed/{slug(machine)}/{day}.json"
+        )
+    else:
+        if m[1] != slug(machine):
+            found.append(f"folder {m[1]!r}, but machine {machine!r} gives {slug(machine)!r}")
+        if m[2] != day:
+            found.append(f"file name {m[2]!r}, but the run was created on {day!r}")
+    if doc.get("tier") != "contributed":
+        found.append(f"tier is {doc.get('tier')!r}; a contributed file says 'contributed'")
+    if HOST_LIKE.search(machine):
+        found.append(f"machine {machine!r} looks like a host name; use a label such as the CPU model")
+    if USER_FOLDER.search(path.read_text(encoding="utf-8")):
+        found.append("names a user folder (/Users/..., /home/... or C:\\Users\\...); replace it with ~")
+    if (size := path.stat().st_size) > MAX_BYTES:
+        found.append(f"{size // 1024} KiB, more than {MAX_BYTES // 1024} KiB")
+    return found

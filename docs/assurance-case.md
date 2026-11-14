@@ -38,16 +38,19 @@ reported upstream (SECURITY.md, "Scope").
 | Box output to the host | `results/`, `machine.json`, compatibility sets, viewer data and version records | `just results-commit` copies only result records and no symlinks (`scripts/results-commit.sh`); `compat_site.py` (which writes the compat archive) and `just stack` refuse a symlink or a path that leaves their folder; the viewer exporters reject symlink targets and ancestors before deleting or writing output (`scripts/output_path.py`); the maintainer reads the results diff before pushing the `results` branch |
 | Results to readers | The static viewer and the release report | The viewer is Svelte, which escapes text by default, and no Python builds HTML; `scripts/release_report.py` has an Atheris fuzz harness (`tests/fuzz_release_report.py`); the pages are static, built by the `site` workflow from `main`, the `results` branch and the `compat` branch |
 | Correctness of a result | Scores computed by the release under test | `bwbench.check` rejects scores outside each case’s tolerance (`src/bwbench/__init__.py`); the [method](method.md) documents reference calculations, Monte Carlo checks and coverage limits; each run records the exact versions it installed |
-| Pull requests and CI | Code and inputs from a fork | Workflows run on `pull_request`, never `pull_request_target` or `workflow_run`, so a fork gets a read-only token and no secrets; every workflow starts from `permissions: contents: read` and every checkout drops its credentials; the compatibility `archive` job runs only on `main` and accepts artifacts only from this repository’s main-branch `compat.yml` runs triggered by schedule or manual dispatch; it pushes only the `compat` branch, which holds no workflows; the `ratios` publish job runs only on `main`, after its attest job validated and signed the same run's files, and pushes only the `ratios` branch, which holds no workflows; release and Pages write permissions are scoped to their publishing jobs; manual inputs reach scripts through environment variables (`solvers-macos.yml`, `noise-hosted.yml`); zizmor and actionlint check the workflows on every pull request |
-| Contributed runs | Result files in `ratios/contributed/` from someone else's machine, by pull request | The comparison page shows contributed rows marked unverified and leaves them out of each summary; the `contributed` workflow runs `bwbench validate --contribution` with a read-only token: the result file's schema, fingerprint and arithmetic, its path from its machine label and date, tier `contributed` (only an attestation proves `hosted`), no default host name as the label, no user folder, at most 256 KiB, no symlink (checked before the file is read), with the validator from the base branch; the maintainer reads the file before merging |
+| Pull requests and CI | Code and inputs from a fork | Workflows run on `pull_request`, never `pull_request_target` or `workflow_run`, so a fork gets a read-only token and no secrets; every workflow starts from `permissions: contents: read` and every checkout drops its credentials; the compatibility `archive` job runs only on `main` and accepts artifacts only from this repository’s main-branch `compat.yml` runs triggered by schedule or manual dispatch; it pushes only the `compat` branch, which holds no workflows; the `ratios` publish job runs only on `main`, after its attest job validated and signed the same run's files, and pushes only the `ratios` branch, which holds no workflows; release and Pages write permissions are scoped to their publishing jobs; manual inputs reach scripts through environment variables (`noise-hosted.yml`); zizmor and actionlint check the workflows on every pull request |
+| Contributed runs | Result files in `ratios/contributed/` from someone else's machine, by pull request. `bwbench compare` ran Brightway's releases there without a container, outside this project's control | The comparison page shows contributed rows marked unverified and leaves them out of each summary; the `contributed` workflow runs `bwbench validate --contribution` with a read-only token: the result file's schema, fingerprint and arithmetic, its path from its machine label and date, tier `contributed` (only an attestation proves `hosted`), no default host name as the label, no user folder, at most 256 KiB, no symlink (checked before the file is read), with the validator from the base branch; the maintainer reads the file before merging |
 | Release and publishing | The source archive and the Pages site | `release` runs only on a `vX.Y.Z` tag of a commit on `main`, checks the tag against `pyproject.toml` and the CHANGELOG, and publishes `SHA256SUMS` and a signed build provenance attestation; tags are signed; Pages deploys only from `main` through the `github-pages` environment ([GOVERNANCE.md](../.github/GOVERNANCE.md#access)) |
 | This project's dependencies | Python packages, the Docker base image, GitHub Actions | `uv.lock` pins the tree and CI installs with `uv sync --locked`; `uv audit` and dependency review check every pull request; Renovate waits 7 days before proposing a new release (30 for a major one); the base image and every action are pinned by digest or commit |
 
 ## Secure design principles
 
-- **Least privilege.** Brightway's code runs only in the box, with no capabilities and a
-  read-only repository. Workflows start from `contents: read`, and a job that needs more asks
-  for it alone: `scorecard`, `codspeed`, `site` and `release`.
+- **Least privilege.** This project's own benchmark runs use the box, with no capabilities and a
+  read-only repository; [where it runs](architecture.md#where-it-runs) lists the hosted and
+  contributed tiers. Workflows start from `contents: read`, and a job that needs more asks
+  for it alone: `scorecard`, `codspeed`, `site`, `release`, the `compat` archive job
+  (`contents: write`) and the `ratios` attest (`id-token: write`, `attestations: write`) and
+  publish (`contents: write`) jobs.
 - **Fail-safe defaults.** A score outside the tolerance fails the case, so no timing is
   published without its check. A symlink in box output stops the script that meets it. The
   required checks must pass before a merge.
@@ -63,8 +66,8 @@ reported upstream (SECURITY.md, "Scope").
 
 ## Countering common weaknesses
 
-- **Untrusted code execution (CWE-829, CWE-494).** Releases under test run only in the box;
-  this project's own dependencies are locked, audited and pinned by digest or commit.
+- **Untrusted code execution (CWE-829, CWE-494).** Releases under test run in the box or on a
+  throwaway hosted runner with a read-only token; this project's own dependencies are locked, audited and pinned by digest or commit.
 - **Link following and path traversal (CWE-59, CWE-22).** Box output is copied without symlinks,
   and the readers refuse a symlink or a path outside their folder.
 - **Cross-site scripting (CWE-79).** Svelte escapes names and text; the viewer contract limits external

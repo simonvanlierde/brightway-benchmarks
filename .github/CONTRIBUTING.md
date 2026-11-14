@@ -20,27 +20,39 @@ doesn't exist.
 
 ## Set up
 
-You need [uv](https://docs.astral.sh/uv/), [just](https://just.systems) and, for the
-benchmarks themselves, Docker. Run `uv sync` once, and `prek install` to install the git
+You need [uv](https://docs.astral.sh/uv/), [just](https://just.systems), Node 24 and
+[pnpm](https://pnpm.io) for the viewer, and Docker for the benchmarks themselves. Run `uv sync` once, and `prek install` to install the git
 hooks with [prek](https://github.com/j178/prek). `just --list` shows every task, and the
 [docs/running.md](../docs/running.md) explains the benchmark recipes.
 
 ## Checks
 
-Run `just check` before you open a pull request. It runs what the `python` workflow runs:
-ruff, the ruff format check, ty, pytest and `uv audit`. These run no Brightway code. `just hooks`
+Run `just check` before you open a pull request. It runs what the `python` and `ui` workflows
+run: ruff, the ruff format check, ty, pytest with the 80% coverage gate and `uv audit`, then the
+viewer's type generation, lint, type check, unit tests, build, size budget and `pnpm audit`. These
+run no Brightway code. The browser tests are separate: `cd ui && pnpm run e2e`. `just hooks`
 runs every git hook over the whole repository, as the `checks` workflow does: yamllint,
 zizmor and actionlint on the workflows, rumdl on the Markdown. The betterleaks hook for
 secrets runs only locally; on GitHub, secret scanning with push protection covers it.
 
-Both workflows must pass before a pull request can merge. The others run apart from a pull
-request:
+Six checks must pass before a pull request can merge: `git hooks` and `dependency review`
+from the `checks` workflow, `lint, types, tests` from `python`, `ui: lint, types, tests, build`
+from `ui`, `pull request title` from `pr-title` and `DCO sign-off` from `dco`
+([ruleset](rulesets/main-checks.json)). The other workflows:
 
 - `fuzz` runs the Atheris harness of `scripts/release_report.py` for 60 seconds on a pull
   request that touches it.
+- `contributed` runs `bwbench validate --contribution` on a pull request that adds a result file
+  under `ratios/contributed/`.
+- `cold-install` follows the README's install steps in a fresh container weekly, and on a pull
+  request that changes them.
 - `smoke` runs `just smoke` weekly, and `compat` runs `just compat` nightly.
+- `python-probe` installs, imports and scores Brightway on Python 3.11 to 3.15 daily, and on the
+  end-of-life Pythons on Mondays.
+- `advisories` audits `uv.lock` and the workflows again every Monday, `links` checks every web
+  link weekly, and `fair` scores the repository on fair-software.eu's recommendations weekly.
 - `site` rebuilds the history pages daily after `compat`, and by hand after new results.
-- `noise-hosted` and `solvers-macos` run by hand.
+- `noise-hosted` runs by hand.
 - `ratios` runs `bwbench compare all` weekly on Linux, macOS and Windows runners, attests the
   result files and, on `main`, commits them to the `ratios` branch.
 - `scorecard` rates the repository for the OpenSSF Scorecard badge.
@@ -106,9 +118,8 @@ A release is one pull request and one tag:
 
 1. In a pull request, set `version` in `pyproject.toml`, keep the project version in `uv.lock`
    in sync without changing dependency pins, and move the `[Unreleased]` entries in CHANGELOG.md
-   under a new `## [X.Y.Z] - date` heading, with its compare link. Update the UI changelog when
-   it has changes, and check that CITATION.cff and codemeta.json still describe the README and
-   current viewer. `just release X.Y.Z` makes that CHANGELOG commit once `version` is set.
+   under a new `## [X.Y.Z] - date` heading, with its compare link. Check that CITATION.cff and
+   codemeta.json still describe the README and current viewer. `just release X.Y.Z` makes that CHANGELOG commit once `version` is set.
 2. Review the full diff from the previous release tag. Run `just check`, the UI checks, unit and
    browser tests, `pnpm size` after its build, and `uv build`. Test the oldest and newest supported
    Python versions. Run the full mutation suite if the project defines one; a single-PR review
@@ -116,8 +127,9 @@ A release is one pull request and one tag:
 3. After the pull request is merged and its checks pass, run `just release X.Y.Z` again on an
    up-to-date `main`. It signs the tag on the merge commit and pushes it; the `release` workflow
    refuses a tag GitHub cannot verify.
-4. After the release workflow succeeds, dispatch `site.yml` on `main` so the viewer’s build
-   label picks up the tag. Verify the release downloads and deployed metadata.
+4. After the release workflow succeeds, check that its `rebuild the site` job started `site.yml`
+   on `main`, so the viewer's build label picks up the tag. Verify the release downloads and
+   deployed metadata.
 
 The tag runs the `release` workflow. It checks the tag against `pyproject.toml` and the
 CHANGELOG, then creates the GitHub release with that version's section as notes, the source
@@ -155,8 +167,11 @@ The `dco` workflow checks every pull request from a fork and fails on a commit w
 - **`just results-commit`** copies `results/` to the `results` branch, and the `site`
   workflow builds the history pages from that branch and publishes them on GitHub Pages.
 - **GitHub Actions** runs the checks above with a read-only token. `scorecard` may upload
-  its report to code scanning, and `site` may deploy Pages, only from
-  `main`, and `release` may create a release, only for a pushed version tag.
+  its report to code scanning, and `site` may deploy Pages, only from `main`. The `compat`
+  archive job and the `ratios` publish job may push their data branches, only from `main`, and
+  the `ratios` attest job may sign attestations. `release` may create a release, only for a
+  pushed version tag. [Where it runs](../docs/architecture.md#where-it-runs) lists each tier and
+  its token.
 
 ## Who maintains this
 

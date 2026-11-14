@@ -1,8 +1,8 @@
 # Running the benchmarks
 
 You need Docker and [just](https://just.systems); `just noise` and `just results-commit` also need
-[uv](https://docs.astral.sh/uv/), and `just results-commit` needs rsync and git 2.42 or later. Brightway's code runs only in a
-throwaway container, the box ([assurance case](assurance-case.md)). `just` lists every recipe.
+[uv](https://docs.astral.sh/uv/), and `just results-commit` needs rsync and git 2.42 or later. The recipes run Brightway's code in a
+throwaway container, the box ([where it runs](architecture.md#where-it-runs)). `just` lists every recipe.
 
 ## Benchmarks
 
@@ -190,20 +190,6 @@ On macOS the PyPardiso and UMFPACK cases skip because neither installs from PyPI
 Expanding the matrix does not create results until those jobs run. After merging a coverage
 change, dispatch `compat` on `main` and wait for its archive job, then dispatch `site` to publish
 the new snapshot. A run dispatched on a feature branch validates jobs but does not update the archive.
-
-### Report newly failing jobs
-
-Save the published `compat/status.json` after each report. Compare that snapshot with the
-next one to name jobs that changed from success to failure, recoveries and continuing failures:
-
-```sh
-python3 scripts/compat_changes.py previous-status.json current-status.json
-```
-
-The report links both workflow runs. A missing previous file starts a baseline and labels
-failures as first observations. Cancelled, skipped and absent jobs are listed separately;
-they do not count as failures or recoveries. An invalid snapshot fails the command, so
-an automation should replace its saved baseline only after the report succeeds.
 
 ### The compat archive
 

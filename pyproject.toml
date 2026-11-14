@@ -126,8 +126,8 @@ show_missing = true
 fail_under = 80
 exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
 
-# Brightway packages are never installed on the host: they run only inside the box,
-# where asv installs them per environment. So the type check covers our own code.
+# Brightway packages are not in this project's environment: asv (in the box) and `bwbench
+# compare` install them per environment. So the type check covers our own code.
 [tool.ty.src]
 include = ["src", "tests"]
 

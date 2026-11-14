@@ -13,9 +13,21 @@ import? 'just/docker.just'
 default:
     @just --list
 
-# The stack checks CI runs. `just hooks` runs the git hooks, which CI also runs.
+# `just hooks` runs the git hooks, as the checks workflow does.
+# What the python and ui workflows run, without the browser tests (`cd ui && pnpm run e2e`).
 check:
     @just py-check
+    @just ui-check
+
+# What the ui workflow runs before its browser tests. Fails when the generated types are stale.
+ui-check:
+    cd ui && pnpm install --frozen-lockfile
+    cd ui && pnpm run types && git diff --exit-code src/lib
+    cd ui && pnpm run check
+    cd ui && pnpm run test
+    cd ui && pnpm run build
+    cd ui && pnpm run size
+    cd ui && pnpm audit --prod --audit-level=moderate
 
 # Fix and format every stack here, as each stack's `fmt` recipe does.
 fmt:

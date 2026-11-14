@@ -20,15 +20,17 @@ doesn't exist.
 
 ## Set up
 
-You need [uv](https://docs.astral.sh/uv/), [just](https://just.systems) and, for the
-benchmarks themselves, Docker. Run `uv sync` once, and `prek install` to install the git
+You need [uv](https://docs.astral.sh/uv/), [just](https://just.systems), Node 24 and
+[pnpm](https://pnpm.io) for the viewer, and Docker for the benchmarks themselves. Run `uv sync` once, and `prek install` to install the git
 hooks with [prek](https://github.com/j178/prek). `just --list` shows every task, and the
 [docs/running.md](../docs/running.md) explains the benchmark recipes.
 
 ## Checks
 
-Run `just check` before you open a pull request. It runs what the `python` workflow runs:
-ruff, the ruff format check, ty, pytest and `uv audit`. These run no Brightway code. `just hooks`
+Run `just check` before you open a pull request. It runs what the `python` and `ui` workflows
+run: ruff, the ruff format check, ty, pytest with the 80% coverage gate and `uv audit`, then the
+viewer's type generation, lint, type check, unit tests, build, size budget and `pnpm audit`. These
+run no Brightway code. The browser tests are separate: `cd ui && pnpm run e2e`. `just hooks`
 runs every git hook over the whole repository, as the `checks` workflow does: yamllint,
 zizmor and actionlint on the workflows, rumdl on the Markdown. The betterleaks hook for
 secrets runs only locally; on GitHub, secret scanning with push protection covers it.

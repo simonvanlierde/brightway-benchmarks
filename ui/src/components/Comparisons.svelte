@@ -112,7 +112,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
                   </td>
                   <td class="num" role="cell" data-label="Ratio">{r.ratio === null ? "–" : sig(r.ratio)}</td>
                   <td class="num" role="cell" data-label="95% interval">{r.ci95 ? interval(r) : "–"}</td>
-                  <td class="ratio-graphic" role="cell" data-label="Interval around 1, faster to the left">
+                  <td class="ratio-graphic" role="cell" data-label="Interval">
+                    <!-- Phones only, where the column header is hidden: "1" over the line at 1, the two directions under the ends. -->
+                    <div class="ratio-axis" aria-hidden="true"><span class="ratio-one-label" style:left="{x(1)}%">1</span></div>
                     <div class="ratio-track" aria-hidden="true">
                       <span class="ratio-one" style:left="{x(1)}%"></span>
                       {#if r.ci95 && r.ratio !== null}
@@ -120,6 +122,7 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
                         <span class="ratio-dot {tone(r.verdict)}" style:left="{x(r.ratio)}%"></span>
                       {/if}
                     </div>
+                    <div class="ratio-axis" aria-hidden="true"><span>faster</span><span>slower</span></div>
                   </td>
                   <td class="ratio-reading" role="cell" data-label="Reading">
                     <span class={tone(r.verdict)}>{r.text}</span>
@@ -277,6 +280,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
   .ratio-dot.worse {
     background: var(--worse);
   }
+  .ratio-axis {
+    display: none;
+  }
   @media (forced-colors: active) {
     .ratio-track > span {
       forced-color-adjust: none;
@@ -331,6 +337,19 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
     }
     .ratio-source {
       grid-column: 1 / -1;
+    }
+    .ratio-axis {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      min-height: 1.2em;
+      color: var(--muted);
+      font-size: var(--text-meta);
+      line-height: 1.2;
+    }
+    .ratio-one-label {
+      position: absolute;
+      transform: translateX(-50%);
     }
     .ratio-candidate th {
       padding: 22px 0 10px;

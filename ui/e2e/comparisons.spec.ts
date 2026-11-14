@@ -142,3 +142,14 @@ test("The case most tables time is described once, above them", async ({ page })
   const release = page.getByRole("region", { name: "bw2data release", exact: true });
   await expect(release.locator(".ratio-case")).toContainText("Database write");
 });
+
+test("On a phone each interval keeps its axis: faster, the line at 1, slower", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("?page=compare");
+  const axis = page.locator(".ratio-row").first().locator(".ratio-axis");
+  await expect(axis).toHaveText(["1", /faster\s*slower/]);
+  await expect(axis.first()).toBeVisible();
+  await expect(axis.last()).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(axis.first()).toBeHidden(); // the column header carries it on wider screens
+});

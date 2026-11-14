@@ -273,7 +273,7 @@ keep your own packages in another environment. The conda and pixi commands use t
 ## Contribute a run
 
 You can add your machine's ratios: how much faster UMFPACK and PyPardiso solve an LCA than
-SuperLU there, and with `install-path` how bw2calc from conda-forge compares with PyPI. A
+SuperLU there (on a Mac also Apple Accelerate's sparse LU), and with `install-path` how bw2calc from conda-forge compares with PyPI. A
 contribution is one result file from `bwbench compare`
 ([method.md](method.md#hosted-ratios)). It holds ratios between set-ups timed in turn on one
 machine, so your machine's speed and noise largely cancel out. The site labels it "contributed,
@@ -282,7 +282,9 @@ unverified" and counts it only as support for the hosted and reference runs.
 The run installs bw2calc and its solvers from PyPI into new virtual environments in a
 temporary folder, and runs them on your machine, outside any container. You need
 [uv](https://docs.astral.sh/uv/) and [git](https://git-scm.com/). On macOS, run
-`brew install suite-sparse swig` first, or the UMFPACK arm is recorded as missing. PyPardiso
+`brew install suite-sparse swig` first, or the UMFPACK arm is recorded as missing. The Accelerate
+arm compiles a small C file against Apple's SDK, so it needs macOS 15.5 or newer and the Xcode
+Command Line Tools (`xcode-select --install`); without them it is missing too. PyPardiso
 installs only on x86_64; elsewhere its arm is missing too, which is a result, not an error.
 
 1. Plug a laptop in, set its performance power mode and close other work.

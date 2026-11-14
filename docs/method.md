@@ -206,7 +206,8 @@ environment of its own and times one case in each at smoke size: bw2calc's first
 (`SingleScore`, `LCA`), or bw2data's `DatabaseWrite` for bw2data's releases. The comparisons:
 
 - `solvers`: UMFPACK and PyPardiso against SuperLU, in one environment, with the other solvers
-  hidden from bw2calc.
+  hidden from bw2calc. On macOS also Apple Accelerate's sparse LU, which bw2calc cannot pick
+  itself, so `bwbench.solvers` patches it in.
 - `install-path`: bw2calc from conda-forge (pixi) against bw2calc from PyPI (uv).
 - `python`: Python 3.12, 3.14 and 3.15 against 3.13.
 - `bw2calc-release` and `bw2data-release`: the latest release against the one before it, on
@@ -215,7 +216,7 @@ environment of its own and times one case in each at smoke size: bw2calc's first
 Every arm outside `solvers` runs SuperLU, so its ratio is the install's, the Python's or the
 release's, not a solver change. An arm that can't install or run is recorded as missing, with
 the reason, and never as zero: PyPardiso on Apple silicon, where MKL has no build, and UMFPACK on
-Windows, where scikit-umfpack does not build.
+Windows, where scikit-umfpack does not build, and Accelerate anywhere but macOS.
 
 The arms run in randomized multiple interleaved trials
 ([Abedi and Brecht, 2017](https://doi.org/10.1145/3030207.3030229)). Each of 20 rounds runs every

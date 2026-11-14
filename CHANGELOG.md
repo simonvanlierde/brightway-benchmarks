@@ -35,6 +35,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   releases. Each result file is attested and published on the `ratios` branch, one folder per run
   (`hosted/<YYYY-MM-DD>-<run id>/<OS>.json`). The same measurement runs anywhere as
   `bwbench compare`, and `bwbench validate` checks a result file ([method](docs/method.md#hosted-ratios)).
+- Apple Accelerate's sparse LU as an arm of `bwbench compare solvers` on macOS 15.5 or newer,
+  patched into bw2calc through a small C wrapper that compiles on first use. Elsewhere the arm
+  is recorded as missing ([running](docs/running.md#contribute-a-run)).
 - Contributed runs: anyone can time the solvers on their own machine with
   `uvx --from git+https://github.com/simonvanlierde/brightway-benchmarks bwbench compare` and add
   the result file by pull request to `ratios/contributed/`. The `contributed` workflow runs

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/simonvanlierde/brightway-benchmarks/blob/main/src/bwbench/ratios.schema.json",
+  "title": "bwbench ratio result",
+  "description": "One run of `bwbench compare` on one machine: interleaved ratios between environments (src/bwbench/ratios.py). bwbench.ratios.problems() checks a file against this schema and what it cannot express.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "tier", "machine", "created", "source", "rounds", "repeats", "seed", "resamples", "fingerprint", "comparisons"],
+  "properties": {
+    "format": {"const": "bwbench-ratios/1", "description": "The shape of this file. A breaking change bumps the number."},
+    "tier": {
+      "enum": ["reference", "hosted", "contributed"],
+      "description": "Who ran it, as the writer claims: the benchmark node, a GitHub-hosted runner, or someone else's machine. Only an attestation of the file proves 'hosted'."
+    },
+    "machine": {"type": "string", "minLength": 1, "maxLength": 100, "description": "A label for the machine, such as the runner image ('GitHub ubuntu24'). Never a host name."},
+    "created": {"type": "string", "format": "date-time", "description": "When the run started, UTC, RFC 3339."},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit", "run"],
+      "properties": {
+        "commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$", "description": "The commit of this repository that measured, or null outside a checkout."},
+        "run": {"type": ["string", "null"], "description": "The GitHub Actions run's URL, or null outside Actions."}
+      }
+    },
+    "rounds": {"type": "integer", "minimum": 2, "description": "Interleaved rounds per comparison. Every arm that is not missing has one time per round."},
+    "repeats": {"type": "integer", "minimum": 1, "description": "Timed calls per arm per round, after one untimed warm-up call in the same process. The round's time is their median."},
+    "seed": {"type": "integer", "description": "Seed of the run order and of the bootstrap."},
+    "resamples": {"type": "integer", "minimum": 100, "description": "Bootstrap resamples behind each interval."},
+    "fingerprint": {"type": "object", "description": "The machine, from the process that ran the comparisons (src/bwbench/fingerprint.py). Its python and lock describe that process, not the arms."},
+    "comparisons": {"type": "array", "items": {"$ref": "#/$defs/comparison"}}
+  },
+  "$defs": {
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "case", "params", "baseline", "arms", "ratios"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Which comparison: solvers, install-path, python, bw2calc-release, bw2data-release (bwbench.compare.COMPARISONS)."},
+        "case": {"type": "string", "pattern": "^bench_\\w+\\.\\w+\\.time_\\w+$", "description": "The benchmark timed, by its key in benchmarks/descriptions.toml."},
+        "params": {"type": "object", "additionalProperties": {"type": ["string", "integer"]}, "description": "The case's parameters, such as {\"size\": \"smoke\", \"cls\": \"LCA\"}."},
+        "baseline": {"type": "string", "description": "The arm every ratio divides by."},
+        "arms": {"type": "object", "minProperties": 2, "additionalProperties": {"$ref": "#/$defs/arm"}},
+        "ratios": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/ratio"}}
+      }
+    },
+    "arm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["installer", "python", "requirements", "solver", "versions", "fingerprint", "seconds", "missing"],
+      "properties": {
+        "installer": {"enum": ["uv", "pixi"], "description": "uv from PyPI, or pixi from conda-forge."},
+        "python": {"type": "string", "description": "The Python minor version asked for, such as '3.13'."},
+        "requirements": {"type": "array", "items": {"type": "string"}, "description": "What was asked for, before resolution."},
+        "solver": {"type": ["string", "null"], "description": "The solver bw2calc used: superlu, umfpack or pypardiso; null when the case never imported bw2calc or the arm is missing."},
+        "versions": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Installed versions of the packages that matter here (bw2calc, bw2data, numpy, scipy, the solvers)."},
+        "fingerprint": {"type": ["object", "null"], "description": "The arm's environment (src/bwbench/fingerprint.py), its lock the resolved set. Null only when the environment could not be built."},
+        "seconds": {
+          "type": "array",
+          "items": {"type": "number", "exclusiveMinimum": 0},
+          "description": "The arm's time per round in seconds, in round order: context, not the result. Empty when missing."
+        },
+        "missing": {"type": ["string", "null"], "description": "Why the arm has no times (cannot install here, solver unavailable), or null. A missing arm is no result, never a zero."}
+      }
+    },
+    "ratio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate", "ratio", "ci95", "seconds", "missing"],
+      "properties": {
+        "candidate": {"type": "string", "description": "The arm divided by the baseline."},
+        "ratio": {"type": ["number", "null"], "exclusiveMinimum": 0, "description": "Geometric mean over rounds of candidate seconds / baseline seconds. Below 1 the candidate is faster; 1 / ratio is its speed-up."},
+        "ci95": {
+          "type": ["array", "null"],
+          "prefixItems": [{"type": "number", "exclusiveMinimum": 0}, {"type": "number", "exclusiveMinimum": 0}],
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "Percentile bootstrap 95% interval of the ratio, resampling whole rounds: [low, high]."
+        },
+        "seconds": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["baseline", "candidate"],
+          "properties": {"baseline": {"type": "number"}, "candidate": {"type": "number"}},
+          "description": "The median time per round of each side, in seconds: context only."
+        },
+        "missing": {"type": ["string", "null"], "description": "Why there is no ratio (an arm is missing), or null."}
+      },
+      "if": {"properties": {"missing": {"type": "null"}}},
+      "then": {"properties": {"ratio": {"type": "number"}, "ci95": {"type": "array"}, "seconds": {"type": "object"}}},
+      "else": {"properties": {"ratio": {"type": "null"}, "ci95": {"type": "null"}, "seconds": {"type": "null"}}}
+    }
+  }
+}

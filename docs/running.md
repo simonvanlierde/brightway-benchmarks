@@ -75,6 +75,14 @@ build strings, the BLAS among them, to a `versions-*.txt` file.
 ([method.md](method.md#the-noise-floor)). Each sample's CPU time, wall time and context
 switches go to `rounds.jsonl`; `scripts/noise_summary.py` reads them.
 
+### Hosted ratios
+
+`just ratios COMPARISON...` runs `bwbench compare` in the box: interleaved ratios between
+solvers, install paths, Pythons or releases ([method.md](method.md#hosted-ratios)). It writes
+`.asv/ratios/box.json`, which no history or site page reads. With no COMPARISON it runs
+`solvers`; `all` runs every comparison this OS has. The box has no pixi, so its `install-path`
+arm from conda-forge is missing. The `ratios` workflow runs `all` weekly on GitHub's runners.
+
 ### The nightly canary
 
 `just canary` times a fixed workload in the box: a pure-Python loop and a 64 MiB memory copy,

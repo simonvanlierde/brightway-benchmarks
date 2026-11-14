@@ -141,7 +141,7 @@ def free_pardiso() -> None:
     It skips factorizing a matrix it has just factorized, so without this the timed call
     after a checking setup would skip the work that SuperLU and UMFPACK pay for.
     """
-    if "pypardiso" in sys.modules:
+    if sys.modules.get("pypardiso") is not None:  # None: hidden, as bwbench.timecase does
         from pypardiso.scipy_aliases import pypardiso_solver  # noqa: PLC0415
 
         pypardiso_solver.free_memory(everything=True)

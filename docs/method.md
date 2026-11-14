@@ -195,6 +195,44 @@ samples in 12, while the host flushed its disk cache. asv's median didn't move.
 `noise-hosted` workflow), the same smoke cases spread 1 to 14%, median 4.0%. It would catch a
 several-fold step such as bw2calc 3.0.0's, but not a small one.
 
+## Hosted ratios
+
+A hosted runner hides changes under about 15%, so the hosted runs report a ratio between two
+set-ups on the same machine, not a time. `bwbench compare`
+([`src/bwbench/compare.py`](../src/bwbench/compare.py)) builds each set-up, an arm, as an
+environment of its own and times one case in each at smoke size: bw2calc's first score
+(`SingleScore`, `LCA`), or bw2data's `DatabaseWrite` for bw2data's releases. The comparisons:
+
+- `solvers`: UMFPACK and PyPardiso against SuperLU, in one environment, with the other solvers
+  hidden from bw2calc.
+- `install-path`: bw2calc from conda-forge (pixi) against bw2calc from PyPI (uv).
+- `python`: Python 3.12, 3.14 and 3.15 against 3.13.
+- `bw2calc-release` and `bw2data-release`: the latest release against the one before it, on
+  macOS and Windows only. The benchmark machine has the full histories on Linux.
+
+Every arm outside `solvers` runs SuperLU, so its ratio is the install's, the Python's or the
+release's, not a solver change. An arm that can't install or run is recorded as missing, with
+the reason, and never as zero: PyPardiso on Apple silicon, where MKL has no build, and UMFPACK on
+Windows, where scikit-umfpack does not build.
+
+The arms run in randomized multiple interleaved trials
+([Abedi and Brecht, 2017](https://doi.org/10.1145/3030207.3030229)). Each of 20 rounds runs every
+arm once, in a new random order. Each run is a fresh process that calls the case once untimed,
+then three times, and the median of the three is the arm's time in that round. A slow moment on
+a shared runner then slows every arm of that round, and the ratio within the round cancels it.
+A candidate's ratio is the geometric mean over rounds of its time over the baseline's. Below 1
+the candidate is faster. Its 95% interval is a percentile bootstrap over the rounds, with 10,000
+resamples that keep each round's pair together. The seconds stay in the file as context only.
+
+The `ratios` workflow runs it every Sunday on `ubuntu-latest`, `macos-latest` and
+`windows-latest`, one result file per OS. The file's fields are described in
+[`src/bwbench/ratios.schema.json`](../src/bwbench/ratios.schema.json), and `bwbench validate
+FILE` checks a file against it, its fingerprints, and its ratios against its seconds. GitHub
+signs each file with a build provenance attestation, and on main the workflow commits the files
+to the `ratios` branch as `hosted/YYYY-MM-DD/<OS>.json`.
+`gh attestation verify FILE -R simonvanlierde/brightway-benchmarks` shows that a file came from
+this repository's workflow, unchanged.
+
 ## Changes on the history pages
 
 The exporter ([`scripts/export_ui.py`](../scripts/export_ui.py)) finds the changes the viewer

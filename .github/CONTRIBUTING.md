@@ -41,6 +41,8 @@ request:
 - `smoke` runs `just smoke` weekly, and `compat` runs `just compat` nightly.
 - `site` rebuilds the history pages daily after `compat`, and by hand after new results.
 - `noise-hosted` and `solvers-macos` run by hand.
+- `ratios` runs `bwbench compare all` weekly on Linux, macOS and Windows runners, attests the
+  result files and, on `main`, commits them to the `ratios` branch.
 - `scorecard` rates the repository for the OpenSSF Scorecard badge.
 - `codspeed` runs the pytest-codspeed suites under CodSpeed's CPU simulation on every push to
   `main` and on pull requests that touch them, and CodSpeed reports changes on the pull request.

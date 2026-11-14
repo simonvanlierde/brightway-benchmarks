@@ -81,6 +81,11 @@ noise subject runs="10":
     done
     uv run --no-project --with numpy==2.5.3 python scripts/noise_summary.py ".asv/noise/{{ subject }}"
 
+# Results go to .asv/ratios/box.json, which no history or site page reads (docs/running.md, "Hosted ratios").
+# Interleaved ratios between environments at smoke size; COMPARISON as `bwbench compare` takes it.
+ratios *comparisons:
+    scripts/box.sh env PYTHONPATH=src python -m bwbench.compare compare {{ comparisons }} --work .asv/ratio-work -o .asv/ratios/box.json
+
 # Results go to results/canary/BWBENCH_MACHINE/, which no Brightway history reads; the night
 # queue runs it once a night on the benchmark node, then `just results-commit` and `just canary-check`.
 # The nightly canary: a fixed stdlib workload, so a move is the machine's (scripts/canary.py).

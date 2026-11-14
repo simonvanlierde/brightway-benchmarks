@@ -38,6 +38,7 @@
   "comparisons": [
     {
       "id": "solvers",
+      "key": "solvers",
       "title": "Solver",
       "case": "bench_lca.SingleScore.time_first_score",
       "case_name": "First score",
@@ -158,6 +159,7 @@
     },
     {
       "id": "install-path",
+      "key": "install-path",
       "title": "Where bw2calc comes from",
       "case": "bench_lca.SingleScore.time_first_score",
       "case_name": "First score",
@@ -235,6 +237,7 @@
     },
     {
       "id": "python",
+      "key": "python",
       "title": "Python version",
       "case": "bench_lca.SingleScore.time_first_score",
       "case_name": "First score",
@@ -422,6 +425,7 @@
     },
     {
       "id": "bw2calc-release",
+      "key": "bw2calc-release",
       "title": "bw2calc release",
       "case": "bench_lca.SingleScore.time_first_score",
       "case_name": "First score",
@@ -484,6 +488,7 @@
     },
     {
       "id": "bw2data-release",
+      "key": "bw2data-release",
       "title": "bw2data release",
       "case": "bench_write.DatabaseWrite.time_write",
       "case_name": "Database write",

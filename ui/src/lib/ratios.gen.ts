@@ -35,6 +35,10 @@ export interface RatioComparisons {
   }[];
   comparisons: {
     id: string;
+    /**
+     * Unique in the file: the id, or the id, case, params and baseline when one comparison ran more than one way.
+     */
+    key: string;
     title: string;
     case: string;
     case_name: string;

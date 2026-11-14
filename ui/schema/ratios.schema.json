@@ -30,7 +30,10 @@
             "pattern": "^https://",
             "description": "The workflow run that wrote a hosted file, or null."
           },
-          "commit": { "type": ["string", "null"], "description": "The commit that measured, or null outside a checkout." }
+          "commit": {
+            "type": ["string", "null"],
+            "description": "The commit that measured, or null outside a checkout."
+          }
         }
       }
     },
@@ -39,9 +42,14 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "title", "case", "case_name", "description", "params", "baseline", "candidates"],
+        "required": ["id", "key", "title", "case", "case_name", "description", "params", "baseline", "candidates"],
         "properties": {
           "id": { "type": "string", "minLength": 1 },
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "description": "Unique in the file: the id, or the id, case, params and baseline when one comparison ran more than one way."
+          },
           "title": { "type": "string", "minLength": 1 },
           "case": { "type": "string" },
           "case_name": { "type": "string" },

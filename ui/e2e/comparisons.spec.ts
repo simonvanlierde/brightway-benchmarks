@@ -92,3 +92,20 @@ test("Across machines in dark mode on a laptop passes axe", async ({ page }) => 
   await page.screenshot({ path: `${shots}/comparisons-dark.png`, fullPage: true });
   await accessible(page);
 });
+
+test("One comparison run with two parameter sets shows two tables", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.route("**/data/ratios.json", async (route) => {
+    const data = await (await route.fetch()).json();
+    const solvers = data.comparisons.find((c: { id: string }) => c.id === "solvers");
+    const medium = { ...solvers, key: "solvers-medium", params: [{ name: "Size", value: "medium", note: null }] };
+    data.comparisons.splice(data.comparisons.indexOf(solvers) + 1, 0, medium);
+    await route.fulfill({ json: data });
+  });
+  await page.goto("?page=compare");
+  await expect(page.getByRole("heading", { level: 3, name: "Solver" })).toHaveCount(2);
+  const ids = await page.locator(".ratio-comparison h3").evaluateAll((hs) => hs.map((h) => h.id));
+  expect(new Set(ids).size).toBe(ids.length);
+  expect(errors).toEqual([]);
+});

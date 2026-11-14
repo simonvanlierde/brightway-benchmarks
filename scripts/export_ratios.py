@@ -17,6 +17,7 @@ worked out here so the viewer computes none.
 
 import argparse
 import json
+import re
 import sys
 import tomllib
 from datetime import datetime
@@ -196,7 +197,8 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
             key = (c["id"], c["case"], json.dumps(c["params"], sort_keys=True), c["baseline"])
             groups.setdefault(key, {"comparison": c, "runs": []})["runs"].append((machine, out_machines[-1]["os"], c))
     comparisons = []
-    for (cid, case, _, baseline), group in groups.items():
+    ids = [cid for cid, *_ in groups]
+    for (cid, case, params, baseline), group in groups.items():
         first = group["comparison"]
         candidates: dict[str, list] = {}
         for machine, os_name, c in group["runs"]:
@@ -228,6 +230,10 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
         comparisons.append(
             {
                 "id": cid,
+                # The page keys its tables and anchors on this; the id alone when it is unique.
+                "key": cid
+                if ids.count(cid) == 1
+                else re.sub(r"[^a-z0-9]+", "-", f"{cid} {case} {params} {baseline}".lower()).strip("-"),
                 "title": TITLES.get(cid, cid),
                 "case": case,
                 "case_name": about["labels"]["benchmarks"].get(case, case),

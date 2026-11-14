@@ -222,3 +222,21 @@ def test_a_file_outside_a_checkout_with_integer_params_still_loads(module: Modul
 
     assert out["machines"][0]["commit"] is None
     assert {"name": "rounds", "value": "2", "note": None} in out["comparisons"][0]["params"]
+
+
+def test_one_comparison_with_two_param_sets_gets_two_keys(module: ModuleType, tmp_path: Path):
+    linux = json.loads((HOSTED / "2026-11-14/Linux.json").read_text(encoding="utf-8"))
+    (tmp_path / "contributed/lab").mkdir(parents=True)
+    medium = {**linux, "tier": "contributed", "machine": "Lab"}
+    medium["comparisons"] = [{**c, "params": {**c["params"], "size": "medium"}} for c in linux["comparisons"]]
+    (tmp_path / "contributed/lab/2026-11-12.json").write_text(json.dumps(medium), encoding="utf-8")
+
+    out = export(module, hosted(tmp_path), tmp_path / "contributed", tmp_path / "data")
+
+    keys = [c["key"] for c in out["comparisons"]]
+    assert len(set(keys)) == len(keys)
+    solvers = [c["key"] for c in out["comparisons"] if c["id"] == "solvers"]
+    assert solvers == [
+        "solvers-bench-lca-singlescore-time-first-score-cls-lca-size-smoke-superlu",
+        "solvers-bench-lca-singlescore-time-first-score-cls-lca-size-medium-superlu",
+    ]

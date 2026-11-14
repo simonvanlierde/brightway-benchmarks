@@ -54,9 +54,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
     <dd>Hosted rows ran in this project's weekly workflow, which signs each file. Contributed rows come from other people's machines and are not verified.{#if method}{" "}<a href={method}>How the ratios are measured</a>.{/if}</dd>
   </dl>
 
-  {#each ratios.comparisons as c (c.id + c.case)}
-    <section class="ratio-comparison" aria-labelledby="ratio-{c.id}">
-      <h3 id="ratio-{c.id}">{c.title}</h3>
+  {#each ratios.comparisons as c (c.key)}
+    <section class="ratio-comparison" aria-labelledby="ratio-{c.key}">
+      <h3 id="ratio-{c.key}">{c.title}</h3>
       <p class="ratio-case">
         <strong>{c.case_name}</strong>{c.description ? `: ${c.description}` : ""}
         {#each c.params as p (p.name)}{" "}<span>{p.name}: <strong>{p.value}</strong>{p.note ? ` (${p.note.replace(/\.$/, "")})` : ""}.</span>{/each}

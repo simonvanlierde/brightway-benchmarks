@@ -14,7 +14,6 @@
                 "'useeio'"
             ]
         ],
-        "repeat": 0,
         "rounds": 2,
         "sample_time": 0.01,
         "timeout": 900,
@@ -66,7 +65,6 @@
                 "'redo_lci'"
             ]
         ],
-        "repeat": 0,
         "rounds": 2,
         "sample_time": 0.01,
         "timeout": 1800,
@@ -402,7 +400,6 @@
                 "'JacobiGMRESLCA'"
             ]
         ],
-        "repeat": 0,
         "rounds": 2,
         "sample_time": 0.01,
         "timeout": 600,

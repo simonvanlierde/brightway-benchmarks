@@ -25,7 +25,6 @@
                 "100"
             ]
         ],
-        "repeat": 0,
         "rounds": 1,
         "sample_time": 0.01,
         "timeout": 900,
@@ -55,7 +54,6 @@
                 "100"
             ]
         ],
-        "repeat": 0,
         "rounds": 1,
         "sample_time": 0.01,
         "timeout": 900,

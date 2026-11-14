@@ -342,3 +342,14 @@ def test_timecase_names_the_solver_only_when_bw2calc_says(
 
     monkeypatch.setitem(sys.modules, "bw2calc", types.SimpleNamespace(**attrs))
     assert timecase.solver() == expected
+
+
+def test_the_signing_job_runs_only_locked_packages():
+    """The attest job holds the OIDC token: its Python comes from uv.lock, never an unlocked --with."""
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ratios.yml").read_text()
+    attest = workflow[workflow.index("\n  attest:") : workflow.index("\n  publish:")]
+    assert "id-token: write" in attest
+    uv = [line for line in attest.splitlines() if "uv sync" in line or "uv run" in line]
+    assert uv
+    assert all("--with" not in line and "--no-project" not in line for line in uv), uv
+    assert all("--frozen" in line if "uv sync" in line else "--no-sync" in line for line in uv), uv

@@ -106,9 +106,8 @@ A release is one pull request and one tag:
 
 1. In a pull request, set `version` in `pyproject.toml`, keep the project version in `uv.lock`
    in sync without changing dependency pins, and move the `[Unreleased]` entries in CHANGELOG.md
-   under a new `## [X.Y.Z] - date` heading, with its compare link. Update the UI changelog when
-   it has changes, and check that CITATION.cff and codemeta.json still describe the README and
-   current viewer. `just release X.Y.Z` makes that CHANGELOG commit once `version` is set.
+   under a new `## [X.Y.Z] - date` heading, with its compare link. Check that CITATION.cff and
+   codemeta.json still describe the README and current viewer. `just release X.Y.Z` makes that CHANGELOG commit once `version` is set.
 2. Review the full diff from the previous release tag. Run `just check`, the UI checks, unit and
    browser tests, `pnpm size` after its build, and `uv build`. Test the oldest and newest supported
    Python versions. Run the full mutation suite if the project defines one; a single-PR review

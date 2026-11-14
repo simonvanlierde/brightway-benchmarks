@@ -40,9 +40,6 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the result file by pull request to `ratios/contributed/`. The `contributed` workflow runs
   `bwbench validate --contribution`, which also checks the file's path, tier and labels
   ([running](docs/running.md#contribute-a-run)).
-- An "Across machines" view under Benchmarks shows those ratios one row per machine, with the
-  95% interval drawn around 1 and a summary per choice: the range where the machines agree, or
-  "Depends on platform" when they do not ([decision 0007](docs/decisions/0007-comparisons-across-machines.md)).
 - Every result file carries an environment fingerprint (CPU, core type, kernel, SMT, governor,
   power profile, Python, BLAS, lock), and `just results-commit` refuses a new result without one.
   A file that keeps cells from a run in another environment lists that run's fingerprint under
@@ -56,9 +53,6 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   workflow): install, import and one score on Python 3.11 to 3.15 daily on three operating
   systems, and on 3.9 and 3.10 weekly on Linux ([running](docs/running.md#which-pythons-work)). A
   package with no release for a Python is left out there, not counted as a failure.
-- Each history's band is the noise allowance the release changes use, so a move that leaves it
-  reads as a change; the data table gives each value's allowance
-  ([method](docs/method.md#changes-on-the-history-pages)).
 - A condition estimate for every size, recorded next to its times (`bench_lca.Conditioning`), so a
   solver's score error reads against how hard the matrix is: USEEIO about 6, BAFU 2025 about 1e22
   ([findings](docs/findings.md#a-score-error-reads-against-the-matrixs-condition-number)).
@@ -78,12 +72,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   ([running](docs/running.md#energy-per-operation)).
 - `just profile` runs one benchmark case under pyinstrument, and findings link the profiles behind
   them ([running](docs/running.md#benchmarks)).
-- Guidance on [contributing a run](docs/running.md#contribute-a-run) from your own machine.
 - Full-size runs time bw_processing and matrix_utils at 10,000 resource groups; the first numbers
   come with the rerun.
 - The synthetic ecoinvent profile's sparse-LU fill can now be compared with real databases'
   ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
-- The viewer links each subject to its Brightway docs and each benchmark to its CodSpeed page.
 - `just dataset` builds the synthetic systems as a dataset for Zenodo: per profile, its matrices
   and ecoSpold2 files, with a dataset card, metadata and SHA-256 sums. It refuses the real
   databases and scans every ecoSpold2 file for licensed identifiers
@@ -107,9 +99,69 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `bwbench.synth` holds only the generator. The profiles are in `bwbench.shapes`, the system
   container and its reference scores in `bwbench.matrices`, and the calibration statistics in
   `bwbench.stats`. `scripts/run_crate.py` now runs without numpy or scipy.
+
+### Removed
+
+- **Breaking:** Python 3.12 is no longer supported. `requires-python` is now `>=3.13`, the
+  benchmark environments, box image and compat matrix (now 3.13 and 3.14) run on 3.13, and the
+  generator v5 rerun is timed on 3.13.
+- The generator's experimental input-sharing controls, which were off in every registered profile
+  and did not bring the fill down
+  ([calibration choices](docs/generator-calibration.md#keeping-fill-explicit)).
+
+### Fixed
+
+- A run at one database size no longer wipes the other sizes' results.
+
+### Viewer
+
+#### Added
+
+- A Findings item in the masthead and a `/findings/` page: the headline findings grouped by package,
+  each with its history and its story where it has one, then every write-up of `docs/findings.md`,
+  rendered on the page. Stories keep their URLs and mark Findings as current ([decision
+  0005](docs/decisions/0005-findings-in-the-masthead.md)).
+- A benchmark view that shows a finding names it and links its write-up.
+- The masthead search lists benchmarks and the sections of Findings, the stories and About as you
+  type, from a [Pagefind](https://pagefind.app/) index built after the site. Words match in any
+  order, and arrow keys move through the results.
+- Findings has an outline of every write-up beside it on a wide screen.
+- The footer names the copyright holder and the BSD 3-Clause licence.
+- A Python versions table (3.11 to 3.15 on Linux, macOS and Windows) and an end-of-life table (3.9
+  and 3.10) on Benchmarks, with a one-line summary on Setup, from the optional `pythonSupport` field
+  of `guidance.json`. A failure shows with its reason; a package no release of which declares the
+  Python reads "Not declared".
+- An "Across machines" view under Benchmarks shows the hosted and contributed ratios one row per
+  machine, with the 95% interval drawn around 1 and a summary per choice: the range where the
+  machines agree, or "Depends on platform" when they do not
+  ([decision 0007](docs/decisions/0007-comparisons-across-machines.md)).
+- The viewer links each subject to its Brightway docs and each benchmark to its CodSpeed page.
+
+#### Changed
+
+- Setup is about installing ([decision 0006](docs/decisions/0006-setup-installs.md)): the solver
+  comparison, the Python versions table and the release changes moved to Benchmarks, and a short
+  "From the benchmarks" list links to them. The check grid sits beside the install set, the check
+  descriptions fold under "What each check covers", and the files, package versions and "Copy
+  latest" fold under "What's in this set". Setup opens on the visitor's own operating system.
+- The Python versions table takes one row for a package that gives the same result on every system.
+- Benchmarks drops its finding cards for a link to Findings, groups each regression's environments
+  into one row, and folds the improvements behind their count.
+- The footer links Method, Cite, GitHub and About only; the stories are reached from Findings.
+- A headline on Findings opens its story where it has one and its write-up otherwise; its history is
+  a link of its own.
+- Typing in the search no longer leaves Setup for Benchmarks.
+- A finding's write-up link in `index.json` opens the site's `/findings/` page, not the Markdown on
+  GitHub.
+- PyPardiso has one colour on every chart, story and preview card: its conda-forge environments are
+  labelled "PyPardiso", not "PyPardiso, MKL", as it only runs on MKL. UMFPACK's BLAS variants keep
+  their own colours.
+- A history's band is the noise allowance its release changes are counted against, not the middle
+  half of the samples, so a move that leaves it reads as a change. The tip and the data table give
+  each value's allowance ([method](docs/method.md#changes-on-the-history-pages)).
 - Benchmarks and Setup use readable names, open with what the site checks, and show a plain
   message when data fails to load.
-- Viewer, from a design review:
+- From a design review:
   - The Benchmarks catalogue is one collapsible group per package, with the current benchmark's
     group open, and a shade at the foot while more is below. Names that several packages share
     say which package they are in.
@@ -130,21 +182,14 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     are 44px high (the other targets keep their own sizes).
   - The viewer's gzip budget is 182 KB (was 180 KB).
 
-### Removed
+#### Fixed
 
-- **Breaking:** Python 3.12 is no longer supported. `requires-python` is now `>=3.13`, the
-  benchmark environments, box image and compat matrix (now 3.13 and 3.14) run on 3.13, and the
-  generator v5 rerun is timed on 3.13.
-- The generator's experimental input-sharing controls, which were off in every registered profile
-  and did not bring the fill down
-  ([calibration choices](docs/generator-calibration.md#keeping-fill-explicit)).
-
-### Fixed
-
-- A run at one database size no longer wipes the other sizes' results.
+- Moving between Setup and Benchmarks no longer shifts the page: the masthead links keep their width
+  when one turns bold, and the scrollbar's gutter is always reserved. The viewer draws its masthead
+  before its script runs, so arriving from a static page does not flash an empty page.
+- The check grid on Setup no longer scrolls vertically: hidden cell labels hung below its last row.
 - Setup marks the selected check cell with a fill and a bottom bar, so a keyboard user can tell it from
   the focused cell, which keeps the outline.
-- The viewer footer links the home-heating case beside the solver story.
 
 ## [0.2.0] - 2026-11-01
 
@@ -212,6 +257,74 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The asv-generated history pages. Existing links redirect to the new benchmark explorer
   ([viewer](ui/README.md#what-it-shows)).
+
+### Viewer
+
+#### Added
+
+- SoftwareSourceCode JSON-LD on the homepage and About page, generated from the project’s metadata
+  ([viewer](ui/README.md#what-it-shows)).
+- Adaptive Brightway leaf icons and social preview cards with descriptive image metadata
+  ([viewer](ui/README.md#what-it-shows)).
+- A sun/moon toggle remembers the chosen theme.
+- An About page explains the project and privacy, with search and sharing metadata. Check freshness
+  sits beside All checks, and GitHub and build identity sit in the footer
+  ([viewer](ui/README.md#what-it-shows)).
+- Two pages, Setup and Benchmarks, with a benchmark search in the masthead
+  ([viewer](ui/README.md#what-it-shows)).
+- Setup gives an install command for uv, pip, conda or pixi, pinned to a dated set that does not
+  change, with a link that copies the newest one.
+- Setup lists every check by platform and Python version in a grid; select one to install its set.
+- Setup and Benchmarks show curated findings, each linked to the chart behind it.
+- Each page has its own shareable URL, and old benchmark links and homepage anchors still work.
+- Search benchmarks by name, and filter release changes by package and direction.
+- Release changes lists regressions first, with improvements grouped by benchmark.
+- A chart's legend buttons bring one environment forward.
+- Benchmarks opens on the findings and the latest release changes, each change with a small history
+  line.
+- A benchmark explains each parameter under its control, and links its values, solvers and source to
+  their documentation.
+- Setup says which machine timed the solvers, and notes when that is not your platform.
+- Setup lists a failing check on your platform, such as an upstream test suite, before the install
+  command, and the command has a copy button.
+- Charts with three releases or fewer set environments a little apart, and commits that are not
+  releases draw faint, with a count under the chart.
+- The explorer explains each benchmark, its parameters and the values you choose, such as what
+  `JacobiGMRESLCA` does.
+- A JSON Schema for the data: an index (format version 1) and reports in Bencher Metric Format v0.
+- `src/lib/contract.ts` loads both from a configurable URL and checks them against the schema and
+  each other.
+- The maintainer view: each benchmark's history over its releases, one line per environment, with
+  its parameters, measure and machine picked from the data and kept in the URL. Changes the data
+  lists are marked on the chart and listed below it, and a data table holds every value.
+- A start page listing what moved beyond its noise in each package's latest release, worse first.
+- The chart can be read with the keyboard and downloaded as SVG; the site has light and dark themes,
+  fits a phone, and is checked against WCAG 2.2 AA in browser tests.
+- `changes` in the index (optional, so `format_version` stays 1): where a series moved, by release
+  against its noise or as a change point.
+- Optional `label` on environments and `bounds` on measures in the index: the name to show for an
+  environment, and what a metric's lower and upper values are.
+
+#### Changed
+
+- A new flat blue look, with red and teal kept for worse and better results ([design](DESIGN.md)).
+- Change tables reflow into labelled rows on phones, and no text is smaller than 12px.
+
+#### Fixed
+
+- Desktop operating-system, Python and package-manager selects share a row, and check explanations
+  use the table's labels ([viewer](ui/README.md#what-it-shows)).
+- Setup shows test results and coverage before Copy, and offers optional instructions for a new uv
+  project ([viewer](ui/README.md#what-it-shows)).
+- Phones show checks for the selected platform and collapse longer parameter explanations. Desktop
+  check grids indicate hidden columns ([viewer](ui/README.md#what-it-shows)).
+- Benchmark search keeps keyboard focus while typing and shows matches on phones
+  ([viewer](ui/README.md#what-it-shows)).
+- Release-change history lines keep each package's commits separate, and benchmark explanations meet
+  the 12px minimum text size ([viewer](ui/README.md#what-it-shows)).
+- Opening a change keeps the machine that measured it, and narrow charts keep their first and last
+  release labels.
+- A link to an unknown benchmark says how to find it.
 
 ## [0.1.0] - 2026-10-28
 

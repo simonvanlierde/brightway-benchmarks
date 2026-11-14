@@ -7,7 +7,8 @@ Each comparison times one catalogue case in two or more environments (arms). Eac
 environment is built here under ``--work``: a uv virtual environment from PyPI, or a pixi
 environment from conda-forge. Then the arms run in interleaved rounds (``bwbench.ratios``),
 each call in a fresh process (``bwbench.timecase``). An arm that cannot be installed or run
-here is recorded as missing, with the reason. The comparisons:
+here is recorded as missing, with the reason. Every arm installs only releases published a week
+or more before the run started, one cutoff for uv and pixi alike. The comparisons:
 
 - ``solvers``: UMFPACK and PyPardiso against SuperLU in one environment, by hiding the others,
   and on macOS Apple Accelerate's sparse LU, patched into bw2calc (``bwbench.solvers``).
@@ -22,7 +23,8 @@ interpreter's or the release's, not a solver change. It runs from a checkout or 
 which carries the cases in ``bwbench/cases``. It needs ``uv``, ``pixi`` for ``install-path``, and
 on macOS the Xcode Command Line Tools for the Accelerate arm.
 
-Exit codes: 0 written (or valid), 1 a file has problems (validate), 2 usage error, 3 could not run.
+Exit codes: 0 written (or valid), 1 a file has problems (validate), 2 usage error, 3 could not
+run, 4 written, but no ratio has a value (every comparison lacks an arm; the file says why).
 """
 
 from __future__ import annotations
@@ -33,14 +35,16 @@ import json
 import os
 import platform
 import random
+import re
 import shutil
 import signal
 import statistics
 import subprocess
 import sys
 import tempfile
+import unicodedata
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from importlib import metadata
 from pathlib import Path
 
@@ -48,20 +52,25 @@ from bwbench.fingerprint import fingerprint
 from bwbench.ratios import (
     FORMAT,
     RESAMPLES,
+    USER_FOLDER,
     bootstrap_interval,
+    contribution_file_problems,
     contribution_problems,
     geometric_mean_ratio,
     interleave,
     problems,
     ratio_seed,
+    slug,
 )
 from bwbench.timecase import BENCHMARKS
 
 PACKAGE = Path(__file__).resolve().parent
 PROBE = PACKAGE / "fingerprint.py"
+STAGE = ".bwbench-stage"  # the arms' copy of this package, in the --work folder
 SOLVERS = ("pypardiso", "scikits.umfpack")  # what bw2calc picks over SuperLU when it can import it
 PICKED = ("superlu", "umfpack", "pypardiso")  # bw2calc's own; an arm's other solver is patched in
 TIMEOUT = 900  # seconds for one install or one timed process
+CUTOFF_AGE = timedelta(weeks=1)  # every arm installs releases at least this old, as the project's uv.lock does
 FIRST_SCORE = ("bench_lca.SingleScore.time_first_score", {"size": "smoke", "cls": "LCA"})
 WRITE = ("bench_write.DatabaseWrite.time_write", {"size": "smoke"})
 
@@ -165,15 +174,34 @@ def _run(args: list[str], cwd: Path, **kw: object) -> subprocess.CompletedProces
         return subprocess.CompletedProcess(args, -1, "", f"timed out after {TIMEOUT} s")
 
 
+def _redact(text: str) -> str:
+    r"""TEXT with the home folder and every user folder (``USER_FOLDER``) replaced by ``~``.
+
+    Either separator and any case, so Windows short names from TEMP (``C:\Users\ADALIN~1``)
+    and ``C:/Users/ada`` go too. A home of ``/`` (``docker run --user`` without a passwd entry)
+    is no user's folder and stays.
+    """
+    home = Path.home()
+    folders = [USER_FOLDER.pattern]
+    if home.parent != home:
+        parts = [re.escape(p) for p in re.split(r"[\\/]+", str(home).strip("\\/"))]
+        lead = r"[\\/]+" if str(home)[:1] in "\\/" else ""
+        folders.insert(0, lead + r"[\\/]+".join(parts) + r"(?![^\\/\s\"'])")
+    return re.sub("|".join(folders), "~", text, flags=re.IGNORECASE)
+
+
 def _tail(proc: subprocess.CompletedProcess[str], lines: int = 5) -> str:
-    text = (proc.stderr or proc.stdout).strip().replace(str(Path.home()), "~").splitlines()
+    text = _redact((proc.stderr or proc.stdout).strip()).splitlines()
     return " / ".join(text[-lines:]) or f"exit {proc.returncode}"
 
 
-def latest_release(package: str, work: Path) -> str:
-    """The newest release of PACKAGE that uv resolves for Python 3.13 (it honours ``UV_EXCLUDE_NEWER``)."""
+def latest_release(package: str, work: Path, cutoff: str) -> str:
+    """The newest release of PACKAGE, published before CUTOFF, that uv resolves for Python 3.13."""
     proc = _run(
-        ["uv", "pip", "compile", "--python-version", "3.13", "--no-header", "--no-annotate", "-"], work, input=package
+        ["uv", "pip", "compile", "--python-version", "3.13", "--no-header", "--no-annotate", "-"],
+        work,
+        input=package,
+        env=os.environ | {"UV_EXCLUDE_NEWER": cutoff},
     )
     for line in proc.stdout.splitlines():
         name, _, version = line.partition("==")
@@ -192,14 +220,15 @@ PIXI_PLATFORMS = {
 }
 
 
-def build(env: Env, folder: Path) -> Built:
-    """Build ENV in FOLDER, record its resolved set as its lock and fingerprint it.
+def build(env: Env, folder: Path, cutoff: str) -> Built:
+    """Build ENV in FOLDER from releases published before CUTOFF (RFC 3339); lock and fingerprint it.
 
     FOLDER is emptied first: uv refuses to create a venv over one a former run left there.
+    One CUTOFF for every arm, so uv and pixi leave out the same new releases.
     """
     shutil.rmtree(folder, ignore_errors=True)
     folder.mkdir(parents=True)
-    built = _build_pixi(env, folder) if env.installer == "pixi" else _build_uv(env, folder)
+    built = _build_pixi(env, folder, cutoff) if env.installer == "pixi" else _build_uv(env, folder, cutoff)
     if built.failed is None and built.python is not None:
         proc = _run([str(built.python), "-I", str(PROBE), str(built.lock)], folder)
         with contextlib.suppress(ValueError):
@@ -209,19 +238,20 @@ def build(env: Env, folder: Path) -> Built:
     return built
 
 
-def _build_uv(env: Env, folder: Path) -> Built:
+def _build_uv(env: Env, folder: Path, cutoff: str) -> Built:
     venv = folder / "venv"
+    cut = os.environ | {"UV_EXCLUDE_NEWER": cutoff}
     proc = _run(["uv", "venv", "--quiet", "--python", env.python, str(venv)], folder)
     if proc.returncode:
         return Built(failed=f"uv venv --python {env.python}: {_tail(proc)}")
     py = venv / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
-    proc = _run(["uv", "pip", "install", "--quiet", "--python", str(py), *env.requirements], folder)
+    proc = _run(["uv", "pip", "install", "--quiet", "--python", str(py), *env.requirements], folder, env=cut)
     if proc.returncode:
         return Built(failed=f"uv pip install {' '.join(env.requirements)}: {_tail(proc)}")
     lock = folder / "requirements.txt"
     built = Built(python=py, lock=lock)
     for extra in env.optional:  # one at a time, so one that cannot build here leaves the others
-        proc = _run(["uv", "pip", "install", "--quiet", "--python", str(py), extra], folder)
+        proc = _run(["uv", "pip", "install", "--quiet", "--python", str(py), extra], folder, env=cut)
         if proc.returncode:
             built.left_out[extra] = _tail(proc)
     proc = _run(["uv", "pip", "freeze", "--python", str(py)], folder)
@@ -231,7 +261,7 @@ def _build_uv(env: Env, folder: Path) -> Built:
     return built
 
 
-def _build_pixi(env: Env, folder: Path) -> Built:
+def _build_pixi(env: Env, folder: Path, cutoff: str) -> Built:
     if shutil.which("pixi") is None:
         return Built(failed="pixi is not installed")
     plat = PIXI_PLATFORMS.get((platform.system(), platform.machine()))
@@ -239,7 +269,8 @@ def _build_pixi(env: Env, folder: Path) -> Built:
         return Built(failed=f"no conda-forge platform for {platform.system()} {platform.machine()}")
     deps = "\n".join(f'{r} = "*"' for r in env.requirements)
     (folder / "pixi.toml").write_text(
-        f'[workspace]\nname = "bwbench-arm"\nchannels = ["conda-forge"]\nplatforms = ["{plat}"]\n\n'
+        f'[workspace]\nname = "bwbench-arm"\nchannels = ["conda-forge"]\nplatforms = ["{plat}"]\n'
+        f'exclude-newer = "{cutoff}"\n\n'
         f'[dependencies]\npython = "{env.python}.*"\n{deps}\n',
         encoding="utf-8",
     )
@@ -254,12 +285,16 @@ def _build_pixi(env: Env, folder: Path) -> Built:
 
 
 def stage(work: Path) -> Path:
-    """Copy this package, with the cases in ``bwbench/cases``, to WORK/src: the arms' import path.
+    """Copy this package, with the cases in ``bwbench/cases``, to WORK/.bwbench-stage: the arms' import path.
 
     Only this package: the folder it is installed in also holds the packages of the environment
-    bwbench runs in (uvx's NumPy, say), which would shadow the arm's own.
+    bwbench runs in (uvx's NumPy, say), which would shadow the arm's own. The folder name is one
+    no checkout has, so ``--work .`` in a checkout leaves its ``src/bwbench`` alone.
     """
-    dest = work / "src" / "bwbench"
+    dest = work.resolve() / STAGE / "bwbench"
+    if PACKAGE.is_relative_to(dest) or dest.is_relative_to(PACKAGE):
+        msg = f"cannot stage into {dest.as_posix()!r}: bwbench runs from inside it"
+        raise RuntimeError(msg)
     skip = shutil.ignore_patterns("__pycache__", "*.dylib")  # the Accelerate library builds anew there
     shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(PACKAGE, dest, ignore=skip)
@@ -270,7 +305,7 @@ def stage(work: Path) -> Path:
 
 def time_arm(arm: Arm, built: Built, case: str, params: dict, repeats: int, work: Path) -> dict:
     """One fresh process of ARM timing CASE: the worker's JSON object, or ``{"missing": why}``."""
-    src = work / "src"  # from stage()
+    src = work / STAGE  # from stage()
     env = os.environ | {
         "PYTHONPATH": os.pathsep.join([str(src), str(src / "bwbench" / "cases")]),
         "BWBENCH_HIDE": ",".join(arm.hide),
@@ -359,13 +394,18 @@ def ratio(base: dict, cand: dict, name: str, seed: int) -> dict:
 
 
 def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, machine: str | None, work: Path) -> dict:
-    """Build the arms of the comparisons IDS, measure them and write the result file to OUT."""
+    """Build the arms of the comparisons IDS, measure them and write the result file to OUT.
+
+    OUT is written again after each comparison, so a run stopped partway keeps the ones it finished.
+    """
     work.mkdir(parents=True, exist_ok=True)
     stage(work)
-    created = datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+    now = datetime.now(UTC)
+    created = now.isoformat(timespec="seconds").replace("+00:00", "Z")
+    cutoff = (now - CUTOFF_AGE).isoformat(timespec="seconds").replace("+00:00", "Z")
     system = platform.system()
     wants_release = {"all", "bw2calc-release", "bw2data-release"} & set(ids) and system in {"Darwin", "Windows"}
-    latest = {p: latest_release(p, work) for p in ("bw2calc", "bw2data")} if wants_release else {}
+    latest = {p: latest_release(p, work, cutoff) for p in ("bw2calc", "bw2data")} if wants_release else {}
     available = comparisons(system, latest)
     chosen = list(available.values()) if "all" in ids else [available[i] for i in ids]
     built: dict[Env, Built] = {}
@@ -375,7 +415,7 @@ def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, mac
                 print(
                     f"compare: building {a.env.installer} Python {a.env.python} {a.env.requirements}", file=sys.stderr
                 )
-                built[a.env] = build(a.env, work / f"env{len(built)}")
+                built[a.env] = build(a.env, work / f"env{len(built)}", cutoff)
     seed = random.SystemRandom().randrange(2**32)
     head = os.environ.get("GITHUB_SHA") or os.environ.get("BWBENCH_COMMIT") or _commit()  # box.sh sets BWBENCH_COMMIT
     run = None
@@ -394,10 +434,14 @@ def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, mac
         "seed": seed,
         "resamples": RESAMPLES,
         "fingerprint": fp,
-        "comparisons": [measure(c, built, rounds, repeats, seed, work) for c in chosen],
+        "comparisons": [],
     }
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8")
+    for c in chosen:
+        doc["comparisons"].append(measure(c, built, rounds, repeats, seed, work))
+        tmp = out.with_name(f"{out.name}.tmp")
+        tmp.write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8")
+        tmp.replace(out)  # atomic: a reader never sees half a file
     return doc
 
 
@@ -409,6 +453,10 @@ def _commit() -> str | None:
     git = shutil.which("git")
     if git is None:
         return None
+    # Only when this package is the checkout's src/bwbench, not a copy installed inside another project.
+    top = _run([git, "rev-parse", "--show-toplevel"], PACKAGE)
+    if top.returncode or Path(top.stdout.strip()).resolve() != PACKAGE.parents[1].resolve():
+        return None
     proc = _run([git, "rev-parse", "HEAD"], PACKAGE)
     return proc.stdout.strip() if proc.returncode == 0 else None
 
@@ -417,6 +465,12 @@ def validate(files: list[Path], *, contribution: bool = False) -> int:
     """1 if any of FILES is not a valid result file (with CONTRIBUTION: contribution), each problem on stderr."""
     bad = 0
     for path in files:
+        # Before any read: a link to /dev/zero would never finish.
+        if contribution and (found := contribution_file_problems(path)):
+            for p in found:
+                print(f"{path.as_posix()}: {p}", file=sys.stderr)
+            bad += 1
+            continue
         try:
             doc = json.loads(path.read_text(encoding="utf-8"))
             found = problems(doc)
@@ -432,14 +486,19 @@ def validate(files: list[Path], *, contribution: bool = False) -> int:
 
 def parser() -> argparse.ArgumentParser:
     """The command line."""
-    p = argparse.ArgumentParser(prog="bwbench", description="Interleaved ratios between Brightway environments.")
+    p = argparse.ArgumentParser(
+        prog="bwbench",
+        description="Interleaved ratios between Brightway environments.",
+        epilog=__doc__.rstrip().split("\n\n")[-1],
+    )
     sub = p.add_subparsers(dest="command", required=True)
     ids = ["all", "solvers", "install-path", "python", "bw2calc-release", "bw2data-release"]
     c = sub.add_parser(
         "compare",
         help="measure ratios on this machine",
         description=__doc__.split("\n\n")[2],
-        epilog="example: bwbench compare solvers install-path -o ratios.json",
+        epilog="example: bwbench compare solvers install-path -o ratios.json\n\n" + __doc__.rstrip().split("\n\n")[-1],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     c.add_argument(
         "ids",
@@ -480,6 +539,15 @@ def parse(argv: list[str] | None) -> argparse.Namespace:
     return args
 
 
+def label_problem(label: str) -> str | None:
+    """Why LABEL can't be a --machine label, or None."""
+    if any(unicodedata.category(c) in {"Cc", "Cf"} for c in label) or not 0 < len(label) <= 100:  # as ratios.py
+        return "--machine must be 1 to 100 characters, with no control or format character"
+    if not slug(label):
+        return f"--machine {label!r} needs ASCII letters or digits: its folder name keeps only those"
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run ``bwbench`` with ARGV; the exit code."""
     for stream in (sys.stdout, sys.stderr):
@@ -491,14 +559,15 @@ def main(argv: list[str] | None = None) -> int:
         parser().error("--rounds must be at least 2 and --repeats at least 1")
     if {"bw2calc-release", "bw2data-release"} & set(args.ids) and platform.system() not in {"Darwin", "Windows"}:
         parser().error("the release comparisons run on macOS and Windows only")
-    if args.machine is not None and not 0 < len(args.machine) <= 100:
-        parser().error("--machine must be 1 to 100 characters")
+    if args.machine is not None and (problem := label_problem(args.machine)):
+        parser().error(problem)
     try:
         if args.work is None:
             with tempfile.TemporaryDirectory(prefix="bwbench-compare-") as tmp:
-                compare(args.ids, args.output, args.rounds, args.repeats, args.tier, args.machine, Path(tmp))
+                doc = compare(args.ids, args.output, args.rounds, args.repeats, args.tier, args.machine, Path(tmp))
         else:
-            compare(args.ids, args.output, args.rounds, args.repeats, args.tier, args.machine, args.work.resolve())
+            work = args.work.resolve()
+            doc = compare(args.ids, args.output, args.rounds, args.repeats, args.tier, args.machine, work)
     except KeyboardInterrupt:
         print("bwbench: interrupted", file=sys.stderr)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -508,6 +577,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 3
     print(args.output.as_posix())
+    if not any(r["ratio"] is not None for c in doc["comparisons"] for r in c["ratios"]):
+        print("error: no ratio has a value: every comparison lacks an arm (the file says why)", file=sys.stderr)
+        return 4
     return 0
 
 

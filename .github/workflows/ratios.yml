@@ -5,8 +5,9 @@ name: ratios
 # (src/bwbench/compare.py, docs/method.md "Hosted ratios"). Each OS writes one result file. The
 # attest job checks the files and signs them with a build provenance attestation through
 # GitHub's OIDC token; on main the publish job commits them to the `ratios` branch as
-# hosted/<YYYY-MM-DD>-<run id>/<OS>.json, never over a published file. `gh attestation verify FILE -R simonvanlierde/brightway-benchmarks`
-# proves a file came from this workflow.
+# hosted/<YYYY-MM-DD>-<run id>/<OS>.json, never over a published file. This proves a file came
+# from this workflow on main: `gh attestation verify FILE -R simonvanlierde/brightway-benchmarks
+# --signer-workflow simonvanlierde/brightway-benchmarks/.github/workflows/ratios.yml --source-ref refs/heads/main`
 
 on:
   schedule:
@@ -62,7 +63,10 @@ jobs:
       - if: runner.os == 'macOS'
         run: brew install suite-sparse swig
 
+      # compare writes the file after each comparison. A step timeout under the job's leaves
+      # time to upload the comparisons that finished.
       - name: bwbench compare all
+        timeout-minutes: 50
         run: |
           PYTHONPATH=src uv run --no-project --python 3.13 python -m bwbench.compare compare all \
             --tier hosted --machine "GitHub $ImageOS" --work "$RUNNER_TEMP/ratio-work" -o "ratios/$RUNNER_OS.json"
@@ -81,6 +85,7 @@ jobs:
             "ratios/$RUNNER_OS.json" >>"$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
         with:
           name: ratios-${{ runner.os }}
           path: ratios/
@@ -113,10 +118,13 @@ jobs:
           merge-multiple: true
           path: ratios
 
+      # This job holds the signing token, so only uv.lock's packages run here: no --with, and
+      # no build of the project (its build backend is not in the lock). Without the dev group
+      # rfc3339-validator is absent; bwbench.ratios checks `created` itself.
       - name: bwbench validate
         run: |
-          PYTHONPATH=src uv run --no-project --python 3.13 --with jsonschema==4.26.0 --with rfc3339-validator==0.1.4 \
-            python -m bwbench.compare validate ratios/*.json
+          uv sync --frozen --no-dev --no-install-project
+          PYTHONPATH=src uv run --no-sync python -m bwbench.compare validate ratios/*.json
 
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:

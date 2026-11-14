@@ -1,8 +1,10 @@
 import copy
 import json
 import math
+import platform
 import random
 import sys
+import tomllib
 from collections.abc import Callable
 from pathlib import Path
 
@@ -187,6 +189,12 @@ def ratio_of(doc: dict, name: str = "umfpack") -> dict:
         (lambda d: d["comparisons"][0]["arms"]["umfpack"].update(missing="gone"), "a ratio from a missing arm"),
         (lambda d: d["comparisons"][0].update(baseline="klu"), "baseline 'klu' is not an arm"),
         (lambda d: d["comparisons"][0].update(case="first score"), "does not match"),
+        (lambda d: d["comparisons"][0]["arms"]["umfpack"].update(missing="", seconds=[]), "should be non-empty"),
+        (lambda d: ratio_of(d).update(missing="", ratio=None, ci95=None, seconds=None), "should be non-empty"),
+        (lambda d: d.update(machine="box \u202egpj.exe"), r"machine: 'box \u202egpj.exe' does not match"),
+        (lambda d: ratio_of(d).update(candidate="umf\u200bpack"), "does not match"),
+        (lambda d: d["fingerprint"].update(cpu_model="CPU\x1b[2J"), "fingerprint/cpu_model: control or format"),
+        (lambda d: d["comparisons"][0]["arms"]["superlu"]["versions"].update({"bw\u2066": "1"}), "U+2066"),
     ],
 )
 def test_validator_names_each_problem(monkeypatch: pytest.MonkeyPatch, change: Callable[[dict], object], expected: str):
@@ -259,6 +267,7 @@ def script(path: Path, body: str) -> Path:
 
 
 ARM = compare.Arm("superlu", compare.Env("uv", "3.13", ("bw2calc",)))
+CUTOFF = "2026-11-07T12:00:00Z"
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="shell-script stand-ins")
@@ -289,6 +298,7 @@ def fake_uv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 venv*) for a; do dir=$a; done
   [ -e "$dir" ] && {{ echo 'A virtual environment already exists; use the --clear flag' >&2; exit 2; }}
   mkdir -p "$dir/bin" && ln -s {sys.executable} "$dir/bin/python" ;;
+"pip install") echo "$UV_EXCLUDE_NEWER" >>"$0.cutoffs" ;;
 "pip freeze") [ -n "$FREEZE" ] && echo "$FREEZE" || {{ echo 'freeze failed' >&2; exit 1; }} ;;
 esac""",
     )
@@ -302,7 +312,7 @@ def test_an_arm_builds_again_in_the_same_folder(fake_uv: Path):
     """A second run over the same --work folder builds each arm afresh, not over the last run's venv."""
     env = compare.Env("uv", "3.13", ("bw2calc",))
     for _ in range(2):
-        built = compare.build(env, fake_uv / "work" / "env0")
+        built = compare.build(env, fake_uv / "work" / "env0", CUTOFF)
         assert built.failed is None
         assert built.fingerprint is not None
         assert built.fingerprint["lock"]["name"] == "requirements.txt"
@@ -312,7 +322,7 @@ def test_an_arm_builds_again_in_the_same_folder(fake_uv: Path):
 @pytest.mark.parametrize("freeze", ["", " "])
 def test_an_arm_whose_resolved_set_is_unknown_fails(fake_uv: Path, monkeypatch: pytest.MonkeyPatch, freeze: str):
     monkeypatch.setenv("FREEZE", freeze)
-    built = compare.build(compare.Env("uv", "3.13", ("bw2calc",)), fake_uv / "env0")
+    built = compare.build(compare.Env("uv", "3.13", ("bw2calc",)), fake_uv / "env0", CUTOFF)
     assert built.failed is not None
     assert built.failed.startswith("uv pip freeze")
 
@@ -396,3 +406,92 @@ def test_compare_imports_without_numpy():
 
     code = "import sys; sys.modules['numpy'] = None; import bwbench.compare"
     subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_the_signing_job_runs_only_locked_packages():
+    """The attest job holds the OIDC token: its Python comes from uv.lock, never an unlocked --with."""
+    workflow = (Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ratios.yml").read_text()
+    attest = workflow[workflow.index("\n  attest:") : workflow.index("\n  publish:")]
+    assert "id-token: write" in attest
+    uv = [line for line in attest.splitlines() if "uv sync" in line or "uv run" in line]
+    assert uv
+    assert all("--with" not in line and "--no-project" not in line for line in uv), uv
+    assert all("--frozen" in line if "uv sync" in line else "--no-sync" in line for line in uv), uv
+
+
+@pytest.mark.parametrize("doc", ["docs/method.md", ".github/workflows/ratios.yml"])
+def test_the_verify_command_pins_the_signing_workflow_and_branch(doc: str):
+    """-R alone accepts a file signed by any workflow of the repository, run on any branch."""
+    text = " ".join((Path(__file__).resolve().parents[1] / doc).read_text().replace("#", " ").split())
+    start = text.index("gh attestation verify")
+    command = text[start : text.index("`", start)]
+    assert "--signer-workflow simonvanlierde/brightway-benchmarks/.github/workflows/ratios.yml" in command
+    assert "--source-ref refs/heads/main" in command
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="shell-script stand-ins")
+@pytest.mark.skipif(compare.PIXI_PLATFORMS.get((platform.system(), platform.machine())) is None, reason="no pixi")
+def test_both_install_paths_resolve_with_the_same_cutoff(fake_uv: Path):
+    """install-path compares one bw2calc release: pixi and uv leave out the same new releases."""
+    env = ".pixi/envs/default/bin"
+    script(fake_uv / "bin" / "pixi", f'[ "$1" = install ] && mkdir -p {env} && ln -s {sys.executable} {env}/python')
+    compare.build(compare.Env("uv", "3.13", ("bw2calc",)), fake_uv / "env0", CUTOFF)
+    compare.build(compare.Env("pixi", "3.13", ("bw2calc",)), fake_uv / "env1", CUTOFF)
+    assert (fake_uv / "bin" / "uv.cutoffs").read_text().split() == [CUTOFF]
+    manifest = tomllib.loads((fake_uv / "env1" / "pixi.toml").read_text())
+    assert manifest["workspace"]["exclude-newer"] == CUTOFF
+    assert manifest["dependencies"]["bw2calc"] == "*"
+
+
+def test_each_comparison_is_saved_as_it_finishes(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """A job killed in a later comparison keeps the ones before it, in a valid file."""
+    time_arm, _ = fake_time_arm({"superlu": 1.0, "umfpack": 0.5, "pypardiso": 0.25, "pypi": 1.0, "conda-forge": 1.1})
+    monkeypatch.setattr(compare, "time_arm", time_arm)
+    monkeypatch.setattr(compare, "build", lambda *_: compare.Built(python=Path("python"), fingerprint=ARM_FP))
+    real = compare.measure
+
+    def measure(c: compare.Comparison, *rest: object) -> dict:
+        if c.id == "install-path":
+            raise KeyboardInterrupt
+        return real(c, *rest)  # ty: ignore[invalid-argument-type]
+
+    monkeypatch.setattr(compare, "measure", measure)
+    out = tmp_path / "r.json"
+    with pytest.raises(KeyboardInterrupt):
+        compare.compare(["solvers", "install-path"], out, 3, 1, "contributed", "test machine", tmp_path)
+    doc = json.loads(out.read_text())
+    assert [c["id"] for c in doc["comparisons"]] == ["solvers"]
+    assert problems(doc) == []
+    assert list(tmp_path.glob("*.tmp")) == []
+
+
+def test_a_run_without_any_ratio_fails(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Every arm missing writes the file, with the reasons, but exits 4: nothing was measured."""
+    monkeypatch.setattr(compare, "build", lambda *_: compare.Built(failed="cannot install here"))
+    out = tmp_path / "r.json"
+    assert compare.main(["compare", "-o", str(out), "--work", str(tmp_path / "w"), "--machine", "test"]) == 4
+    assert {r["missing"] for r in json.loads(out.read_text())["comparisons"][0]["ratios"]} == {"baseline missing"}
+    assert "exit codes" in compare.parser().format_help().lower()
+
+
+def test_the_schema_refuses_every_control_and_format_character_it_can_name():
+    """The schema's text pattern covers Cc and Cf in the Basic Multilingual Plane; problems() covers the rest."""
+    import re  # noqa: PLC0415
+    import unicodedata  # noqa: PLC0415
+
+    pattern = re.compile(
+        json.loads(compare.PACKAGE.joinpath("ratios.schema.json").read_text())["$defs"]["text"]["pattern"]
+    )
+    hidden = [chr(i) for i in range(0x10000) if unicodedata.category(chr(i)) in {"Cc", "Cf"}]
+    assert [f"U+{ord(c):04X}" for c in hidden if pattern.search(f"a{c}b")] == []
+    assert pattern.search("GitHub ubuntu24 ½ µ")
+
+
+@pytest.mark.parametrize("label", ["", "x" * 101, "box\u202eexe", "box\x1b[2J"])
+def test_compare_refuses_a_machine_label_the_file_could_not_hold(
+    label: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(compare, "compare", lambda *_: pytest.fail("compare ran"))  # never install bw2calc here
+    with pytest.raises(SystemExit) as e:
+        compare.main(["compare", "-o", str(tmp_path / "r.json"), "--machine", label])
+    assert e.value.code == 2

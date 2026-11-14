@@ -9,10 +9,10 @@ percentile bootstrap interval over rounds. Below 1 the candidate is faster. The 
 context only: on a shared runner they move from week to week, the ratio much less.
 
 The file's shape is ``ratios.schema.json`` beside this module, which documents every field.
-``problems(doc)`` checks a file against it and against what the schema cannot express: an
-RFC 3339 ``created``, valid fingerprints (each arm's with its lock), one time per round, one
-ratio per candidate arm, and a ratio and interval that follow from the times and the seed
-(``ratio_seed``), recomputed.
+``problems(doc)`` checks a file against it and against what the schema cannot express: no
+control or format character in any key or string, an RFC 3339 ``created``, valid fingerprints
+(each arm's with its lock), one time per round, one ratio per candidate arm, and a ratio and
+interval that follow from the times and the seed (``ratio_seed``), recomputed.
 Standard library only, apart from ``jsonschema`` in ``problems``.
 """
 
@@ -23,6 +23,7 @@ import math
 import random
 import re
 import statistics
+import unicodedata
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -38,14 +39,28 @@ RTOL = 1e-6  # a stored ratio against the one recomputed from the stored seconds
 CONTRIBUTED = re.compile(r"(?:^|/)ratios/contributed/([a-z0-9][a-z0-9-]*)/(\d{4}-\d{2}-\d{2})\.json$")
 MAX_BYTES = 256 * 1024  # the solvers comparison at 20 rounds is about 5 KiB
 # Labels a machine's own name gives: a domain name, a macOS default computer name ("Ada's
-# MacBook Pro"), a Windows default one (DESKTOP-4F2K9QX).
+# MacBook Pro", "Adas-MacBook-Pro"), Ubuntu's <user>-<model> ("ada-ThinkPad-X1"), a Windows
+# default one (DESKTOP-4F2K9QX). A domain ends in a common or two-letter top-level label, so
+# "ubuntu-24.04" and "m2.max" pass.
 # shortcut: only these defaults; a custom host name passes, and the pull request review catches it.
+LAPTOPS = (
+    "thinkpad|ideapad|yoga|legion|xps|latitude|precision|inspiron|vostro|elitebook|probook|zbook"
+    "|pavilion|envy|zenbook|vivobook|rog|aspire|swift|surface|virtualbox"
+)
+VENDORS = "lenovo|dell|hp|asus|acer|microsoft|msi|framework|apple"
 HOST_LIKE = re.compile(
-    r"^[\w-]+(\.[\w-]+)+$|\.(local|lan|home|internal)$|'s[ -](macbook|imac|mac)|^(desktop|laptop)-[a-z0-9]{7}$",
+    r"^[\w-]+(\.[\w-]+)*\.(com|net|org|edu|gov|io|dev|local|lan|home|internal|corp|[a-z]{2})$"
+    "|['\u2019`]?s[ -]?(macbook|imac|mac\\b)"  # U+2019, the curly apostrophe macOS writes
+    rf"|^(?!({VENDORS})-)[a-z0-9]+-({LAPTOPS})\b"
+    r"|^(desktop|laptop)-[a-z0-9]{7}$",
     re.IGNORECASE,
 )
-# A home folder in the file's text, where a Windows backslash is escaped as \\.
-USER_FOLDER = re.compile(r"/Users/[^/\s\"]|/home/[^/\s\"]|[A-Za-z]:\\\\Users\\\\")
+# A home folder, with either separator; in a file's JSON text a backslash is escaped as \\.
+# /home/linuxbrew (Homebrew on Linux) and /Users/Shared are no one's home.
+USER_FOLDER = re.compile(
+    r"[A-Za-z]:[\\/]+Users[\\/]+[^\\/\s\"]+|/home/(?!linuxbrew\b)[^/\s\"]+|/Users/(?!Shared\b)[^/\s\"]+|/root(?=/)",
+    re.IGNORECASE,
+)
 
 
 def interleave(arms: list[str], rounds: int, rng: random.Random) -> list[list[str]]:
@@ -94,6 +109,7 @@ def problems(doc: object) -> list[str]:
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     validator = Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
     found = [f"{'/'.join(map(str, e.absolute_path)) or '(top)'}: {e.message}" for e in validator.iter_errors(doc)]
+    found += _text_problems(doc)
     if found or not isinstance(doc, dict):
         return found  # the checks below assume the shape
     found += _created_problems(doc["created"])
@@ -102,6 +118,24 @@ def problems(doc: object) -> list[str]:
     found += [f"comparisons: comparison {i!r} twice" for i, n in ids.items() if n > 1]
     for c in doc["comparisons"]:
         found += _comparison_problems(c, doc["rounds"], doc["seed"], doc["resamples"])
+    return found
+
+
+def _text_problems(value: object, where: str = "") -> list[str]:
+    """Control and format characters (Unicode Cc, Cf) in VALUE's keys and strings: the site shows them.
+
+    A bidi override or an escape sequence would change how a public page or a terminal reads.
+    """
+    if isinstance(value, str):
+        bad = sorted({f"U+{ord(ch):04X}" for ch in value if unicodedata.category(ch) in {"Cc", "Cf"}})
+        return [f"{where or '(top)'}: control or format character {', '.join(bad)}"] if bad else []
+    items = value.items() if isinstance(value, dict) else enumerate(value) if isinstance(value, list) else ()
+    found = []
+    for key, v in items:
+        path = f"{where}/{ascii(key)[1:-1]}" if where else ascii(key)[1:-1]
+        if isinstance(key, str):
+            found += [f"{p} (a key)" for p in _text_problems(key, path)]
+        found += _text_problems(v, path)
     return found
 
 
@@ -182,8 +216,8 @@ def contribution_problems(path: Path, doc: dict) -> list[str]:
     the tier is ``contributed`` (only an attestation proves ``hosted``), the machine label is
     not a default host name, no user folder appears, and the file is small and regular.
     """
-    if path.is_symlink() or not path.is_file():
-        return [f"{path.as_posix()} is not a regular file"]
+    if found := contribution_file_problems(path):
+        return found
     found = []
     machine, day = str(doc.get("machine", "")), str(doc.get("created", ""))[:10]
     m = CONTRIBUTED.search(path.as_posix())
@@ -201,7 +235,14 @@ def contribution_problems(path: Path, doc: dict) -> list[str]:
     if HOST_LIKE.search(machine):
         found.append(f"machine {machine!r} looks like a host name; use a label such as the CPU model")
     if USER_FOLDER.search(path.read_text(encoding="utf-8")):
-        found.append("names a user folder (/Users/..., /home/... or C:\\Users\\...); replace it with ~")
-    if (size := path.stat().st_size) > MAX_BYTES:
-        found.append(f"{size // 1024} KiB, more than {MAX_BYTES // 1024} KiB")
+        found.append("names a user folder (/Users/..., /home/..., /root/... or C:\\Users\\...); replace it with ~")
     return found
+
+
+def contribution_file_problems(path: Path) -> list[str]:
+    """Why the file at PATH is not safe to read as a contribution: a link, not a regular file, too large."""
+    if path.is_symlink() or not path.is_file():
+        return [f"{path.as_posix()} is not a regular file"]
+    if (size := path.stat().st_size) > MAX_BYTES:
+        return [f"{size // 1024} KiB, more than {MAX_BYTES // 1024} KiB"]
+    return []

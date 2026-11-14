@@ -276,8 +276,8 @@ You can add your machine's ratios: how much faster UMFPACK and PyPardiso solve a
 SuperLU there (on a Mac also Apple Accelerate's sparse LU), and with `install-path` how bw2calc from conda-forge compares with PyPI. A
 contribution is one result file from `bwbench compare`
 ([method.md](method.md#hosted-ratios)). It holds ratios between set-ups timed in turn on one
-machine, so your machine's speed and noise largely cancel out. The site labels it "contributed,
-unverified" and counts it only as support for the hosted and reference runs.
+machine, so your machine's speed and noise largely cancel out. The comparison page shows
+contributed rows marked unverified and leaves them out of each summary.
 
 The run installs bw2calc and its solvers from PyPI into new virtual environments in a
 temporary folder, and runs them on your machine, outside any container. You need
@@ -296,7 +296,7 @@ installs only on x86_64; elsewhere its arm is missing too, which is a result, no
    ```
 
    Set `--machine` to a label for the machine, such as its CPU model, never its host name.
-   Without it, the CPU model is used. Add `install-path` to the command to time conda-forge
+   The label needs ASCII letters or digits, which name its folder. Without it, the CPU model is used. Add `install-path` to the command to time conda-forge
    against PyPI too; that needs [pixi](https://pixi.sh).
 3. Fork this repository, then copy the file to
    `ratios/contributed/<machine>/<date>.json`. `<machine>` is your label in lower case with
@@ -310,7 +310,7 @@ installs only on x86_64; elsewhere its arm is missing too, which is a result, no
 
    It exits 0 when the file can go in. It refuses a file that is not in its folder, that
    says a tier other than `contributed`, has a default host name as its label (such as
-   `Ada's MacBook Pro` or `DESKTOP-4F2K9QX`), names a user folder, or is over 256 KiB.
+   `Ada's MacBook Pro`, `ada-ThinkPad-X1` or `DESKTOP-4F2K9QX`), names a user folder, or is over 256 KiB.
 5. Commit with `git commit -s`
    ([CONTRIBUTING](../.github/CONTRIBUTING.md#sign-off-your-commits)) and open a pull request
    against `main`. Add `?template=contribute-a-run.md` to the address of the "Open a pull
@@ -318,7 +318,7 @@ installs only on x86_64; elsewhere its arm is missing too, which is a result, no
 
 The file records the CPU model, OS, kernel, Python, BLAS and the installed versions, never a
 host name or user name. Read it before you push: a `missing` reason holds the last lines of an
-installer's error, with your home folder written as `~`.
+installer's error, with your home folder and any other user folder written as `~`.
 
 ## Publish the synthetic inputs
 

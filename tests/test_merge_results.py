@@ -116,3 +116,22 @@ def test_cells_neither_run_timed_are_skipped_not_failed():
     assert math.isnan(times[2])
     assert times[3] == 1
     assert row == [[["'u'", "'s'"], ["'B'", "'A'"]], "v", 20, 1, [0.2, None, None, 0.1]]
+
+
+def stamped(row: list, fingerprint: object, **extra: object) -> str:
+    return json.dumps(json.loads(result(row)) | {"fingerprint": fingerprint, **extra})
+
+
+def test_a_rerun_that_kept_the_cells_keeps_the_earlier_fingerprints():
+    """With --skip-existing-successful the new file holds the old cells itself; their fingerprints stay."""
+    old = stamped([[1, 9], [["'s'", "'e'"]], "v"], {"kernel": "6.1"}, kept_fingerprints=[None])
+    new = stamped([[2, 9], [["'s'", "'e'"]], "v"], {"kernel": "6.8"})
+    merged = json.loads(merge(old, new))
+    assert merged["fingerprint"] == {"kernel": "6.8"}
+    assert merged["kept_fingerprints"] == [None, {"kernel": "6.1"}]
+
+
+def test_a_rerun_that_timed_nothing_new_keeps_the_committed_file():
+    old = stamped([[1, 9], [["'s'", "'e'"]], "v"], {"kernel": "6.1"}, kept_fingerprints=[None])
+    new = stamped([[1, 9], [["'s'", "'e'"]], "v"], None)
+    assert merge(old, new) == old

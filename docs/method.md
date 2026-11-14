@@ -162,7 +162,8 @@ match within `DIRECT_RTOL` (1e-9), or `BAFU_RTOL` (1e-6) for BAFU 2025; an error
   tell is `null`; an asv result must name its lock. It describes the run that last wrote the
   file; a cell kept from an earlier run has its own `started_at`, and when that run's
   fingerprint differs, the file lists it under `"kept_fingerprints"` (`null` for a run from
-  before fingerprints).
+  before fingerprints). The list may name more runs than the cells came from: a rerun that
+  timed every cell again still lists the fingerprint it replaced.
 - Each result file keeps every sample beside the median (asv's `samples` column), so anyone
   can rerun the noise rule below on the `results` branch. Runs before this change kept none.
 - A nightly canary times a fixed workload on the benchmark machine, so drift in the machine

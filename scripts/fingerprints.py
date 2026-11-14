@@ -15,9 +15,10 @@ so the fingerprints SNAPSHOT (an empty file for none) lists for FILE go into its
 ``kept_fingerprints``, without duplicates and without the new fingerprint. A rerun that timed
 every cell again still lists them: the list may name more environments than the cells came from.
 
-``fingerprints.py check TREE`` (results-commit.sh): every JSON file staged as new or changed in
-the git worktree TREE, other than asv's machine.json and benchmarks.json and the RO-Crate, must
-carry a valid fingerprint (``bwbench.fingerprint.problems``); an asv result (one with
+``fingerprints.py check TREE`` (results-commit.sh, after merge_results.py): every JSON file
+staged as new or changed in the git worktree TREE, other than asv's machine.json and
+benchmarks.json and the RO-Crate, must carry a valid fingerprint
+(``bwbench.fingerprint.problems``); an asv result (one with
 ``result_columns``) must also name its lock. A ``kept_fingerprints`` list, which
 merge_results.py writes for cells kept from earlier runs, must hold only valid asv
 fingerprints or ``null``. Files already committed are not checked again: results from before

@@ -276,8 +276,8 @@ You can add your machine's ratios: how much faster UMFPACK and PyPardiso solve a
 SuperLU there, and with `install-path` how bw2calc from conda-forge compares with PyPI. A
 contribution is one result file from `bwbench compare`
 ([method.md](method.md#hosted-ratios)). It holds ratios between set-ups timed in turn on one
-machine, so your machine's speed and noise largely cancel out. The site labels it "contributed,
-unverified" and counts it only as support for the hosted and reference runs.
+machine, so your machine's speed and noise largely cancel out. The comparison page shows
+contributed rows marked unverified and leaves them out of each summary.
 
 The run installs bw2calc and its solvers from PyPI into new virtual environments in a
 temporary folder, and runs them on your machine, outside any container. You need

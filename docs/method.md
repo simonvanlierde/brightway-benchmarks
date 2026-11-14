@@ -214,7 +214,8 @@ environment of its own and times one case in each at smoke size: bw2calc's first
   macOS and Windows only. The benchmark machine has the full histories on Linux.
 
 Every arm outside `solvers` runs SuperLU, so its ratio is the install's, the Python's or the
-release's, not a solver change. An arm that can't install or run is recorded as missing, with
+release's, not a solver change. uv and pixi install only releases published a week or more
+before the run started, with one cutoff for both, so `install-path` compares one bw2calc release. An arm that can't install or run is recorded as missing, with
 the reason, and never as zero: PyPardiso on Apple silicon, where MKL has no build, and UMFPACK on
 Windows, where scikit-umfpack does not build.
 

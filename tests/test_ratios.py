@@ -1,8 +1,10 @@
 import copy
 import json
 import math
+import platform
 import random
 import sys
+import tomllib
 from collections.abc import Callable
 from pathlib import Path
 
@@ -259,6 +261,7 @@ def script(path: Path, body: str) -> Path:
 
 
 ARM = compare.Arm("superlu", compare.Env("uv", "3.13", ("bw2calc",)))
+CUTOFF = "2026-11-07T12:00:00Z"
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="shell-script stand-ins")
@@ -289,6 +292,7 @@ def fake_uv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 venv*) for a; do dir=$a; done
   [ -e "$dir" ] && {{ echo 'A virtual environment already exists; use the --clear flag' >&2; exit 2; }}
   mkdir -p "$dir/bin" && ln -s {sys.executable} "$dir/bin/python" ;;
+"pip install") echo "$UV_EXCLUDE_NEWER" >>"$0.cutoffs" ;;
 "pip freeze") [ -n "$FREEZE" ] && echo "$FREEZE" || {{ echo 'freeze failed' >&2; exit 1; }} ;;
 esac""",
     )
@@ -302,7 +306,7 @@ def test_an_arm_builds_again_in_the_same_folder(fake_uv: Path):
     """A second run over the same --work folder builds each arm afresh, not over the last run's venv."""
     env = compare.Env("uv", "3.13", ("bw2calc",))
     for _ in range(2):
-        built = compare.build(env, fake_uv / "work" / "env0")
+        built = compare.build(env, fake_uv / "work" / "env0", CUTOFF)
         assert built.failed is None
         assert built.fingerprint is not None
         assert built.fingerprint["lock"]["name"] == "requirements.txt"
@@ -312,7 +316,7 @@ def test_an_arm_builds_again_in_the_same_folder(fake_uv: Path):
 @pytest.mark.parametrize("freeze", ["", " "])
 def test_an_arm_whose_resolved_set_is_unknown_fails(fake_uv: Path, monkeypatch: pytest.MonkeyPatch, freeze: str):
     monkeypatch.setenv("FREEZE", freeze)
-    built = compare.build(compare.Env("uv", "3.13", ("bw2calc",)), fake_uv / "env0")
+    built = compare.build(compare.Env("uv", "3.13", ("bw2calc",)), fake_uv / "env0", CUTOFF)
     assert built.failed is not None
     assert built.failed.startswith("uv pip freeze")
 
@@ -363,3 +367,17 @@ def test_the_verify_command_pins_the_signing_workflow_and_branch(doc: str):
     command = text[start : text.index("`", start)]
     assert "--signer-workflow simonvanlierde/brightway-benchmarks/.github/workflows/ratios.yml" in command
     assert "--source-ref refs/heads/main" in command
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="shell-script stand-ins")
+@pytest.mark.skipif(compare.PIXI_PLATFORMS.get((platform.system(), platform.machine())) is None, reason="no pixi")
+def test_both_install_paths_resolve_with_the_same_cutoff(fake_uv: Path):
+    """install-path compares one bw2calc release: pixi and uv leave out the same new releases."""
+    env = ".pixi/envs/default/bin"
+    script(fake_uv / "bin" / "pixi", f'[ "$1" = install ] && mkdir -p {env} && ln -s {sys.executable} {env}/python')
+    compare.build(compare.Env("uv", "3.13", ("bw2calc",)), fake_uv / "env0", CUTOFF)
+    compare.build(compare.Env("pixi", "3.13", ("bw2calc",)), fake_uv / "env1", CUTOFF)
+    assert (fake_uv / "bin" / "uv.cutoffs").read_text().split() == [CUTOFF]
+    manifest = tomllib.loads((fake_uv / "env1" / "pixi.toml").read_text())
+    assert manifest["workspace"]["exclude-newer"] == CUTOFF
+    assert manifest["dependencies"]["bw2calc"] == "*"

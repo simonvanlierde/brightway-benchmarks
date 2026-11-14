@@ -36,7 +36,7 @@ SuperLU, and UMFPACK on OpenBLAS about 5 times.**
 
 The reference BLAS row comes from the `bw2calc` history, the others from `bw2calc-conda`. No
 release from 2.0 to 3.1.0 changed these times, with one exception: PyPardiso from PyPI takes
-0.09 s longer from 3.0.0 on, the release that started the MKL search below. A generator v4
+about 0.1 s longer from 3.0.0 on, the release that started the MKL search below. A generator v4
 profile put the LU factorization at 98% of one score under PyPardiso; v5 has not been profiled.
 `JacobiGMRESLCA` (from 2.4.0) gives a score in 133 ms, with a relative error of 5.6e-9, on the
 synthetic matrix only.
@@ -99,14 +99,14 @@ The history builds scikit-umfpack, which has no PyPI wheels, on Debian's referen
 3.1.0 alike, UMFPACK's first score drops from about 2.55 to 1.03 s. A second functional unit is
 23% slower on 2.4.0 (41.8 against 33.9 ms) and 40% slower on 3.1.0 (24.6 against 17.6 ms), on
 MKL's BLAS too. So the slower solve comes with conda-forge's builds, not the BLAS. SuperLU stays
-within 1%, and so does PyPardiso on 2.4.0; on 3.1.0, conda-forge's PyPardiso is 4% faster than
+within 2% (1.7% on 2.4.0's second functional unit), and PyPardiso within 1% on 2.4.0; on 3.1.0, conda-forge's PyPardiso is 4% faster than
 PyPI's. Scores match.
 
 On the real ecoinvent 3.12 matrix:
 
 | UMFPACK on | Factorize | `lu_solver` solve | Aᵀx = b, refinement on | Aᵀx = b, refinement off |
 | --- | --- | --- | --- | --- |
-| Reference BLAS (PyPI build) | 1.79 s | 16.5 ms | 10.5 ms | 3.7 ms |
+| Reference BLAS (PyPI build) | 1.78 s | 16.5 ms | 10.5 ms | 3.7 ms |
 | OpenBLAS (conda-forge) | 0.66 s | 24 ms | 12.7 ms | 4.8 ms |
 | MKL (conda-forge) | 0.63 s | 24 ms | 6.3 ms | 4.8 ms |
 
@@ -251,6 +251,11 @@ condition number times 1e-16, and the checks allow 1e-9, or 1e-6 on BAFU 2025.
 | ecoinvent-shaped synthetic | 3.2e3 | 4.3e-15 SuperLU, 1.7e-15 UMFPACK (generator v4) |
 | BAFU 2025 | 9.4e21 | 6.5e-7 SuperLU (passes only BAFU's 1e-6), 1.9e-15 UMFPACK |
 
+The condition estimates are generator v5's. The score errors come from the 30-product checks'
+logs, not from the stored results. On generator v5 the stored one-score errors on the
+ecoinvent-shaped matrix are 2.75e-15 with SuperLU, 2.60e-15 with UMFPACK and 2.90e-15 with
+PyPardiso.
+
 BAFU's estimate is far past 1e16, so a direct solve has no digits to promise. SuperLU lands 8
 orders of magnitude from UMFPACK's refined solve at 1e-15.
 
@@ -307,7 +312,7 @@ Rerun: [`bench_timex.TimelineLCI`](../benchmarks/bench_bw_timex/bench_timex.py).
 
 ### bw_graph_tools 0.9 made traversal up to 6 times faster
 
-**bw_graph_tools 0.9's batched scoring makes traversal with PyPardiso 1.1 to 6 times faster.**
+**bw_graph_tools 0.9's batched scoring makes traversal with PyPardiso 1.1 to 6 times faster, except on BAFU 2025, where it is slower.**
 Use 0.9 or later.
 
 | Database, with PyPardiso | `max_calc` | 0.8 | 0.9 |
@@ -316,6 +321,8 @@ Use 0.9 or later.
 | ecoinvent | 100 | 12.3 s | 8.16 s |
 | EXIOBASE | 2 | 1.19 minutes | 12.0 s |
 | EXIOBASE | 100 | over asv's 15-minute limit | 2.38 minutes |
+| BAFU 2025 | 2 | 74.8 ms | 88.5 ms |
+| BAFU 2025 | 100 | 742 ms | 1.00 s |
 
 Graph: [bw_graph_tools, traversal](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw_graph_tools&bench=bench_traversal.Traversal.time_traverse).
 Rerun: [`bench_traversal.Traversal`](../benchmarks/bench_bw_graph_tools/bench_traversal.py).
@@ -342,10 +349,10 @@ Rerun: [`bench_traversal.Traversal`](../benchmarks/bench_bw_graph_tools/bench_tr
 [bw_processing#113](https://github.com/brightway-lca/bw_processing/pull/113) removes that, and
 cuts building a matrix from 1,000 groups by 40%.** Nothing to do until a release has it.
 
-In every bw_processing release, adding 100 groups takes 2.17 ms, and 1,000 take 249 ms.
+In every bw_processing release, adding 100 groups takes 2.17 to 2.27 ms, and 1,000 take 249 ms.
 matrix_utils 0.9 builds a matrix from 1,000 groups in 655 ms on bw_processing 1.6, and 393 ms
 on #113. [matrix_utils#48](https://github.com/brightway-lca/matrix_utils/pull/48) takes those
-to 619 and 355 ms. Since 0.6, matrix_utils itself builds 12% slower at 1,000 groups.
+to 619 and 355 ms. Since 0.6, matrix_utils itself builds 12 to 13% slower at 1,000 groups.
 
 Graph: [bw_processing, resource groups](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw_processing&bench=bench_datapackage.Groups.time_groups).
 Rerun: [`bench_datapackage.Groups`](../benchmarks/bench_bw_processing/bench_datapackage.py) and

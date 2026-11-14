@@ -25,7 +25,7 @@
     },
     "rounds": {"type": "integer", "minimum": 2, "description": "Interleaved rounds per comparison. Every arm that is not missing has one time per round."},
     "repeats": {"type": "integer", "minimum": 1, "description": "Timed calls per arm per round, after one untimed warm-up call in the same process. The round's time is their median."},
-    "seed": {"type": "integer", "description": "Seed of the run order and of the bootstrap."},
+    "seed": {"type": "integer", "description": "Seed of the run order and of the bootstrap: each comparison's order follows from it and the comparison's id, each ratio's bootstrap seed from it, the id and the candidate (bwbench.ratios.ratio_seed)."},
     "resamples": {"type": "integer", "minimum": 100, "description": "Bootstrap resamples behind each interval."},
     "fingerprint": {"type": "object", "description": "The machine, from the process that ran the comparisons (src/bwbench/fingerprint.py). Its python and lock describe that process, not the arms."},
     "comparisons": {"type": "array", "items": {"$ref": "#/$defs/comparison"}}
@@ -36,7 +36,7 @@
       "additionalProperties": false,
       "required": ["id", "case", "params", "baseline", "arms", "ratios"],
       "properties": {
-        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Which comparison: solvers, install-path, python, bw2calc-release, bw2data-release (bwbench.compare.COMPARISONS)."},
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Which comparison: solvers, install-path, python, bw2calc-release, bw2data-release (bwbench.compare.comparisons)."},
         "case": {"type": "string", "pattern": "^bench_\\w+\\.\\w+\\.time_\\w+$", "description": "The benchmark timed, by its key in benchmarks/descriptions.toml."},
         "params": {"type": "object", "additionalProperties": {"type": ["string", "integer"]}, "description": "The case's parameters, such as {\"size\": \"smoke\", \"cls\": \"LCA\"}."},
         "baseline": {"type": "string", "description": "The arm every ratio divides by."},
@@ -52,8 +52,8 @@
         "installer": {"enum": ["uv", "pixi"], "description": "uv from PyPI, or pixi from conda-forge."},
         "python": {"type": "string", "description": "The Python minor version asked for, such as '3.13'."},
         "requirements": {"type": "array", "items": {"type": "string"}, "description": "What was asked for, before resolution."},
-        "solver": {"type": ["string", "null"], "description": "The solver bw2calc used: superlu, umfpack or pypardiso; null when the case never imported bw2calc or the arm is missing."},
-        "versions": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Installed versions of the packages that matter here (bw2calc, bw2data, numpy, scipy, the solvers)."},
+        "solver": {"type": ["string", "null"], "description": "The solver bw2calc used: superlu, umfpack or pypardiso; null when the arm is missing (an arm whose case never imported bw2calc, or whose bw2calc does not say, is missing)."},
+        "versions": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Installed versions of the packages that matter here (bw2calc, bw2data, numpy, scipy, the solvers); empty when the arm is missing."},
         "fingerprint": {"type": ["object", "null"], "description": "The arm's environment (src/bwbench/fingerprint.py), its lock the resolved set. Null only when the environment could not be built."},
         "seconds": {
           "type": "array",
@@ -75,7 +75,7 @@
           "prefixItems": [{"type": "number", "exclusiveMinimum": 0}, {"type": "number", "exclusiveMinimum": 0}],
           "minItems": 2,
           "maxItems": 2,
-          "description": "Percentile bootstrap 95% interval of the ratio, resampling whole rounds: [low, high]."
+          "description": "Percentile bootstrap 95% interval of the ratio, resampling whole rounds: [low, high], from `resamples` resamples seeded by bwbench.ratios.ratio_seed."
         },
         "seconds": {
           "type": ["object", "null"],

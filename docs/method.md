@@ -229,9 +229,12 @@ resamples that keep each round's pair together. The seconds stay in the file as 
 The `ratios` workflow runs it every Sunday on `ubuntu-latest`, `macos-latest` and
 `windows-latest`, one result file per OS. The file's fields are described in
 [`src/bwbench/ratios.schema.json`](../src/bwbench/ratios.schema.json), and `bwbench validate
-FILE` checks a file against it, its fingerprints, and its ratios against its seconds. GitHub
-signs each file with a build provenance attestation, and on main the workflow commits the files
-to the `ratios` branch as `hosted/YYYY-MM-DD/<OS>.json`.
+FILE` checks a file against it, its fingerprints, and its ratios and intervals against its
+seconds and seed. GitHub signs each file with a build provenance attestation, and on main the
+workflow commits the files to the `ratios` branch as `hosted/<YYYY-MM-DD>-<run id>/<OS>.json`,
+the date from the files' `created` and the run the workflow's: a second run on one day gets its
+own folder, and no published file is overwritten. Folder names sort by date, so the newest file
+per OS is in the last folder that holds one.
 `gh attestation verify FILE -R simonvanlierde/brightway-benchmarks` shows that a file came from
 this repository's workflow, unchanged.
 

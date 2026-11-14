@@ -2,6 +2,7 @@ import copy
 import json
 import math
 import random
+import sys
 from collections.abc import Callable
 from pathlib import Path
 
@@ -11,8 +12,10 @@ from hypothesis import strategies as st
 
 from bwbench import compare
 from bwbench.fingerprint import fingerprint
-from bwbench.ratios import bootstrap_interval, geometric_mean_ratio, interleave, problems
+from bwbench.ratios import bootstrap_interval, geometric_mean_ratio, interleave, problems, ratio_seed
 
+# An arm's environment: its lock is the resolved set, which problems() requires of every arm.
+ARM_FP = fingerprint() | {"lock": {"name": "requirements.txt", "sha256": "0" * 64}}
 times = st.lists(st.floats(1e-4, 10.0), min_size=2, max_size=30)
 
 
@@ -93,8 +96,7 @@ def result(
     time_arm, calls = fake_time_arm({"superlu": 1.0, "umfpack": 0.5, "pypardiso": 0.25}, fail)
     monkeypatch.setattr(compare, "time_arm", time_arm)
     c = compare.comparisons("Linux", {})["solvers"]
-    built = {c.baseline.env: compare.Built(python=Path("python"), fingerprint=fingerprint())}
-    rng = random.Random(4)
+    built = {c.baseline.env: compare.Built(python=Path("python"), fingerprint=ARM_FP)}
     doc = {
         "format": "bwbench-ratios/1",
         "tier": "contributed",
@@ -106,7 +108,7 @@ def result(
         "seed": 4,
         "resamples": 10_000,
         "fingerprint": fingerprint(),
-        "comparisons": [compare.measure(c, built, rounds, 3, rng, Path())],
+        "comparisons": [compare.measure(c, built, rounds, 3, 4, Path())],
     }
     return json.loads(json.dumps(doc)), calls
 
@@ -165,6 +167,19 @@ def ratio_of(doc: dict, name: str = "umfpack") -> dict:
         (lambda d: d.update(created="yesterday"), "is not a 'date-time'"),
         (lambda d: ratio_of(d).update(ratio=ratio_of(d)["ratio"] * 1.01), "but the seconds give"),
         (lambda d: ratio_of(d).update(ci95=[0.1, 0.2]), "outside its interval"),
+        (lambda d: ratio_of(d).update(ci95=ratio_of(d)["ci95"][::-1]), "low above high"),
+        (lambda d: ratio_of(d).update(ci95=[ratio_of(d)["ci95"][0] * 0.99, ratio_of(d)["ci95"][1]]), "the seed gives"),
+        (lambda d: d["comparisons"][0]["ratios"].pop(), "has no ratio"),
+        (lambda d: d["comparisons"][0]["ratios"].append(ratio_of(d)), "2 ratios"),
+        (lambda d: d["comparisons"].append(d["comparisons"][0]), "comparison 'solvers' twice"),
+        (
+            lambda d: ratio_of(d).update(missing="no reason", ratio=None, ci95=None, seconds=None),
+            "missing, but both arms have times",
+        ),
+        (
+            lambda d: d["comparisons"][0]["arms"]["superlu"]["fingerprint"].update(lock=None),
+            "superlu/fingerprint: no lock",
+        ),
         (lambda d: ratio_of(d).update(ratio=0.0), "less than or equal to the minimum"),
         (lambda d: ratio_of(d).update(missing="no reason", ratio=0.5), "is not of type 'null'"),
         (lambda d: ratio_of(d).update(candidate="superlu"), "is not a candidate arm"),
@@ -206,3 +221,124 @@ def test_release_comparisons_only_on_macos_and_windows():
     mac = compare.comparisons("Darwin", {"bw2calc": "3.1.0", "bw2data": "4.8"})
     assert mac["bw2calc-release"].baseline.env.requirements == ("bw2calc<3.1.0",)
     assert mac["bw2data-release"].candidates[0].env.requirements == ("bw2data==4.8", "bw2calc")
+
+
+def test_release_comparisons_need_the_latest_release():
+    """Without a release comparison named, compare() resolves no release: the others still run."""
+    assert set(compare.comparisons("Darwin", {})) == {"solvers", "install-path", "python"}
+
+
+def test_an_arm_that_fails_later_drops_its_solver_and_versions(monkeypatch: pytest.MonkeyPatch):
+    time_arm, calls = fake_time_arm({"superlu": 1.0, "umfpack": 0.5, "pypardiso": 0.25})
+
+    def flaky(arm: compare.Arm, *rest: object) -> dict:
+        if arm.name == "umfpack" and calls.count("umfpack") >= 2:
+            return {"missing": "the case failed: boom"}
+        return time_arm(arm, *rest)
+
+    monkeypatch.setattr(compare, "time_arm", flaky)
+    c = compare.comparisons("Linux", {})["solvers"]
+    built = {c.baseline.env: compare.Built(python=Path("python"), fingerprint=ARM_FP)}
+    umfpack = compare.measure(c, built, 4, 3, 1, Path())["arms"]["umfpack"]
+    assert umfpack["missing"] == "the case failed: boom"
+    assert (umfpack["solver"], umfpack["versions"], umfpack["seconds"]) == (None, {}, [])
+
+
+def test_the_stored_interval_follows_from_the_seed(monkeypatch: pytest.MonkeyPatch):
+    doc, _ = result(monkeypatch)
+    c = doc["comparisons"][0]
+    base, cand = c["arms"]["superlu"]["seconds"], c["arms"]["umfpack"]["seconds"]
+    seed = ratio_seed(doc["seed"], "solvers", "umfpack")
+    assert ratio_of(doc)["ci95"] == list(bootstrap_interval(base, cand, seed, doc["resamples"]))
+
+
+def script(path: Path, body: str) -> Path:
+    path.write_text(f"#!/bin/sh\n{body}\n")
+    path.chmod(0o755)
+    return path
+
+
+ARM = compare.Arm("superlu", compare.Env("uv", "3.13", ("bw2calc",)))
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="shell-script stand-ins")
+@pytest.mark.parametrize(
+    ("body", "why"),
+    [
+        ("", "printed no JSON object"),
+        ("echo 'Traceback?'", "printed no JSON object"),
+        ("sleep 5", "timed out after 1 s"),
+        ("""echo '{"seconds": [1.0], "solver": null, "versions": {}, "missing": null}'""", "never imported bw2calc"),
+    ],
+)
+def test_an_arm_that_prints_no_result_is_missing(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, body: str, why: str):
+    monkeypatch.setattr(compare, "TIMEOUT", 1)
+    built = compare.Built(python=script(tmp_path / "python", body))
+    out = compare.time_arm(ARM, built, "bench_lca.SingleScore.time_first_score", {}, 1, tmp_path)
+    assert why in out["missing"]
+
+
+@pytest.fixture
+def fake_uv(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """A uv that refuses ``uv venv`` over an existing folder, as uv 0.13 does, and freezes what FREEZE says."""
+    bin_ = tmp_path / "bin"
+    bin_.mkdir()
+    script(
+        bin_ / "uv",
+        f"""case "$1 $2" in
+venv*) for a; do dir=$a; done
+  [ -e "$dir" ] && {{ echo 'A virtual environment already exists; use the --clear flag' >&2; exit 2; }}
+  mkdir -p "$dir/bin" && ln -s {sys.executable} "$dir/bin/python" ;;
+"pip freeze") [ -n "$FREEZE" ] && echo "$FREEZE" || {{ echo 'freeze failed' >&2; exit 1; }} ;;
+esac""",
+    )
+    monkeypatch.setenv("PATH", f"{bin_}:{__import__('os').environ['PATH']}")
+    monkeypatch.setenv("FREEZE", "bw2calc==3.1.0")
+    return tmp_path
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="shell-script stand-ins")
+def test_an_arm_builds_again_in_the_same_folder(fake_uv: Path):
+    """A second run over the same --work folder builds each arm afresh, not over the last run's venv."""
+    env = compare.Env("uv", "3.13", ("bw2calc",))
+    for _ in range(2):
+        built = compare.build(env, fake_uv / "work" / "env0")
+        assert built.failed is None
+        assert built.fingerprint is not None
+        assert built.fingerprint["lock"]["name"] == "requirements.txt"
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="shell-script stand-ins")
+@pytest.mark.parametrize("freeze", ["", " "])
+def test_an_arm_whose_resolved_set_is_unknown_fails(fake_uv: Path, monkeypatch: pytest.MonkeyPatch, freeze: str):
+    monkeypatch.setenv("FREEZE", freeze)
+    built = compare.build(compare.Env("uv", "3.13", ("bw2calc",)), fake_uv / "env0")
+    assert built.failed is not None
+    assert built.failed.startswith("uv pip freeze")
+
+
+@pytest.mark.parametrize("created", ["2026-11-14", "2026-11-14T12:00:00", "yesterday"])
+def test_created_is_checked_without_rfc3339_validator(monkeypatch: pytest.MonkeyPatch, created: str):
+    """Without rfc3339-validator, jsonschema skips format: date-time."""
+    import jsonschema  # noqa: PLC0415
+
+    doc, _ = result(monkeypatch)
+    monkeypatch.setattr(jsonschema.Draft202012Validator, "FORMAT_CHECKER", jsonschema.FormatChecker(formats=()))
+    assert problems(doc) == []
+    assert broken(doc, lambda d: d.update(created=created)) == [f"created: not an RFC 3339 date-time: {created!r}"]
+
+
+@pytest.mark.parametrize(
+    ("attrs", "expected"),
+    [({}, None), ({"PYPARDISO": False}, "superlu"), ({"PYPARDISO": False, "UMFPACK": True}, "umfpack")],
+)
+def test_timecase_names_the_solver_only_when_bw2calc_says(
+    monkeypatch: pytest.MonkeyPatch, attrs: dict, expected: str | None
+):
+    """bw2calc before 2.0 has no PYPARDISO flag, and 2.0's early dev releases no UMFPACK."""
+    import types  # noqa: PLC0415
+
+    from bwbench import timecase  # noqa: PLC0415
+
+    monkeypatch.setitem(sys.modules, "bw2calc", types.SimpleNamespace(**attrs))
+    assert timecase.solver() == expected

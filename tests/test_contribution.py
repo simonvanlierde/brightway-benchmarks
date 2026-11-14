@@ -45,6 +45,7 @@ def test_stage_gives_the_arms_this_package_and_the_cases_only(tmp_path: Path):
     src = compare.stage(tmp_path)
     assert sorted(p.name for p in src.iterdir()) == ["bwbench"]
     assert (src / "bwbench" / "timecase.py").is_file()
+    assert (src / "bwbench" / "accelerate.c").is_file()  # the Accelerate arm compiles it there, in --work
     assert (src / "bwbench" / "cases" / "bench_bw2calc" / "bench_lca.py").is_file()
     assert not list(src.rglob("__pycache__"))
     assert compare.stage(tmp_path) == src  # a rerun in the same --work folder

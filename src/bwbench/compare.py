@@ -10,7 +10,8 @@ each call in a fresh process (``bwbench.timecase``). An arm that cannot be insta
 here is recorded as missing, with the reason. Every arm installs only releases published a week
 or more before the run started, one cutoff for uv and pixi alike. The comparisons:
 
-- ``solvers``: UMFPACK and PyPardiso against SuperLU in one environment, by hiding the others.
+- ``solvers``: UMFPACK and PyPardiso against SuperLU in one environment, by hiding the others,
+  and on macOS Apple Accelerate's sparse LU, patched into bw2calc (``bwbench.solvers``).
 - ``install-path``: bw2calc from conda-forge (pixi) against PyPI (uv).
 - ``python``: Python 3.12, 3.14 and 3.15 against 3.13.
 - ``bw2calc-release``, ``bw2data-release``: the latest release against the one before, on
@@ -19,7 +20,8 @@ or more before the run started, one cutoff for uv and pixi alike. The comparison
 Every arm other than the solvers' runs SuperLU, so its ratio is the install's, the
 interpreter's or the release's, not a solver change. It runs from a checkout or as installed
 (``uvx --from git+https://github.com/simonvanlierde/brightway-benchmarks bwbench compare``),
-which carries the cases in ``bwbench/cases``. It needs ``uv``, and ``pixi`` for ``install-path``.
+which carries the cases in ``bwbench/cases``. It needs ``uv``, ``pixi`` for ``install-path``, and
+on macOS the Xcode Command Line Tools for the Accelerate arm.
 
 Exit codes: 0 written (or valid), 1 a file has problems (validate), 2 usage error, 3 could not
 run, 4 written, but no ratio has a value (every comparison lacks an arm; the file says why).
@@ -66,6 +68,7 @@ PACKAGE = Path(__file__).resolve().parent
 PROBE = PACKAGE / "fingerprint.py"
 STAGE = ".bwbench-stage"  # the arms' copy of this package, in the --work folder
 SOLVERS = ("pypardiso", "scikits.umfpack")  # what bw2calc picks over SuperLU when it can import it
+PICKED = ("superlu", "umfpack", "pypardiso")  # bw2calc's own; an arm's other solver is patched in
 TIMEOUT = 900  # seconds for one install or one timed process
 CUTOFF_AGE = timedelta(weeks=1)  # every arm installs releases at least this old, as the project's uv.lock does
 FIRST_SCORE = ("bench_lca.SingleScore.time_first_score", {"size": "smoke", "cls": "LCA"})
@@ -84,12 +87,17 @@ class Env:
 
 @dataclass(frozen=True)
 class Arm:
-    """One side of a comparison: an environment, the modules hidden in it, the solver it must use."""
+    """One side of a comparison: an environment, the modules hidden in it, the solver it must use.
+
+    A ``solver`` bw2calc does not pick itself is patched in (``bwbench.solvers``); ``missing`` says why
+    the arm cannot run on this system.
+    """
 
     name: str
     env: Env
     hide: tuple[str, ...] = SOLVERS
     solver: str = "superlu"
+    missing: str | None = None
 
 
 @dataclass(frozen=True)
@@ -126,6 +134,12 @@ def comparisons(system: str, latest: dict[str, str]) -> dict[str, Comparison]:
             (
                 Arm("umfpack", solvers, hide=("pypardiso",), solver="umfpack"),
                 Arm("pypardiso", solvers, hide=(), solver="pypardiso"),
+                Arm(
+                    "accelerate",
+                    solvers,
+                    solver="accelerate",
+                    missing=None if system == "Darwin" else "Apple Accelerate is macOS only",
+                ),
             ),
         ),
         "install-path": Comparison(
@@ -281,7 +295,7 @@ def stage(work: Path) -> Path:
     if PACKAGE.is_relative_to(dest) or dest.is_relative_to(PACKAGE):
         msg = f"cannot stage into {dest.as_posix()!r}: bwbench runs from inside it"
         raise RuntimeError(msg)
-    skip = shutil.ignore_patterns("__pycache__")
+    skip = shutil.ignore_patterns("__pycache__", "*.dylib")  # the Accelerate library builds anew there
     shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(PACKAGE, dest, ignore=skip)
     if not (dest / "cases").is_dir():  # a checkout: the cases sit beside src/
@@ -295,6 +309,7 @@ def time_arm(arm: Arm, built: Built, case: str, params: dict, repeats: int, work
     env = os.environ | {
         "PYTHONPATH": os.pathsep.join([str(src), str(src / "bwbench" / "cases")]),
         "BWBENCH_HIDE": ",".join(arm.hide),
+        "BWBENCH_SOLVER": "" if arm.solver in PICKED else arm.solver,
         "PYTHONUTF8": "1",
     }
     args = [str(built.python), "-m", "bwbench.timecase", case, json.dumps(params), str(repeats)]
@@ -335,7 +350,7 @@ def measure(c: Comparison, built: dict[Env, Built], rounds: int, repeats: int, s
             "versions": {},
             "fingerprint": built[a.env].fingerprint,
             "seconds": [],
-            "missing": built[a.env].failed,
+            "missing": a.missing or built[a.env].failed,
         }
         for a in arms
     }

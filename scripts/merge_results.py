@@ -9,9 +9,10 @@ version changed keeps only the new cells, as its old ones timed other code.
 A merged file's ``fingerprint`` is the new run's. Cells kept from HEAD may have run in another
 environment (another kernel or lock, or before fingerprints existed), so when HEAD's
 fingerprint differs from the new one, it goes into the top-level list ``kept_fingerprints``,
-with ``null`` for cells from before fingerprints. The list carries forward across merges,
-without duplicates, and is left out when empty. It says which environments the kept cells
-came from, not which cell came from which.
+with ``null`` for cells from before fingerprints. HEAD's list and the new file's carry forward,
+without duplicates and without the new fingerprint, and the list is left out when empty. It
+says which environments the kept cells came from, not which cell came from which. A file whose
+merged cells equal HEAD's stays as HEAD has it: the run timed nothing new.
 """
 
 import hashlib
@@ -74,12 +75,15 @@ def merge(old: str, new: str) -> str:
     results = a["results"] | {
         name: merge_row(a["results"].get(name, []), row, columns) for name, row in b["results"].items()
     }
-    if results == b["results"]:
-        return new
+    if results == a["results"]:
+        return old  # nothing new was timed, so HEAD's fingerprints still describe every cell
+    # The new file may hold HEAD's cells itself (asv's --skip-existing-successful keeps them).
     kept = [*a.get("kept_fingerprints", []), *b.get("kept_fingerprints", [])]
     if a.get("fingerprint") != b.get("fingerprint"):
         kept.append(a.get("fingerprint"))
-    unique = [fp for i, fp in enumerate(kept) if fp not in kept[:i]]
+    unique = [fp for i, fp in enumerate(kept) if fp not in kept[:i] and fp != b.get("fingerprint")]
+    if results == b["results"] and unique == b.get("kept_fingerprints", []):
+        return new
     extra = {"kept_fingerprints": unique} if unique else {}
     return json.dumps(b | {"results": results, "durations": a.get("durations", {}) | b.get("durations", {})} | extra)
 

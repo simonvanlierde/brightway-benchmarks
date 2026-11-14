@@ -289,3 +289,22 @@ def test_results_committed_before_the_fingerprint_stay(repo: Path, env: dict[str
     run = commit_results(repo, env)
     assert run.returncode == 0, run.stderr
     assert files_on_branch(repo, env) == ["bw2calc/m/new.json", "bw2calc/m/old.json"]
+
+
+def test_an_old_local_file_the_branch_already_covers_does_not_block(repo: Path, env: dict[str, str]):
+    """Another clone added cells to a file this clone holds unfingerprinted: the merge rebuilds the branch's."""
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.0, "ecoinvent": 9.0}))
+    git(repo, env, "switch", "-q", "--orphan", "results")
+    git(repo, env, "--work-tree", str(repo / "results"), "add", "bw2calc/m/abc-env.json")
+    git(repo, env, "commit", "-q", "-m", "another clone's result")
+    git(repo, env, "switch", "-q", "main")
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.0}, fingerprint=None))
+    write(repo, "bw2calc/m/new.json")
+    run = commit_results(repo, env)
+    assert run.returncode == 0, run.stderr
+    assert json.loads(git(repo, env, "show", "refs/heads/results:bw2calc/m/abc-env.json"))["fingerprint"] == FP
+    # Cells it changes still need a fingerprint.
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 2.0}, fingerprint=None))
+    run = commit_results(repo, env)
+    assert run.returncode == 1
+    assert "bw2calc/m/abc-env.json" in run.stderr

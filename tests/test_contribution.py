@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from bwbench import compare
-from bwbench.ratios import USER_FOLDER, contribution_problems
+from bwbench.ratios import HOST_LIKE, USER_FOLDER, contribution_problems
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -172,3 +172,29 @@ def test_tail_keeps_paths_when_home_is_the_root(monkeypatch: pytest.MonkeyPatch)
 )
 def test_user_folder_matches_what_redaction_leaves(text: str, *, user: bool):
     assert bool(USER_FOLDER.search(text)) is user
+
+
+@pytest.mark.parametrize(
+    "machine",
+    [
+        "Ada's MacBook Pro",
+        "Ada\u2019s MacBook Pro",
+        "Adas-MacBook-Pro",
+        "Adas-iMac",
+        "ada-ThinkPad-X1-Carbon-Gen-9",
+        "ada-XPS-15-9520",
+        "adas-macbook-pro.local",
+        "ada.example.com",
+        "DESKTOP-4F2K9QX",
+    ],
+)
+def test_host_names_are_refused(machine: str):
+    assert HOST_LIKE.search(machine)
+
+
+@pytest.mark.parametrize(
+    "machine",
+    ["Apple M3 Pro", "ubuntu-24.04", "m2.max", "ryzen-5.5600X", "Lenovo-ThinkPad-X1", "Intel Xeon machine"],
+)
+def test_machine_labels_pass(machine: str):
+    assert not HOST_LIKE.search(machine)

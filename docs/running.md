@@ -308,7 +308,7 @@ installs only on x86_64; elsewhere its arm is missing too, which is a result, no
 
    It exits 0 when the file can go in. It refuses a file that is not in its folder, that
    says a tier other than `contributed`, has a default host name as its label (such as
-   `Ada's MacBook Pro` or `DESKTOP-4F2K9QX`), names a user folder, or is over 256 KiB.
+   `Ada's MacBook Pro`, `ada-ThinkPad-X1` or `DESKTOP-4F2K9QX`), names a user folder, or is over 256 KiB.
 5. Commit with `git commit -s`
    ([CONTRIBUTING](../.github/CONTRIBUTING.md#sign-off-your-commits)) and open a pull request
    against `main`. Add `?template=contribute-a-run.md` to the address of the "Open a pull

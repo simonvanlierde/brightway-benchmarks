@@ -38,10 +38,20 @@ RTOL = 1e-6  # a stored ratio against the one recomputed from the stored seconds
 CONTRIBUTED = re.compile(r"(?:^|/)ratios/contributed/([a-z0-9][a-z0-9-]*)/(\d{4}-\d{2}-\d{2})\.json$")
 MAX_BYTES = 256 * 1024  # the solvers comparison at 20 rounds is about 5 KiB
 # Labels a machine's own name gives: a domain name, a macOS default computer name ("Ada's
-# MacBook Pro"), a Windows default one (DESKTOP-4F2K9QX).
+# MacBook Pro", "Adas-MacBook-Pro"), Ubuntu's <user>-<model> ("ada-ThinkPad-X1"), a Windows
+# default one (DESKTOP-4F2K9QX). A domain ends in a common or two-letter top-level label, so
+# "ubuntu-24.04" and "m2.max" pass.
 # shortcut: only these defaults; a custom host name passes, and the pull request review catches it.
+LAPTOPS = (
+    "thinkpad|ideapad|yoga|legion|xps|latitude|precision|inspiron|vostro|elitebook|probook|zbook"
+    "|pavilion|envy|zenbook|vivobook|rog|aspire|swift|surface|virtualbox"
+)
+VENDORS = "lenovo|dell|hp|asus|acer|microsoft|msi|framework|apple"
 HOST_LIKE = re.compile(
-    r"^[\w-]+(\.[\w-]+)+$|\.(local|lan|home|internal)$|'s[ -](macbook|imac|mac)|^(desktop|laptop)-[a-z0-9]{7}$",
+    r"^[\w-]+(\.[\w-]+)*\.(com|net|org|edu|gov|io|dev|local|lan|home|internal|corp|[a-z]{2})$"
+    "|['\u2019`]?s[ -]?(macbook|imac|mac\\b)"  # U+2019, the curly apostrophe macOS writes
+    rf"|^(?!({VENDORS})-)[a-z0-9]+-({LAPTOPS})\b"
+    r"|^(desktop|laptop)-[a-z0-9]{7}$",
     re.IGNORECASE,
 )
 # A home folder, with either separator; in a file's JSON text a backslash is escaped as \\.

@@ -418,6 +418,10 @@ def _commit() -> str | None:
     git = shutil.which("git")
     if git is None:
         return None
+    # Only when this package is the checkout's src/bwbench, not a copy installed inside another project.
+    top = _run([git, "rev-parse", "--show-toplevel"], PACKAGE)
+    if top.returncode or Path(top.stdout.strip()).resolve() != PACKAGE.parents[1].resolve():
+        return None
     proc = _run([git, "rev-parse", "HEAD"], PACKAGE)
     return proc.stdout.strip() if proc.returncode == 0 else None
 

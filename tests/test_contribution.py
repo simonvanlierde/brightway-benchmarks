@@ -205,3 +205,32 @@ def test_a_label_without_ascii_letters_or_digits_is_refused(capsys: pytest.Captu
         compare.main(["compare", "-o", "x.json", "--machine", "\u82f9\u679c"])
     assert e.value.code == 2
     assert "ASCII letters or digits" in capsys.readouterr().err
+
+
+def _git(cwd: Path, *args: str) -> str:
+    out = subprocess.run(
+        ["git", "-c", "user.name=Ada", "-c", "user.email=ada@example.org", "-c", "commit.gpgsign=false", *args],  # noqa: S607
+        cwd=cwd,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return out.stdout.strip()
+
+
+@pytest.mark.parametrize(("where", "own"), [("src/bwbench", True), (".venv/lib/bwbench", False)])
+def test_commit_is_heads_only_from_this_checkout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, where: str, *, own: bool
+):
+    """A copy installed inside another git project must not record that project's HEAD."""
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "commit", "-q", "--allow-empty", "-m", "x")
+    package = tmp_path / where
+    package.mkdir(parents=True)
+
+    def no_record(_: str) -> object:
+        raise compare.metadata.PackageNotFoundError
+
+    monkeypatch.setattr(compare.metadata, "distribution", no_record)
+    monkeypatch.setattr(compare, "PACKAGE", package)
+    assert compare._commit() == (_git(tmp_path, "rev-parse", "HEAD") if own else None)  # noqa: SLF001

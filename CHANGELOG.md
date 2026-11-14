@@ -105,6 +105,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Breaking:** Python 3.12 is no longer supported. `requires-python` is now `>=3.13`, the
   benchmark environments, box image and compat matrix (now 3.13 and 3.14) run on 3.13, and the
   generator v5 rerun is timed on 3.13.
+- `scripts/compat_changes.py`, the report of newly failing compat jobs, which no recipe or workflow
+  ran. The compat workflow's issue drafts and the Setup page show failures.
 - The generator's experimental input-sharing controls, which were off in every registered profile
   and did not bring the fill down
   ([calibration choices](docs/generator-calibration.md#keeping-fill-explicit)).
@@ -206,7 +208,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Linux-only ([coverage](docs/running.md#the-nightly-runs)).
 - Compatibility reports identify new failures, recoveries and continuing failures. Failed diagnostic
   jobs retain an upstream issue draft for a person to review and post
-  ([compatibility reports](docs/running.md#report-newly-failing-jobs)).
+  ([compatibility reports](https://github.com/simonvanlierde/brightway-benchmarks/blob/v0.2.0/docs/running.md#report-newly-failing-jobs)).
 - USEEIO 1.1 as a public-domain input for bw2calc benchmarks, fetched by a pinned checksum and checked
   against a reference solve ([real database](docs/method.md#the-real-databases)).
 - Synthetic ecoSpold2 import benchmarks that require no ecoinvent licence, plus optional benchmarks

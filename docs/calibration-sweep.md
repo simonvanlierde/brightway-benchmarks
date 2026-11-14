@@ -22,7 +22,7 @@ to every seed. The giant loop's share and the negative share vary by seed (SD 0.
 so each seed gets 3 SD: 0.12 and 0.035. The test also holds the mean of seeds 0 to 3 to 3 SD
 over the square root of four (0.06 and 0.02); the sweep reports per seed only. LU fill and
 overlap are measurements here, not pass thresholds. The fill target is
-`test_ecoinvent_profile_fills_like_its_target`, which the profile does not meet yet (#54).
+`test_ecoinvent_profile_fills_like_its_target`, which the profile meets from generator v5 (#54).
 
 ## Running a sweep
 

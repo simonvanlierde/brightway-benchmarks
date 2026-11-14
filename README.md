@@ -14,8 +14,8 @@ calculations and their coverage limits. A release that slows a calculation or ch
 score shows up in the history.
 
 The benchmarks run on synthetic databases that copy ecoinvent's degrees, loops and locality, so
-anyone can rerun them and the results can be published. They fill more than ecoinvent in a direct
-solver, so direct-solver times on them run high
+anyone can rerun them and the results can be published. A direct-solver score on them takes 1.4 to 1.6
+times as long as factorizing the real ecoinvent matrix
 ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)). Two real databases sit
 beside them: USEEIO 1.1 (US EPA, public domain) and BAFU 2025 (Swiss Federal Office for the
 Environment), downloaded from [files.brightway.dev](https://files.brightway.dev/) by a pinned SHA-256
@@ -31,11 +31,11 @@ Every case's history is in the
 most users:
 
 - [The solver sets the time for one score.](docs/findings.md#the-solver-sets-the-time-for-one-score) On an ecoinvent-sized database,
-  UMFPACK on OpenBLAS takes 2.63 s, PyPardiso 10.0 s and SciPy's SuperLU 27.7 s.
-- [bw2calc 3.0.0 made `IterativeLCA` about 5 times slower with UMFPACK](docs/findings.md#bw2calc-300-slowed-iterativelca-without-pypardiso-and-310-fixed-it), and
-  about 9 times with SuperLU. 3.1.0 fixed it.
+  UMFPACK on OpenBLAS takes 1.03 s, PyPardiso 2.22 s and SciPy's SuperLU 4.98 s.
+- [bw2calc 3.0.0 made `IterativeLCA` about 12 times slower with UMFPACK](docs/findings.md#bw2calc-300-slowed-iterativelca-without-pypardiso-and-310-fixed-it), and
+  about 25 times with SuperLU. 3.1.0 fixed it.
 - [bw2data 4.7 lost a faster database write](docs/findings.md#bw2data-47-lost-the-faster-database-write): an earlier commit had
-  cut its time by 32%.
+  cut its time by 35%.
 - [bw_timex 1.3.0 made the time-explicit LCI about 19 times slower.](docs/findings.md#bw_timex-130-made-the-time-explicit-lci-about-19-times-slower) 1.3.2
   fixed it, and 1.4.0 is faster again.
 

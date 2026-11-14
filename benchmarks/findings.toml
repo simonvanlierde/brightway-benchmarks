@@ -11,7 +11,7 @@
 
 [[findings]]
 title = "The solver sets the time for one score"
-text = "On an ecoinvent-sized database, UMFPACK on OpenBLAS takes 2.63 s, PyPardiso 10.0 s and SciPy's SuperLU 27.7 s."
+text = "On an ecoinvent-sized database, UMFPACK on OpenBLAS takes 1.03 s, PyPardiso 2.22 s and SciPy's SuperLU 4.98 s."
 group = "bw2calc-conda"
 benchmark = "bench_lca.SingleScore.time_first_score"
 params = { size = "ecoinvent", cls = "LCA" }
@@ -20,7 +20,7 @@ story = "solver-choice"
 
 [[findings]]
 title = "bw2calc 3.0.0 slowed IterativeLCA, and 3.1.0 fixed it"
-text = "One score took 45.0 s instead of 9.04 s with UMFPACK, and about 4 minutes instead of 27.7 s with SuperLU."
+text = "One score took 31.3 s instead of 2.54 s with UMFPACK, and 2.1 minutes instead of 4.98 s with SuperLU."
 group = "bw2calc"
 benchmark = "bench_lca.SingleScore.time_first_score"
 params = { size = "ecoinvent", cls = "IterativeLCA" }
@@ -29,7 +29,7 @@ profile = "bw2calc-300-iterativelca-umfpack.html"
 
 [[findings]]
 title = "bw2calc 3.0.0 doubled JacobiGMRESLCA's Monte Carlo time"
-text = "Ten draws take 0.70 s instead of 0.324 s with every solver, and 3.1.0 has not fixed it."
+text = "Ten draws take 0.65 s instead of 0.338 s with every solver, and 3.1.0 has not fixed it."
 group = "bw2calc"
 benchmark = "bench_lca.MonteCarlo.time_iterations"
 params = { size = "ecoinvent", iterations = "10", cls = "JacobiGMRESLCA" }
@@ -44,12 +44,12 @@ params = {}
 doc = "bw_timex-130-made-the-time-explicit-lci-about-19-times-slower"
 
 [[findings]]
-title = "bw_graph_tools 0.9 made traversal 1.6 to 6 times faster"
-text = "Batched scoring took a 2-calculation EXIOBASE traversal from 1.14 minutes to 11.3 s."
+title = "bw_graph_tools 0.9 made traversal up to 6 times faster"
+text = "Batched scoring took a 2-calculation EXIOBASE traversal from 1.19 minutes to 12.0 s."
 group = "bw_graph_tools"
 benchmark = "bench_traversal.Traversal.time_traverse"
 params = { size = "exiobase", max_calc = "2" }
-doc = "bw_graph_tools-09-made-traversal-16-to-6-times-faster"
+doc = "bw_graph_tools-09-made-traversal-up-to-6-times-faster"
 
 [[findings]]
 title = "A correct solve can still score the wrong inventory"

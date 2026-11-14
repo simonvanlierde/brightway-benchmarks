@@ -7,11 +7,6 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
 
 ## Planned
 
-- **Rerun the histories with generator v5.** Activity families now bring mean METIS fill to
-  37.9 against ecoinvent's 30.9, passing the calibration guards over four seeds
-  ([calibration](docs/generator-calibration.md)). The published histories still use v4, whose
-  higher fill overstates direct-solver times. Rerun every minor line and update the findings
-  and solver story ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
 - **Our own results UI,** replacing asv's pages: what changed in each release against the
   measured noise, each benchmark's history, and comparisons across solvers and environments
   ([decision 0001](docs/decisions/0001-own-benchmark-ui.md)).

@@ -24,6 +24,7 @@ import hashlib
 import itertools
 import json
 import math
+import os
 import re
 import shutil
 import subprocess
@@ -462,6 +463,8 @@ def otava(values: list[list[float]]) -> list[list[dict]]:
         capture_output=True,
         text=True,
         check=False,
+        # The script pins its own Python; a UV_PYTHON from the caller (setup-uv sets one) would override it.
+        env={k: v for k, v in os.environ.items() if k != "UV_PYTHON"},
     )
     if run.returncode:
         sys.exit(f"export_ui: change_points.py exited {run.returncode}: {run.stderr.strip()}")

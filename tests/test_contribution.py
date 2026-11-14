@@ -111,3 +111,20 @@ def test_validate_contribution_flag_runs_the_extra_checks(tmp_path: Path, capsys
 def test_tail_hides_the_home_folder():
     proc = subprocess.CompletedProcess([], 1, "", f"error: {Path.home() / 'x'} failed")
     assert str(Path.home()) not in compare._tail(proc)  # noqa: SLF001
+
+
+def test_stage_leaves_a_checkout_folder_alone(tmp_path: Path):
+    """`bwbench compare --work .` from a checkout must not replace the checkout's own package."""
+    mine = tmp_path / "src" / "bwbench"
+    mine.mkdir(parents=True)
+    (mine / "edited.py").write_text("x = 1\n", encoding="utf-8")
+    compare.stage(tmp_path)
+    assert (mine / "edited.py").read_text(encoding="utf-8") == "x = 1\n"
+
+
+def test_stage_refuses_to_overwrite_the_package_it_runs_from(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    staged = compare.stage(tmp_path) / "bwbench"
+    monkeypatch.setattr(compare, "PACKAGE", staged)
+    with pytest.raises(RuntimeError, match="inside"):
+        compare.stage(tmp_path)
+    assert (staged / "timecase.py").is_file()

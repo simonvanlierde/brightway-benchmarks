@@ -57,6 +57,7 @@ from bwbench.timecase import BENCHMARKS
 
 PACKAGE = Path(__file__).resolve().parent
 PROBE = PACKAGE / "fingerprint.py"
+STAGE = ".bwbench-stage"  # the arms' copy of this package, in the --work folder
 SOLVERS = ("pypardiso", "scikits.umfpack")  # what bw2calc picks over SuperLU when it can import it
 TIMEOUT = 900  # seconds for one install or one timed process
 FIRST_SCORE = ("bench_lca.SingleScore.time_first_score", {"size": "smoke", "cls": "LCA"})
@@ -240,12 +241,16 @@ def _build_pixi(env: Env, folder: Path) -> Built:
 
 
 def stage(work: Path) -> Path:
-    """Copy this package, with the cases in ``bwbench/cases``, to WORK/src: the arms' import path.
+    """Copy this package, with the cases in ``bwbench/cases``, to WORK/.bwbench-stage: the arms' import path.
 
     Only this package: the folder it is installed in also holds the packages of the environment
-    bwbench runs in (uvx's NumPy, say), which would shadow the arm's own.
+    bwbench runs in (uvx's NumPy, say), which would shadow the arm's own. The folder name is one
+    no checkout has, so ``--work .`` in a checkout leaves its ``src/bwbench`` alone.
     """
-    dest = work / "src" / "bwbench"
+    dest = work.resolve() / STAGE / "bwbench"
+    if PACKAGE.is_relative_to(dest) or dest.is_relative_to(PACKAGE):
+        msg = f"cannot stage into {dest.as_posix()!r}: bwbench runs from inside it"
+        raise RuntimeError(msg)
     skip = shutil.ignore_patterns("__pycache__")
     shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(PACKAGE, dest, ignore=skip)
@@ -256,7 +261,7 @@ def stage(work: Path) -> Path:
 
 def time_arm(arm: Arm, built: Built, case: str, params: dict, repeats: int, work: Path) -> dict:
     """One fresh process of ARM timing CASE: the worker's JSON object, or ``{"missing": why}``."""
-    src = work / "src"  # from stage()
+    src = work / STAGE  # from stage()
     env = os.environ | {
         "PYTHONPATH": os.pathsep.join([str(src), str(src / "bwbench" / "cases")]),
         "BWBENCH_HIDE": ",".join(arm.hide),

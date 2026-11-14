@@ -109,11 +109,12 @@ def _read(path: Path, tier: str) -> dict | None:
     except (OSError, ValueError) as error:
         print(f"export_ratios: skipped {path}: {error}", file=sys.stderr)
         return None
-    if found := problems(doc):
+    try:
+        found = problems(doc) or ([] if doc["tier"] == tier else [f"it says {doc['tier']}, its folder {tier}"])
+    except Exception as error:  # noqa: BLE001 - one file must never stop the site build
+        found = [f"{type(error).__name__}: {error}"]
+    if found:
         print(f"export_ratios: skipped {path}: {'; '.join(found[:3])}", file=sys.stderr)
-        return None
-    if doc["tier"] != tier:
-        print(f"export_ratios: skipped {path}: it says {doc['tier']}, its folder {tier}", file=sys.stderr)
         return None
     return doc
 
@@ -157,7 +158,7 @@ def _label(comparison: dict, candidate: str, docs: list[dict]) -> str:
     return f"{_arm(candidate, comparison)} against {_arm(comparison['baseline'], comparison)}"
 
 
-def _reason(comparison: dict, ratio: dict) -> str | None:
+def reason(comparison: dict, ratio: dict) -> str | None:
     """Why RATIO has none: the missing arm's own reason, up to the installer's output.
 
     compare.py writes "<what bw2calc used>: <what failed>: <the tool's own output>"; the page shows
@@ -167,7 +168,7 @@ def _reason(comparison: dict, ratio: dict) -> str | None:
         return None
     arms = comparison["arms"]
     text = arms[ratio["candidate"]]["missing"] or arms[comparison["baseline"]]["missing"] or ratio["missing"]
-    text = ": ".join(text.splitlines()[0].split(": ")[:2]).strip()
+    text = ": ".join((text.splitlines() or [""])[0].split(": ")[:2]).strip()
     return text if len(text) <= REASON_CHARS else text[: REASON_CHARS - 1].rstrip() + "…"
 
 
@@ -208,7 +209,7 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
                         "ci95": r["ci95"],
                         "verdict": way,
                         "text": text,
-                        "missing": _reason(c, r),
+                        "missing": reason(c, r),
                         "seconds": r["seconds"],
                         "_os": os_name,
                         "_comparison": c,
@@ -248,9 +249,19 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
     return {"format_version": 1, "machines": out_machines, "comparisons": comparisons}
 
 
+def _builds(machine: tuple[str, str, dict]) -> bool:
+    """Whether MACHINE's file builds on its own; one that does not is skipped, with a warning."""
+    try:
+        build([machine])
+    except Exception as error:  # noqa: BLE001 - one file must never stop the site build
+        print(f"export_ratios: skipped {machine[0]}: {type(error).__name__}: {error}", file=sys.stderr)
+        return False
+    return True
+
+
 def export(ratios: Path | None, contributed: Path | None, out: Path) -> dict | None:
     """Write OUT/ratios.json from the newest files; None, and no file, when there are none."""
-    machines = collect(ratios, contributed)
+    machines = [m for m in collect(ratios, contributed) if _builds(m)]
     if not machines:
         print("export_ratios: no ratio files, so the site has no comparison page data", file=sys.stderr)
         return None

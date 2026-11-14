@@ -158,3 +158,48 @@ def test_the_ui_fixture_is_the_export_of_the_hosted_fixtures(module: ModuleType,
     """ui/README.md says how to refresh ui/test/fixtures/real/ratios.json when this fails."""
     out = module.export(hosted(tmp_path), None, tmp_path / "data")
     assert json.loads((ROOT / "ui/test/fixtures/real/ratios.json").read_text(encoding="utf-8")) == out
+
+
+def test_an_empty_missing_reason_reads_as_empty(module: ModuleType):
+    # The file schema allows "missing": "", so the reason has no first line.
+    comparison = {"baseline": "superlu", "arms": {"superlu": {"missing": None}, "pypardiso": {"missing": ""}}}
+    assert module.reason(comparison, {"candidate": "pypardiso", "missing": ""}) == ""
+
+
+def test_a_file_that_breaks_the_export_is_skipped_with_a_warning(
+    module: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    linux = json.loads((HOSTED / "2026-11-14/Linux.json").read_text(encoding="utf-8"))
+    contributed = tmp_path / "contributed"
+    for name in ("good", "bad-check", "bad-build"):
+        (contributed / name).mkdir(parents=True)
+        doc = {**linux, "tier": "contributed", "machine": name}
+        (contributed / name / "2026-11-12.json").write_text(json.dumps(doc), encoding="utf-8")
+    real_problems = module.problems
+
+    def problems(doc: dict) -> list[str]:
+        if doc["machine"] == "bad-check":
+            message = "arch"
+            raise KeyError(message)
+        return real_problems(doc)
+
+    bad = json.loads((contributed / "bad-build/2026-11-12.json").read_text(encoding="utf-8"))
+    bad["comparisons"][0]["case"] = "bench_x.Y.time_crash"
+    (contributed / "bad-build/2026-11-12.json").write_text(json.dumps(bad), encoding="utf-8")
+    real_reason = module.reason
+
+    def crash(comparison: dict, ratio: dict) -> str | None:
+        if comparison["case"] == "bench_x.Y.time_crash":
+            message = "boom"
+            raise TypeError(message)
+        return real_reason(comparison, ratio)
+
+    monkeypatch.setattr(module, "problems", problems)
+    monkeypatch.setattr(module, "reason", crash)
+
+    out = module.export(None, contributed, tmp_path / "data")
+
+    assert [m["name"] for m in out["machines"]] == ["good"]
+    err = capsys.readouterr().err
+    assert "bad-check/2026-11-12.json: KeyError" in err
+    assert "skipped contributed/bad-build: TypeError: boom" in err

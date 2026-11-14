@@ -159,8 +159,10 @@ match within `DIRECT_RTOL` (1e-9), or `BAFU_RTOL` (1e-6) for BAFU 2025; an error
 - Each result file carries an environment fingerprint under `"fingerprint"`: CPU model, core
   type, kernel, SMT, cpufreq governor, power profile, Python, BLAS and the lock file's checksum
   ([`src/bwbench/fingerprint.py`](../src/bwbench/fingerprint.py)). A field the platform can't
-  tell is `null`. It describes the run that last wrote the file; a cell kept from an earlier
-  run has its own `started_at`.
+  tell is `null`; an asv result must name its lock. It describes the run that last wrote the
+  file; a cell kept from an earlier run has its own `started_at`, and when that run's
+  fingerprint differs, the file lists it under `"kept_fingerprints"` (`null` for a run from
+  before fingerprints).
 - Each result file keeps every sample beside the median (asv's `samples` column), so anyone
   can rerun the noise rule below on the `results` branch. Runs before this change kept none.
 - A nightly canary times a fixed workload on the benchmark machine, so drift in the machine
@@ -227,9 +229,12 @@ resamples that keep each round's pair together. The seconds stay in the file as 
 The `ratios` workflow runs it every Sunday on `ubuntu-latest`, `macos-latest` and
 `windows-latest`, one result file per OS. The file's fields are described in
 [`src/bwbench/ratios.schema.json`](../src/bwbench/ratios.schema.json), and `bwbench validate
-FILE` checks a file against it, its fingerprints, and its ratios against its seconds. GitHub
-signs each file with a build provenance attestation, and on main the workflow commits the files
-to the `ratios` branch as `hosted/YYYY-MM-DD/<OS>.json`.
+FILE` checks a file against it, its fingerprints, and its ratios and intervals against its
+seconds and seed. GitHub signs each file with a build provenance attestation, and on main the
+workflow commits the files to the `ratios` branch as `hosted/<YYYY-MM-DD>-<run id>/<OS>.json`,
+the date from the files' `created` and the run the workflow's: a second run on one day gets its
+own folder, and no published file is overwritten. Folder names sort by date, so the newest file
+per OS is in the last folder that holds one.
 `gh attestation verify FILE -R simonvanlierde/brightway-benchmarks` shows that a file came from
 this repository's workflow, unchanged.
 

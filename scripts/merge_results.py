@@ -5,6 +5,13 @@ smoke-size run of a commit would replace that commit's ecoinvent cells. Run in t
 branch worktree after `git add`: for each result file the commit changes, every cell the
 run timed comes from the new file, and every other cell from HEAD. A benchmark whose
 version changed keeps only the new cells, as its old ones timed other code.
+
+A merged file's ``fingerprint`` is the new run's. Cells kept from HEAD may have run in another
+environment (another kernel or lock, or before fingerprints existed), so when HEAD's
+fingerprint differs from the new one, it goes into the top-level list ``kept_fingerprints``,
+with ``null`` for cells from before fingerprints. The list carries forward across merges,
+without duplicates, and is left out when empty. It says which environments the kept cells
+came from, not which cell came from which.
 """
 
 import hashlib
@@ -69,7 +76,12 @@ def merge(old: str, new: str) -> str:
     }
     if results == b["results"]:
         return new
-    return json.dumps(b | {"results": results, "durations": a.get("durations", {}) | b.get("durations", {})})
+    kept = [*a.get("kept_fingerprints", []), *b.get("kept_fingerprints", [])]
+    if a.get("fingerprint") != b.get("fingerprint"):
+        kept.append(a.get("fingerprint"))
+    unique = [fp for i, fp in enumerate(kept) if fp not in kept[:i]]
+    extra = {"kept_fingerprints": unique} if unique else {}
+    return json.dumps(b | {"results": results, "durations": a.get("durations", {}) | b.get("durations", {})} | extra)
 
 
 def git(tree: str, *args: str) -> str:

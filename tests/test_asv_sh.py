@@ -283,3 +283,30 @@ def test_a_result_no_environment_ran_fails_the_run(repo: Path):
     out = run_with_env(repo, conda=False)
     assert out.returncode == 1
     assert "no environment" in out.stderr
+
+
+def test_a_result_whose_environment_has_no_lock_is_not_stamped(tmp_path: Path):
+    """An asv result's fingerprint must name the environment's lock; without one stamp fails the file."""
+    env = tmp_path / "env" / "abc"
+    (env / "bin").mkdir(parents=True)
+    (env / "bin" / "python").symlink_to(sys.executable)
+    info = {"tool_name": "uv", "python": "3.12", "requirements": {}, "build_env_vars": {}}
+    (env / "asv-env-info.json").write_text(json.dumps(info))
+    result = tmp_path / "m" / "0123abcd-uv-py3.12.json"
+    result.parent.mkdir()
+    text = json.dumps({"env_name": "uv-py3.12", "python": "3.12", "requirements": {}, "env_vars": {}})
+    result.write_text(text)
+    script = REPO / "scripts" / "fingerprints.py"
+    run = subprocess.run(
+        [sys.executable, str(script), "stamp", str(env.parent), str(result)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert run.returncode == 1
+    assert "no lock file" in run.stderr
+    assert result.read_text() == text
+    (result.parent / "pylock.abc.toml").write_text("lock-version = '1.0'\n")
+    run = subprocess.run([sys.executable, str(script), "stamp", str(env.parent), str(result)], check=False)
+    assert run.returncode == 0
+    assert json.loads(result.read_text())["fingerprint"]["lock"]["name"] == "pylock.abc.toml"

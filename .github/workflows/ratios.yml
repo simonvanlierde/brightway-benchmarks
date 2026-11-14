@@ -5,7 +5,7 @@ name: ratios
 # (src/bwbench/compare.py, docs/method.md "Hosted ratios"). Each OS writes one result file. The
 # attest job checks the files and signs them with a build provenance attestation through
 # GitHub's OIDC token; on main the publish job commits them to the `ratios` branch as
-# hosted/YYYY-MM-DD/<OS>.json. `gh attestation verify FILE -R simonvanlierde/brightway-benchmarks`
+# hosted/<YYYY-MM-DD>-<run id>/<OS>.json, never over a published file. `gh attestation verify FILE -R simonvanlierde/brightway-benchmarks`
 # proves a file came from this workflow.
 
 on:
@@ -148,12 +148,21 @@ jobs:
           else
             git init --quiet -b ratios archive
           fi
-          day=$(date -u +%F)
-          mkdir -p "archive/hosted/$day"
-          cp new/*.json "archive/hosted/$day/"
+          # The day the earliest file started, and this run: a second run that day, or a rerun
+          # of this one, never replaces a file that was published and attested.
+          day=$(jq -r '.created[:10]' new/*.json | sort | head -n 1)
+          dir="archive/hosted/$day-$GITHUB_RUN_ID"
+          mkdir -p "$dir"
+          for f in new/*.json; do
+            if [ -e "$dir/${f##*/}" ]; then
+              echo "::notice::$dir/${f##*/} is already published; keeping it"
+            else
+              cp "$f" "$dir/"
+            fi
+          done
           cd archive
           git add hosted
           git diff --cached --quiet && exit 0
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
-            commit --quiet -m "ratios: $day from ${GITHUB_SHA::7}"
+            commit --quiet -m "ratios: $day run $GITHUB_RUN_ID from ${GITHUB_SHA::7}"
           git push --quiet "https://x-access-token:${GH_TOKEN}@github.com/$GITHUB_REPOSITORY" HEAD:ratios

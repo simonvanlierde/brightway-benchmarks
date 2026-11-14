@@ -10,15 +10,14 @@
         ],
         "params": [
             [
-                "'smoke'",
-                "'bafu'"
+                "'smoke'"
             ],
             [
                 "'heat pump'",
                 "'gas boiler'"
             ]
         ],
-        "rounds": 1,
+        "rounds": 2,
         "sample_time": 0.01,
         "timeout": 1800,
         "type": "time",
@@ -35,8 +34,7 @@
         ],
         "params": [
             [
-                "'smoke'",
-                "'bafu'"
+                "'smoke'"
             ],
             [
                 "'heat pump'",
@@ -59,15 +57,14 @@
         ],
         "params": [
             [
-                "'smoke'",
-                "'bafu'"
+                "'smoke'"
             ],
             [
                 "5",
                 "20"
             ]
         ],
-        "rounds": 1,
+        "rounds": 2,
         "sample_time": 0.01,
         "timeout": 1800,
         "type": "time",
@@ -84,8 +81,7 @@
         ],
         "params": [
             [
-                "'smoke'",
-                "'bafu'"
+                "'smoke'"
             ],
             [
                 "5",

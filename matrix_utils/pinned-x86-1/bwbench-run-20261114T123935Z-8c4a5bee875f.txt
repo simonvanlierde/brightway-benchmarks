@@ -1,0 +1,12 @@
+commit 8c4a5bee875f1a74fd8ed3c2f7e4c9428c643ff2
+generator 5
+ac1ac43479e0f29cf8455422ccad1ee4b286ec1e4b112ccfe2ab19dd7b6fdcd5  .asv/../results/matrix_utils/benchmarks.json
+ec3eb2929298a0911c5108a3e185843fa7d1d3e790dfef6d8a977e87a4072298  .asv/../results/matrix_utils/pinned-x86-1/0849b068-uv-py3.13-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK8a6962af.json
+8ac915c6ae53db19c26b4a91888fefa8406cafd66350ffbbf89039c7931dd9f3  .asv/../results/matrix_utils/pinned-x86-1/55ef6296-uv-py3.13-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK8a6962af.json
+5cfc62ea56a8801c0f7fd86bb9f87173367d9f9a17d049fbd9d4278a9b41afa2  .asv/../results/matrix_utils/pinned-x86-1/machine.json
+0fe1d786d222c027e85c6c176b37f65d7cb168530d0b47874defd413b5b0f1c3  .asv/../results/matrix_utils/pinned-x86-1/a34841f2-env-cef7a163b8e0d15bee845f9898f5aa8d.json
+820748c3537f50fc06ec3849665536d95cab348d7ee5d9520d19f9e8f14ebfe3  .asv/../results/matrix_utils/pinned-x86-1/pylock.b6de27c9e037fab9eee4ab76a33bbc7e.toml
+a7542cfd727c5bbc634e087c5cf2c49b833eaab93dd3fba99c9a07016d8e3869  .asv/../results/matrix_utils/pinned-x86-1/a34841f2-uv-py3.13-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK8a6962af.json
+0f6a6368b3f3bf4c3b4d31b7886cee58f7ca2178b1f73118f72b65a76ca25f02  .asv/../results/matrix_utils/pinned-x86-1/55ef6296-env-cef7a163b8e0d15bee845f9898f5aa8d.json
+7b0963fcab6669a064574f8cedbfcd4bd90fccfabed6234db83b51c2b64d8e4a  .asv/../results/matrix_utils/pinned-x86-1/0849b068-env-cef7a163b8e0d15bee845f9898f5aa8d.json
+d8d423ade27941dec1c6dd57f462e167d778218cae497c5959a833e7ed85cece  .asv/../results/matrix_utils/pinned-x86-1/pylock.437114e9e3a42c76b35e2c84dd85c8f1.toml

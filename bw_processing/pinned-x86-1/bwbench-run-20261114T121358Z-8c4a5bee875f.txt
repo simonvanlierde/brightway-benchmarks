@@ -1,0 +1,6 @@
+commit 8c4a5bee875f1a74fd8ed3c2f7e4c9428c643ff2
+generator 5
+007419f640095359031ef62361aef932c5ce4da8ccbff864e2d3511772ca6b5f  .asv/../results/bw_processing/benchmarks.json
+5cfc62ea56a8801c0f7fd86bb9f87173367d9f9a17d049fbd9d4278a9b41afa2  .asv/../results/bw_processing/pinned-x86-1/machine.json
+1a2a6d551f87279ca14123156fd8531cf14239b94567bd04015b9a0c8945b87e  .asv/../results/bw_processing/pinned-x86-1/pylock.c69c72a90c537a0a4282439baf4470d3.toml
+9e36c6a70ff70a8b7f36dcc17278df13232dea144acc385216c8b118d0682294  .asv/../results/bw_processing/pinned-x86-1/16883ace-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKda5bac56.json

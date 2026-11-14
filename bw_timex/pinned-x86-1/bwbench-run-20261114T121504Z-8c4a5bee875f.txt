@@ -1,0 +1,7 @@
+commit 8c4a5bee875f1a74fd8ed3c2f7e4c9428c643ff2
+generator 5
+f58b9d6c34b705d351ec922c2419e21a1c303e6bdd92e3af37e95344600d4b11  .asv/../results/bw_timex/benchmarks.json
+91ff61308e62207e7839cc6fc5a18f4384ca279e426a87f037de866fcd1996c1  .asv/../results/bw_timex/pinned-x86-1/48ad70ce-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKb4e4fdbe.json
+5cfc62ea56a8801c0f7fd86bb9f87173367d9f9a17d049fbd9d4278a9b41afa2  .asv/../results/bw_timex/pinned-x86-1/machine.json
+a7802613d56ca70621841c778f73cf8e978a69868d126cb7b73517b8f6ffee08  .asv/../results/bw_timex/pinned-x86-1/pylock.db633f0594f7578ed861527498e63d94.toml
+f666537caea9333e886ec7306994f25233c9a9fc24a854dac9aabf19dd3c2e6a  .asv/../results/bw_timex/pinned-x86-1/9f8a7471-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKb4e4fdbe.json

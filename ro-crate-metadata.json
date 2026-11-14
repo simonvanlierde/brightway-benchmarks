@@ -40,6 +40,15 @@
           "@id": "bw2calc/pinned-x86-1/1362ae13-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
+          "@id": "bw2calc/pinned-x86-1/1362ae13-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/1362ae13-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/1362ae13-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
           "@id": "bw2calc/pinned-x86-1/1e93fdbd-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json"
         },
         {
@@ -79,6 +88,15 @@
           "@id": "bw2calc/pinned-x86-1/23dea922-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
+          "@id": "bw2calc/pinned-x86-1/23dea922-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/23dea922-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/23dea922-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
           "@id": "bw2calc/pinned-x86-1/39ce2caf-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json"
         },
         {
@@ -94,6 +112,15 @@
           "@id": "bw2calc/pinned-x86-1/39ce2caf-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
+          "@id": "bw2calc/pinned-x86-1/39ce2caf-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/39ce2caf-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/39ce2caf-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
           "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json"
         },
         {
@@ -107,6 +134,15 @@
         },
         {
           "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
         },
         {
           "@id": "bw2calc/pinned-x86-1/6cc6c138-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json"
@@ -196,6 +232,15 @@
           "@id": "bw2calc/pinned-x86-1/9cdf5657-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
+          "@id": "bw2calc/pinned-x86-1/9cdf5657-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/9cdf5657-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/9cdf5657-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
           "@id": "bw2calc/pinned-x86-1/a51ac183-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json"
         },
         {
@@ -280,6 +325,9 @@
           "@id": "bw2calc/pinned-x86-1/bwbench-run-20261114T084602Z-8c4a5bee875f.txt"
         },
         {
+          "@id": "bw2calc/pinned-x86-1/bwbench-run-20261114T120714Z-8c4a5bee875f.txt"
+        },
+        {
           "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json"
         },
         {
@@ -293,6 +341,15 @@
         },
         {
           "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
         },
         {
           "@id": "bw2calc/pinned-x86-1/f9494979-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json"
@@ -451,6 +508,9 @@
           "@id": "bw2calc-conda/pinned-x86-1/bwbench-run-20261114T070047Z-8c4a5bee875f.txt"
         },
         {
+          "@id": "bw2calc-conda/pinned-x86-1/bwbench-run-20261114T084606Z-8c4a5bee875f.txt"
+        },
+        {
           "@id": "bw2calc-conda/pinned-x86-1/fb9d6561-rattler-py3.12-libblas_=__mkl-mkl2026.1.0-numpy2.5.3-scikit-umfpack0.4.2-scipy1.18.1-BWBENCH_STACK75149e5a.json"
         },
         {
@@ -577,6 +637,9 @@
           "@id": "bw2data/pinned-x86-1/8a5b0bdb-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd96dd57a.json"
         },
         {
+          "@id": "bw2data/pinned-x86-1/8a5b0bdb-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKbcd57435.json"
+        },
+        {
           "@id": "bw2data/pinned-x86-1/bwbench-run-20261028T213846Z-d7d77f77a74d.txt"
         },
         {
@@ -602,6 +665,9 @@
         },
         {
           "@id": "bw2data/pinned-x86-1/bwbench-run-20261114T065347Z-8c4a5bee875f.txt"
+        },
+        {
+          "@id": "bw2data/pinned-x86-1/bwbench-run-20261114T120909Z-8c4a5bee875f.txt"
         },
         {
           "@id": "bw2data/pinned-x86-1/c60b0ec4-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd040c487.json"
@@ -727,6 +793,9 @@
           "@id": "bw_graph_tools/pinned-x86-1/bwbench-run-20261114T083132Z-8c4a5bee875f.txt"
         },
         {
+          "@id": "bw_graph_tools/pinned-x86-1/bwbench-run-20261114T120914Z-8c4a5bee875f.txt"
+        },
+        {
           "@id": "bw_graph_tools/pinned-x86-1/e3a36daa-uv-py3.12-bw2calc2.5.0-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK2c9ff45a.json"
         },
         {
@@ -778,6 +847,9 @@
           "@id": "bw_processing/pinned-x86-1/16883ace-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json"
         },
         {
+          "@id": "bw_processing/pinned-x86-1/16883ace-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKda5bac56.json"
+        },
+        {
           "@id": "bw_processing/pinned-x86-1/20976a11-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json"
         },
         {
@@ -812,6 +884,9 @@
         },
         {
           "@id": "bw_processing/pinned-x86-1/bwbench-run-20261114T064625Z-8c4a5bee875f.txt"
+        },
+        {
+          "@id": "bw_processing/pinned-x86-1/bwbench-run-20261114T121358Z-8c4a5bee875f.txt"
         },
         {
           "@id": "bw_processing/pinned-x86-1/ccd49b69-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json"
@@ -883,6 +958,9 @@
           "@id": "bw_timex/pinned-x86-1/48ad70ce-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json"
         },
         {
+          "@id": "bw_timex/pinned-x86-1/48ad70ce-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKb4e4fdbe.json"
+        },
+        {
           "@id": "bw_timex/pinned-x86-1/531931d0-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json"
         },
         {
@@ -922,6 +1000,9 @@
           "@id": "bw_timex/pinned-x86-1/9f8a7471-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json"
         },
         {
+          "@id": "bw_timex/pinned-x86-1/9f8a7471-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKb4e4fdbe.json"
+        },
+        {
           "@id": "bw_timex/pinned-x86-1/bwbench-run-20261101T155852Z-76b208103d7b.txt"
         },
         {
@@ -944,6 +1025,9 @@
         },
         {
           "@id": "bw_timex/pinned-x86-1/bwbench-run-20261114T065632Z-8c4a5bee875f.txt"
+        },
+        {
+          "@id": "bw_timex/pinned-x86-1/bwbench-run-20261114T121504Z-8c4a5bee875f.txt"
         },
         {
           "@id": "bw_timex/pinned-x86-1/c3af060e-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json"
@@ -985,7 +1069,13 @@
           "@id": "matrix_utils/pinned-x86-1/0849b068-env-396c7d86970305ac6d068864ab055f76.json"
         },
         {
+          "@id": "matrix_utils/pinned-x86-1/0849b068-env-cef7a163b8e0d15bee845f9898f5aa8d.json"
+        },
+        {
           "@id": "matrix_utils/pinned-x86-1/0849b068-uv-py3.12-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK5d2957fc.json"
+        },
+        {
+          "@id": "matrix_utils/pinned-x86-1/0849b068-uv-py3.13-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK8a6962af.json"
         },
         {
           "@id": "matrix_utils/pinned-x86-1/087757b6-env-396c7d86970305ac6d068864ab055f76.json"
@@ -1015,7 +1105,13 @@
           "@id": "matrix_utils/pinned-x86-1/55ef6296-env-396c7d86970305ac6d068864ab055f76.json"
         },
         {
+          "@id": "matrix_utils/pinned-x86-1/55ef6296-env-cef7a163b8e0d15bee845f9898f5aa8d.json"
+        },
+        {
           "@id": "matrix_utils/pinned-x86-1/55ef6296-uv-py3.12-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK5d2957fc.json"
+        },
+        {
+          "@id": "matrix_utils/pinned-x86-1/55ef6296-uv-py3.13-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK8a6962af.json"
         },
         {
           "@id": "matrix_utils/pinned-x86-1/5ff146cf-env-396c7d86970305ac6d068864ab055f76.json"
@@ -1057,7 +1153,13 @@
           "@id": "matrix_utils/pinned-x86-1/a34841f2-env-396c7d86970305ac6d068864ab055f76.json"
         },
         {
+          "@id": "matrix_utils/pinned-x86-1/a34841f2-env-cef7a163b8e0d15bee845f9898f5aa8d.json"
+        },
+        {
           "@id": "matrix_utils/pinned-x86-1/a34841f2-uv-py3.12-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK5d2957fc.json"
+        },
+        {
+          "@id": "matrix_utils/pinned-x86-1/a34841f2-uv-py3.13-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK8a6962af.json"
         },
         {
           "@id": "matrix_utils/pinned-x86-1/bbb820b4-env-396c7d86970305ac6d068864ab055f76.json"
@@ -1088,6 +1190,9 @@
         },
         {
           "@id": "matrix_utils/pinned-x86-1/bwbench-run-20261114T064625Z-8c4a5bee875f.txt"
+        },
+        {
+          "@id": "matrix_utils/pinned-x86-1/bwbench-run-20261114T123935Z-8c4a5bee875f.txt"
         },
         {
           "@id": "matrix_utils/pinned-x86-1/machine.json"
@@ -1208,7 +1313,43 @@
           "@id": "bw2calc/benchmarks.json"
         },
         {
+          "@id": "bw2calc/pinned-x86-1/1362ae13-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/1362ae13-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/1362ae13-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
           "@id": "bw2calc/pinned-x86-1/1e93fdbd-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/23dea922-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/23dea922-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/23dea922-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/39ce2caf-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/39ce2caf-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/39ce2caf-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
         },
         {
           "@id": "bw2calc/pinned-x86-1/6cc6c138-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
@@ -1220,6 +1361,15 @@
           "@id": "bw2calc/pinned-x86-1/8b3faa2e-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
         },
         {
+          "@id": "bw2calc/pinned-x86-1/9cdf5657-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/9cdf5657-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/9cdf5657-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
           "@id": "bw2calc/pinned-x86-1/a51ac183-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
         },
         {
@@ -1227,6 +1377,18 @@
         },
         {
           "@id": "bw2calc/pinned-x86-1/bwbench-run-20261114T084602Z-8c4a5bee875f.txt"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/bwbench-run-20261114T120714Z-8c4a5bee875f.txt"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json"
+        },
+        {
+          "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
         },
         {
           "@id": "bw2calc/pinned-x86-1/f9494979-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
@@ -1251,6 +1413,9 @@
         },
         {
           "@id": "bw2calc-conda/pinned-x86-1/bwbench-run-20261114T070047Z-8c4a5bee875f.txt"
+        },
+        {
+          "@id": "bw2calc-conda/pinned-x86-1/bwbench-run-20261114T084606Z-8c4a5bee875f.txt"
         },
         {
           "@id": "bw2calc-conda/pinned-x86-1/fb9d6561-rattler-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json"
@@ -1286,7 +1451,13 @@
           "@id": "bw2data/pinned-x86-1/646849c2-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKbcd57435.json"
         },
         {
+          "@id": "bw2data/pinned-x86-1/8a5b0bdb-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKbcd57435.json"
+        },
+        {
           "@id": "bw2data/pinned-x86-1/bwbench-run-20261114T065347Z-8c4a5bee875f.txt"
+        },
+        {
+          "@id": "bw2data/pinned-x86-1/bwbench-run-20261114T120909Z-8c4a5bee875f.txt"
         },
         {
           "@id": "bw2data/pinned-x86-1/f6999430-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKbcd57435.json"
@@ -1328,6 +1499,9 @@
           "@id": "bw_graph_tools/pinned-x86-1/bwbench-run-20261114T083132Z-8c4a5bee875f.txt"
         },
         {
+          "@id": "bw_graph_tools/pinned-x86-1/bwbench-run-20261114T120914Z-8c4a5bee875f.txt"
+        },
+        {
           "@id": "bw_graph_tools/pinned-x86-1/e3a36daa-uv-py3.13-bw2calc2.5.0-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKc2eb77bf.json"
         },
         {
@@ -1346,7 +1520,13 @@
           "@id": "bw_processing/benchmarks.json"
         },
         {
+          "@id": "bw_processing/pinned-x86-1/16883ace-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKda5bac56.json"
+        },
+        {
           "@id": "bw_processing/pinned-x86-1/bwbench-run-20261114T064625Z-8c4a5bee875f.txt"
+        },
+        {
+          "@id": "bw_processing/pinned-x86-1/bwbench-run-20261114T121358Z-8c4a5bee875f.txt"
         },
         {
           "@id": "bw_processing/pinned-x86-1/machine.json"
@@ -1358,13 +1538,22 @@
           "@id": "bw_timex/benchmarks.json"
         },
         {
+          "@id": "bw_timex/pinned-x86-1/48ad70ce-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKb4e4fdbe.json"
+        },
+        {
           "@id": "bw_timex/pinned-x86-1/531931d0-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKb4e4fdbe.json"
         },
         {
           "@id": "bw_timex/pinned-x86-1/601dcd4b-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKb4e4fdbe.json"
         },
         {
+          "@id": "bw_timex/pinned-x86-1/9f8a7471-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKb4e4fdbe.json"
+        },
+        {
           "@id": "bw_timex/pinned-x86-1/bwbench-run-20261114T065632Z-8c4a5bee875f.txt"
+        },
+        {
+          "@id": "bw_timex/pinned-x86-1/bwbench-run-20261114T121504Z-8c4a5bee875f.txt"
         },
         {
           "@id": "bw_timex/pinned-x86-1/machine.json"
@@ -1376,7 +1565,28 @@
           "@id": "matrix_utils/benchmarks.json"
         },
         {
+          "@id": "matrix_utils/pinned-x86-1/0849b068-env-cef7a163b8e0d15bee845f9898f5aa8d.json"
+        },
+        {
+          "@id": "matrix_utils/pinned-x86-1/0849b068-uv-py3.13-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK8a6962af.json"
+        },
+        {
+          "@id": "matrix_utils/pinned-x86-1/55ef6296-env-cef7a163b8e0d15bee845f9898f5aa8d.json"
+        },
+        {
+          "@id": "matrix_utils/pinned-x86-1/55ef6296-uv-py3.13-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK8a6962af.json"
+        },
+        {
+          "@id": "matrix_utils/pinned-x86-1/a34841f2-env-cef7a163b8e0d15bee845f9898f5aa8d.json"
+        },
+        {
+          "@id": "matrix_utils/pinned-x86-1/a34841f2-uv-py3.13-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK8a6962af.json"
+        },
+        {
           "@id": "matrix_utils/pinned-x86-1/bwbench-run-20261114T064625Z-8c4a5bee875f.txt"
+        },
+        {
+          "@id": "matrix_utils/pinned-x86-1/bwbench-run-20261114T123935Z-8c4a5bee875f.txt"
         },
         {
           "@id": "matrix_utils/pinned-x86-1/machine.json"
@@ -2921,6 +3131,21 @@
       "description": "asv result"
     },
     {
+      "@id": "bw2calc/pinned-x86-1/1362ae13-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/1362ae13-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/1362ae13-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
       "@id": "bw2calc/pinned-x86-1/1e93fdbd-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json",
       "@type": "File",
       "description": "asv result"
@@ -2986,6 +3211,21 @@
       "description": "asv result"
     },
     {
+      "@id": "bw2calc/pinned-x86-1/23dea922-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/23dea922-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/23dea922-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
       "@id": "bw2calc/pinned-x86-1/39ce2caf-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json",
       "@type": "File",
       "description": "asv result"
@@ -3011,6 +3251,21 @@
       "description": "asv result"
     },
     {
+      "@id": "bw2calc/pinned-x86-1/39ce2caf-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/39ce2caf-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/39ce2caf-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
       "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json",
       "@type": "File",
       "description": "asv result"
@@ -3032,6 +3287,21 @@
     },
     {
       "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/3d7333bc-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json",
       "@type": "File",
       "description": "asv result"
     },
@@ -3181,6 +3451,21 @@
       "description": "asv result"
     },
     {
+      "@id": "bw2calc/pinned-x86-1/9cdf5657-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/9cdf5657-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/9cdf5657-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
       "@id": "bw2calc/pinned-x86-1/a51ac183-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json",
       "@type": "File",
       "description": "asv result"
@@ -3321,6 +3606,11 @@
       "description": "which bwbench commit wrote which file, by sha256"
     },
     {
+      "@id": "bw2calc/pinned-x86-1/bwbench-run-20261114T120714Z-8c4a5bee875f.txt",
+      "@type": "File",
+      "description": "which bwbench commit wrote which file, by sha256"
+    },
+    {
       "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.12-numpy2.5.3-pyklu0.2.0-scipy1.18.1-BWBENCH_SOLVERklu-BWBENCH_STACK75149e5a.json",
       "@type": "File",
       "description": "asv result"
@@ -3342,6 +3632,21 @@
     },
     {
       "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK75149e5a.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.13-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.13-numpy2.5.3-scikit-umfpack-scipy1.18.1-BWBENCH_STACKf7c32611.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "bw2calc/pinned-x86-1/f5d9d7e9-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json",
       "@type": "File",
       "description": "asv result"
     },
@@ -3606,6 +3911,11 @@
       "description": "which bwbench commit wrote which file, by sha256"
     },
     {
+      "@id": "bw2calc-conda/pinned-x86-1/bwbench-run-20261114T084606Z-8c4a5bee875f.txt",
+      "@type": "File",
+      "description": "which bwbench commit wrote which file, by sha256"
+    },
+    {
       "@id": "bw2calc-conda/pinned-x86-1/fb9d6561-rattler-py3.12-libblas_=__mkl-mkl2026.1.0-numpy2.5.3-scikit-umfpack0.4.2-scipy1.18.1-BWBENCH_STACK75149e5a.json",
       "@type": "File",
       "description": "asv result"
@@ -3816,6 +4126,11 @@
       "description": "asv result"
     },
     {
+      "@id": "bw2data/pinned-x86-1/8a5b0bdb-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKbcd57435.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
       "@id": "bw2data/pinned-x86-1/bwbench-run-20261028T213846Z-d7d77f77a74d.txt",
       "@type": "File",
       "description": "which bwbench commit wrote which file, by sha256"
@@ -3857,6 +4172,11 @@
     },
     {
       "@id": "bw2data/pinned-x86-1/bwbench-run-20261114T065347Z-8c4a5bee875f.txt",
+      "@type": "File",
+      "description": "which bwbench commit wrote which file, by sha256"
+    },
+    {
+      "@id": "bw2data/pinned-x86-1/bwbench-run-20261114T120909Z-8c4a5bee875f.txt",
       "@type": "File",
       "description": "which bwbench commit wrote which file, by sha256"
     },
@@ -4066,6 +4386,11 @@
       "description": "which bwbench commit wrote which file, by sha256"
     },
     {
+      "@id": "bw_graph_tools/pinned-x86-1/bwbench-run-20261114T120914Z-8c4a5bee875f.txt",
+      "@type": "File",
+      "description": "which bwbench commit wrote which file, by sha256"
+    },
+    {
       "@id": "bw_graph_tools/pinned-x86-1/e3a36daa-uv-py3.12-bw2calc2.5.0-numpy2.5.3-pypardiso-scipy1.18.1-BWBENCH_STACK2c9ff45a.json",
       "@type": "File",
       "description": "asv result"
@@ -4151,6 +4476,11 @@
       "description": "asv result"
     },
     {
+      "@id": "bw_processing/pinned-x86-1/16883ace-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKda5bac56.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
       "@id": "bw_processing/pinned-x86-1/20976a11-uv-py3.12-numpy2.5.3-scipy1.18.1-BWBENCH_STACK97c2e9bf.json",
       "@type": "File",
       "description": "asv result"
@@ -4207,6 +4537,11 @@
     },
     {
       "@id": "bw_processing/pinned-x86-1/bwbench-run-20261114T064625Z-8c4a5bee875f.txt",
+      "@type": "File",
+      "description": "which bwbench commit wrote which file, by sha256"
+    },
+    {
+      "@id": "bw_processing/pinned-x86-1/bwbench-run-20261114T121358Z-8c4a5bee875f.txt",
       "@type": "File",
       "description": "which bwbench commit wrote which file, by sha256"
     },
@@ -4326,6 +4661,11 @@
       "description": "asv result"
     },
     {
+      "@id": "bw_timex/pinned-x86-1/48ad70ce-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKb4e4fdbe.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
       "@id": "bw_timex/pinned-x86-1/531931d0-uv-py3.12-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKd57b23d5.json",
       "@type": "File",
       "description": "asv result"
@@ -4391,6 +4731,11 @@
       "description": "asv result"
     },
     {
+      "@id": "bw_timex/pinned-x86-1/9f8a7471-uv-py3.13-bw2calc2.5.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACKb4e4fdbe.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
       "@id": "bw_timex/pinned-x86-1/bwbench-run-20261101T155852Z-76b208103d7b.txt",
       "@type": "File",
       "description": "which bwbench commit wrote which file, by sha256"
@@ -4427,6 +4772,11 @@
     },
     {
       "@id": "bw_timex/pinned-x86-1/bwbench-run-20261114T065632Z-8c4a5bee875f.txt",
+      "@type": "File",
+      "description": "which bwbench commit wrote which file, by sha256"
+    },
+    {
+      "@id": "bw_timex/pinned-x86-1/bwbench-run-20261114T121504Z-8c4a5bee875f.txt",
       "@type": "File",
       "description": "which bwbench commit wrote which file, by sha256"
     },
@@ -4496,7 +4846,17 @@
       "description": "asv result"
     },
     {
+      "@id": "matrix_utils/pinned-x86-1/0849b068-env-cef7a163b8e0d15bee845f9898f5aa8d.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
       "@id": "matrix_utils/pinned-x86-1/0849b068-uv-py3.12-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK5d2957fc.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "matrix_utils/pinned-x86-1/0849b068-uv-py3.13-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK8a6962af.json",
       "@type": "File",
       "description": "asv result"
     },
@@ -4546,7 +4906,17 @@
       "description": "asv result"
     },
     {
+      "@id": "matrix_utils/pinned-x86-1/55ef6296-env-cef7a163b8e0d15bee845f9898f5aa8d.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
       "@id": "matrix_utils/pinned-x86-1/55ef6296-uv-py3.12-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK5d2957fc.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "matrix_utils/pinned-x86-1/55ef6296-uv-py3.13-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK8a6962af.json",
       "@type": "File",
       "description": "asv result"
     },
@@ -4616,7 +4986,17 @@
       "description": "asv result"
     },
     {
+      "@id": "matrix_utils/pinned-x86-1/a34841f2-env-cef7a163b8e0d15bee845f9898f5aa8d.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
       "@id": "matrix_utils/pinned-x86-1/a34841f2-uv-py3.12-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK5d2957fc.json",
+      "@type": "File",
+      "description": "asv result"
+    },
+    {
+      "@id": "matrix_utils/pinned-x86-1/a34841f2-uv-py3.13-bw_processing1.6-numpy2.5.3-scipy1.18.1-BWBENCH_STACK8a6962af.json",
       "@type": "File",
       "description": "asv result"
     },
@@ -4667,6 +5047,11 @@
     },
     {
       "@id": "matrix_utils/pinned-x86-1/bwbench-run-20261114T064625Z-8c4a5bee875f.txt",
+      "@type": "File",
+      "description": "which bwbench commit wrote which file, by sha256"
+    },
+    {
+      "@id": "matrix_utils/pinned-x86-1/bwbench-run-20261114T123935Z-8c4a5bee875f.txt",
       "@type": "File",
       "description": "which bwbench commit wrote which file, by sha256"
     },

@@ -11,10 +11,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'",
-                "'bafu'",
-                "'useeio'",
-                "'exiobase'"
+                "'ecoinvent'"
             ],
             [
                 "'heat pump'",
@@ -25,7 +22,7 @@
                 "100"
             ]
         ],
-        "rounds": 1,
+        "rounds": 2,
         "sample_time": 0.01,
         "timeout": 900,
         "type": "time",
@@ -44,17 +41,14 @@
         ],
         "params": [
             [
-                "'ecoinvent'",
-                "'bafu'",
-                "'useeio'",
-                "'exiobase'"
+                "'ecoinvent'"
             ],
             [
                 "2",
                 "100"
             ]
         ],
-        "rounds": 1,
+        "rounds": 2,
         "sample_time": 0.01,
         "timeout": 900,
         "type": "time",
@@ -71,10 +65,7 @@
         ],
         "params": [
             [
-                "'ecoinvent'",
-                "'bafu'",
-                "'useeio'",
-                "'exiobase'"
+                "'ecoinvent'"
             ],
             [
                 "2",

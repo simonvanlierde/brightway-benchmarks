@@ -15,7 +15,7 @@
             ]
         ],
         "repeat": 0,
-        "rounds": 1,
+        "rounds": 2,
         "sample_time": 0.01,
         "timeout": 600,
         "type": "time",

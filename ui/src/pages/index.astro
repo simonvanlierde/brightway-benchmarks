@@ -2,6 +2,8 @@
 import { execFileSync } from "node:child_process";
 import App from "../components/App.svelte";
 import Masthead from "../components/Masthead.svelte";
+import SetupIntro from "../components/SetupIntro.svelte";
+import { setupIntro } from "../lib/build-data";
 import "../styles.css";
 import { staticHref, VIEWER_PAGES, viewerHref } from "../lib/pages";
 import Head from "./_Head.astro";
@@ -25,6 +27,7 @@ const build = {
   url: released ? `${repository}/releases/tag/${tag}` : sha ? `${repository}/commit/${sha}` : repository,
 };
 const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
+const intro = setupIntro();
 ---
 
 <html lang="en">
@@ -40,10 +43,10 @@ const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
     <link rel="preload" as="fetch" crossorigin href={`${data}ratios.json`} />
   </head>
   <body>
-    <App client:only="svelte" base={base} build={build} {home}>
+    <App client:only="svelte" base={base} build={build} {home} {intro}>
       {/* The viewer's masthead, drawn before its script runs, so a page change does not flash an empty page. */}
+      <Fragment slot="fallback">
       <Masthead
-        slot="fallback"
         name="Brightway Benchmarks"
         home={import.meta.env.BASE_URL}
         links={[
@@ -52,10 +55,28 @@ const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
         ]}
         search={{ value: "", open: false, toggle: () => {}, input: () => {}, submit: () => {} }}
       />
+      {/* Setup's heading and intro, drawn with the page, so a phone shows them before the script and the data arrive. */}
+      {intro && (
+        <div class="frame fullwidth">
+          <div class="view"><div class="home-columns"><div class="setup-column"><SetupIntro {...intro} /></div></div></div>
+        </div>
+      )}
+      {/* The same rule as pageOf in lib/history.ts: any other page drops it before it is drawn. */}
+      {intro && (
+        <script is:inline>
+          (() => {
+            const q = new URLSearchParams(location.search);
+            const page = q.get("page");
+            const other = q.has("bench") || page === "explorer" || page === "changes" || (!page && (q.has("group") || q.has("direction")));
+            if (other) document.currentScript.previousElementSibling.remove();
+          })();
+        </script>
+      )}
+      </Fragment>
     </App>
     <noscript>
       <main class="view">
-        <h1>Brightway benchmarks</h1>
+        {!intro && <h1>Brightway benchmarks</h1>}
         <p>Tested installation sets and performance histories for the Brightway life cycle assessment stack.</p>
         <p>Enable JavaScript to select setups and explore charts, or read <a href={staticHref(home, "about")}>about the benchmarks</a> and the <a href={`${repository}/blob/main/docs/method.md`}>measurement method</a>.</p>
       </main>

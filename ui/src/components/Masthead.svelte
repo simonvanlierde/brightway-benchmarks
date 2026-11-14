@@ -42,6 +42,8 @@ let {
     results?: {
       benchmarks: Hit[];
       more?: { count: number; href: string; onclick: (e: MouseEvent) => void } | undefined;
+      /** The benchmark catalogue, offered when nothing matches. */
+      catalogue: { href: string; onclick: (e: MouseEvent) => void };
       pages: Hit[];
       /** Pagefind has not answered the current words yet. */
       pending: boolean;
@@ -86,7 +88,7 @@ function picked(e: MouseEvent, hit: { onclick?: (e: MouseEvent) => void }) {
 <header class="top">
   <div class="top-inner">
     {#if search}
-      <h1><a href={home} onclick={onbrand}><LogoMark size={24} /><span class="brand-name">{name}</span></a></h1>
+      <a class="brand" href={home} onclick={onbrand}><LogoMark size={24} /><span class="brand-name">{name}</span></a>
     {:else}
       <a class="static-brand" href={home}><LogoMark size={24} /><span class="brand-name">{name}</span></a>
     {/if}
@@ -127,7 +129,7 @@ function picked(e: MouseEvent, hit: { onclick?: (e: MouseEvent) => void }) {
                 {/each}
               </ul>
             {/if}
-            {#if !total && !r.pending}<p class="hit-none">Nothing matches “{search.value.trim()}”.</p>{/if}
+            {#if !total && !r.pending}<p class="hit-none">Nothing matches “{search.value.trim()}”. Try a package or solver name, or <a href={r.catalogue.href} onclick={(e) => picked(e, r.catalogue)}>browse the catalogue</a>.</p>{/if}
           </div>
         {/if}
       </form>

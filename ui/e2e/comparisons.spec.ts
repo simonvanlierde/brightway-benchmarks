@@ -63,7 +63,7 @@ test("Across machines reads one row per machine under each choice, with its summ
 test("Benchmarks and Setup link to the comparisons", async ({ page }) => {
   await page.goto("?page=explorer");
   await page.getByRole("link", { name: "compare it across machines" }).click();
-  await expect(page.getByRole("heading", { level: 2, name: "Across machines" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Across machines" })).toBeVisible();
   await page.goto("");
   await expect(page.getByRole("link", { name: "Does it hold on your machine?" })).toHaveAttribute(
     "href",
@@ -76,7 +76,7 @@ test("Without published ratios, the page says so and Benchmarks offers no link",
   await page.goto("?page=compare");
   await expect(page.locator("#main .empty")).toHaveText(/^No comparisons are published yet\./);
   await page.goto("?page=explorer");
-  await expect(page.getByRole("heading", { level: 2, name: "Benchmarks" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Benchmarks" })).toBeVisible();
   await expect(page.getByRole("link", { name: "compare it across machines" })).toHaveCount(0);
 });
 
@@ -112,7 +112,7 @@ test("One comparison run with two parameter sets shows two tables", async ({ pag
     await route.fulfill({ json: data });
   });
   await page.goto("?page=compare");
-  await expect(page.getByRole("heading", { level: 3, name: "Solver" })).toHaveCount(2);
+  await expect(page.getByRole("heading", { level: 2, name: "Solver" })).toHaveCount(2);
   const ids = await page.locator(".ratio-comparison h3").evaluateAll((hs) => hs.map((h) => h.id));
   expect(new Set(ids).size).toBe(ids.length);
   expect(errors).toEqual([]);

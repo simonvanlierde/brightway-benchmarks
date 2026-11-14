@@ -14,7 +14,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   ([method](docs/method.md#how-the-results-stay-reproducible)).
 - Every benchmark's history starts again from the rerun after the change to generator version 5 in
   this release. Earlier times stay in the results branch's git history
-  ([method](docs/method.md#how-the-results-stay-reproducible)).
+  ([method](docs/method.md#how-the-results-stay-reproducible)). The site and its release table
+  now leave out the earlier generator versions' times, which had stayed in the histories of the
+  commits the rerun did not cover.
 - The synthetic ecoinvent profile shares supplier lists across activity families and passes its
   structural and solver-fill checks over four seeds ([calibration](docs/generator-calibration.md)).
 - bw_timex's timeline cases (`TimelineLCI`, `HeatingTimeline`) time every sample as a first
@@ -49,6 +51,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A nightly canary on the benchmark machine: a fixed workload whose drift is the machine's, kept
   apart from the histories (`just canary`, `just canary-check`,
   [running](docs/running.md#the-nightly-canary)).
+- `MonteCarloConvergence` compares IID and scrambled Sobol sampling on the smoke model at 16, 64
+  and 256 draws. Its error uses an independent 4096-draw Monte Carlo mean
+  ([benchmark](benchmarks/bench_bw2calc/bench_lca.py)).
 - A Python support probe outside the asv harness (`scripts/py_probe.py`, the `python-probe`
   workflow): install, import and one score on Python 3.11 to 3.15 daily on three operating
   systems, and on 3.9 and 3.10 weekly on Linux ([running](docs/running.md#which-pythons-work)). A
@@ -192,6 +197,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The check grid on Setup no longer scrolls vertically: hidden cell labels hung below its last row.
 - Setup marks the selected check cell with a fill and a bottom bar, so a keyboard user can tell it from
   the focused cell, which keeps the outline.
+- Site polish: Findings and the stories link a benchmark's history only when the published data has
+  it, and say so otherwise. An unknown address gets a 404 page with links to Setup, Benchmarks and
+  Findings. Setup draws its heading and intro before the viewer's script, so a phone shows them
+  about 2 s sooner. Changes past twice or half read "about 5 times faster", the install command
+  wraps at spaces only, phone charts keep their marker shapes, each page's title is its one h1,
+  and an empty search links the catalogue.
 
 ## [0.2.0] - 2026-11-01
 

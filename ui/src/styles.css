@@ -535,7 +535,7 @@ code,
 a:hover {
   text-decoration-thickness: 2px;
 }
-.top h1 {
+.top .brand {
   font-size: 1rem;
   letter-spacing: -0.025em;
   font-weight: 700;
@@ -595,7 +595,8 @@ a:hover {
   margin: 0;
   padding: 0;
 }
-.view h3 {
+.view h3,
+.view h2.bench-changes {
   font-weight: 650;
   margin: 32px 0 14px;
   font-size: 1.35rem;
@@ -715,7 +716,7 @@ details.data {
   gap: 12px 25px;
   font-size: 0.8rem;
 }
-.top h1 a {
+.top .brand {
   color: var(--ink);
   text-decoration: none;
   display: flex;
@@ -731,7 +732,7 @@ details.data {
   line-height: 1.4;
   font-size: 0.8rem;
 }
-.view > header h2 {
+.view > header h1 {
   font-size: clamp(1.7rem, 2.7vw, 2.4rem);
   font-weight: 650;
   letter-spacing: -0.035em;
@@ -870,7 +871,7 @@ tbody tr:hover {
   overflow: hidden;
   visibility: hidden;
 }
-.view .home-intro h2 {
+.view .home-intro h1 {
   max-width: 32ch;
   font-size: clamp(1.75rem, 2.6vw, 2.5rem);
   font-weight: 650;
@@ -1017,7 +1018,7 @@ details.data[open] summary {
     gap: 14px;
     font-size: 0.8rem;
   }
-  .top h1 {
+  .top .brand {
     font-size: 0.875rem;
   }
   .direction-filter button {
@@ -1062,7 +1063,7 @@ details.data[open] summary {
     padding: 12px 0;
   }
 
-  .view > header h2 {
+  .view > header h1 {
     font-size: min(1.8rem, 11vw);
   }
   .latest-table tbody th {
@@ -1103,7 +1104,7 @@ details.data[open] summary {
     white-space: normal;
     font-size: 0.8rem;
   }
-  .view .home-intro h2 {
+  .view .home-intro h1 {
     font-size: 2.1rem;
   }
   .view .home-intro p {
@@ -1112,6 +1113,10 @@ details.data[open] summary {
   .responsive-table td[data-label="Environment"]::before {
     content: "Environment: ";
     color: var(--muted);
+  }
+  /* Folded cases say what they are ("3 cases"), and the label would sit alone on its own line. */
+  .responsive-table td[data-label="Environment"]:has(> details)::before {
+    content: none;
   }
   .responsive-table td[data-label="Releases"]::before {
     content: "Releases: ";
@@ -1219,6 +1224,15 @@ so a chosen control needs a line of its own. */
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-size: 0.8125rem;
+}
+/* A word breaks only when it is wider than the box on its own, as a flag with a URL is, and then after a "/". */
+.install-command .word {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: normal;
+}
+.install-command .part {
+  white-space: nowrap;
 }
 .install-command .copy {
   border: 0;
@@ -1350,7 +1364,7 @@ table.check-grid td a[aria-current="true"] {
 }
 
 /* Benchmark view: one header line, each parameter's meaning under its control. */
-.view .bench-header h2 {
+.view .bench-header h1 {
   margin-bottom: 4px;
 }
 .bench-meta {
@@ -1628,7 +1642,7 @@ table.check-grid td a[aria-current="true"] {
     align-items: center;
     gap: 0 6px;
   }
-  .top-inner h1 {
+  .top-inner > .brand {
     grid-column: 1;
     grid-row: 1;
   }
@@ -1812,9 +1826,12 @@ table.check-grid td > span.undeclared {
 .python-note {
   max-width: 68ch;
 }
+/* The block and its rule reach the measure's edge, as the release changes below do; its text keeps a reading measure. */
 .view > .solver-evidence {
   margin: 8px 0 32px;
-  max-width: 48rem;
+}
+.view > .solver-evidence > p {
+  max-width: 68ch;
 }
 /* Improvements fold behind their count: regressions are what a maintainer opens the page for. */
 .view details.gains {
@@ -1845,9 +1862,7 @@ table.check-grid td > span.undeclared {
   overflow-y: auto;
   padding: 8px 0;
   background: var(--page);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
+  border: 1px solid var(--axis);
 }
 .masthead-search:focus-within .search-results:not(.dismissed) {
   display: block;
@@ -1904,4 +1919,13 @@ table.check-grid td > span.undeclared {
   margin: 8px 16px;
   color: var(--muted);
   font-size: var(--text-evidence);
+}
+/* An ordinary link inside the sentence, not a result row. */
+#masthead-search .search-results .hit-none a {
+  display: inline;
+  padding: 0;
+  color: var(--accent);
+  font-size: inherit;
+  font-weight: inherit;
+  text-decoration: underline;
 }

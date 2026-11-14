@@ -32,7 +32,7 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
 </script>
 
 <header class="overview-intro compare-intro">
-  <h2>Across machines</h2>
+  <h1>Across machines</h1>
   <p class="lede">
     Does a choice that speeds up Brightway on one computer do the same on yours? Each table times one choice against
     the usual one on several machines{oses.length ? `: ${oses.join(", ")}` : ""}, one row per machine.
@@ -67,7 +67,7 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
 
   {#each ratios.comparisons as c (c.key)}
     <section class="ratio-comparison" aria-labelledby="ratio-{c.key}">
-      <h3 id="ratio-{c.key}">{c.title}</h3>
+      <h2 id="ratio-{c.key}">{c.title}</h2>
       {#if !shared || caseOf(c) !== caseOf(shared)}<p class="ratio-case">{@render about(c)}</p>{/if}
       {#if c.caveat}<p class="ratio-case">{c.caveat}</p>{/if}
       <div class="scroll" role="region" aria-label="{c.title}, table" use:scrollable>
@@ -168,7 +168,7 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
   .ratio-case.ratio-shared {
     margin-top: 20px;
   }
-  .ratio-comparison h3 {
+  .ratio-comparison h2 {
     font-size: 1.35rem;
     font-weight: 650;
     letter-spacing: -0.02em;

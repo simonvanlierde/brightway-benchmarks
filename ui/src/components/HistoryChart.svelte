@@ -151,11 +151,12 @@ $effect(() => {
   const labelled = width >= 640 && domain.length > 1;
   const labelRoom = labelled ? Math.min(160, Math.ceil(Math.max(...domain.map((n) => n.length)) * 6.8) + 18) : 16;
   const emphasis = (name: string) => name === chosen;
-  // Markers shrink with the room per step; with under 24px a step (fifteen releases on a phone) the lines
-  // and the change rings stay and the per-point markers go, as they would run into each other.
+  // Markers shrink with the room per step, so fifteen releases on a phone keep small shapes: with the end
+  // names gone there, shape is what tells the lines apart beside colour. Under 12px a step they would
+  // run into each other, so only the lines and the change rings stay.
   const room = (width - 56 - labelRoom) / Math.max(1, labels.length);
   const marker = joined ? Math.min(5, room / 4.5) : 6;
-  const markers = !joined || room >= 24;
+  const markers = !joined || room >= 12;
   const plot = Plot.plot({
     width,
     height: width < 480 ? 300 : 380,

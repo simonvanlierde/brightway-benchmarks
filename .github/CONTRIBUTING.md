@@ -127,8 +127,9 @@ A release is one pull request and one tag:
 3. After the pull request is merged and its checks pass, run `just release X.Y.Z` again on an
    up-to-date `main`. It signs the tag on the merge commit and pushes it; the `release` workflow
    refuses a tag GitHub cannot verify.
-4. After the release workflow succeeds, dispatch `site.yml` on `main` so the viewer’s build
-   label picks up the tag. Verify the release downloads and deployed metadata.
+4. After the release workflow succeeds, check that its `rebuild the site` job started `site.yml`
+   on `main`, so the viewer's build label picks up the tag. Verify the release downloads and
+   deployed metadata.
 
 The tag runs the `release` workflow. It checks the tag against `pyproject.toml` and the
 CHANGELOG, then creates the GitHub release with that version's section as notes, the source

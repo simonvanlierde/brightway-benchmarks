@@ -113,4 +113,4 @@ All of them are in [`.github/workflows/`](../.github/workflows/).
   `advisories`, `scorecard`, `ratios` (weekly interleaved ratios on three OSes, attested, onto the
   `ratios` branch; [method](method.md#hosted-ratios)).
 - Manual: `noise-hosted` (the noise floor on a hosted runner).
-- `release` makes the GitHub release when a `vX.Y.Z` tag is pushed.
+- `release` makes the GitHub release when a `vX.Y.Z` tag is pushed, then dispatches `site`.

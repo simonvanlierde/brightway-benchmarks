@@ -35,6 +35,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   releases. Each result file is attested and published on the `ratios` branch, one folder per run
   (`hosted/<YYYY-MM-DD>-<run id>/<OS>.json`). The same measurement runs anywhere as
   `bwbench compare`, and `bwbench validate` checks a result file ([method](docs/method.md#hosted-ratios)).
+- Contributed runs: anyone can time the solvers on their own machine with
+  `uvx --from git+https://github.com/simonvanlierde/brightway-benchmarks bwbench compare` and add
+  the result file by pull request to `ratios/contributed/`. The `contributed` workflow runs
+  `bwbench validate --contribution`, which also checks the file's path, tier and labels
+  ([running](docs/running.md#contribute-a-run)).
 - Every result file carries an environment fingerprint (CPU, core type, kernel, SMT, governor,
   power profile, Python, BLAS, lock), and `just results-commit` refuses a new result without one.
   A file that keeps cells from a run in another environment lists that run's fingerprint under

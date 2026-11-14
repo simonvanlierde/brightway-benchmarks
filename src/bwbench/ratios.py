@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import math
 import random
+import re
 import statistics
 import unicodedata
 from collections import Counter
@@ -34,6 +35,32 @@ SCHEMA = Path(__file__).with_name("ratios.schema.json")
 RESAMPLES = 10_000
 LEVEL = 0.95
 RTOL = 1e-6  # a stored ratio against the one recomputed from the stored seconds (JSON keeps 17 digits)
+
+CONTRIBUTED = re.compile(r"(?:^|/)ratios/contributed/([a-z0-9][a-z0-9-]*)/(\d{4}-\d{2}-\d{2})\.json$")
+MAX_BYTES = 256 * 1024  # the solvers comparison at 20 rounds is about 5 KiB
+# Labels a machine's own name gives: a domain name, a macOS default computer name ("Ada's
+# MacBook Pro", "Adas-MacBook-Pro"), Ubuntu's <user>-<model> ("ada-ThinkPad-X1"), a Windows
+# default one (DESKTOP-4F2K9QX). A domain ends in a common or two-letter top-level label, so
+# "ubuntu-24.04" and "m2.max" pass.
+# shortcut: only these defaults; a custom host name passes, and the pull request review catches it.
+LAPTOPS = (
+    "thinkpad|ideapad|yoga|legion|xps|latitude|precision|inspiron|vostro|elitebook|probook|zbook"
+    "|pavilion|envy|zenbook|vivobook|rog|aspire|swift|surface|virtualbox"
+)
+VENDORS = "lenovo|dell|hp|asus|acer|microsoft|msi|framework|apple"
+HOST_LIKE = re.compile(
+    r"^[\w-]+(\.[\w-]+)*\.(com|net|org|edu|gov|io|dev|local|lan|home|internal|corp|[a-z]{2})$"
+    "|['\u2019`]?s[ -]?(macbook|imac|mac\\b)"  # U+2019, the curly apostrophe macOS writes
+    rf"|^(?!({VENDORS})-)[a-z0-9]+-({LAPTOPS})\b"
+    r"|^(desktop|laptop)-[a-z0-9]{7}$",
+    re.IGNORECASE,
+)
+# A home folder, with either separator; in a file's JSON text a backslash is escaped as \\.
+# /home/linuxbrew (Homebrew on Linux) and /Users/Shared are no one's home.
+USER_FOLDER = re.compile(
+    r"[A-Za-z]:[\\/]+Users[\\/]+[^\\/\s\"]+|/home/(?!linuxbrew\b)[^/\s\"]+|/Users/(?!Shared\b)[^/\s\"]+|/root(?=/)",
+    re.IGNORECASE,
+)
 
 
 def interleave(arms: list[str], rounds: int, rng: random.Random) -> list[list[str]]:
@@ -175,3 +202,47 @@ def _ratio_problems(where: str, r: dict, base: dict, cand: dict, rounds: int, bo
     if not (math.isclose(lo, w_lo, rel_tol=RTOL) and math.isclose(hi, w_hi, rel_tol=RTOL)):
         out.append(f"{where}: interval [{lo!r}, {hi!r}], but the seed gives [{w_lo!r}, {w_hi!r}]")
     return out
+
+
+def slug(machine: str) -> str:
+    """The folder name for a machine label: lower case, each run of other characters one dash."""
+    return re.sub(r"[^a-z0-9]+", "-", machine.lower()).strip("-")
+
+
+def contribution_problems(path: Path, doc: dict) -> list[str]:
+    """What keeps the file at PATH, holding DOC, out of ``ratios/contributed/``; empty when it may go in.
+
+    On top of ``problems``: the path is ``ratios/contributed/<slug of machine>/<date created>.json``,
+    the tier is ``contributed`` (only an attestation proves ``hosted``), the machine label is
+    not a default host name, no user folder appears, and the file is small and regular.
+    """
+    if found := contribution_file_problems(path):
+        return found
+    found = []
+    machine, day = str(doc.get("machine", "")), str(doc.get("created", ""))[:10]
+    m = CONTRIBUTED.search(path.as_posix())
+    if m is None:
+        found.append(
+            f"goes in ratios/contributed/<machine>/<YYYY-MM-DD>.json: ratios/contributed/{slug(machine)}/{day}.json"
+        )
+    else:
+        if m[1] != slug(machine):
+            found.append(f"folder {m[1]!r}, but machine {machine!r} gives {slug(machine)!r}")
+        if m[2] != day:
+            found.append(f"file name {m[2]!r}, but the run was created on {day!r}")
+    if doc.get("tier") != "contributed":
+        found.append(f"tier is {doc.get('tier')!r}; a contributed file says 'contributed'")
+    if HOST_LIKE.search(machine):
+        found.append(f"machine {machine!r} looks like a host name; use a label such as the CPU model")
+    if USER_FOLDER.search(path.read_text(encoding="utf-8")):
+        found.append("names a user folder (/Users/..., /home/..., /root/... or C:\\Users\\...); replace it with ~")
+    return found
+
+
+def contribution_file_problems(path: Path) -> list[str]:
+    """Why the file at PATH is not safe to read as a contribution: a link, not a regular file, too large."""
+    if path.is_symlink() or not path.is_file():
+        return [f"{path.as_posix()} is not a regular file"]
+    if (size := path.stat().st_size) > MAX_BYTES:
+        return [f"{size // 1024} KiB, more than {MAX_BYTES // 1024} KiB"]
+    return []

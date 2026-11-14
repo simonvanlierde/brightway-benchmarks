@@ -21,6 +21,9 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
 - **More solver columns for bw2calc:** NVIDIA cuDSS behind a GPU opt-in, kept out of the default
   run (`scripts/solver_factorize.py --cudss` already times it on real ecoinvent), and Apple's
   Accelerate LU on macOS.
+- **Continuous runs on contributed machines:** when someone offers a machine for regular runs,
+  a [Bencher](https://bencher.dev) self-hosted runner on it, beside the result files
+  contributors add by hand now ([running](docs/running.md#contribute-a-run)).
 - **bw2data's write path:** the SQLite database against the Parquet tables proposed for a
   registry, with time and peak memory at ecoinvent size.
 - **bw_timex at a larger timeline,** so the timeline builder, not the graph traversal, sets the

@@ -196,8 +196,8 @@ def contribution_problems(path: Path, doc: dict) -> list[str]:
     the tier is ``contributed`` (only an attestation proves ``hosted``), the machine label is
     not a default host name, no user folder appears, and the file is small and regular.
     """
-    if path.is_symlink() or not path.is_file():
-        return [f"{path.as_posix()} is not a regular file"]
+    if found := contribution_file_problems(path):
+        return found
     found = []
     machine, day = str(doc.get("machine", "")), str(doc.get("created", ""))[:10]
     m = CONTRIBUTED.search(path.as_posix())
@@ -216,6 +216,13 @@ def contribution_problems(path: Path, doc: dict) -> list[str]:
         found.append(f"machine {machine!r} looks like a host name; use a label such as the CPU model")
     if USER_FOLDER.search(path.read_text(encoding="utf-8")):
         found.append("names a user folder (/Users/..., /home/..., /root/... or C:\\Users\\...); replace it with ~")
-    if (size := path.stat().st_size) > MAX_BYTES:
-        found.append(f"{size // 1024} KiB, more than {MAX_BYTES // 1024} KiB")
     return found
+
+
+def contribution_file_problems(path: Path) -> list[str]:
+    """Why the file at PATH is not safe to read as a contribution: a link, not a regular file, too large."""
+    if path.is_symlink() or not path.is_file():
+        return [f"{path.as_posix()} is not a regular file"]
+    if (size := path.stat().st_size) > MAX_BYTES:
+        return [f"{size // 1024} KiB, more than {MAX_BYTES // 1024} KiB"]
+    return []

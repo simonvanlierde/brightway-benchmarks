@@ -234,3 +234,25 @@ def test_commit_is_heads_only_from_this_checkout(
     monkeypatch.setattr(compare.metadata, "distribution", no_record)
     monkeypatch.setattr(compare, "PACKAGE", package)
     assert compare._commit() == (_git(tmp_path, "rev-parse", "HEAD") if own else None)  # noqa: SLF001
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="symlinks")
+def test_validate_checks_the_file_before_reading_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    """A link to /dev/zero would never finish reading."""
+    link = tmp_path / "ratios" / "contributed" / "apple-m3-pro" / "2026-11-14.json"
+    link.parent.mkdir(parents=True)
+    link.symlink_to("/dev/zero")
+    big = link.with_name("2026-11-15.json")
+    big.write_text(" " * 300_000, encoding="utf-8")
+
+    def no_read(*_: object, **__: object) -> str:
+        msg = "read before the file checks"
+        raise AssertionError(msg)
+
+    monkeypatch.setattr(Path, "read_text", no_read)
+    assert compare.main(["validate", "--contribution", str(link), str(big)]) == 1
+    err = capsys.readouterr().err
+    assert "not a regular file" in err
+    assert "KiB" in err

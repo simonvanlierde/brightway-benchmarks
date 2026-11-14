@@ -49,6 +49,7 @@ from bwbench.ratios import (
     RESAMPLES,
     USER_FOLDER,
     bootstrap_interval,
+    contribution_file_problems,
     contribution_problems,
     geometric_mean_ratio,
     interleave,
@@ -430,6 +431,12 @@ def validate(files: list[Path], *, contribution: bool = False) -> int:
     """1 if any of FILES is not a valid result file (with CONTRIBUTION: contribution), each problem on stderr."""
     bad = 0
     for path in files:
+        # Before any read: a link to /dev/zero would never finish.
+        if contribution and (found := contribution_file_problems(path)):
+            for p in found:
+                print(f"{path.as_posix()}: {p}", file=sys.stderr)
+            bad += 1
+            continue
         try:
             doc = json.loads(path.read_text(encoding="utf-8"))
             found = problems(doc)

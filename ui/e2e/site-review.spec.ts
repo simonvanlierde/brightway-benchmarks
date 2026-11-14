@@ -180,10 +180,12 @@ test("on a phone the build id is the footer's own last row", async ({ page }) =>
   );
 });
 
-test("the solver story's per-score saving follows the real ecoinvent figures it comes from", async ({ page }) => {
+test("the solver story's per-score saving sits with the install choice and names real ecoinvent", async ({ page }) => {
   await page.goto("stories/solver-choice/");
-  const sentences = ((await page.locator(".lede").textContent()) ?? "").split(/(?<=\.) /);
-  const saving = sentences.findIndex((s) => s.includes("saves about 3 s"));
-  expect(sentences[saving]).toContain("real ecoinvent");
-  expect(sentences[saving - 1]).toContain("3.66 s");
+  const saving = page.locator(".install .saving");
+  await expect(saving).toContainText("On real ecoinvent");
+  await expect(saving).toContainText("saves about 3 s");
+  // 3.66 s (SuperLU) less 0.66 s (conda-forge UMFPACK), in the chart below the box.
+  await expect(page.locator(".bars").first()).toContainText("3.66 s");
+  await expect(page.locator(".bars").first()).toContainText("0.66 s");
 });

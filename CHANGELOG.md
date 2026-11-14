@@ -9,6 +9,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### For readers of the history pages
 
+- The findings, the solver story and the site's masthead quote the generator v5 histories. A
+  direct-solver score on the synthetic database now takes 1.4 to 1.6 times as long as factorizing
+  real ecoinvent 3.12, against 4 to 7.6 times on v4. So the solver gaps shrink: SuperLU against
+  conda-forge's UMFPACK goes from about 10 to about 5 times, and bw2calc 3.0.0's `IterativeLCA`
+  slowdown grows from 5 to 12 times with UMFPACK ([findings](docs/findings.md)).
 - The box's `/tmp` is a tmpfs from the v5 rerun on, so bw2data's `DatabaseWrite` times a write to
   memory, about 6% faster than to the container's disk. bw_timex's times do not change
   ([method](docs/method.md#how-the-results-stay-reproducible)).

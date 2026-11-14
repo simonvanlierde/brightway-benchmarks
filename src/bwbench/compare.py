@@ -38,6 +38,7 @@ import statistics
 import subprocess
 import sys
 import tempfile
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -463,8 +464,10 @@ def main(argv: list[str] | None = None) -> int:
         parser().error("--rounds must be at least 2 and --repeats at least 1")
     if {"bw2calc-release", "bw2data-release"} & set(args.ids) and platform.system() not in {"Darwin", "Windows"}:
         parser().error("the release comparisons run on macOS and Windows only")
-    if args.machine is not None and not 0 < len(args.machine) <= 100:
-        parser().error("--machine must be 1 to 100 characters")
+    label = args.machine
+    hidden = label is not None and any(unicodedata.category(c) in {"Cc", "Cf"} for c in label)  # as ratios.py refuses
+    if label is not None and (hidden or not 0 < len(label) <= 100):
+        parser().error("--machine must be 1 to 100 characters, with no control or format character")
     try:
         if args.work is None:
             with tempfile.TemporaryDirectory(prefix="bwbench-compare-") as tmp:

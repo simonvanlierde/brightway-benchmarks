@@ -431,3 +431,13 @@ def test_the_schema_refuses_every_control_and_format_character_it_can_name():
     hidden = [chr(i) for i in range(0x10000) if unicodedata.category(chr(i)) in {"Cc", "Cf"}]
     assert [f"U+{ord(c):04X}" for c in hidden if pattern.search(f"a{c}b")] == []
     assert pattern.search("GitHub ubuntu24 ½ µ")
+
+
+@pytest.mark.parametrize("label", ["", "x" * 101, "box\u202eexe", "box\x1b[2J"])
+def test_compare_refuses_a_machine_label_the_file_could_not_hold(
+    label: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    monkeypatch.setattr(compare, "compare", lambda *_: pytest.fail("compare ran"))  # never install bw2calc here
+    with pytest.raises(SystemExit) as e:
+        compare.main(["compare", "-o", str(tmp_path / "r.json"), "--machine", label])
+    assert e.value.code == 2

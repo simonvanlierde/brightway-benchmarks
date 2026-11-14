@@ -44,5 +44,6 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
 
 - Timing unreleased Brightway code by default. Commits are timed only by hand, so the history
   shows what users install.
-- Running Brightway's code outside the throwaway benchmark box.
+- Running this project's own benchmarks outside the throwaway benchmark box. Hosted and
+  contributed ratio runs are the exceptions ([where it runs](docs/architecture.md#where-it-runs)).
 - Real ecoinvent data in the repository. The profiles hold only aggregate statistics.

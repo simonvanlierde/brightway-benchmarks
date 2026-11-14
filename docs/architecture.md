@@ -50,14 +50,25 @@ pyinstrument reports that a finding links to, not synthetic profiles.
 
 ## Where it runs
 
-On your machine, Brightway's code runs only in the box: a container built from
-[`docker/Dockerfile`](../docker/Dockerfile) that sees this repository and nothing else.
-[`scripts/box.sh`](../scripts/box.sh) starts it and
-[`scripts/asv.sh`](../scripts/asv.sh) runs asv inside it. [`justfile`](../justfile) names the
-recipes (`just smoke`, `just bench`). Every recipe and variable is in [`docs/running.md`](running.md).
+Brightway's code runs in four places. Each answers a different question and holds a different
+token.
 
-A hosted CI runner is a throwaway machine too, so the `codspeed` and `cold-install` workflows
-install Brightway straight onto it.
+| Tier | Where Brightway's code runs | Token and permissions | Question it answers |
+| --- | --- | --- | --- |
+| CodSpeed (`codspeed` workflow) | A GitHub-hosted runner, under CodSpeed's CPU simulation | `contents: read`, plus `id-token: write` for the upload to CodSpeed | Did this pull request change how many instructions a case takes? |
+| Bare-metal asv (`just bench`, `just smoke`) | The box: a throwaway container on a pinned machine, built from [`docker/Dockerfile`](../docker/Dockerfile) | None. The maintainer pushes the `results` branch by hand | How fast is each release, and which release changed it? |
+| Hosted ratios (`ratios` workflow) | GitHub-hosted Linux, macOS and Windows runners, no container | `contents: read` to measure; the attest job adds `id-token: write` and `attestations: write`; the publish job, on `main` only, adds `contents: write` for the `ratios` branch | Which set-up is faster on this OS, and by how much? ([method](method.md#hosted-ratios)) |
+| Contributed ratios (`bwbench compare` on someone's own machine) | The contributor's machine, in uv environments that `bwbench compare` builds, with no container | None on our side. The `contributed` workflow only validates the file, with `contents: read` | Does the hosted answer hold on other hardware? ([running](running.md#contribute-a-run)) |
+
+This project's own runs use the box. [`scripts/box.sh`](../scripts/box.sh) starts it, and
+[`scripts/asv.sh`](../scripts/asv.sh) runs asv inside it. It sees this repository and nothing
+else. [`justfile`](../justfile) names the recipes, and [`docs/running.md`](running.md) lists every
+recipe and variable. A contributor who runs `bwbench compare` installs Brightway's releases
+on their own machine, as any Brightway user does.
+
+The macOS and Windows jobs of `compat` and the `python-probe` workflow also install Brightway
+straight onto a hosted runner, a throwaway machine with a read-only token. `cold-install` does
+so in a fresh container on one.
 
 ## Where results go
 

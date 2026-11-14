@@ -155,8 +155,11 @@ The `dco` workflow checks every pull request from a fork and fails on a commit w
 - **`just results-commit`** copies `results/` to the `results` branch, and the `site`
   workflow builds the history pages from that branch and publishes them on GitHub Pages.
 - **GitHub Actions** runs the checks above with a read-only token. `scorecard` may upload
-  its report to code scanning, and `site` may deploy Pages, only from
-  `main`, and `release` may create a release, only for a pushed version tag.
+  its report to code scanning, and `site` may deploy Pages, only from `main`. The `compat`
+  archive job and the `ratios` publish job may push their data branches, only from `main`, and
+  the `ratios` attest job may sign attestations. `release` may create a release, only for a
+  pushed version tag. [Where it runs](../docs/architecture.md#where-it-runs) lists each tier and
+  its token.
 
 ## Who maintains this
 

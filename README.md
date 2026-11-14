@@ -48,8 +48,9 @@ It gives install commands for uv, pip, conda and pixi, pinned to a dated set.
 
 ## Run it yourself
 
-You need Docker and [just](https://just.systems). Brightway's code runs in a throwaway
-container, never on your machine ([assurance case](docs/assurance-case.md)).
+You need Docker and [just](https://just.systems). These recipes run Brightway's code in a
+throwaway container, not on your machine. [How it works](docs/architecture.md#where-it-runs)
+lists where else it runs.
 
 ```sh
 just smoke                                 # every package's oldest and latest release, small database

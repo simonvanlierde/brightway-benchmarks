@@ -1,8 +1,8 @@
 # Running the benchmarks
 
 You need Docker and [just](https://just.systems); `just noise` and `just results-commit` also need
-[uv](https://docs.astral.sh/uv/), and `just results-commit` needs rsync and git 2.42 or later. Brightway's code runs only in a
-throwaway container, the box ([assurance case](assurance-case.md)). `just` lists every recipe.
+[uv](https://docs.astral.sh/uv/), and `just results-commit` needs rsync and git 2.42 or later. The recipes run Brightway's code in a
+throwaway container, the box ([where it runs](architecture.md#where-it-runs)). `just` lists every recipe.
 
 ## Benchmarks
 

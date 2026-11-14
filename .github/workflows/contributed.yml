@@ -47,7 +47,8 @@ jobs:
           enable-cache: false
           version: "0.13.6"
 
-      # `! -type d` passes symlinks too, so the validator refuses them.
+      # `! -type d` passes symlinks too, so the validator refuses them. The environment comes
+      # from the base branch's lock, so a pull request cannot swap the validator's dependencies.
       - name: bwbench validate --contribution
         shell: bash # pipefail, so a failing find fails the step
         run: |-
@@ -57,7 +58,6 @@ jobs:
           if grep -qs contribution_problems base/src/bwbench/ratios.py; then srcs="base/src src"; fi
           for src in $srcs; do
             find ratios/contributed ! -type d -print0 |
-              xargs -0 --no-run-if-empty env PYTHONPATH="$src" uv run --no-project --python 3.13 \
-                --with jsonschema==4.26.0 --with rfc3339-validator==0.1.4 \
-                python -m bwbench.compare validate --contribution
+              xargs -0 --no-run-if-empty env PYTHONPATH="$src" uv run --locked --no-dev \
+                --project base python -m bwbench.compare validate --contribution
           done

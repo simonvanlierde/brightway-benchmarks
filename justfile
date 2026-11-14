@@ -179,8 +179,7 @@ ui-serve port="4400":
 ui-data out:
     python3 scripts/export_ui.py results {{ out }}
     python3 scripts/export_guidance.py site/compat/status.json {{ out }} --probe site/compat/python-probe.json
-    PYTHONPATH=src uv run --no-project --python 3.13 --with jsonschema==4.26.0 --with rfc3339-validator==0.1.4 \
-      python scripts/export_ratios.py build/ratios ratios/contributed {{ out }}
+    uv run --locked python scripts/export_ratios.py build/ratios ratios/contributed {{ out }}
 
 # Commit results/ to the local `results` branch for the site; refuses results that name this host.
 results-commit:

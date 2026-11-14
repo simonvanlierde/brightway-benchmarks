@@ -1,6 +1,6 @@
 <script lang="ts">
 import { tick } from "svelte";
-import type { BenchmarkIndex, Guidance } from "../lib/contract";
+import type { BenchmarkIndex, Guidance, Ratios } from "../lib/contract";
 import { dateLabel, type GuidanceCheck, statusLabel, statusTone } from "../lib/guidance";
 import { benchLabel, byBenchmark, format, latestChanges, percentRange, type View, writeView } from "../lib/history";
 import { supportLead, supportTable } from "../lib/pythonSupport";
@@ -16,6 +16,7 @@ let {
   follow,
   name,
   findings,
+  ratios,
 }: {
   guidance: Guidance | undefined;
   ready: boolean;
@@ -27,7 +28,11 @@ let {
   name: string;
   /** The findings page, for the nudge beside the install set. */
   findings?: string;
+  /** The comparisons across machines, when published. */
+  ratios: Ratios | undefined;
 } = $props();
+const compareView: View = { page: "compare", params: [] };
+const ratioOses = $derived([...new Set(ratios?.machines.map((m) => m.os))]);
 const chosen = $derived(guidance?.checks.find((c) => c.id === view.check));
 // With no platform in the address, start on the visitor's own system; the select still changes it.
 const ua =
@@ -180,6 +185,7 @@ $effect(() => {
           <li><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchLabel(index, row.bench)}</a><span><strong class={row.way}>{percentRange(rows)} {row.way}</strong> in {row.group.label ?? row.group.name} {row.to}</span></li>
         {/if}
       {/each}
+      {#if ratios}<li><a href={writeView(compareView)} onclick={(e) => follow(e, compareView)}>Does it hold on your machine?</a><span>{ratios.comparisons.length} choices timed side by side on {ratios.machines.length} {ratios.machines.length === 1 ? "machine" : "machines"}: {ratioOses.join(", ")}.</span></li>{/if}
       {#if findings}<li><a href={findings}>What the benchmarks found</a><span>Release regressions, fixes and the solver story, each with its write-up.</span></li>{/if}
     </ul>
   </aside>

@@ -1,6 +1,6 @@
 # 0006. Setup installs; Benchmarks and Findings carry the evidence
 
-- Status: accepted
+- Status: accepted; amended by 0007
 - Date: 2026-11-12
 - Amends: 0002, 0005
 

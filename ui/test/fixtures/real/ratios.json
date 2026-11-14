@@ -1,0 +1,543 @@
+{
+  "format_version": 1,
+  "machines": [
+    {
+      "id": "hosted/Linux",
+      "name": "GitHub ubuntu26",
+      "tier": "hosted",
+      "os": "Linux",
+      "arch": "x86_64",
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "created": "2026-11-14T14:23:33Z",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/43604589027",
+      "commit": "b58ecd2fe752c205a23bdae8297ad4ea5c812b31"
+    },
+    {
+      "id": "hosted/macOS",
+      "name": "GitHub macos26",
+      "tier": "hosted",
+      "os": "macOS",
+      "arch": "arm64",
+      "cpu": "Apple M2 Pro (Virtual)",
+      "created": "2026-11-14T14:23:30Z",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/43604589027",
+      "commit": "b58ecd2fe752c205a23bdae8297ad4ea5c812b31"
+    },
+    {
+      "id": "hosted/Windows",
+      "name": "GitHub win25-vs2026",
+      "tier": "hosted",
+      "os": "Windows",
+      "arch": "AMD64",
+      "cpu": "AMD EPYC 7763 64-Core Processor",
+      "created": "2026-11-14T14:23:30Z",
+      "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/43604589027",
+      "commit": "b58ecd2fe752c205a23bdae8297ad4ea5c812b31"
+    }
+  ],
+  "comparisons": [
+    {
+      "id": "solvers",
+      "title": "Solver",
+      "case": "bench_lca.SingleScore.time_first_score",
+      "case_name": "First score",
+      "description": "One demand and one impact method from scratch: build the matrices, factorize, solve and characterize.",
+      "params": [
+        {
+          "name": "Synthetic database",
+          "value": "smoke",
+          "note": "200 products: a quick check that the case runs."
+        },
+        {
+          "name": "Calculation class",
+          "value": "LCA",
+          "note": "Solves directly, factorizing the technosphere matrix; Monte Carlo refactorizes on every draw."
+        }
+      ],
+      "baseline": "superlu",
+      "candidates": [
+        {
+          "name": "umfpack",
+          "label": "UMFPACK against SuperLU",
+          "summary": {
+            "direction": "unclear",
+            "text": "No clear difference on 2 machines"
+          },
+          "rows": [
+            {
+              "machine": "hosted/Linux",
+              "ratio": 1.002597203370642,
+              "ci95": [
+                0.9548268783417607,
+                1.055066058809368
+              ],
+              "verdict": "unclear",
+              "text": "No clear difference",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.004265262999993524,
+                "candidate": 0.004237063499999749
+              }
+            },
+            {
+              "machine": "hosted/macOS",
+              "ratio": 0.9883697734369906,
+              "ci95": [
+                0.9412173048495693,
+                1.0375449552149199
+              ],
+              "verdict": "unclear",
+              "text": "No clear difference",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.0016519585000196457,
+                "candidate": 0.001699312499994221
+              }
+            },
+            {
+              "machine": "hosted/Windows",
+              "ratio": null,
+              "ci95": null,
+              "verdict": "missing",
+              "text": "Not measured",
+              "missing": "bw2calc used superlu, not umfpack: scikit-umfpack did not install",
+              "seconds": null
+            }
+          ]
+        },
+        {
+          "name": "pypardiso",
+          "label": "PyPardiso against SuperLU",
+          "summary": {
+            "direction": "slower",
+            "text": "1.21 to 19.9x slower on 2 machines, 2 OSes"
+          },
+          "rows": [
+            {
+              "machine": "hosted/Linux",
+              "ratio": 1.2112970195965918,
+              "ci95": [
+                1.1619294240788622,
+                1.2632561226131143
+              ],
+              "verdict": "slower",
+              "text": "1.21x slower",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.004265262999993524,
+                "candidate": 0.005117914500004872
+              }
+            },
+            {
+              "machine": "hosted/macOS",
+              "ratio": null,
+              "ci95": null,
+              "verdict": "missing",
+              "text": "Not measured",
+              "missing": "bw2calc used umfpack, not pypardiso: pypardiso did not install",
+              "seconds": null
+            },
+            {
+              "machine": "hosted/Windows",
+              "ratio": 19.88148728555022,
+              "ci95": [
+                19.13077672618745,
+                20.545500389497274
+              ],
+              "verdict": "slower",
+              "text": "19.9x slower",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.004251150000001758,
+                "candidate": 0.08460545000001218
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "install-path",
+      "title": "Where bw2calc comes from",
+      "case": "bench_lca.SingleScore.time_first_score",
+      "case_name": "First score",
+      "description": "One demand and one impact method from scratch: build the matrices, factorize, solve and characterize.",
+      "params": [
+        {
+          "name": "Synthetic database",
+          "value": "smoke",
+          "note": "200 products: a quick check that the case runs."
+        },
+        {
+          "name": "Calculation class",
+          "value": "LCA",
+          "note": "Solves directly, factorizing the technosphere matrix; Monte Carlo refactorizes on every draw."
+        }
+      ],
+      "baseline": "pypi",
+      "candidates": [
+        {
+          "name": "conda-forge",
+          "label": "conda-forge (pixi) against PyPI (uv)",
+          "summary": {
+            "direction": "slower",
+            "text": "1.10x slower on 1 of 3 machines, 1 OS"
+          },
+          "rows": [
+            {
+              "machine": "hosted/Linux",
+              "ratio": 1.00461723545843,
+              "ci95": [
+                0.9735107392523953,
+                1.031580359053684
+              ],
+              "verdict": "unclear",
+              "text": "No clear difference",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.003879310499996791,
+                "candidate": 0.003995192000004977
+              }
+            },
+            {
+              "machine": "hosted/macOS",
+              "ratio": 0.9477755363349952,
+              "ci95": [
+                0.8754709282973261,
+                1.0223408498151987
+              ],
+              "verdict": "unclear",
+              "text": "No clear difference",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.0017661670000279628,
+                "candidate": 0.0016346250000083273
+              }
+            },
+            {
+              "machine": "hosted/Windows",
+              "ratio": 1.0981496856281905,
+              "ci95": [
+                1.0840753596522008,
+                1.1111022895456457
+              ],
+              "verdict": "slower",
+              "text": "1.10x slower",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.0043260999999858996,
+                "candidate": 0.004732049999972787
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "python",
+      "title": "Python version",
+      "case": "bench_lca.SingleScore.time_first_score",
+      "case_name": "First score",
+      "description": "One demand and one impact method from scratch: build the matrices, factorize, solve and characterize.",
+      "params": [
+        {
+          "name": "Synthetic database",
+          "value": "smoke",
+          "note": "200 products: a quick check that the case runs."
+        },
+        {
+          "name": "Calculation class",
+          "value": "LCA",
+          "note": "Solves directly, factorizing the technosphere matrix; Monte Carlo refactorizes on every draw."
+        }
+      ],
+      "baseline": "3.13",
+      "candidates": [
+        {
+          "name": "3.12",
+          "label": "Python 3.12 against Python 3.13",
+          "summary": {
+            "direction": "mixed",
+            "text": "Depends on platform: faster on 1 machine, slower on 1"
+          },
+          "rows": [
+            {
+              "machine": "hosted/Linux",
+              "ratio": 0.9540692248759117,
+              "ci95": [
+                0.9348540298763964,
+                0.9733844143301914
+              ],
+              "verdict": "faster",
+              "text": "1.05x faster",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.0037204335000069477,
+                "candidate": 0.0035262294999967025
+              }
+            },
+            {
+              "machine": "hosted/macOS",
+              "ratio": 1.0855134823411952,
+              "ci95": [
+                1.0146960594186467,
+                1.1801577439769921
+              ],
+              "verdict": "slower",
+              "text": "1.09x slower",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.0016599585000278694,
+                "candidate": 0.0019193545000462109
+              }
+            },
+            {
+              "machine": "hosted/Windows",
+              "ratio": 0.9851189132971757,
+              "ci95": [
+                0.9674618703373298,
+                1.0043086454253298
+              ],
+              "verdict": "unclear",
+              "text": "No clear difference",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.00428820000001906,
+                "candidate": 0.004224200000010114
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.14",
+          "label": "Python 3.14 against Python 3.13",
+          "summary": {
+            "direction": "slower",
+            "text": "1.03x slower on 1 of 3 machines, 1 OS"
+          },
+          "rows": [
+            {
+              "machine": "hosted/Linux",
+              "ratio": 1.029968001614835,
+              "ci95": [
+                1.0099792206263698,
+                1.0507208280829539
+              ],
+              "verdict": "slower",
+              "text": "1.03x slower",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.0037204335000069477,
+                "candidate": 0.0038230760000033115
+              }
+            },
+            {
+              "machine": "hosted/macOS",
+              "ratio": 1.0559764238004725,
+              "ci95": [
+                0.9736955972039495,
+                1.1434298597212955
+              ],
+              "verdict": "unclear",
+              "text": "No clear difference",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.0016599585000278694,
+                "candidate": 0.0019014795000202867
+              }
+            },
+            {
+              "machine": "hosted/Windows",
+              "ratio": 1.0034790998386591,
+              "ci95": [
+                0.985557280748915,
+                1.0184919527764686
+              ],
+              "verdict": "unclear",
+              "text": "No clear difference",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.00428820000001906,
+                "candidate": 0.00432019999996669
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.15",
+          "label": "Python 3.15 against Python 3.13",
+          "summary": {
+            "direction": "faster",
+            "text": "1.04 to 1.09x faster on 2 of 3 machines, 2 OSes"
+          },
+          "rows": [
+            {
+              "machine": "hosted/Linux",
+              "ratio": 0.9633232588509545,
+              "ci95": [
+                0.9448780340989581,
+                0.9815700840883017
+              ],
+              "verdict": "faster",
+              "text": "1.04x faster",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.0037204335000069477,
+                "candidate": 0.003575300500003209
+              }
+            },
+            {
+              "machine": "hosted/macOS",
+              "ratio": 0.9572870165818155,
+              "ci95": [
+                0.8879852240572731,
+                1.024416942419441
+              ],
+              "verdict": "unclear",
+              "text": "No clear difference",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.0016599585000278694,
+                "candidate": 0.0016524584999899616
+              }
+            },
+            {
+              "machine": "hosted/Windows",
+              "ratio": 0.9167571881624191,
+              "ci95": [
+                0.9027026896553749,
+                0.9283026843653613
+              ],
+              "verdict": "faster",
+              "text": "1.09x faster",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.00428820000001906,
+                "candidate": 0.003966000000019676
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bw2calc-release",
+      "title": "bw2calc release",
+      "case": "bench_lca.SingleScore.time_first_score",
+      "case_name": "First score",
+      "description": "One demand and one impact method from scratch: build the matrices, factorize, solve and characterize.",
+      "params": [
+        {
+          "name": "Synthetic database",
+          "value": "smoke",
+          "note": "200 products: a quick check that the case runs."
+        },
+        {
+          "name": "Calculation class",
+          "value": "LCA",
+          "note": "Solves directly, factorizing the technosphere matrix; Monte Carlo refactorizes on every draw."
+        }
+      ],
+      "baseline": "previous",
+      "candidates": [
+        {
+          "name": "latest",
+          "label": "bw2calc 3.1.0 against 3.0.0",
+          "summary": {
+            "direction": "unclear",
+            "text": "No clear difference on 2 machines"
+          },
+          "rows": [
+            {
+              "machine": "hosted/macOS",
+              "ratio": 0.9966098009112292,
+              "ci95": [
+                0.943650888005126,
+                1.0467590991754028
+              ],
+              "verdict": "unclear",
+              "text": "No clear difference",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.001577521000001525,
+                "candidate": 0.0015953125000010004
+              }
+            },
+            {
+              "machine": "hosted/Windows",
+              "ratio": 0.9908207126228148,
+              "ci95": [
+                0.9731462100862575,
+                1.0050913169616036
+              ],
+              "verdict": "unclear",
+              "text": "No clear difference",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.004254150000008394,
+                "candidate": 0.004242599999997765
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bw2data-release",
+      "title": "bw2data release",
+      "case": "bench_write.DatabaseWrite.time_write",
+      "case_name": "Database write",
+      "description": "Writing a synthetic database into a new bw2data project.",
+      "params": [
+        {
+          "name": "Synthetic database",
+          "value": "smoke",
+          "note": "200 products: a quick check that the case runs."
+        }
+      ],
+      "baseline": "previous",
+      "candidates": [
+        {
+          "name": "latest",
+          "label": "bw2data 4.8 against 4.7",
+          "summary": {
+            "direction": "unclear",
+            "text": "No clear difference on 2 machines"
+          },
+          "rows": [
+            {
+              "machine": "hosted/macOS",
+              "ratio": 0.9815762776605023,
+              "ci95": [
+                0.9597776024202451,
+                1.0053355381936397
+              ],
+              "verdict": "unclear",
+              "text": "No clear difference",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.04842541649992427,
+                "candidate": 0.047724083499986136
+              }
+            },
+            {
+              "machine": "hosted/Windows",
+              "ratio": 0.9405676103734023,
+              "ci95": [
+                0.8847190094272597,
+                1.0408215165980153
+              ],
+              "verdict": "unclear",
+              "text": "No clear difference",
+              "missing": null,
+              "seconds": {
+                "baseline": 0.30215259999999944,
+                "candidate": 0.2718551500000217
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

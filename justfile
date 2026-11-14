@@ -123,7 +123,8 @@ compat python="3.13" column="latest":
     BWBENCH_TARGET={{ if column == "conda-forge" { "conda" } else { "box" } }} BWBENCH_MEM=${BWBENCH_MEM:-6g} scripts/box.sh scripts/compat.sh {{ python }} {{ column }}
 
 # Build the static site in site/, around the viewer the site workflow adds: the compat archive (the
-# `compat` branch, which the compat workflow writes) and redirects from the old asv pages.
+# `compat` branch, which the compat workflow writes) and redirects from the old asv pages. The
+# `ratios` branch, which the ratios workflow writes, goes to build/ratios for `just ui-data`.
 site:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -131,6 +132,10 @@ site:
     [ ! -d profiles ] || { mkdir -p site/profiles && cp -r profiles/. site/profiles/; }
     if git fetch --quiet origin compat 2>/dev/null; then git archive FETCH_HEAD compat | tar -x -C site
     else echo "no compat branch yet, so the site has no setup guidance" >&2
+    fi
+    rm -rf build/ratios && mkdir -p build/ratios
+    if git fetch --quiet origin ratios 2>/dev/null; then git archive FETCH_HEAD | tar -x -C build/ratios
+    else echo "no ratios branch yet, so the site has no comparisons across machines" >&2
     fi
     for conf in asv/*.json; do
       s=$(basename "$conf" .json)
@@ -157,10 +162,13 @@ ui-serve port="4400":
 # Write the UI's data from results/ to OUT (scripts/export_ui.py says what it reads), and the setup
 # guidance from site/compat/status.json, which `just site` fetches; without it there is none. The
 # Python support table comes from site/compat/python-probe.json (scripts/probe_site.py); without it there is none.
+# The comparisons across machines come from build/ratios (`just site`) and ratios/contributed.
 # Needs uv: change points come from Apache Otava, in an environment of its own.
 ui-data out:
     python3 scripts/export_ui.py results {{ out }}
     python3 scripts/export_guidance.py site/compat/status.json {{ out }} --probe site/compat/python-probe.json
+    PYTHONPATH=src uv run --no-project --python 3.13 --with jsonschema==4.26.0 --with rfc3339-validator==0.1.4 \
+      python scripts/export_ratios.py build/ratios ratios/contributed {{ out }}
 
 # Commit results/ to the local `results` branch for the site; refuses results that name this host.
 results-commit:

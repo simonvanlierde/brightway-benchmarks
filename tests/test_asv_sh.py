@@ -298,7 +298,7 @@ def test_a_result_whose_environment_has_no_lock_is_not_stamped(tmp_path: Path):
     result.write_text(text)
     script = REPO / "scripts" / "fingerprints.py"
     run = subprocess.run(
-        [sys.executable, str(script), "stamp", str(env.parent), str(result)],
+        [sys.executable, str(script), "stamp", str(env.parent), "/dev/null", str(result)],
         capture_output=True,
         text=True,
         check=False,
@@ -307,6 +307,36 @@ def test_a_result_whose_environment_has_no_lock_is_not_stamped(tmp_path: Path):
     assert "no lock file" in run.stderr
     assert result.read_text() == text
     (result.parent / "pylock.abc.toml").write_text("lock-version = '1.0'\n")
-    run = subprocess.run([sys.executable, str(script), "stamp", str(env.parent), str(result)], check=False)
+    run = subprocess.run([sys.executable, str(script), "stamp", str(env.parent), "/dev/null", str(result)], check=False)
     assert run.returncode == 0
     assert json.loads(result.read_text())["fingerprint"]["lock"]["name"] == "pylock.abc.toml"
+
+
+@pytest.mark.parametrize("earlier", [{"kernel": "6.1"}, None])
+def test_a_rerun_keeps_the_fingerprint_of_the_cells_asv_kept(repo: Path, earlier: dict | None):
+    """A rewrite by asv drops our keys but keeps the old cells; stamp lists the old fingerprint."""
+    stack = hashlib.sha256((repo / "asv" / "plain.stack.txt").read_bytes()).hexdigest()[:8]
+    name = f"rattler-py3.12-BWBENCH_STACK{stack}"
+    result = {"env_name": name, "python": "3.12", "requirements": {}, "env_vars": {"BWBENCH_STACK": stack}}
+    path = repo / "results" / "m" / f"0123abcd-{name}.json"
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(result | {"fingerprint": earlier, "kept_fingerprints": [{"kernel": "5.0"}]}))
+    # As asv does: the rewritten file drops every key it does not know.
+    (repo / "stub" / "uvx").write_text(
+        '#!/bin/sh\ncase "$*" in *" run "*) sleep 0.1\n'
+        f"echo '{json.dumps(result)}' >results/m/0123abcd-{name}.json ;; esac\n"
+    )
+    out = run_with_env(repo, conda=True)
+    assert out.returncode == 0, out.stderr
+    stamped = json.loads(path.read_text())
+    assert stamped["fingerprint"]["python"].startswith("CPython")
+    assert stamped["kept_fingerprints"] == [{"kernel": "5.0"}, earlier]
+    # The same environment again adds nothing.
+    again = subprocess.run(
+        ["/bin/sh", "scripts/asv.sh", "plain", "run"],
+        cwd=repo,
+        env={"PATH": f"{repo / 'stub'}:/usr/bin:/bin", "HOME": str(repo), "BWBENCH_MACHINE": "m"},
+        check=False,
+    )
+    assert again.returncode == 0
+    assert json.loads(path.read_text())["kept_fingerprints"] == [{"kernel": "5.0"}, earlier]

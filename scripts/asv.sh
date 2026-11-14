@@ -41,8 +41,11 @@ grep -qs "\"$machine\"" "$HOME/.asv-machine.json" ||
 # The klu and umfpack-T entries set BWBENCH_SOLVER in their own env. One left in the caller's
 # shell would reach every environment and patch the stock umfpack one without a word.
 unset BWBENCH_SOLVER
-# Files newer than this one were written by this run.
+# Files newer than this one were written by this run. It holds the fingerprints of the results
+# already there: asv drops them when it rewrites a file, but keeps that file's earlier cells.
 start=$(mktemp "$PWD/.asv/.run-XXXXXX")
+out=$results/$machine
+[ "$cmd" != run ] || [ ! -d "$out" ] || python3 scripts/fingerprints.py snapshot "$out" >"$start"
 status=0
 case $cmd in
 # --record-samples keeps every sample beside the median, so readers can rerun the noise rule.
@@ -54,7 +57,6 @@ esac
 # Record what each environment holds next to the results: a lock file, or for conda a versions
 # file. asv reinstalls only the subject per commit, so this is the state after the last commit it installed.
 if [ "$cmd" = run ]; then
-    out=$results/$machine
     mkdir -p "$out"
     for info in .asv/env/"$subject"/*/asv-env-info.json; do
         [ -e "$info" ] || continue
@@ -83,7 +85,7 @@ if [ "$cmd" = run ]; then
     done
     # Every result file this run wrote carries its environment's fingerprint (src/bwbench/fingerprint.py),
     # which results-commit requires. After the lock files: the fingerprint holds the lock's checksum.
-    find "$out" -newer "$start" -name '*-*.json' -exec python3 scripts/fingerprints.py stamp ".asv/env/$subject" {} + ||
+    find "$out" -newer "$start" -name '*-*.json' -exec python3 scripts/fingerprints.py stamp ".asv/env/$subject" "$start" {} + ||
         status=1
     # Which bwbench commit wrote which file, by checksum. run_crate.py gives each file the newest
     # record that lists its content, so this holds after results-commit merges several clones.

@@ -59,7 +59,7 @@ if git rev-parse -q --verify refs/heads/results >/dev/null; then
     git worktree add -q "$tree" results
     if git rev-parse -q --verify refs/remotes/origin/results >/dev/null &&
         ! git -C "$tree" merge -q --ff-only origin/results 2>/dev/null; then
-        echo "results-commit: the local results branch and origin/results have diverged; merge them first" >&2
+        echo "results-commit: the local results branch and origin/results have diverged; rebuild the local results branch from origin/results, then rerun" >&2
         exit 1
     fi
 elif git rev-parse -q --verify refs/remotes/origin/results >/dev/null; then

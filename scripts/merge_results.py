@@ -39,6 +39,16 @@ def cells(row: list, columns: list[str]) -> dict[tuple, dict[str, object]]:
 def merge_row(old: list, new: list, columns: list[str]) -> list:
     """One benchmark's row: the union of both rows' parameter values, new cells first."""
     p, v = columns.index("params"), columns.index("version")
+    if "started_at" in columns:
+        started = columns.index("started_at")
+        if (
+            len(old) > started
+            and len(new) > started
+            and old[started] is not None
+            and new[started] is not None
+            and old[started] > new[started]
+        ):
+            old, new = new, old
     if len(old) <= p or len(new) <= p or len(old[p]) != len(new[p]) or old[v : v + 1] != new[v : v + 1]:
         return new
     axes = [n + [x for x in o if x not in n] for o, n in zip(old[p], new[p], strict=True)]

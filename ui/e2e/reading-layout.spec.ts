@@ -13,3 +13,8 @@ test("reading pages fit a narrow phone without JavaScript", async ({ browser }) 
   }
   await context.close();
 });
+
+test("story bars keep list semantics when their markers are hidden", async ({ page }) => {
+  await page.goto("stories/solver-choice/");
+  await expect(page.locator("figure.bars > ul").first()).toHaveAttribute("role", "list");
+});

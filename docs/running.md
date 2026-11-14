@@ -285,6 +285,11 @@ yours go under a machine name of their own.
    pull request from your fork's `results` into this repository's `results`. Say in it which
    CPU, memory and OS the machine has, and paste the `just noise` spread.
 
+`just results-commit` treats an omitted file or cell as a partial run and restores it. To remove
+a result, edit or delete it directly in a `results` branch worktree. Then run the main branch's
+`scripts/run_crate.py` against that worktree and commit the result with the rebuilt
+`ro-crate-metadata.json`.
+
 ## Publish the synthetic inputs
 
 `just dataset` writes the synthetic systems at the current generator version to

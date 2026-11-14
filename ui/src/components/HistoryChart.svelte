@@ -1,8 +1,13 @@
 <script lang="ts">
 import * as Plot from "@observablehq/plot";
 import type { Change } from "../lib/contract";
-import { format, type Line, noiseText, percent, scaleFor, ticksFor, verdict } from "../lib/history";
+import type { Line } from "../lib/history";
 import { spreadLabels } from "../lib/labels";
+
+type Helpers = Pick<
+  typeof import("../lib/history"),
+  "format" | "noiseText" | "percent" | "scaleFor" | "ticksFor" | "verdict"
+>;
 
 let {
   lines,
@@ -12,6 +17,7 @@ let {
   better,
   title,
   filename,
+  helpers,
 }: {
   lines: Line[];
   /** Each line's series colour and symbol (seriesSlots), so an environment looks the same on every chart. */
@@ -21,6 +27,7 @@ let {
   better: "lower" | "higher" | undefined;
   title: string;
   filename: string;
+  helpers: Helpers;
 } = $props();
 
 const SYMBOLS = ["circle", "square", "triangle", "diamond", "star", "cross", "wye"];
@@ -54,7 +61,7 @@ const steps = $derived.by(() => {
 });
 const scale = $derived.by(() => {
   const values = points.map((p) => p.value).sort((a, b) => a - b);
-  return scaleFor(unit, values[Math.floor(values.length / 2)] ?? 1);
+  return helpers.scaleFor(unit, values[Math.floor(values.length / 2)] ?? 1);
 });
 const changeAt = $derived.by(() => {
   const short = new Map(lines.map((l) => [l.case, l.short]));
@@ -66,9 +73,10 @@ const changeAt = $derived.by(() => {
 });
 
 function words(change: Change): string {
-  const way = verdict(change.ratio, better);
-  if (change.method === "release") return `${percent(change.ratio)} ${way} (beyond ${noiseText(change)} noise)`;
-  return `level shift ${percent(change.ratio)} ${way}`;
+  const way = helpers.verdict(change.ratio, better);
+  if (change.method === "release")
+    return `${helpers.percent(change.ratio)} ${way} (beyond ${helpers.noiseText(change)} noise)`;
+  return `level shift ${helpers.percent(change.ratio)} ${way}`;
 }
 
 function stepText(step: (typeof steps)[number]): string {
@@ -76,7 +84,7 @@ function stepText(step: (typeof steps)[number]): string {
   if (!first) return "";
   const rows = step.map(
     (p) =>
-      `${p.short}: ${format(p.value, unit)}${p.noise === undefined ? "" : ` ${noiseText({ threshold: p.noise })} noise`}`,
+      `${p.short}: ${helpers.format(p.value, unit)}${p.noise === undefined ? "" : ` ${helpers.noiseText({ threshold: p.noise })} noise`}`,
   );
   const marks = (changeAt.get(first.commit) ?? []).map((c) => `${c.short}: ${words(c.change)}`);
   const note = first.released ? [] : ["Not a release, so release changes skip it"];
@@ -93,7 +101,7 @@ $effect(() => {
   const slot = (i: number) => slots[i] ?? i;
   const colours = domain.map((_, i) => v(`--s${(slot(i) % SLOTS) + 1}`));
   const labels = steps.map((s) => s[0]?.label ?? "");
-  const ticks = ticksFor(
+  const ticks = helpers.ticksFor(
     steps.map((s) => ({ label: s[0]?.label ?? "", released: s[0]?.released ?? false })),
     Math.floor(width / 64), // an 8-character commit id at 12px is about 56px wide
   );
@@ -121,7 +129,7 @@ $effect(() => {
         label: points.find((p) => p.commit === commit)?.label ?? "",
         y: valueAt.get(`${commit}/${c.short}`),
         short: c.short,
-        way: verdict(c.change.ratio, better),
+        way: helpers.verdict(c.change.ratio, better),
       }))
       .filter((f) => f.y !== undefined)
       .map((f, tier) => ({ ...f, tier })),

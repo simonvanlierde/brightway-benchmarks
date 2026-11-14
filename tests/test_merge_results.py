@@ -43,6 +43,12 @@ def test_a_new_failure_replaces_the_old_time():
     assert merged_row(old, new)[0] == [None, 2]
 
 
+def test_the_later_run_wins_when_the_staged_copy_is_older():
+    old = [[1], [["'s'"]], "v", 20, 5, [0.1]]
+    new = [[2], [["'s'"]], "v", 10, 1, [0.2]]
+    assert merged_row(old, new) == old
+
+
 def test_a_changed_benchmark_keeps_only_the_new_cells():
     new = [[7], [["'u'"]], "v2"]
     assert merged_row([[1], [["'s'"]], "v1"], new) == new

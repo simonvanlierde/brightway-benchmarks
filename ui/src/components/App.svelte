@@ -29,7 +29,9 @@ import {
   pickParams,
   pText,
   readView,
+  scaleFor,
   seriesSlots,
+  ticksFor,
   type View,
   verdict,
   writeView,
@@ -55,6 +57,7 @@ let {
   home?: string;
 } = $props();
 const story = $derived(staticHref(home, "solver-choice"));
+const chartHelpers = { format, noiseText, percent, scaleFor, ticksFor, verdict };
 // A link such as Setup's "All Python versions" names a section of the overview, which draws after the data loads.
 $effect(() => {
   if (view.page === "explorer" && !view.bench && index && guidance && location.hash)
@@ -590,7 +593,7 @@ $effect(() => {
             {#await chart()}
               <div class="skeleton" aria-busy="true"><span class="sr">Loading the chart…</span></div>
             {:then { default: HistoryChart }}
-              <HistoryChart lines={shown} {slots} {changes} {unit} better={measure?.better} {title} {filename} />
+              <HistoryChart lines={shown} {slots} {changes} {unit} better={measure?.better} {title} {filename} helpers={chartHelpers} />
             {:catch reason}
               <div class="empty" role="alert"><p>The chart did not load. Reload the page.</p>{@render technical(String(reason))}</div>
             {/await}

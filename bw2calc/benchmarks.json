@@ -1,4 +1,108 @@
 {
+    "bench_heating.HeatingMulti.time_heating_scores": {
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        state.results[bench_name] = state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
+        "min_run_count": 2,
+        "name": "bench_heating.HeatingMulti.time_heating_scores",
+        "number": 1,
+        "param_names": [
+            "size"
+        ],
+        "params": [
+            [
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
+            ]
+        ],
+        "repeat": 0,
+        "rounds": 2,
+        "sample_time": 0.01,
+        "timeout": 900,
+        "type": "time",
+        "unit": "seconds",
+        "version": "5-fb647cb2-heating3",
+        "warmup_time": 0
+    },
+    "bench_heating.HeatingMulti.track_relative_error": {
+        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        found, value = _recorded(type(self), bench_name, args, method)\n        if found:\n            return value\n        prepared = state.prepared[bench_name]\n        return prepared.verify(prepared())\n\ndef setup(*args: Any) -> None:\n    if not _recorded(state.cls, bench_name, args, method)[0]:\n        prepare(bench_name, args)",
+        "name": "bench_heating.HeatingMulti.track_relative_error",
+        "param_names": [
+            "size"
+        ],
+        "params": [
+            [
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
+            ]
+        ],
+        "timeout": 900,
+        "type": "track",
+        "unit": "unit",
+        "version": "5-fb647cb2-heating3"
+    },
+    "bench_heating.HeatingSweep.time_heating_sweep": {
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        state.results[bench_name] = state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
+        "min_run_count": 2,
+        "name": "bench_heating.HeatingSweep.time_heating_sweep",
+        "number": 1,
+        "param_names": [
+            "size",
+            "scenarios",
+            "variant"
+        ],
+        "params": [
+            [
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
+            ],
+            [
+                "4",
+                "16"
+            ],
+            [
+                "'rebuild'",
+                "'redo_lci'"
+            ]
+        ],
+        "repeat": 0,
+        "rounds": 2,
+        "sample_time": 0.01,
+        "timeout": 1800,
+        "type": "time",
+        "unit": "seconds",
+        "version": "5-fb647cb2-heating3",
+        "warmup_time": 0
+    },
+    "bench_heating.HeatingSweep.track_relative_error": {
+        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        found, value = _recorded(type(self), bench_name, args, method)\n        if found:\n            return value\n        prepared = state.prepared[bench_name]\n        return prepared.verify(prepared())\n\ndef setup(*args: Any) -> None:\n    if not _recorded(state.cls, bench_name, args, method)[0]:\n        prepare(bench_name, args)",
+        "name": "bench_heating.HeatingSweep.track_relative_error",
+        "param_names": [
+            "size",
+            "scenarios",
+            "variant"
+        ],
+        "params": [
+            [
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
+            ],
+            [
+                "4",
+                "16"
+            ],
+            [
+                "'rebuild'",
+                "'redo_lci'"
+            ]
+        ],
+        "timeout": 1800,
+        "type": "track",
+        "unit": "unit",
+        "version": "5-fb647cb2-heating3"
+    },
     "bench_import.timeraw_import_bw2calc": {
         "code": "def timeraw_import_bw2calc() -> str:\n    return \"import bw2calc\"",
         "min_run_count": 2,
@@ -14,8 +118,50 @@
         "version": "ce934fe2d4f5e2fc94524a88423fff2404699a10336975a86e82510058ceba99",
         "warmup_time": -1
     },
+    "bench_lca.Conditioning.time_condition_estimate": {
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        state.results[bench_name] = state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
+        "min_run_count": 2,
+        "name": "bench_lca.Conditioning.time_condition_estimate",
+        "number": 1,
+        "param_names": [
+            "size"
+        ],
+        "params": [
+            [
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
+            ]
+        ],
+        "repeat": 1,
+        "rounds": 2,
+        "sample_time": 0.01,
+        "timeout": 1800,
+        "type": "time",
+        "unit": "seconds",
+        "version": "5-fb647cb2",
+        "warmup_time": 0
+    },
+    "bench_lca.Conditioning.track_condition_estimate": {
+        "code": "class <locals>:\n    def track(self: Any, *args: Any) -> float:\n        found, value = _recorded(type(self), bench_name, args, method)\n        return value if found else fn(state.prepared[bench_name]())\n\ndef setup(*args: Any) -> None:\n    if not _recorded(state.cls, bench_name, args, method)[0]:\n        prepare(bench_name, args)",
+        "name": "bench_lca.Conditioning.track_condition_estimate",
+        "param_names": [
+            "size"
+        ],
+        "params": [
+            [
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
+            ]
+        ],
+        "timeout": 1800,
+        "type": "track",
+        "unit": "unit",
+        "version": "5-fb647cb2"
+    },
     "bench_lca.MonteCarlo.time_iterations": {
-        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        state.results[bench_name] = state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
         "min_run_count": 2,
         "name": "bench_lca.MonteCarlo.time_iterations",
         "number": 1,
@@ -26,7 +172,8 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'"
             ],
             [
                 "10"
@@ -42,11 +189,11 @@
         "timeout": 1800,
         "type": "time",
         "unit": "seconds",
-        "version": "3-05303220",
+        "version": "5-fb647cb2",
         "warmup_time": 0
     },
     "bench_lca.MultiScores.time_scores": {
-        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        state.results[bench_name] = state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
         "min_run_count": 2,
         "name": "bench_lca.MultiScores.time_scores",
         "number": 1,
@@ -57,11 +204,12 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
             ],
             [
                 "1",
-                "3",
                 "10",
                 "30"
             ],
@@ -77,11 +225,11 @@
         "timeout": 900,
         "type": "time",
         "unit": "seconds",
-        "version": "3-05303220",
+        "version": "5-fb647cb2",
         "warmup_time": 0
     },
     "bench_lca.NewDemand.time_redo_lci": {
-        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        state.results[bench_name] = state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
         "min_run_count": 2,
         "name": "bench_lca.NewDemand.time_redo_lci",
         "number": 1,
@@ -91,7 +239,9 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
             ],
             [
                 "'LCA'",
@@ -105,11 +255,11 @@
         "timeout": 600,
         "type": "time",
         "unit": "seconds",
-        "version": "3-05303220",
+        "version": "5-fb647cb2",
         "warmup_time": 0
     },
     "bench_lca.NewDemand.track_relative_error": {
-        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        prepared = self.prepared[bench_name]\n        return prepared.verify(prepared())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        found, value = _recorded(type(self), bench_name, args, method)\n        if found:\n            return value\n        prepared = state.prepared[bench_name]\n        return prepared.verify(prepared())\n\ndef setup(*args: Any) -> None:\n    if not _recorded(state.cls, bench_name, args, method)[0]:\n        prepare(bench_name, args)",
         "name": "bench_lca.NewDemand.track_relative_error",
         "param_names": [
             "size",
@@ -117,7 +267,9 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
             ],
             [
                 "'LCA'",
@@ -128,10 +280,10 @@
         "timeout": 600,
         "type": "track",
         "unit": "unit",
-        "version": "3-05303220"
+        "version": "5-fb647cb2"
     },
     "bench_lca.NewDemandRefinement.time_redo_lci_refinement": {
-        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        state.results[bench_name] = state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
         "min_run_count": 2,
         "name": "bench_lca.NewDemandRefinement.time_redo_lci_refinement",
         "number": 1,
@@ -141,7 +293,9 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
             ],
             [
                 "'on'",
@@ -154,11 +308,11 @@
         "timeout": 600,
         "type": "time",
         "unit": "seconds",
-        "version": "3-05303220",
+        "version": "5-fb647cb2",
         "warmup_time": 0
     },
     "bench_lca.NewDemandRefinement.track_refinement_steps": {
-        "code": "class <locals>:\n    def track(self: Any, *args: Any) -> float:\n        return fn(self.prepared[bench_name]())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def track(self: Any, *args: Any) -> float:\n        found, value = _recorded(type(self), bench_name, args, method)\n        return value if found else fn(state.prepared[bench_name]())\n\ndef setup(*args: Any) -> None:\n    if not _recorded(state.cls, bench_name, args, method)[0]:\n        prepare(bench_name, args)",
         "name": "bench_lca.NewDemandRefinement.track_refinement_steps",
         "param_names": [
             "size",
@@ -166,7 +320,9 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
             ],
             [
                 "'on'",
@@ -176,10 +332,10 @@
         "timeout": 600,
         "type": "track",
         "unit": "unit",
-        "version": "3-05303220"
+        "version": "5-fb647cb2"
     },
     "bench_lca.NewDemandRefinement.track_relative_error": {
-        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        prepared = self.prepared[bench_name]\n        return prepared.verify(prepared())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        found, value = _recorded(type(self), bench_name, args, method)\n        if found:\n            return value\n        prepared = state.prepared[bench_name]\n        return prepared.verify(prepared())\n\ndef setup(*args: Any) -> None:\n    if not _recorded(state.cls, bench_name, args, method)[0]:\n        prepare(bench_name, args)",
         "name": "bench_lca.NewDemandRefinement.track_relative_error",
         "param_names": [
             "size",
@@ -187,7 +343,9 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
             ],
             [
                 "'on'",
@@ -197,10 +355,10 @@
         "timeout": 600,
         "type": "track",
         "unit": "unit",
-        "version": "3-05303220"
+        "version": "5-fb647cb2"
     },
     "bench_lca.SingleScore.peakmem_first_score": {
-        "code": "class <locals>:\n    def peak(self: Any, *args: Any) -> None:\n        self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def peak(self: Any, *args: Any) -> None:\n        state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
         "name": "bench_lca.SingleScore.peakmem_first_score",
         "param_names": [
             "size",
@@ -208,7 +366,9 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
             ],
             [
                 "'LCA'",
@@ -219,10 +379,10 @@
         "timeout": 600,
         "type": "peakmemory",
         "unit": "bytes",
-        "version": "3-05303220"
+        "version": "5-fb647cb2"
     },
     "bench_lca.SingleScore.time_first_score": {
-        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        state.results[bench_name] = state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
         "min_run_count": 2,
         "name": "bench_lca.SingleScore.time_first_score",
         "number": 1,
@@ -232,7 +392,9 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
             ],
             [
                 "'LCA'",
@@ -246,11 +408,11 @@
         "timeout": 600,
         "type": "time",
         "unit": "seconds",
-        "version": "3-05303220",
+        "version": "5-fb647cb2",
         "warmup_time": 0
     },
     "bench_lca.SingleScore.track_relative_error": {
-        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        prepared = self.prepared[bench_name]\n        return prepared.verify(prepared())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        found, value = _recorded(type(self), bench_name, args, method)\n        if found:\n            return value\n        prepared = state.prepared[bench_name]\n        return prepared.verify(prepared())\n\ndef setup(*args: Any) -> None:\n    if not _recorded(state.cls, bench_name, args, method)[0]:\n        prepare(bench_name, args)",
         "name": "bench_lca.SingleScore.track_relative_error",
         "param_names": [
             "size",
@@ -258,7 +420,9 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'",
+                "'useeio'"
             ],
             [
                 "'LCA'",
@@ -269,7 +433,7 @@
         "timeout": 600,
         "type": "track",
         "unit": "unit",
-        "version": "3-05303220"
+        "version": "5-fb647cb2"
     },
     "version": 2
 }

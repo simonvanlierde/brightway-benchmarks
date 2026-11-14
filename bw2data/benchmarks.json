@@ -15,7 +15,7 @@
         "warmup_time": -1
     },
     "bench_write.DatabaseWrite.peakmem_write": {
-        "code": "class <locals>:\n    def peak(self: Any, *args: Any) -> None:\n        self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def peak(self: Any, *args: Any) -> None:\n        state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
         "name": "bench_write.DatabaseWrite.peakmem_write",
         "param_names": [
             "size"
@@ -29,10 +29,10 @@
         "timeout": 1800,
         "type": "peakmemory",
         "unit": "bytes",
-        "version": "4-05303220"
+        "version": "5-fb647cb2"
     },
     "bench_write.DatabaseWrite.time_write": {
-        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        state.results[bench_name] = state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
         "min_run_count": 2,
         "name": "bench_write.DatabaseWrite.time_write",
         "number": 1,
@@ -45,16 +45,16 @@
                 "'bafu'"
             ]
         ],
-        "rounds": 2,
+        "rounds": 1,
         "sample_time": 0.01,
         "timeout": 1800,
         "type": "time",
         "unit": "seconds",
-        "version": "4-05303220",
+        "version": "5-fb647cb2",
         "warmup_time": 0
     },
     "bench_write.DatabaseWrite.track_score_error": {
-        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        prepared = self.prepared[bench_name]\n        return prepared.verify(prepared())\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def error(self: Any, *args: Any) -> float | None:\n        found, value = _recorded(type(self), bench_name, args, method)\n        if found:\n            return value\n        prepared = state.prepared[bench_name]\n        return prepared.verify(prepared())\n\ndef setup(*args: Any) -> None:\n    if not _recorded(state.cls, bench_name, args, method)[0]:\n        prepare(bench_name, args)",
         "name": "bench_write.DatabaseWrite.track_score_error",
         "param_names": [
             "size"
@@ -68,7 +68,7 @@
         "timeout": 1800,
         "type": "track",
         "unit": "unit",
-        "version": "4-05303220"
+        "version": "5-fb647cb2"
     },
     "version": 2
 }

@@ -1,0 +1,16 @@
+commit 9ea97092b4e5360a45ea2417dbcb12a4240ec7f9
+generator 5
+1cd0fd4f65f42bdecf0de98a6388ca03eed93118084d3f18ee2f4d0fa0133a9b  .asv/../results/bw2calc-conda/benchmarks.json
+111e8f305f0192f252f684f5cb6fdc99c3e1fda7a74097d2b2b2943757fd1624  .asv/../results/bw2calc-conda/pinned-x86-1/versions-168669f0fb01f8fc996759a341cfd2cd.txt
+7debf766fda9f2d8aa5912c379ad8bd71a16119802a30fae311225d6cc8ddbb1  .asv/../results/bw2calc-conda/pinned-x86-1/fe780d2b-rattler-py3.13-libblas_=__mkl-mkl2026.1.0-numpy2.5.3-scikit-umfpack0.4.2-scipy1.18.1-BWBENCH_STACKf7c32611.json
+5cfc62ea56a8801c0f7fd86bb9f87173367d9f9a17d049fbd9d4278a9b41afa2  .asv/../results/bw2calc-conda/pinned-x86-1/machine.json
+4c0f3d2dbc78dad1ef04a860b7944251f7e562960e05efd233067ca2e5747c0c  .asv/../results/bw2calc-conda/pinned-x86-1/fb9d6561-rattler-py3.13-libblas_=__mkl-mkl2026.1.0-numpy2.5.3-scikit-umfpack0.4.2-scipy1.18.1-BWBENCH_STACKf7c32611.json
+845fce4d19cae2f77618726b5fbc1717bee83baccd32bbd1aac13749d3f49d38  .asv/../results/bw2calc-conda/pinned-x86-1/versions-fc5683d9347b67c1dbd3ef983ea2dd6d.txt
+b7fc7deb0030ec46b57e2a925c63cf5714ef08bfe710a40973af5e53bce630f0  .asv/../results/bw2calc-conda/pinned-x86-1/fe780d2b-rattler-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json
+3b78736f37ae45aa21d82e71484aaa228cd584e2e8a7cf431e29ab3c90d9402d  .asv/../results/bw2calc-conda/pinned-x86-1/fe780d2b-rattler-py3.13-numpy2.5.3-scikit-umfpack0.4.2-scipy1.18.1-BWBENCH_STACKf7c32611.json
+42cef8cee8640f71959f6038b2e811c62b7725664c5a88239c8b297cfdf36c92  .asv/../results/bw2calc-conda/pinned-x86-1/fb9d6561-rattler-py3.13-mkl2026.1.0-numpy2.5.3-pypardiso0.4.7-scipy1.18.1-BWBENCH_STACKf7c32611.json
+e49bb627f186b1df6576a0ffce4655f73196d0cd6dd363733307128a6c47dcf2  .asv/../results/bw2calc-conda/pinned-x86-1/versions-6afec304fdd2ec8cc3eb4e9141051411.txt
+93f5dd2e850e6fe1d0f6740202398eeeff166e913a7acfbec1d7dac848e3cc66  .asv/../results/bw2calc-conda/pinned-x86-1/versions-0f07c0462ef8da4e7087b07d58896e20.txt
+042692bed754cea2dbf095c88fed31a1aeab4a07b7b3ebde3e24a081f0bfdfc6  .asv/../results/bw2calc-conda/pinned-x86-1/fb9d6561-rattler-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json
+47a39f767440090f62ab47541ab375b8b1f03dae032625ab53d756e6694797ad  .asv/../results/bw2calc-conda/pinned-x86-1/fe780d2b-rattler-py3.13-mkl2026.1.0-numpy2.5.3-pypardiso0.4.7-scipy1.18.1-BWBENCH_STACKf7c32611.json
+c0f4a1b00ddcc6076c0be8a349931ad4b38e1ec5f8ba66e624b5baa5e60a1a4d  .asv/../results/bw2calc-conda/pinned-x86-1/fb9d6561-rattler-py3.13-numpy2.5.3-scikit-umfpack0.4.2-scipy1.18.1-BWBENCH_STACKf7c32611.json

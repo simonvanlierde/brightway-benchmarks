@@ -1,6 +1,6 @@
 {
     "bench_datapackage.EntriesPath.time_add_entries": {
-        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        state.results[bench_name] = state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
         "min_run_count": 2,
         "name": "bench_datapackage.EntriesPath.time_add_entries",
         "number": 1,
@@ -14,16 +14,16 @@
             ]
         ],
         "repeat": 0,
-        "rounds": 2,
+        "rounds": 1,
         "sample_time": 0.01,
         "timeout": 600,
         "type": "time",
         "unit": "seconds",
-        "version": "4",
+        "version": "5",
         "warmup_time": 0
     },
     "bench_datapackage.EntriesPath.time_vars_iterator": {
-        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        state.results[bench_name] = state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
         "min_run_count": 2,
         "name": "bench_datapackage.EntriesPath.time_vars_iterator",
         "number": 1,
@@ -37,16 +37,16 @@
             ]
         ],
         "repeat": 0,
-        "rounds": 2,
+        "rounds": 1,
         "sample_time": 0.01,
         "timeout": 600,
         "type": "time",
         "unit": "seconds",
-        "version": "4",
+        "version": "5",
         "warmup_time": 0
     },
     "bench_datapackage.Groups.time_groups": {
-        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        self.results[bench_name] = self.prepared[bench_name]()\n\n    def setup(self: Any, *args: Any) -> None:\n        self.prepared = {}\n        self.results = {}\n        for b in group:\n            self.prepared[b.name] = b.prepare(**dict(zip(names, args, strict=True)))\n        self.usage = _usage()  # last, so the setup's own work is not counted",
+        "code": "class <locals>:\n    def time(self: Any, *args: Any) -> None:\n        state.results[bench_name] = state.prepared[bench_name]()\n\ndef setup(*args: Any) -> None:\n    state.results = {}\n    prepare(bench_name, args)\n    state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted",
         "min_run_count": 2,
         "name": "bench_datapackage.Groups.time_groups",
         "number": 1,
@@ -61,12 +61,12 @@
             ]
         ],
         "repeat": 0,
-        "rounds": 2,
+        "rounds": 1,
         "sample_time": 0.01,
         "timeout": 600,
         "type": "time",
         "unit": "seconds",
-        "version": "4",
+        "version": "5",
         "warmup_time": 0
     },
     "version": 2

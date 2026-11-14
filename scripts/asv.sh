@@ -45,7 +45,9 @@ unset BWBENCH_SOLVER
 start=$(mktemp "$PWD/.asv/.run-XXXXXX")
 status=0
 case $cmd in
-run | continuous | compare) asv "$cmd" --config "$conf" --machine "$machine" "$@" || status=$? ;;
+# --record-samples keeps every sample beside the median, so readers can rerun the noise rule.
+run) asv run --config "$conf" --machine "$machine" --record-samples "$@" || status=$? ;;
+continuous | compare) asv "$cmd" --config "$conf" --machine "$machine" "$@" || status=$? ;;
 *) asv "$cmd" --config "$conf" "$@" || status=$? ;;
 esac
 
@@ -79,6 +81,10 @@ if [ "$cmd" = run ]; then
             uv pip compile --quiet --no-deps --python "$env/bin/python" --no-header -o "$lock" - ||
             status=1
     done
+    # Every result file this run wrote carries its environment's fingerprint (src/bwbench/fingerprint.py),
+    # which results-commit requires. After the lock files: the fingerprint holds the lock's checksum.
+    find "$out" -newer "$start" -name '*-*.json' -exec python3 scripts/fingerprints.py stamp ".asv/env/$subject" {} + ||
+        status=1
     # Which bwbench commit wrote which file, by checksum. run_crate.py gives each file the newest
     # record that lists its content, so this holds after results-commit merges several clones.
     # box.sh passes the commit in: in a worktree, git cannot reach .git from inside the box.

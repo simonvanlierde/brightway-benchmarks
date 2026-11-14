@@ -6,6 +6,7 @@ import json
 import platform
 import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -28,8 +29,11 @@ CONF = {
 def repo(tmp_path: Path) -> Path:
     """A scratch repo with asv.sh, two subject configs and uvx and uv stubs that do nothing."""
     (tmp_path / "scripts").mkdir()
-    for script in ("asv.sh", "asv_conf.py"):
+    for script in ("asv.sh", "asv_conf.py", "fingerprints.py"):
         shutil.copy(REPO / "scripts" / script, tmp_path / "scripts")
+    (tmp_path / "src" / "bwbench").mkdir(parents=True)
+    for module in ("__init__.py", "fingerprint.py"):
+        shutil.copy(REPO / "src" / "bwbench" / module, tmp_path / "src" / "bwbench")
     (tmp_path / "asv").mkdir()
     (tmp_path / ".asv").mkdir()
     (tmp_path / "asv" / "solvers.json").write_text(json.dumps(CONF))
@@ -142,9 +146,15 @@ def add_env(repo: Path, name: str, *, conda: bool = False, stack: str | None = N
         (env / "conda-meta" / "libblas-3.11.0-1_h1ea3ea9_openblas.json").write_text("{}")
     stack = stack or hashlib.sha256((repo / "asv" / "plain.stack.txt").read_bytes()).hexdigest()[:8]
     # As asv writes it, indented.
-    info = {"build_env_vars": {"BWBENCH_STACK": stack}, "tool_name": "rattler" if conda else "uv"}
+    info = {
+        "build_env_vars": {"BWBENCH_STACK": stack},
+        "python": "3.12",
+        "requirements": {},
+        "tool_name": "rattler" if conda else "uv",
+    }
     (env / "asv-env-info.json").write_text(json.dumps(info, indent=4))
-    (env / "bin" / "python").write_text("#!/bin/sh\necho numpy==2.5.3\n")
+    # pip freeze prints numpy; the fingerprint (python -I fingerprint.py LOCK) runs on the real Python.
+    (env / "bin" / "python").write_text(f'#!/bin/sh\n[ "$1" = -I ] && exec {sys.executable} "$@"\necho numpy==2.5.3\n')
     (env / "bin" / "python").chmod(0o755)
 
 
@@ -234,3 +244,42 @@ def test_each_result_keeps_the_commit_that_wrote_it(repo: Path):
     assert [r["@id"] for r in graph[f"#run-{'a' * 40}"]["result"]][-1] == "plain/m/first.json"
     assert [r["@id"] for r in graph[f"#run-{'b' * 40}"]["result"]][-1] == "plain/m/second.json"
     assert graph[f"{module.REPO}/tree/{'b' * 40}"]["version"] == "b" * 40
+
+
+def test_each_result_gets_its_environments_fingerprint_and_samples(repo: Path):
+    """Asv runs with --record-samples, and asv.sh stamps what it wrote with the fingerprint of its environment."""
+    stack = hashlib.sha256((repo / "asv" / "plain.stack.txt").read_bytes()).hexdigest()[:8]
+    name = f"rattler-py3.12-BWBENCH_STACK{stack}"
+    result = {"env_name": name, "python": "3.12", "requirements": {}, "env_vars": {"BWBENCH_STACK": stack}}
+    (repo / "stub" / "uvx").write_text(
+        '#!/bin/sh\necho "$@" >>"$0.log"\ncase "$*" in *" run "*) sleep 0.1; mkdir -p results/m\n'
+        f"echo '{json.dumps(result)}' >results/m/0123abcd-{name}.json ;; esac\n"
+    )
+    (repo / "stub" / "uvx").chmod(0o755)
+    out = run_with_env(repo, conda=True)
+    assert out.returncode == 0, out.stderr
+    assert "run --config" in (log := (repo / "stub" / "uvx.log").read_text())
+    assert "--record-samples" in log
+    stamped = json.loads((repo / "results" / "m" / f"0123abcd-{name}.json").read_text())
+    assert stamped["env_name"] == name
+    fp = stamped["fingerprint"]
+    assert fp["lock"]["name"] == "versions-abc.txt"
+    assert (
+        fp["lock"]["sha256"] == hashlib.sha256((repo / "results" / "m" / "versions-abc.txt").read_bytes()).hexdigest()
+    )
+    assert fp["python"].startswith("CPython")
+    # The run record lists the stamped file, not the one asv wrote.
+    (record,) = (repo / "results" / "m").glob("bwbench-run-*.txt")
+    digest = hashlib.sha256((repo / "results" / "m" / f"0123abcd-{name}.json").read_bytes()).hexdigest()
+    assert digest in record.read_text()
+
+
+def test_a_result_no_environment_ran_fails_the_run(repo: Path):
+    result = {"env_name": "uv-py3.11", "python": "3.11", "requirements": {}, "env_vars": {}}
+    (repo / "stub" / "uvx").write_text(
+        '#!/bin/sh\ncase "$*" in *" run "*) sleep 0.1; mkdir -p results/m\n'
+        f"echo '{json.dumps(result)}' >results/m/0123abcd-uv-py3.11.json ;; esac\n"
+    )
+    out = run_with_env(repo, conda=False)
+    assert out.returncode == 1
+    assert "no environment" in out.stderr

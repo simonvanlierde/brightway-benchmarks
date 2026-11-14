@@ -29,6 +29,14 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Every result file carries an environment fingerprint (CPU, core type, kernel, SMT, governor,
+  power profile, Python, BLAS, lock), and `just results-commit` refuses a new result without one
+  ([method](docs/method.md#how-the-results-stay-reproducible)).
+- Result files keep each case's raw samples next to its median, so the noise rule can be rerun
+  from the `results` branch.
+- A nightly canary on the benchmark machine: a fixed workload whose drift is the machine's, kept
+  apart from the histories (`just canary`, `just canary-check`,
+  [running](docs/running.md#the-nightly-canary)).
 - A Python support probe outside the asv harness (`scripts/py_probe.py`, the `python-probe`
   workflow): install, import and one score on Python 3.11 to 3.15 daily on three operating
   systems, and on 3.9 and 3.10 weekly on Linux ([running](docs/running.md#which-pythons-work)). A

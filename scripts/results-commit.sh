@@ -10,7 +10,8 @@
 # values other than the defaults. Only asv's JSON, the lock files, pip freezes and the
 # bwbench-run records are copied, and no symlinks. The RO-Crate is
 # written again over the merged branch.
-# It refuses results that name this host, because they become public once pushed: asv.sh's
+# It refuses a new or changed result file without an environment fingerprint (scripts/fingerprints.py),
+# and results that name this host, because they become public once pushed: asv.sh's
 # default (box-<slot>) never does, but a BWBENCH_MACHINE set by hand or results from before
 # that default can. Other names to refuse (an ssh alias, say) go in BWBENCH_PRIVATE_NAMES,
 # separated by spaces.
@@ -76,6 +77,8 @@ if git -C "$tree" diff --cached --quiet; then
     exit 0
 fi
 here=$(cd "$(dirname "$0")" && pwd)
+# A new or changed result must say what machine and environment timed it (scripts/fingerprints.py).
+uv run --quiet --frozen --project "$here/.." python "$here/fingerprints.py" check "$tree" || exit 1
 uv run --quiet --frozen --project "$here/.." python "$here/merge_results.py" "$tree"
 uv run --quiet --frozen --project "$here/.." python "$here/run_crate.py" "$tree"
 git -C "$tree" add -A

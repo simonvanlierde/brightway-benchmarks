@@ -9,9 +9,14 @@ from pathlib import Path
 
 import pytest
 
+from bwbench.fingerprint import FIELDS
+
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "results-commit.sh"
 GIT = shutil.which("git") or "git"
 HOST = "benchhost7"  # what the hostname shim reports; long enough to count as a name
+# A valid fingerprint of a made-up machine, which every result the tests commit carries.
+FP = dict.fromkeys(FIELDS) | {"version": 1, "os": "Linux", "cpu_model": "Example CPU"}
+STAMPED = json.dumps({"fingerprint": FP})
 
 
 @pytest.fixture
@@ -39,7 +44,7 @@ def commit_results(repo: Path, env: dict[str, str]) -> subprocess.CompletedProce
     return subprocess.run([str(SCRIPT)], cwd=repo, capture_output=True, text=True, check=False, env=env)
 
 
-def write(repo: Path, name: str, text: str = "{}") -> None:
+def write(repo: Path, name: str, text: str = STAMPED) -> None:
     path = repo / "results" / name
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
@@ -74,14 +79,14 @@ def test_first_run_starts_an_empty_branch_with_result_files_only(repo: Path, env
 
 
 def test_updates_files_and_never_deletes_them(repo: Path, env: dict[str, str]):
-    write(repo, "bw2calc/pinned-e0/a.json", '{"v": 1}')
+    write(repo, "bw2calc/pinned-e0/a.json", json.dumps({"v": 1, "fingerprint": FP}))
     write(repo, "bw2calc/pinned-e0/b.json")
     assert commit_results(repo, env).returncode == 0
-    write(repo, "bw2calc/pinned-e0/a.json", '{"v": 2}')
+    write(repo, "bw2calc/pinned-e0/a.json", json.dumps({"v": 2, "fingerprint": FP}))
     (repo / "results" / "bw2calc" / "pinned-e0" / "b.json").unlink()
     assert commit_results(repo, env).returncode == 0
     assert files_on_branch(repo, env) == ["bw2calc/pinned-e0/a.json", "bw2calc/pinned-e0/b.json"]
-    assert git(repo, env, "show", "refs/heads/results:bw2calc/pinned-e0/a.json") == '{"v": 2}'
+    assert json.loads(git(repo, env, "show", "refs/heads/results:bw2calc/pinned-e0/a.json"))["v"] == 2
     assert git(repo, env, "rev-list", "--count", "refs/heads/results").strip() == "2"
 
 
@@ -163,7 +168,11 @@ def asv_result(times: dict[str, float], version: str = "1") -> str:
     """One benchmark over `size` and `cls`, with one class, as asv writes it."""
     row = [list(times.values()), [[f"'{s}'" for s in times], ["'LCA'"]], version]
     return json.dumps(
-        {"result_columns": ["result", "params", "version"], "results": {"bench_lca.Score.time_score": row}}
+        {
+            "result_columns": ["result", "params", "version"],
+            "results": {"bench_lca.Score.time_score": row},
+            "fingerprint": FP,
+        }
     )
 
 
@@ -210,3 +219,27 @@ def test_a_merged_file_is_credited_to_the_run_that_wrote_it(repo: Path, env: dic
     crate = json.loads(git(repo, env, "show", "refs/heads/results:ro-crate-metadata.json"))
     (run,) = [e for e in crate["@graph"] if {"@id": "bw2calc/m/abc-env.json"} in e.get("result", [])]
     assert run["@id"] == "#run-2bbb"
+
+
+@pytest.mark.parametrize("fingerprint", [None, FP | {"smt": "yes"}, {k: v for k, v in FP.items() if k != "kernel"}])
+def test_refuses_a_new_result_without_a_valid_fingerprint(repo: Path, env: dict[str, str], fingerprint: dict | None):
+    write(repo, "bw2calc/m/old.json", json.dumps({"v": 1}))
+    write(repo, "bw2calc/m/machine.json", '{"machine": "m"}')  # asv's, which carries none
+    stamped = {"v": 1} if fingerprint is None else {"v": 1, "fingerprint": fingerprint}
+    write(repo, "bw2calc/m/abc-env.json", json.dumps(stamped))
+    run = commit_results(repo, env)
+    assert run.returncode == 1
+    assert "bw2calc/m/abc-env.json" in run.stderr
+    assert "results" not in git(repo, env, "branch")
+
+
+def test_results_committed_before_the_fingerprint_stay(repo: Path, env: dict[str, str]):
+    write(repo, "bw2calc/m/old.json", json.dumps({"v": 1}))
+    git(repo, env, "switch", "-q", "--orphan", "results")
+    git(repo, env, "--work-tree", str(repo / "results"), "add", "bw2calc/m/old.json")
+    git(repo, env, "commit", "-q", "-m", "an older result")
+    git(repo, env, "switch", "-q", "main")
+    write(repo, "bw2calc/m/new.json")
+    run = commit_results(repo, env)
+    assert run.returncode == 0, run.stderr
+    assert files_on_branch(repo, env) == ["bw2calc/m/new.json", "bw2calc/m/old.json"]

@@ -19,11 +19,13 @@ def test_crate_lists_every_file_and_the_profiles(tmp_path: Path, monkeypatch: py
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     (tmp_path / "bw2calc" / "m1").mkdir(parents=True)
+    (tmp_path / "canary" / "m1").mkdir(parents=True)
     names = (
         "bw2calc/benchmarks.json",
         "bw2calc/m1/abc123-env.json",
         "bw2calc/m1/machine.json",
         "bw2calc/m1/pylock.env.toml",
+        "canary/m1/20261115T190500Z.json",
     )
     for name in names:
         (tmp_path / name).write_text("{}")
@@ -35,6 +37,7 @@ def test_crate_lists_every_file_and_the_profiles(tmp_path: Path, monkeypatch: py
     assert parts == list(names)
     assert graph["bw2calc/m1/pylock.env.toml"]["description"].startswith("PEP 751")
     assert graph["bw2calc/m1/machine.json"]["description"] == "asv machine description"
+    assert graph["canary/m1/20261115T190500Z.json"]["description"].startswith("one night of the machine's canary")
     assert "m1" not in graph["./"]["name"]  # machine folders carry host names; the dataset name must not
     assert graph["#profile-ecoinvent"]["value"]
     # No bwbench-run record lists them, so the commit that wrote them is unknown.

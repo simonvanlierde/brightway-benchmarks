@@ -134,8 +134,11 @@ site:
     else echo "no compat branch yet, so the site has no setup guidance" >&2
     fi
     rm -rf build/ratios && mkdir -p build/ratios
-    if git fetch --quiet origin ratios 2>/dev/null; then git archive FETCH_HEAD | tar -x -C build/ratios
-    else echo "no ratios branch yet, so the site has no comparisons across machines" >&2
+    # ls-remote exits 2 when the branch is missing, which is fine; any other failure stops the build.
+    status=0 && git ls-remote --quiet --exit-code origin refs/heads/ratios >/dev/null || status=$?
+    if [ "$status" = 0 ]; then git fetch --quiet origin ratios && git archive FETCH_HEAD | tar -x -C build/ratios
+    elif [ "$status" = 2 ]; then echo "no ratios branch yet, so the site has no comparisons across machines" >&2
+    else echo "could not reach origin for the ratios branch (git ls-remote exit $status)" >&2 && exit 1
     fi
     for conf in asv/*.json; do
       s=$(basename "$conf" .json)

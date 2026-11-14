@@ -61,6 +61,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
         <strong>{c.case_name}</strong>{c.description ? `: ${c.description}` : ""}
         {#each c.params as p (p.name)}{" "}<span>{p.name}: <strong>{p.value}</strong>{p.note ? ` (${p.note.replace(/\.$/, "")})` : ""}.</span>{/each}
       </p>
+      {#if c.id === "solvers"}
+        <p class="ratio-case">At this size the factorization is too small to show which solver is faster. On an ecoinvent-sized database PyPardiso and UMFPACK give a score 2 to 5 times faster than SuperLU.</p>
+      {/if}
       <div class="scroll" role="region" aria-label="{c.title}, table" use:scrollable>
         <table class="ratio-table">
           <caption class="sr">{c.title}: one row per machine; below 1 the alternative is faster.</caption>

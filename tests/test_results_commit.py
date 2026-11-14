@@ -15,7 +15,12 @@ SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "results-commit.sh"
 GIT = shutil.which("git") or "git"
 HOST = "benchhost7"  # what the hostname shim reports; long enough to count as a name
 # A valid fingerprint of a made-up machine, which every result the tests commit carries.
-FP = dict.fromkeys(FIELDS) | {"version": 1, "os": "Linux", "cpu_model": "Example CPU"}
+FP = dict.fromkeys(FIELDS) | {
+    "version": 1,
+    "os": "Linux",
+    "cpu_model": "Example CPU",
+    "lock": {"name": "pylock.abc.toml", "sha256": "0" * 64},
+}
 STAMPED = json.dumps({"fingerprint": FP})
 
 
@@ -164,14 +169,15 @@ def test_files_it_does_not_publish_are_not_checked(repo: Path, env: dict[str, st
     assert files_on_branch(repo, env) == ["bw2calc/m/a.json"]
 
 
-def asv_result(times: dict[str, float], version: str = "1") -> str:
+def asv_result(times: dict[str, float], version: str = "1", fingerprint: dict | None = FP, **extra: object) -> str:
     """One benchmark over `size` and `cls`, with one class, as asv writes it."""
     row = [list(times.values()), [[f"'{s}'" for s in times], ["'LCA'"]], version]
     return json.dumps(
         {
             "result_columns": ["result", "params", "version"],
             "results": {"bench_lca.Score.time_score": row},
-            "fingerprint": FP,
+            "fingerprint": fingerprint,
+            **extra,
         }
     )
 
@@ -231,6 +237,46 @@ def test_refuses_a_new_result_without_a_valid_fingerprint(repo: Path, env: dict[
     assert run.returncode == 1
     assert "bw2calc/m/abc-env.json" in run.stderr
     assert "results" not in git(repo, env, "branch")
+
+
+def test_an_asv_result_must_name_its_lock(repo: Path, env: dict[str, str]):
+    write(repo, "canary/m/20260101T000000Z.json", json.dumps({"fingerprint": FP | {"lock": None}}))
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.0}, fingerprint=FP | {"lock": None}))
+    run = commit_results(repo, env)
+    assert run.returncode == 1
+    assert "bw2calc/m/abc-env.json: no lock" in run.stderr
+    assert "canary" not in run.stderr
+
+
+@pytest.mark.parametrize("kept", [FP, [FP | {"smt": "yes"}], [FP | {"lock": None}], ["x"]])
+def test_refuses_kept_fingerprints_that_are_not_a_list_of_valid_ones(repo: Path, env: dict[str, str], kept: object):
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.0}, kept_fingerprints=kept))
+    run = commit_results(repo, env)
+    assert run.returncode == 1
+    assert "kept_fingerprints" in run.stderr
+
+
+def test_cells_kept_from_another_environment_keep_its_fingerprint(repo: Path, env: dict[str, str]):
+    """A merged file names the fingerprints of every run whose cells it kept, null for pre-fingerprint ones."""
+    other = FP | {"kernel": "6.1"}
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.0, "ecoinvent": 9.0, "xl": 20.0}, fingerprint=None))
+    git(repo, env, "switch", "-q", "--orphan", "results")
+    git(repo, env, "--work-tree", str(repo / "results"), "add", "bw2calc/m/abc-env.json")
+    git(repo, env, "commit", "-q", "-m", "an older result")
+    git(repo, env, "switch", "-q", "main")
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.5, "ecoinvent": 8.0}, fingerprint=other))
+    assert commit_results(repo, env).returncode == 0
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.4}))
+    run = commit_results(repo, env)
+    assert run.returncode == 0, run.stderr
+    merged = json.loads(git(repo, env, "show", "refs/heads/results:bw2calc/m/abc-env.json"))
+    assert merged["fingerprint"] == FP
+    assert merged["kept_fingerprints"] == [None, other]
+    # The same environment again adds nothing.
+    write(repo, "bw2calc/m/abc-env.json", asv_result({"smoke": 1.3}))
+    assert commit_results(repo, env).returncode == 0
+    again = json.loads(git(repo, env, "show", "refs/heads/results:bw2calc/m/abc-env.json"))
+    assert again["kept_fingerprints"] == [None, other]
 
 
 def test_results_committed_before_the_fingerprint_stay(repo: Path, env: dict[str, str]):

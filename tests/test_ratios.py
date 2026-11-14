@@ -403,3 +403,12 @@ def test_each_comparison_is_saved_as_it_finishes(monkeypatch: pytest.MonkeyPatch
     assert [c["id"] for c in doc["comparisons"]] == ["solvers"]
     assert problems(doc) == []
     assert list(tmp_path.glob("*.tmp")) == []
+
+
+def test_a_run_without_any_ratio_fails(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Every arm missing writes the file, with the reasons, but exits 4: nothing was measured."""
+    monkeypatch.setattr(compare, "build", lambda *_: compare.Built(failed="cannot install here"))
+    out = tmp_path / "r.json"
+    assert compare.main(["compare", "-o", str(out), "--work", str(tmp_path / "w"), "--machine", "test"]) == 4
+    assert {r["missing"] for r in json.loads(out.read_text())["comparisons"][0]["ratios"]} == {"baseline missing"}
+    assert "exit codes" in compare.parser().format_help().lower()

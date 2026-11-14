@@ -20,7 +20,8 @@ Every arm other than the solvers' runs SuperLU, so its ratio is the install's, t
 interpreter's or the release's, not a solver change. Run it from a checkout: the cases live in
 ``benchmarks/``. It needs ``uv``, and ``pixi`` for ``install-path``.
 
-Exit codes: 0 written (or valid), 1 a file has problems (validate), 2 usage error, 3 could not run.
+Exit codes: 0 written (or valid), 1 a file has problems (validate), 2 usage error, 3 could not
+run, 4 written, but no ratio has a value (every comparison lacks an arm; the file says why).
 """
 
 from __future__ import annotations
@@ -407,14 +408,19 @@ def validate(files: list[Path]) -> int:
 
 def parser() -> argparse.ArgumentParser:
     """The command line."""
-    p = argparse.ArgumentParser(prog="bwbench", description="Interleaved ratios between Brightway environments.")
+    p = argparse.ArgumentParser(
+        prog="bwbench",
+        description="Interleaved ratios between Brightway environments.",
+        epilog=__doc__.rstrip().split("\n\n")[-1],
+    )
     sub = p.add_subparsers(dest="command", required=True)
     ids = ["all", "solvers", "install-path", "python", "bw2calc-release", "bw2data-release"]
     c = sub.add_parser(
         "compare",
         help="measure ratios on this machine",
         description=__doc__.split("\n\n")[2],
-        epilog="example: bwbench compare solvers install-path -o ratios.json",
+        epilog="example: bwbench compare solvers install-path -o ratios.json\n\n" + __doc__.rstrip().split("\n\n")[-1],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     c.add_argument(
         "ids",
@@ -462,9 +468,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.work is None:
             with tempfile.TemporaryDirectory(prefix="bwbench-compare-") as tmp:
-                compare(args.ids, args.output, args.rounds, args.repeats, args.tier, args.machine, Path(tmp))
+                doc = compare(args.ids, args.output, args.rounds, args.repeats, args.tier, args.machine, Path(tmp))
         else:
-            compare(args.ids, args.output, args.rounds, args.repeats, args.tier, args.machine, args.work.resolve())
+            work = args.work.resolve()
+            doc = compare(args.ids, args.output, args.rounds, args.repeats, args.tier, args.machine, work)
     except KeyboardInterrupt:
         print("bwbench: interrupted", file=sys.stderr)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -474,6 +481,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 3
     print(args.output.as_posix())
+    if not any(r["ratio"] is not None for c in doc["comparisons"] for r in c["ratios"]):
+        print("error: no ratio has a value: every comparison lacks an arm (the file says why)", file=sys.stderr)
+        return 4
     return 0
 
 

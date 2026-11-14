@@ -2,7 +2,8 @@
 """Interleaved ratio files as the comparison page's data: ``export_ratios.py RATIOS CONTRIBUTED OUT``.
 
 Reads the newest valid file per machine: RATIOS/reference/YYYY-MM-DD.json and
-RATIOS/hosted/YYYY-MM-DD/<OS>.json (a checkout of the ``ratios`` branch), and
+RATIOS/hosted/<YYYY-MM-DD>-<run id>/<OS>.json (a checkout of the ``ratios``
+branch), the newest by its ``created``, and
 CONTRIBUTED/<machine>/YYYY-MM-DD.json (``ratios/contributed`` on main). A file's tier comes from
 its folder: a contributed file that claims another tier is skipped, as is one that
 ``bwbench.ratios.problems`` rejects, each with a warning. Writes OUT/ratios.json in the shape

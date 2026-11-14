@@ -25,6 +25,7 @@ Exit codes: 0 written (or valid), 1 a file has problems (validate), 2 usage erro
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import platform
@@ -40,7 +41,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from bwbench.fingerprint import fingerprint
-from bwbench.ratios import FORMAT, RESAMPLES, bootstrap_interval, geometric_mean_ratio, interleave, problems
+from bwbench.ratios import (
+    FORMAT,
+    RESAMPLES,
+    bootstrap_interval,
+    geometric_mean_ratio,
+    interleave,
+    problems,
+    ratio_seed,
+)
 from bwbench.timecase import BENCHMARKS
 
 SRC = Path(__file__).resolve().parents[1]
@@ -120,6 +129,8 @@ def comparisons(system: str, latest: dict[str, str]) -> dict[str, Comparison]:
     if system in {"Darwin", "Windows"}:
         # bw2data does not depend on bw2calc, which its write case checks the score with.
         for pkg, case, extra in (("bw2calc", FIRST_SCORE, ()), ("bw2data", WRITE, ("bw2calc",))):
+            if pkg not in latest:  # compare() resolves releases only when a release comparison runs
+                continue
             out[f"{pkg}-release"] = Comparison(
                 f"{pkg}-release",
                 *case,
@@ -130,7 +141,11 @@ def comparisons(system: str, latest: dict[str, str]) -> dict[str, Comparison]:
 
 
 def _run(args: list[str], cwd: Path, **kw: object) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(args, cwd=cwd, capture_output=True, text=True, timeout=TIMEOUT, check=False, **kw)  # noqa: S603  # ty: ignore[no-matching-overload]
+    """ARGS' result; a process that outlives TIMEOUT is killed and fails with exit code -1."""
+    try:
+        return subprocess.run(args, cwd=cwd, capture_output=True, text=True, timeout=TIMEOUT, check=False, **kw)  # noqa: S603  # ty: ignore[no-matching-overload]
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(args, -1, "", f"timed out after {TIMEOUT} s")
 
 
 def _tail(proc: subprocess.CompletedProcess[str], lines: int = 5) -> str:
@@ -161,15 +176,19 @@ PIXI_PLATFORMS = {
 
 
 def build(env: Env, folder: Path) -> Built:
-    """Build ENV in FOLDER, record its resolved set as its lock and fingerprint it."""
-    folder.mkdir(parents=True, exist_ok=True)
+    """Build ENV in FOLDER, record its resolved set as its lock and fingerprint it.
+
+    FOLDER is emptied first: uv refuses to create a venv over one a former run left there.
+    """
+    shutil.rmtree(folder, ignore_errors=True)
+    folder.mkdir(parents=True)
     built = _build_pixi(env, folder) if env.installer == "pixi" else _build_uv(env, folder)
     if built.failed is None and built.python is not None:
         proc = _run([str(built.python), "-I", str(PROBE), str(built.lock)], folder)
-        if proc.returncode:
+        with contextlib.suppress(ValueError):
+            built.fingerprint = None if proc.returncode else json.loads(proc.stdout)
+        if built.fingerprint is None:
             built.failed = f"fingerprint: {_tail(proc)}"
-        else:
-            built.fingerprint = json.loads(proc.stdout)
     return built
 
 
@@ -189,6 +208,8 @@ def _build_uv(env: Env, folder: Path) -> Built:
         if proc.returncode:
             built.left_out[extra] = _tail(proc)
     proc = _run(["uv", "pip", "freeze", "--python", str(py)], folder)
+    if proc.returncode or not proc.stdout.strip():  # the lock would name no environment
+        return Built(failed=f"uv pip freeze: {_tail(proc)}")
     lock.write_text(proc.stdout, encoding="utf-8")
     return built
 
@@ -226,8 +247,16 @@ def time_arm(arm: Arm, built: Built, case: str, params: dict, repeats: int, work
     proc = _run(args, work, env=env)
     if proc.returncode:
         return {"missing": f"the case failed: {_tail(proc)}"}
-    out = json.loads(proc.stdout.strip().splitlines()[-1])
-    if out["missing"] is None and out["solver"] not in {None, arm.solver}:
+    lines = proc.stdout.strip().splitlines()
+    out = None
+    with contextlib.suppress(ValueError):
+        out = json.loads(lines[-1]) if lines else None
+    if not isinstance(out, dict) or not {"seconds", "solver", "versions", "missing"} <= out.keys():
+        return {"missing": f"the case printed no JSON object: {_tail(proc)}"}
+    if out["missing"] is None and out["solver"] is None:
+        # Ratios between runs that never reached bw2calc's solver would compare nothing.
+        out["missing"] = "bw2calc's solver is unknown: the case never imported bw2calc, or this release does not say"
+    elif out["missing"] is None and out["solver"] != arm.solver:
         wanted = "scikit-umfpack" if arm.solver == "umfpack" else arm.solver
         why = built.left_out.get(wanted, "")
         out["missing"] = f"bw2calc used {out['solver']}, not {arm.solver}" + (
@@ -236,9 +265,13 @@ def time_arm(arm: Arm, built: Built, case: str, params: dict, repeats: int, work
     return out
 
 
-def measure(c: Comparison, built: dict[Env, Built], rounds: int, repeats: int, rng: random.Random, work: Path) -> dict:
-    """Run C's arms in interleaved rounds; the comparison's entry in the result file."""
+def measure(c: Comparison, built: dict[Env, Built], rounds: int, repeats: int, seed: int, work: Path) -> dict:
+    """Run C's arms in interleaved rounds; the comparison's entry in the result file.
+
+    SEED is the file's: the run order and each ratio's bootstrap seed follow from it and C's id.
+    """
     arms = (c.baseline, *c.candidates)
+    rng = random.Random(f"{seed}/{c.id}")  # noqa: S311 - the run order, not a secret
     entry: dict[str, dict] = {
         a.name: {
             "installer": a.env.installer,
@@ -259,7 +292,7 @@ def measure(c: Comparison, built: dict[Env, Built], rounds: int, repeats: int, r
                 continue
             out = time_arm(arm, built[arm.env], c.case, c.params, repeats, work)
             if out["missing"] is not None:
-                e |= {"missing": out["missing"], "seconds": []}
+                e |= {"missing": out["missing"], "seconds": [], "solver": None, "versions": {}}
                 continue
             e |= {"solver": out["solver"], "versions": out["versions"]}
             e["seconds"].append(statistics.median(out["seconds"]))
@@ -270,7 +303,9 @@ def measure(c: Comparison, built: dict[Env, Built], rounds: int, repeats: int, r
         "params": c.params,
         "baseline": c.baseline.name,
         "arms": entry,
-        "ratios": [ratio(entry[c.baseline.name], entry[a.name], a.name, rng.randrange(2**32)) for a in c.candidates],
+        "ratios": [
+            ratio(entry[c.baseline.name], entry[a.name], a.name, ratio_seed(seed, c.id, a.name)) for a in c.candidates
+        ],
     }
 
 
@@ -307,7 +342,6 @@ def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, mac
                 )
                 built[a.env] = build(a.env, work / f"env{len(built)}")
     seed = random.SystemRandom().randrange(2**32)
-    rng = random.Random(seed)  # noqa: S311 - the run order, not a secret
     head = os.environ.get("GITHUB_SHA") or os.environ.get("BWBENCH_COMMIT") or _git_head()  # box.sh sets BWBENCH_COMMIT
     run = None
     if os.environ.get("GITHUB_RUN_ID"):
@@ -325,7 +359,7 @@ def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, mac
         "seed": seed,
         "resamples": RESAMPLES,
         "fingerprint": fp,
-        "comparisons": [measure(c, built, rounds, repeats, rng, work) for c in chosen],
+        "comparisons": [measure(c, built, rounds, repeats, seed, work) for c in chosen],
     }
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8")
@@ -377,7 +411,11 @@ def parser() -> argparse.ArgumentParser:
     c.add_argument("--repeats", type=int, default=3, help="timed calls per arm and round (default: 3)")
     c.add_argument("--tier", choices=["reference", "hosted", "contributed"], default="contributed")
     c.add_argument("--machine", help="a label for this machine (default: its CPU model); never a host name")
-    c.add_argument("--work", type=Path, help="where the environments go (default: a temporary folder, removed)")
+    c.add_argument(
+        "--work",
+        type=Path,
+        help="where the environments go, each arm's folder emptied first (default: a temporary folder, removed)",
+    )
     v = sub.add_parser("validate", help="check result files", epilog="example: bwbench validate ratios.json")
     v.add_argument("files", nargs="+", type=Path)
     return p

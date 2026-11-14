@@ -7,7 +7,8 @@ CASE is a benchmark's key in ``benchmarks/descriptions.toml``, such as
 untimed, then REPEATS times, each after a fresh setup and checked after the timing, as under
 asv. ``$BWBENCH_HIDE`` names modules (comma-separated) to hide before Brightway imports them,
 so bw2calc cannot pick that solver. Prints one JSON object: ``seconds`` (the timed calls),
-``solver`` (what bw2calc used, or null), ``versions``, and ``missing`` (why the case does not
+``solver`` (what bw2calc used, or null when the case never imported it or the release does
+not say), ``versions``, and ``missing`` (why the case does not
 apply here, or null). Exits non-zero when the case fails or its check does.
 """
 
@@ -47,9 +48,11 @@ def find(case: str) -> Bench:
 
 
 def solver() -> str | None:
-    """The direct solver bw2calc picked at import, or None when the case never imported it."""
+    """The direct solver bw2calc picked at import, or None when the case never imported it or it does not say."""
     bc = sys.modules.get("bw2calc")
     if bc is None:
+        return None
+    if not hasattr(bc, "PYPARDISO"):  # bw2calc before 2.0 does not say which solver it picked
         return None
     return "pypardiso" if bc.PYPARDISO else "umfpack" if getattr(bc, "UMFPACK", False) else "superlu"
 

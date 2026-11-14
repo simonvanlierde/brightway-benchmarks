@@ -3,6 +3,7 @@ import { parse } from "smol-toml";
 import findingsToml from "../../../benchmarks/findings.toml?raw";
 import { compiledContent } from "../../../docs/findings.md";
 import StaticPage from "../layouts/StaticPage.astro";
+import { published } from "../lib/build-data";
 import { viewerHref } from "../lib/story-links";
 
 interface Finding {
@@ -20,8 +21,11 @@ const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
 const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
 const findings = (parse(findingsToml) as unknown as { findings: Finding[] }).findings;
 // findings.toml lists params in axis order, none skipped; scripts/export_ui.py fails the export otherwise.
+// No history link until the data has the benchmark: the viewer would only say it is not there.
 const view = (f: Finding) =>
-  f.group && f.benchmark ? viewerHref(home, f.group, f.benchmark, Object.values(f.params ?? {})) : undefined;
+  f.group && f.benchmark && published(f.group, f.benchmark)
+    ? viewerHref(home, f.group, f.benchmark, Object.values(f.params ?? {}))
+    : undefined;
 const profile = (value: string) =>
   value.startsWith("https://") ? value : `${home}profiles/${value.replace(/^profiles\//, "")}`;
 const story = (f: Finding) => `${home}stories/${f.story}/`;
@@ -37,6 +41,14 @@ let doc = (await compiledContent())
     /href="(?!https?:|#|mailto:)([^"]+)"/g,
     (_, rel) => `href="${new URL(rel, `${repository}/blob/main/docs/`)}"`,
   )
+  // A link to a viewer history the data does not have keeps its words, without the link.
+  .replace(/<a href="([^"]*[?&](?:amp;)?bench=[^"]*)">([\s\S]*?)<\/a>/g, (link, href: string, words: string) => {
+    const q = new URL(href.replaceAll("&amp;", "&"), "https://x.invalid/").searchParams;
+    const [group, bench] = [q.get("group"), q.get("bench")];
+    return group && bench && !published(group, bench)
+      ? `${words} <span class="quiet">(not published yet)</span>`
+      : link;
+  })
   // A wide table scrolls in its own box, as the viewer's do, so the page never scrolls sideways.
   // Each box is named after its section, so no two regions share a label.
   .replace(/<h[23] id="[^"]*">([\s\S]*?)<\/h[23]>|<table>/g, (match, heading) => {

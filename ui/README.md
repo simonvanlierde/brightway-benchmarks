@@ -51,6 +51,11 @@ PUBLIC_DATA_URL=https://example.org/bench-data/ pnpm build
 The data folder must hold `index.json`, with each report at the `path` the index gives, and may
 hold `guidance.json`.
 
+The static pages (Findings, the stories) link a benchmark's history only when the served data has
+that benchmark. They check at build time against `UI_DATA_DIR/index.json`, a folder on disk; without
+`UI_DATA_DIR`, a build with no `PUBLIC_DATA_URL` checks against the test fixtures, and any other
+build links every benchmark.
+
 ## What it shows
 
 Setup is about installing. It opens on the visitor's own operating system when the address names none, with labelled operating-system, Python-version and package-manager selectors above the install command. There is one install command per package manager (uv, pip, conda or pixi), chosen with a package-manager select (the choice is remembered in this browser). A command names a dated set that never changes; "Copy latest" copies the one that follows the newest passing set. Selecting a check keeps that check’s install set; a failed check without a passing set says so. Changing package manager selects a matching check for that Python version and updates the URL; it never substitutes another Python version. With no explicit check, the page chooses a matching check on the platform. The command's source check, any matching upstream-suite result, and coverage caveats appear before Copy; the files, package versions and “Copy latest” fold under “What's in this set”. A one-line Python summary sits under the selects and links the full table on Benchmarks. An optional “No project yet? Create one” section gives uv users a complete project-creation command sequence. Beside the install set, every check appears in a comparison grid: select a cell to install its set. A smoke pass and an upstream test-suite pass are separate claims. If the current check fails, the earlier passing files keep their date and run link.

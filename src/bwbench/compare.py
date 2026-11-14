@@ -333,7 +333,10 @@ def ratio(base: dict, cand: dict, name: str, seed: int) -> dict:
 
 
 def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, machine: str | None, work: Path) -> dict:
-    """Build the arms of the comparisons IDS, measure them and write the result file to OUT."""
+    """Build the arms of the comparisons IDS, measure them and write the result file to OUT.
+
+    OUT is written again after each comparison, so a run stopped partway keeps the ones it finished.
+    """
     work.mkdir(parents=True, exist_ok=True)
     now = datetime.now(UTC)
     created = now.isoformat(timespec="seconds").replace("+00:00", "Z")
@@ -369,10 +372,14 @@ def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, mac
         "seed": seed,
         "resamples": RESAMPLES,
         "fingerprint": fp,
-        "comparisons": [measure(c, built, rounds, repeats, seed, work) for c in chosen],
+        "comparisons": [],
     }
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8")
+    for c in chosen:
+        doc["comparisons"].append(measure(c, built, rounds, repeats, seed, work))
+        tmp = out.with_name(f"{out.name}.tmp")
+        tmp.write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8")
+        tmp.replace(out)  # atomic: a reader never sees half a file
     return doc
 
 

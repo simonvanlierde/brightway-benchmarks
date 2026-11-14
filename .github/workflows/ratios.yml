@@ -63,7 +63,10 @@ jobs:
       - if: runner.os == 'macOS'
         run: brew install suite-sparse swig
 
+      # compare writes the file after each comparison. A step timeout under the job's leaves
+      # time to upload the comparisons that finished.
       - name: bwbench compare all
+        timeout-minutes: 50
         run: |
           PYTHONPATH=src uv run --no-project --python 3.13 python -m bwbench.compare compare all \
             --tier hosted --machine "GitHub $ImageOS" --work "$RUNNER_TEMP/ratio-work" -o "ratios/$RUNNER_OS.json"
@@ -82,6 +85,7 @@ jobs:
             "ratios/$RUNNER_OS.json" >>"$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
         with:
           name: ratios-${{ runner.os }}
           path: ratios/

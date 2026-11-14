@@ -381,3 +381,25 @@ def test_both_install_paths_resolve_with_the_same_cutoff(fake_uv: Path):
     manifest = tomllib.loads((fake_uv / "env1" / "pixi.toml").read_text())
     assert manifest["workspace"]["exclude-newer"] == CUTOFF
     assert manifest["dependencies"]["bw2calc"] == "*"
+
+
+def test_each_comparison_is_saved_as_it_finishes(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """A job killed in a later comparison keeps the ones before it, in a valid file."""
+    time_arm, _ = fake_time_arm({"superlu": 1.0, "umfpack": 0.5, "pypardiso": 0.25, "pypi": 1.0, "conda-forge": 1.1})
+    monkeypatch.setattr(compare, "time_arm", time_arm)
+    monkeypatch.setattr(compare, "build", lambda *_: compare.Built(python=Path("python"), fingerprint=ARM_FP))
+    real = compare.measure
+
+    def measure(c: compare.Comparison, *rest: object) -> dict:
+        if c.id == "install-path":
+            raise KeyboardInterrupt
+        return real(c, *rest)  # ty: ignore[invalid-argument-type]
+
+    monkeypatch.setattr(compare, "measure", measure)
+    out = tmp_path / "r.json"
+    with pytest.raises(KeyboardInterrupt):
+        compare.compare(["solvers", "install-path"], out, 3, 1, "contributed", "test machine", tmp_path)
+    doc = json.loads(out.read_text())
+    assert [c["id"] for c in doc["comparisons"]] == ["solvers"]
+    assert problems(doc) == []
+    assert list(tmp_path.glob("*.tmp")) == []

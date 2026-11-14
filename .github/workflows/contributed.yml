@@ -5,12 +5,18 @@ name: contributed
 # fingerprint, and what a contribution needs on top (`bwbench validate --contribution`):
 # ratios/contributed/<machine slug>/<YYYY-MM-DD>.json, tier "contributed", no default host
 # name as the machine label, no user folder, at most 256 KiB, a regular file. It checks every
-# file there, not only the new ones, so the folder stays valid as the rules tighten.
+# file there, not only the new ones, so the folder stays valid as the rules tighten. The
+# validator comes from the base branch, so a pull request cannot loosen the rules it is checked
+# by; when it changes them, its own validator runs too.
 
 on:
   pull_request:
     paths:
       - ratios/contributed/**
+      - src/bwbench/compare.py
+      - src/bwbench/ratios.py
+      - src/bwbench/ratios.schema.json
+      - src/bwbench/fingerprint.py
       - .github/workflows/contributed.yml
 
 permissions:
@@ -30,6 +36,12 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           enable-cache: false
@@ -40,7 +52,12 @@ jobs:
         shell: bash # pipefail, so a failing find fails the step
         run: |-
           [ -d ratios/contributed ] || exit 0
-          find ratios/contributed ! -type d -print0 |
-            xargs -0 --no-run-if-empty env PYTHONPATH=src uv run --no-project --python 3.13 \
-              --with jsonschema==4.26.0 --with rfc3339-validator==0.1.4 \
-              python -m bwbench.compare validate --contribution
+          srcs=src
+          # A base from before the contribution checks has no validator to run.
+          if grep -qs contribution_problems base/src/bwbench/ratios.py; then srcs="base/src src"; fi
+          for src in $srcs; do
+            find ratios/contributed ! -type d -print0 |
+              xargs -0 --no-run-if-empty env PYTHONPATH="$src" uv run --no-project --python 3.13 \
+                --with jsonschema==4.26.0 --with rfc3339-validator==0.1.4 \
+                python -m bwbench.compare validate --contribution
+          done

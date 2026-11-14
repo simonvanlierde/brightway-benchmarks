@@ -31,6 +31,7 @@ import json
 import os
 import platform
 import random
+import re
 import shutil
 import signal
 import statistics
@@ -46,17 +47,21 @@ from bwbench.fingerprint import fingerprint
 from bwbench.ratios import (
     FORMAT,
     RESAMPLES,
+    USER_FOLDER,
     bootstrap_interval,
+    contribution_file_problems,
     contribution_problems,
     geometric_mean_ratio,
     interleave,
     problems,
     ratio_seed,
+    slug,
 )
 from bwbench.timecase import BENCHMARKS
 
 PACKAGE = Path(__file__).resolve().parent
 PROBE = PACKAGE / "fingerprint.py"
+STAGE = ".bwbench-stage"  # the arms' copy of this package, in the --work folder
 SOLVERS = ("pypardiso", "scikits.umfpack")  # what bw2calc picks over SuperLU when it can import it
 TIMEOUT = 900  # seconds for one install or one timed process
 FIRST_SCORE = ("bench_lca.SingleScore.time_first_score", {"size": "smoke", "cls": "LCA"})
@@ -151,8 +156,24 @@ def _run(args: list[str], cwd: Path, **kw: object) -> subprocess.CompletedProces
         return subprocess.CompletedProcess(args, -1, "", f"timed out after {TIMEOUT} s")
 
 
+def _redact(text: str) -> str:
+    r"""TEXT with the home folder and every user folder (``USER_FOLDER``) replaced by ``~``.
+
+    Either separator and any case, so Windows short names from TEMP (``C:\Users\ADALIN~1``)
+    and ``C:/Users/ada`` go too. A home of ``/`` (``docker run --user`` without a passwd entry)
+    is no user's folder and stays.
+    """
+    home = Path.home()
+    folders = [USER_FOLDER.pattern]
+    if home.parent != home:
+        parts = [re.escape(p) for p in re.split(r"[\\/]+", str(home).strip("\\/"))]
+        lead = r"[\\/]+" if str(home)[:1] in "\\/" else ""
+        folders.insert(0, lead + r"[\\/]+".join(parts) + r"(?![^\\/\s\"'])")
+    return re.sub("|".join(folders), "~", text, flags=re.IGNORECASE)
+
+
 def _tail(proc: subprocess.CompletedProcess[str], lines: int = 5) -> str:
-    text = (proc.stderr or proc.stdout).strip().replace(str(Path.home()), "~").splitlines()
+    text = _redact((proc.stderr or proc.stdout).strip()).splitlines()
     return " / ".join(text[-lines:]) or f"exit {proc.returncode}"
 
 
@@ -240,12 +261,16 @@ def _build_pixi(env: Env, folder: Path) -> Built:
 
 
 def stage(work: Path) -> Path:
-    """Copy this package, with the cases in ``bwbench/cases``, to WORK/src: the arms' import path.
+    """Copy this package, with the cases in ``bwbench/cases``, to WORK/.bwbench-stage: the arms' import path.
 
     Only this package: the folder it is installed in also holds the packages of the environment
-    bwbench runs in (uvx's NumPy, say), which would shadow the arm's own.
+    bwbench runs in (uvx's NumPy, say), which would shadow the arm's own. The folder name is one
+    no checkout has, so ``--work .`` in a checkout leaves its ``src/bwbench`` alone.
     """
-    dest = work / "src" / "bwbench"
+    dest = work.resolve() / STAGE / "bwbench"
+    if PACKAGE.is_relative_to(dest) or dest.is_relative_to(PACKAGE):
+        msg = f"cannot stage into {dest.as_posix()!r}: bwbench runs from inside it"
+        raise RuntimeError(msg)
     skip = shutil.ignore_patterns("__pycache__")
     shutil.rmtree(dest, ignore_errors=True)
     shutil.copytree(PACKAGE, dest, ignore=skip)
@@ -256,7 +281,7 @@ def stage(work: Path) -> Path:
 
 def time_arm(arm: Arm, built: Built, case: str, params: dict, repeats: int, work: Path) -> dict:
     """One fresh process of ARM timing CASE: the worker's JSON object, or ``{"missing": why}``."""
-    src = work / "src"  # from stage()
+    src = work / STAGE  # from stage()
     env = os.environ | {
         "PYTHONPATH": os.pathsep.join([str(src), str(src / "bwbench" / "cases")]),
         "BWBENCH_HIDE": ",".join(arm.hide),
@@ -394,6 +419,10 @@ def _commit() -> str | None:
     git = shutil.which("git")
     if git is None:
         return None
+    # Only when this package is the checkout's src/bwbench, not a copy installed inside another project.
+    top = _run([git, "rev-parse", "--show-toplevel"], PACKAGE)
+    if top.returncode or Path(top.stdout.strip()).resolve() != PACKAGE.parents[1].resolve():
+        return None
     proc = _run([git, "rev-parse", "HEAD"], PACKAGE)
     return proc.stdout.strip() if proc.returncode == 0 else None
 
@@ -402,6 +431,12 @@ def validate(files: list[Path], *, contribution: bool = False) -> int:
     """1 if any of FILES is not a valid result file (with CONTRIBUTION: contribution), each problem on stderr."""
     bad = 0
     for path in files:
+        # Before any read: a link to /dev/zero would never finish.
+        if contribution and (found := contribution_file_problems(path)):
+            for p in found:
+                print(f"{path.as_posix()}: {p}", file=sys.stderr)
+            bad += 1
+            continue
         try:
             doc = json.loads(path.read_text(encoding="utf-8"))
             found = problems(doc)
@@ -478,6 +513,8 @@ def main(argv: list[str] | None = None) -> int:
         parser().error("the release comparisons run on macOS and Windows only")
     if args.machine is not None and not 0 < len(args.machine) <= 100:
         parser().error("--machine must be 1 to 100 characters")
+    if args.machine is not None and not slug(args.machine):
+        parser().error(f"--machine {args.machine!r} needs ASCII letters or digits: its folder name keeps only those")
     try:
         if args.work is None:
             with tempfile.TemporaryDirectory(prefix="bwbench-compare-") as tmp:

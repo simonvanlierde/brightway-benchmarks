@@ -38,14 +38,28 @@ RTOL = 1e-6  # a stored ratio against the one recomputed from the stored seconds
 CONTRIBUTED = re.compile(r"(?:^|/)ratios/contributed/([a-z0-9][a-z0-9-]*)/(\d{4}-\d{2}-\d{2})\.json$")
 MAX_BYTES = 256 * 1024  # the solvers comparison at 20 rounds is about 5 KiB
 # Labels a machine's own name gives: a domain name, a macOS default computer name ("Ada's
-# MacBook Pro"), a Windows default one (DESKTOP-4F2K9QX).
+# MacBook Pro", "Adas-MacBook-Pro"), Ubuntu's <user>-<model> ("ada-ThinkPad-X1"), a Windows
+# default one (DESKTOP-4F2K9QX). A domain ends in a common or two-letter top-level label, so
+# "ubuntu-24.04" and "m2.max" pass.
 # shortcut: only these defaults; a custom host name passes, and the pull request review catches it.
+LAPTOPS = (
+    "thinkpad|ideapad|yoga|legion|xps|latitude|precision|inspiron|vostro|elitebook|probook|zbook"
+    "|pavilion|envy|zenbook|vivobook|rog|aspire|swift|surface|virtualbox"
+)
+VENDORS = "lenovo|dell|hp|asus|acer|microsoft|msi|framework|apple"
 HOST_LIKE = re.compile(
-    r"^[\w-]+(\.[\w-]+)+$|\.(local|lan|home|internal)$|'s[ -](macbook|imac|mac)|^(desktop|laptop)-[a-z0-9]{7}$",
+    r"^[\w-]+(\.[\w-]+)*\.(com|net|org|edu|gov|io|dev|local|lan|home|internal|corp|[a-z]{2})$"
+    "|['\u2019`]?s[ -]?(macbook|imac|mac\\b)"  # U+2019, the curly apostrophe macOS writes
+    rf"|^(?!({VENDORS})-)[a-z0-9]+-({LAPTOPS})\b"
+    r"|^(desktop|laptop)-[a-z0-9]{7}$",
     re.IGNORECASE,
 )
-# A home folder in the file's text, where a Windows backslash is escaped as \\.
-USER_FOLDER = re.compile(r"/Users/[^/\s\"]|/home/[^/\s\"]|[A-Za-z]:\\\\Users\\\\")
+# A home folder, with either separator; in a file's JSON text a backslash is escaped as \\.
+# /home/linuxbrew (Homebrew on Linux) and /Users/Shared are no one's home.
+USER_FOLDER = re.compile(
+    r"[A-Za-z]:[\\/]+Users[\\/]+[^\\/\s\"]+|/home/(?!linuxbrew\b)[^/\s\"]+|/Users/(?!Shared\b)[^/\s\"]+|/root(?=/)",
+    re.IGNORECASE,
+)
 
 
 def interleave(arms: list[str], rounds: int, rng: random.Random) -> list[list[str]]:
@@ -182,8 +196,8 @@ def contribution_problems(path: Path, doc: dict) -> list[str]:
     the tier is ``contributed`` (only an attestation proves ``hosted``), the machine label is
     not a default host name, no user folder appears, and the file is small and regular.
     """
-    if path.is_symlink() or not path.is_file():
-        return [f"{path.as_posix()} is not a regular file"]
+    if found := contribution_file_problems(path):
+        return found
     found = []
     machine, day = str(doc.get("machine", "")), str(doc.get("created", ""))[:10]
     m = CONTRIBUTED.search(path.as_posix())
@@ -201,7 +215,14 @@ def contribution_problems(path: Path, doc: dict) -> list[str]:
     if HOST_LIKE.search(machine):
         found.append(f"machine {machine!r} looks like a host name; use a label such as the CPU model")
     if USER_FOLDER.search(path.read_text(encoding="utf-8")):
-        found.append("names a user folder (/Users/..., /home/... or C:\\Users\\...); replace it with ~")
-    if (size := path.stat().st_size) > MAX_BYTES:
-        found.append(f"{size // 1024} KiB, more than {MAX_BYTES // 1024} KiB")
+        found.append("names a user folder (/Users/..., /home/..., /root/... or C:\\Users\\...); replace it with ~")
     return found
+
+
+def contribution_file_problems(path: Path) -> list[str]:
+    """Why the file at PATH is not safe to read as a contribution: a link, not a regular file, too large."""
+    if path.is_symlink() or not path.is_file():
+        return [f"{path.as_posix()} is not a regular file"]
+    if (size := path.stat().st_size) > MAX_BYTES:
+        return [f"{size // 1024} KiB, more than {MAX_BYTES // 1024} KiB"]
+    return []

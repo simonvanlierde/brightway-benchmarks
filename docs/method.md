@@ -45,8 +45,9 @@ over seeds 0 to 3: mean METIS fill is 37.9, and SuperLU's COLAMD fill on Aᵀ is
 [Calibration choices and research](generator-calibration.md) explain the construction and its
 limits. Input magnitudes still have a narrower upper tail than the real database.
 
-The published synthetic histories in [findings.md](findings.md) use generator v4. Those times
-retain its fill caveat until the v5 histories have been rerun. With a licence of your own,
+The published synthetic histories in [findings.md](findings.md) use generator v5. A
+direct-solver score there takes 1.4 to 1.6 times as long as factorizing real ecoinvent 3.12,
+against 4 to 7.6 times on generator v4. With a licence of your own,
 [`scripts/solver_factorize.py`](../scripts/solver_factorize.py) times each
 direct solver on the real matrix, and with `--cudss` NVIDIA's cuDSS on a GPU. That option
 refactorizes unchanged values. `--cudss-updates` instead applies three deterministic row-scaled

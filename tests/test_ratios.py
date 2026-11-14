@@ -353,3 +353,13 @@ def test_the_signing_job_runs_only_locked_packages():
     assert uv
     assert all("--with" not in line and "--no-project" not in line for line in uv), uv
     assert all("--frozen" in line if "uv sync" in line else "--no-sync" in line for line in uv), uv
+
+
+@pytest.mark.parametrize("doc", ["docs/method.md", ".github/workflows/ratios.yml"])
+def test_the_verify_command_pins_the_signing_workflow_and_branch(doc: str):
+    """-R alone accepts a file signed by any workflow of the repository, run on any branch."""
+    text = " ".join((Path(__file__).resolve().parents[1] / doc).read_text().replace("#", " ").split())
+    start = text.index("gh attestation verify")
+    command = text[start : text.index("`", start)]
+    assert "--signer-workflow simonvanlierde/brightway-benchmarks/.github/workflows/ratios.yml" in command
+    assert "--source-ref refs/heads/main" in command

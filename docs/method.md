@@ -236,8 +236,16 @@ workflow commits the files to the `ratios` branch as `hosted/<YYYY-MM-DD>-<run i
 the date from the files' `created` and the run the workflow's: a second run on one day gets its
 own folder, and no published file is overwritten. Folder names sort by date, so the newest file
 per OS is in the last folder that holds one.
-`gh attestation verify FILE -R simonvanlierde/brightway-benchmarks` shows that a file came from
-this repository's workflow, unchanged.
+This command shows that a file came from the `ratios` workflow run on `main`, unchanged:
+
+```sh
+gh attestation verify FILE -R simonvanlierde/brightway-benchmarks \
+  --signer-workflow simonvanlierde/brightway-benchmarks/.github/workflows/ratios.yml \
+  --source-ref refs/heads/main
+```
+
+Without the last two flags it accepts a file that any workflow of the repository signed, on any
+branch.
 
 ## Changes on the history pages
 

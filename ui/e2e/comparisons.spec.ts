@@ -109,3 +109,23 @@ test("One comparison run with two parameter sets shows two tables", async ({ pag
   expect(new Set(ids).size).toBe(ids.length);
   expect(errors).toEqual([]);
 });
+
+test("On a phone the table keeps its semantics, labels every cell and reads in visual order", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("?page=compare");
+  await expect(page.locator(".ratio-row").first()).toBeVisible();
+  // Chromium's own accessibility tree, not Playwright's role engine, which ignores display:block.
+  const cdp = await page.context().newCDPSession(page);
+  const { nodes } = await cdp.send("Accessibility.getFullAXTree");
+  const roles = nodes.filter((n) => !n.ignored).map((n) => n.role?.value);
+  for (const role of ["table", "rowgroup", "row", "columnheader", "rowheader", "cell"])
+    expect(roles, role).toContain(role);
+  const row = page.locator(".ratio-row").first();
+  const labels = await row
+    .locator("td")
+    .evaluateAll((tds) => tds.map((td) => getComputedStyle(td, "::before").content));
+  expect(labels.filter((c) => c === "none" || c === "normal")).toEqual([]);
+  // Focus follows the DOM, so each cell must sit no higher than the one before it.
+  const tops = await row.locator("th, td").evaluateAll((cells) => cells.map((c) => c.getBoundingClientRect().top));
+  expect(tops).toEqual([...tops].sort((a, b) => a - b));
+});

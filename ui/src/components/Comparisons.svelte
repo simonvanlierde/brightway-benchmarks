@@ -65,41 +65,48 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
         <p class="ratio-case">At this size the factorization is too small to show which solver is faster. On an ecoinvent-sized database PyPardiso and UMFPACK give a score 2 to 5 times faster than SuperLU.</p>
       {/if}
       <div class="scroll" role="region" aria-label="{c.title}, table" use:scrollable>
-        <table class="ratio-table">
+        <!-- svelte-ignore a11y_no_redundant_roles -->
+        <!-- Explicit roles: phones lay the table out as blocks, which can drop its semantics in Chromium and WebKit. -->
+        <table class="ratio-table" role="table">
           <caption class="sr">{c.title}: one row per machine; below 1 the alternative is faster.</caption>
-          <thead>
-            <tr>
-              <th scope="col">Machine</th>
-              <th scope="col">Source</th>
-              <th scope="col" class="num">Ratio</th>
-              <th scope="col" class="num">95% interval</th>
-              <th scope="col" class="ratio-axis-head"><span aria-hidden="true"><span>faster</span><span>slower</span></span><span class="sr">Interval drawn around 1</span></th>
-              <th scope="col">Reading</th>
+          <!-- svelte-ignore a11y_no_redundant_roles -->
+          <thead role="rowgroup">
+            <!-- svelte-ignore a11y_no_redundant_roles -->
+            <tr role="row">
+              <th role="columnheader" scope="col">Machine</th>
+              <th role="columnheader" scope="col">Source</th>
+              <th role="columnheader" scope="col" class="num">Ratio</th>
+              <th role="columnheader" scope="col" class="num">95% interval</th>
+              <th role="columnheader" scope="col" class="ratio-axis-head"><span aria-hidden="true"><span>faster</span><span>slower</span></span><span class="sr">Interval drawn around 1</span></th>
+              <th role="columnheader" scope="col">Reading</th>
             </tr>
           </thead>
           {#each c.candidates as k (k.name)}
             {@const x = ratioScale(k.rows)}
-            <tbody>
-              <tr class="ratio-candidate">
-                <th scope="rowgroup" colspan="6">
+            <!-- svelte-ignore a11y_no_redundant_roles -->
+            <tbody role="rowgroup">
+              <!-- svelte-ignore a11y_no_redundant_roles -->
+              <tr class="ratio-candidate" role="row">
+                <th role="rowheader" scope="rowgroup" colspan="6">
                   <span class="ratio-label">{k.label}</span>
                   <span class="ratio-summary {tone(k.summary.direction)}">{k.summary.text}</span>
                 </th>
               </tr>
               {#each k.rows as r (r.machine)}
                 {@const m = machines.get(r.machine)}
-                <tr class="ratio-row">
-                  <th scope="row">
+                <!-- svelte-ignore a11y_no_redundant_roles -->
+                <tr class="ratio-row" role="row">
+                  <th role="rowheader" scope="row">
                     {m?.name ?? r.machine}
                     <span class="ratio-meta">{m?.os}{m?.cpu ? ` · ${m.cpu}` : ""}</span>
                   </th>
-                  <td class="ratio-source" data-label="Source">
+                  <td class="ratio-source" role="cell" data-label="Source">
                     {m ? TIERS[m.tier] : ""}
                     {#if m}<span class="ratio-meta">{#if m.run}<a href={m.run}>{dateLabel(m.created)}<span class="sr">, the run</span></a>{:else}{dateLabel(m.created)}{/if}</span>{/if}
                   </td>
-                  <td class="num" data-label="Ratio">{r.ratio === null ? "–" : sig(r.ratio)}</td>
-                  <td class="num" data-label="95% interval">{r.ci95 ? interval(r) : "–"}</td>
-                  <td class="ratio-graphic">
+                  <td class="num" role="cell" data-label="Ratio">{r.ratio === null ? "–" : sig(r.ratio)}</td>
+                  <td class="num" role="cell" data-label="95% interval">{r.ci95 ? interval(r) : "–"}</td>
+                  <td class="ratio-graphic" role="cell" data-label="Interval around 1, faster to the left">
                     <div class="ratio-track" aria-hidden="true">
                       <span class="ratio-one" style:left="{x(1)}%"></span>
                       {#if r.ci95 && r.ratio !== null}
@@ -108,7 +115,7 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
                       {/if}
                     </div>
                   </td>
-                  <td class="ratio-reading" data-label="Reading">
+                  <td class="ratio-reading" role="cell" data-label="Reading">
                     <span class={tone(r.verdict)}>{r.text}</span>
                     {#if r.missing}<span class="ratio-meta">{r.missing}</span>
                     {:else if r.seconds}<span class="ratio-meta">{ms(r.seconds.candidate)} against {ms(r.seconds.baseline)}</span>{/if}
@@ -298,15 +305,15 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
       text-align: left;
       white-space: normal;
     }
-    .ratio-row td.num::before {
+    .ratio-row td::before {
       content: attr(data-label);
+      content: attr(data-label) / "";
       display: block;
       color: var(--muted);
       font-size: var(--text-meta);
     }
     .ratio-source {
       grid-column: 1 / -1;
-      order: 1;
     }
     .ratio-candidate th {
       padding: 22px 0 10px;

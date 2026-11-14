@@ -6,6 +6,7 @@ import {
   benchLabel,
   benchmarkLabel,
   breakable,
+  changeRange,
   changesFor,
   displayNames,
   findBench,
@@ -14,7 +15,6 @@ import {
   lines,
   pageOf,
   percent,
-  percentRange,
   pickParams,
   pText,
   readView,
@@ -208,11 +208,17 @@ describe("numbers", () => {
     expect(percent(1.014)).toBe("+1.4%");
   });
 
-  it("shows one benchmark's changes as a range from the smallest to the largest", () => {
-    const rows = [0.2, 0.21].map((ratio) => ({ change: { ratio } }) as LatestChange);
-    expect(percentRange(rows)).toBe("−79% to −80%");
-    expect(percentRange(rows.slice(0, 1))).toBe("−80%");
-    expect(percentRange([])).toBe("");
+  it("shows one benchmark's changes as a range, in times once every case doubles or halves", () => {
+    const rows = (ratios: number[], measure = "latency") =>
+      ratios.map((ratio) => ({ change: { ratio, measure }, way: verdict(ratio, "lower") }) as LatestChange);
+    expect(changeRange(rows([0.92, 0.96]))).toBe("−4% to −8% better");
+    expect(changeRange(rows([1.12]))).toBe("+12% worse");
+    expect(changeRange(rows([0.2, 0.21]))).toBe("4.8 to 5 times faster");
+    expect(changeRange(rows([0.2, 0.201]))).toBe("about 5 times faster");
+    expect(changeRange(rows([2.17, 2.12]))).toBe("2.1 to 2.2 times slower");
+    expect(changeRange(rows([2.4, 1.5]))).toBe("+50% to +140% worse");
+    expect(changeRange(rows([3], "peak-memory"))).toBe("about 3 times worse");
+    expect(changeRange([])).toBe("");
   });
 
   it("formats values to three significant figures in their own scale", () => {
@@ -291,6 +297,7 @@ describe("page routing", () => {
   it("keeps legacy histories, overview filters and the compatibility anchor", () => {
     expect(pageOf({ params: [], bench: "known-bench" })).toBe("explorer");
     expect(pageOf({ params: [], direction: "worse" })).toBe("explorer");
+    expect(pageOf({ params: [], page: "compare" })).toBe("explorer"); // the comparisons sit under Benchmarks
     expect(pageOf({ params: [], page: "home" })).toBe("home");
     expect(pageOf({ params: [], page: "unknown" })).toBe("home");
     // Compatibility is part of Setup now, and release changes open the Benchmarks overview.

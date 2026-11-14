@@ -86,3 +86,25 @@ test("Benchmarks' intro links to all findings", async ({ page }) => {
   await expect(all).toHaveAttribute("href", "/findings/");
   await expect(page.locator(".findings")).toHaveCount(0);
 });
+
+test("the static pages link only the benchmark histories the data has", async ({ page }) => {
+  const index = JSON.parse(readFileSync("test/fixtures/real/index.json", "utf8")) as {
+    groups: { id: string; name: string }[];
+    benchmarks: { group: string; name: string }[];
+  };
+  const has = (group: string | null, bench: string | null) =>
+    index.benchmarks.some((b) => b.name === bench && index.groups.some((g) => g.id === b.group && g.name === group));
+  for (const path of ["findings/", "stories/home-heating/", "stories/solver-choice/"]) {
+    await page.goto(path);
+    const hrefs = await page
+      .locator('main a[href*="bench="]')
+      .evaluateAll((links) => links.map((a) => a.getAttribute("href") ?? ""));
+    for (const href of hrefs) {
+      const q = new URL(href, "https://x.invalid/").searchParams;
+      expect(has(q.get("group"), q.get("bench")), `${path}: ${href}`).toBe(true);
+    }
+  }
+  // The fixture data predates the heating benchmarks: the story names them without a link.
+  await page.goto("stories/home-heating/");
+  await expect(page.locator(".chart-links")).toContainText("Its timings are not published yet.");
+});

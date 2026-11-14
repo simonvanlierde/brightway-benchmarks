@@ -33,7 +33,9 @@ They serve `dist/` with [test/fixtures/real/](test/fixtures/real/) as its data: 
 clone that has asv's mirrors in `.asv/` (they give the release names) into that folder. Its
 `guidance.json` comes from [test/fixtures/compat/status.json](test/fixtures/compat/status.json):
 `python3 scripts/export_guidance.py ui/test/fixtures/compat/status.json ui/test/fixtures/real`, and a
-pytest fails when the two drift apart.
+pytest fails when the two drift apart. Its `ratios.json` is the export of one real hosted run in
+[tests/fixtures/ratios/](../tests/fixtures/ratios/), checked the same way:
+`PYTHONPATH=src uv run python scripts/export_ratios.py tests/fixtures/ratios - ui/test/fixtures/real`.
 
 To look at a UI change, `just ui-serve` (port 4400 by default) builds the viewer and serves it
 with that same data. CI's `ui` job also keeps the browser tests' screenshots as the
@@ -48,6 +50,11 @@ PUBLIC_DATA_URL=https://example.org/bench-data/ pnpm build
 
 The data folder must hold `index.json`, with each report at the `path` the index gives, and may
 hold `guidance.json`.
+
+The static pages (Findings, the stories) link a benchmark's history only when the served data has
+that benchmark. They check at build time against `UI_DATA_DIR/index.json`, a folder on disk; without
+`UI_DATA_DIR`, a build with no `PUBLIC_DATA_URL` checks against the test fixtures, and any other
+build links every benchmark.
 
 ## What it shows
 

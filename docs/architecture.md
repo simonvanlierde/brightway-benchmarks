@@ -85,7 +85,7 @@ page, the about page and the stories (pages in [`ui/src/pages/`](../ui/src/pages
 the JSON at runtime. [`ui/scripts/size.mjs`](../ui/scripts/size.mjs) holds the size budget.
 
 The [site workflow](../.github/workflows/site.yml) checks out `main`, `results` and `compat`, runs
-`just site` and `just ui-data`, builds the viewer and publishes everything on GitHub Pages at
+`just site` (which fetches the `ratios` branch too) and `just ui-data`, builds the viewer and publishes everything on GitHub Pages at
 <https://simonvanlierde.com/brightway-benchmarks/>. It runs daily and when the viewer or its data
 scripts change on `main`.
 

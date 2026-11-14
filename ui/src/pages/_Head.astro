@@ -6,7 +6,8 @@ import { softwareJsonLd } from "../lib/structured-data";
 interface Props {
   title: string;
   description: string;
-  canonical: string;
+  /** Left out on a page that should not be found, such as 404: it is then not indexed. */
+  canonical?: string;
   /** The preview card: a PNG in public/. */
   image?: string;
   imageAlt?: string;
@@ -31,8 +32,8 @@ const image = `https://simonvanlierde.com/brightway-benchmarks/ui/${card}?v=${ve
 <meta name="color-scheme" content="light dark" />
 <title>{title}</title>
 <meta name="description" content={description} />
-<meta name="robots" content="index,follow" />
-<link rel="canonical" href={canonical} />
+<meta name="robots" content={canonical ? "index,follow" : "noindex"} />
+{canonical && <link rel="canonical" href={canonical} />}
 <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
 <link rel="icon" type="image/x-icon" sizes="32x32" href={`${import.meta.env.BASE_URL}favicon.ico`} />
 <link rel="apple-touch-icon" sizes="180x180" href={`${import.meta.env.BASE_URL}apple-touch-icon.png`} />
@@ -41,7 +42,7 @@ const image = `https://simonvanlierde.com/brightway-benchmarks/ui/${card}?v=${ve
 <meta property="og:site_name" content="brightway-benchmarks" />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
-<meta property="og:url" content={canonical} />
+{canonical && <meta property="og:url" content={canonical} />}
 <meta property="og:image" content={image} />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />

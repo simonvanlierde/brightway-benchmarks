@@ -1,16 +1,19 @@
 // The one module that knows the data's format: the rest of the UI imports its types from here.
 import type { Guidance } from "./guidance.gen";
 import type { BenchmarkIndex } from "./index.gen";
+import type { RatioComparisons as Ratios } from "./ratios.gen";
 import type { BenchmarkReport } from "./report.gen";
-import { guidanceValidator, indexValidator, reportValidator, type Validator } from "./validators.gen";
+import { guidanceValidator, indexValidator, ratiosValidator, reportValidator, type Validator } from "./validators.gen";
 
-export type { BenchmarkIndex, BenchmarkReport, Guidance };
+export type { BenchmarkIndex, BenchmarkReport, Guidance, Ratios };
 export type Report = BenchmarkIndex["reports"][number];
 export type Change = NonNullable<BenchmarkIndex["changes"]>[number];
 
 export const FORMAT_VERSION = 1;
 /** guidance.json's own format: 2 gave each passing set one install command per package manager. */
 export const GUIDANCE_VERSION = 2;
+/** ratios.json's own format, from scripts/export_ratios.py. */
+export const RATIOS_VERSION = 1;
 export const REPORT_FORMATS: readonly string[] = ["bmf/v0"];
 
 // The validators are compiled from ui/schema/ by `pnpm types` (scripts/generate-validators.mjs), so
@@ -150,4 +153,22 @@ export async function loadGuidance(base: string | URL, fetcher: typeof fetch = f
     }
   }
   return guidance;
+}
+
+/** Optional ratios across machines beside index.json; without the file the comparison page says none are published. */
+export async function loadRatios(base: string | URL, fetcher: typeof fetch = fetch): Promise<Ratios | undefined> {
+  const url = new URL("ratios.json", folder(base));
+  const data = await getJson(url, fetcher, true);
+  if (data === undefined) return undefined;
+  const version = (data as { format_version?: unknown } | null)?.format_version;
+  if (version !== RATIOS_VERSION) {
+    throw new ContractError(`${url}: format_version ${version}, this UI reads ${RATIOS_VERSION}`, "version");
+  }
+  const ratios = valid<Ratios>(ratiosValidator, data, url);
+  const machines = new Set(ratios.machines.map((m) => m.id));
+  for (const c of ratios.comparisons)
+    for (const k of c.candidates)
+      for (const r of k.rows)
+        if (!machines.has(r.machine)) throw new ContractError(`${url}: ${c.id}/${k.name}: no machine "${r.machine}"`);
+  return ratios;
 }

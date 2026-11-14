@@ -23,7 +23,10 @@ createServer((req, res) => {
   try {
     if (!statSync(file).isFile()) throw new Error("not a file");
   } catch {
-    res.writeHead(404).end();
+    // As GitHub Pages does: the site's own 404 page, with the 404 status, for a page it does not have.
+    const missing = join(root, "dist/404.html");
+    if (path.startsWith("/data/") || !statSync(missing, { throwIfNoEntry: false })?.isFile()) res.writeHead(404).end();
+    else createReadStream(missing).pipe(res.writeHead(404, { "content-type": "text/html" }));
     return;
   }
   res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" });

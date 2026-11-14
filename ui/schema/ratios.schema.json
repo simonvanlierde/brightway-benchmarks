@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://simonvanlierde.github.io/brightway-benchmarks/ui/schema/ratios.schema.json",
+  "title": "RatioComparisons",
+  "description": "The comparison page's data: the newest interleaved ratio file per machine, regrouped by comparison and candidate, one row per machine, with a range summary per candidate. Written by scripts/export_ratios.py; optional beside index.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format_version", "machines", "comparisons"],
+  "properties": {
+    "format_version": { "const": 1 },
+    "machines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "tier", "os", "arch", "cpu", "created", "run", "commit"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1, "description": "The file's own label for the machine." },
+          "tier": {
+            "enum": ["reference", "hosted", "contributed"],
+            "description": "From the folder the file came from, not the file's claim: hosted files are attested by the ratios workflow, contributed ones are not verified."
+          },
+          "os": { "type": "string", "minLength": 1 },
+          "arch": { "type": "string" },
+          "cpu": { "type": ["string", "null"] },
+          "created": { "type": "string", "format": "date-time" },
+          "run": {
+            "type": ["string", "null"],
+            "pattern": "^https://",
+            "description": "The workflow run that wrote a hosted file, or null."
+          },
+          "commit": {
+            "type": ["string", "null"],
+            "description": "The commit that measured, or null outside a checkout."
+          }
+        }
+      }
+    },
+    "comparisons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "key",
+          "title",
+          "case",
+          "case_name",
+          "description",
+          "params",
+          "baseline",
+          "caveat",
+          "candidates"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "description": "Unique in the file: the id, or the id, case, params and baseline when one comparison ran more than one way."
+          },
+          "title": { "type": "string", "minLength": 1 },
+          "case": { "type": "string" },
+          "case_name": { "type": "string" },
+          "description": { "type": "string" },
+          "params": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "value", "note"],
+              "properties": {
+                "name": { "type": "string" },
+                "value": { "type": "string" },
+                "note": { "type": ["string", "null"] }
+              }
+            }
+          },
+          "baseline": { "type": "string" },
+          "caveat": {
+            "type": ["string", "null"],
+            "description": "Why the case, at this size, cannot show the difference the comparison asks about; its summaries then say so."
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "label", "summary", "rows"],
+              "properties": {
+                "name": { "type": "string" },
+                "label": { "type": "string", "description": "Candidate against baseline, in words." },
+                "summary": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["direction", "text"],
+                  "properties": {
+                    "direction": { "enum": ["faster", "slower", "mixed", "unclear", "none"] },
+                    "text": { "type": "string", "minLength": 1 }
+                  }
+                },
+                "rows": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["machine", "ratio", "ci95", "verdict", "text", "missing", "seconds"],
+                    "properties": {
+                      "machine": { "type": "string" },
+                      "ratio": {
+                        "type": ["number", "null"],
+                        "exclusiveMinimum": 0,
+                        "description": "Candidate time over baseline time; below 1 the candidate is faster."
+                      },
+                      "ci95": {
+                        "type": ["array", "null"],
+                        "items": { "type": "number", "exclusiveMinimum": 0 },
+                        "minItems": 2,
+                        "maxItems": 2
+                      },
+                      "verdict": { "enum": ["faster", "slower", "unclear", "missing"] },
+                      "text": { "type": "string", "minLength": 1 },
+                      "missing": { "type": ["string", "null"], "description": "Why there is no ratio here." },
+                      "seconds": {
+                        "type": ["object", "null"],
+                        "additionalProperties": false,
+                        "required": ["baseline", "candidate"],
+                        "properties": { "baseline": { "type": "number" }, "candidate": { "type": "number" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -53,7 +53,7 @@ test("the view lives in the URL, and back goes back", async ({ page }) => {
   await expect(page.getByLabel("Scoring", { exact: true })).toHaveValue("adjoint");
   await expect(page.getByLabel("Functional units", { exact: true })).toHaveValue("3");
   await page.getByRole("link", { name: "Import bw2calc" }).first().click();
-  await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveText("Import bw2calc");
+  await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Import bw2calc");
   await page.goBack();
   await expect(page.getByLabel("Scoring", { exact: true })).toHaveValue("adjoint");
 });
@@ -63,7 +63,7 @@ test("the start page links each change to its chart", async ({ page }) => {
   const first = page.locator(".latest-table tbody tr").first().getByRole("link");
   const name = await first.textContent();
   await first.click();
-  await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveText(name ?? "");
+  await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText(name ?? "");
   await expect(page.locator(".chart svg")).toBeVisible();
 });
 
@@ -272,8 +272,10 @@ test("Benchmarks opens on the solver comparison, the release changes and the Pyt
 }) => {
   await page.goto("?page=explorer");
   const main = page.getByRole("main");
+  await expect(main.getByRole("heading", { level: 1 })).toHaveText("Benchmarks");
+  // The page's title is its one h1; the masthead's site name is a plain link.
+  await expect(page.locator("h1")).toHaveCount(1);
   await expect(main.getByRole("heading", { level: 2 })).toHaveText([
-    "Benchmarks",
     /^Solver alternatives/,
     "What changed in the latest releases",
     /Python/,
@@ -383,6 +385,11 @@ test("the masthead search lists benchmarks and findings, and opens the first mat
   await expect(results.locator('a[href*="/findings/#"], a[href*="/stories/"]').first()).toBeVisible();
   await search.fill("zzzqqq");
   await expect(results.getByText("Nothing matches")).toBeVisible();
+  // The way out of an empty search: the whole catalogue, with the words cleared so it is not filtered empty.
+  await results.getByRole("link", { name: "browse the catalogue" }).click();
+  await expect(page).toHaveURL(/page=explorer/);
+  await expect(search).toHaveValue("");
+  await expect(page.locator(".rail-group").first()).toBeAttached();
   await search.fill("timeraw_import_bw2calc");
   await search.press("Enter");
   await expect(page.locator(".benchmark-id")).toContainText("bench_import.timeraw_import_bw2calc");
@@ -604,7 +611,7 @@ test("check qualifications precede the install command", async ({ page }) => {
   await page.goto("?platform=linux");
   const results = page.getByRole("list", { name: "Check results on Linux" });
   await expect(results.getByRole("listitem")).toHaveText([
-    "Passed Smoke calculations · Latest releases · Python 3.12",
+    "Passed Small test calculations · Latest releases · Python 3.12",
     "Failed Upstream test suites · Python 3.12",
   ]);
   const after = await results.evaluate(
@@ -670,7 +677,7 @@ test("platform setups keep their pins, install command and URL together", async 
   const pins = page.locator(".package-pins");
   await expect(pins).not.toHaveAttribute("open", "");
   await expect(pins.locator("summary")).toHaveText(
-    `What's in this set: ${check.lastPassed.packages.length} packages, files`,
+    `What's in this set: ${check.lastPassed.packages.length} packages and the install files`,
   );
   await expect(page.getByRole("link", { name: "requirements.txt", exact: true })).toBeHidden();
   await pins.locator("summary").click();
@@ -711,7 +718,7 @@ test("a failed current check keeps its older passing files clearly dated", async
   await page.route("**/data/guidance.json", (route) => route.fulfill({ json: data }));
   await page.goto("?page=home&platform=linux");
   await expect(page.getByRole("list", { name: "Check results on Linux" }).getByRole("listitem").first()).toHaveText(
-    "Failed Smoke calculations · Latest releases · Python 3.12",
+    "Failed Small test calculations · Latest releases · Python 3.12",
   );
   await expect(page.locator(".saved-warning")).toHaveText(
     "The latest run of Latest releases did not pass; this is the set that passed on Oct 30, 2026.",
@@ -751,8 +758,9 @@ test("Setup nudges link the largest regression and improvement, and Benchmarks' 
   if (!worst || !best) throw new Error("fixture lacks a regression or an improvement");
   await page.goto("?page=home&platform=linux");
   const nudges = page.locator(".nudges li");
-  await expect(nudges).toHaveCount(4);
+  await expect(nudges).toHaveCount(5);
   await expect(nudges.nth(0)).toContainText("Which solver to install");
+  await expect(nudges.nth(3)).toContainText("Does it hold on your machine?");
   await expect(nudges.nth(1).locator(".worse")).toBeVisible();
   await expect(nudges.nth(2).locator(".better")).toBeVisible();
   for (const [at, row] of [
@@ -869,7 +877,7 @@ test("the phone masthead scrolls the current page into view", async ({ page }) =
 
 test("a benchmark's tab title uses its readable name", async ({ page }) => {
   await chart(page, SCORES);
-  const name = await page.locator(".view > header h2").textContent();
+  const name = await page.locator(".view > header h1").textContent();
   await expect.poll(async () => (await page.title()).startsWith(`${name} · `)).toBe(true);
 });
 

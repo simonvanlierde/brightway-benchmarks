@@ -51,16 +51,19 @@ test("a scroll region takes keyboard focus only while it has something to scroll
 test("the data files are preloaded from the page, and fetched once", async ({ page }) => {
   const asked: string[] = [];
   page.on("request", (r) => {
-    if (/\/data\/(index|guidance)\.json$/.test(r.url())) asked.push(new URL(r.url()).pathname);
+    if (/\/data\/(index|guidance|ratios)\.json$/.test(r.url())) asked.push(new URL(r.url()).pathname);
   });
   await page.goto("");
   await page.locator(".install-set").waitFor();
   const preloads = await page
     .locator('link[rel="preload"][as="fetch"][crossorigin]')
     .evaluateAll((links) => links.map((l) => l.getAttribute("href")));
-  expect(preloads).toEqual(["data/index.json", "data/guidance.json"]);
-  expect(asked.filter((p) => p.endsWith("index.json"))).toHaveLength(1);
-  expect(asked.filter((p) => p.endsWith("guidance.json"))).toHaveLength(1);
+  expect(preloads).toEqual(["data/index.json", "data/guidance.json", "data/ratios.json"]);
+  for (const name of ["index.json", "guidance.json", "ratios.json"])
+    expect(
+      asked.filter((p) => p.endsWith(name)),
+      name,
+    ).toHaveLength(1);
 });
 
 test("an empty check-grid cell is a hidden dash with text for a screen reader", async ({ page }) => {
@@ -76,7 +79,7 @@ test("an empty check-grid cell is a hidden dash with text for a screen reader", 
 test("without guidance, Setup's heading is the site's name, as the masthead shows it", async ({ page }) => {
   await page.route("**/data/guidance.json", (route) => route.fulfill({ status: 404 }));
   await page.goto("");
-  await expect(page.getByRole("main").getByRole("heading", { level: 2 }).first()).toHaveText("Brightway Benchmarks");
+  await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toHaveText("Brightway Benchmarks");
 });
 
 test("Setup's solver nudge quotes the solver table's own figures", async ({ page }) => {
@@ -154,14 +157,18 @@ test("the x axis names a commit that is not a release, muted; the y axis keeps o
   expect(decimals.size, y.join(" ")).toBe(1);
 });
 
-test("on a phone, fifteen releases draw lines without per-point markers", async ({ page }) => {
-  const markers = () => page.locator('.chart [data-mark="dot"] path').count();
+test("on a phone, fifteen releases keep smaller marker shapes, so lines differ by more than colour", async ({
+  page,
+}) => {
+  const dots = page.locator('.chart [data-mark="dot"] path');
+  const size = async () => (await dots.first().boundingBox())?.width ?? 0;
   await page.setViewportSize({ width: 1440, height: 900 });
   await chart(page, FIRST_SCORE);
-  expect(await markers()).toBeGreaterThan(0);
+  const wide = await size();
+  expect(wide).toBeGreaterThan(0);
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect.poll(markers).toBe(0);
-  await expect(page.locator('.chart :is([data-mark="line"], [data-mark="dot"]) path')).not.toHaveCount(0);
+  await expect.poll(size).toBeLessThan(wide);
+  expect(await dots.count()).toBeGreaterThan(0);
 });
 
 test("on a phone the build id is the footer's own last row", async ({ page }) => {

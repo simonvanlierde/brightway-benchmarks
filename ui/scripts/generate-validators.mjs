@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import standaloneCode from "ajv/dist/standalone/index.js";
 
-const names = ["guidance", "index", "report"];
+const names = ["guidance", "index", "ratios", "report"];
 // NOTE: formats go unchecked, to keep ajv-formats out of the page. The exporter's tests check date-time.
 const ajv = new Ajv2020({ allErrors: true, validateFormats: false, code: { source: true, esm: true } });
 for (const name of names) {

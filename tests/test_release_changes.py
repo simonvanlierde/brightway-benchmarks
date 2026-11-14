@@ -199,3 +199,38 @@ def test_cells_line_up_by_parameter_when_the_axis_order_differs(module: ModuleTy
         ("SingleScore.time_first_score", "'smoke'", pytest.approx(2.0)),
         ("SingleScore.time_first_score", "'ecoinvent'", pytest.approx(2.0)),
     ]
+
+
+def test_a_result_of_an_older_benchmark_version_is_not_compared(module: ModuleType, tmp_path: Path):
+    meta = tmp_path / "results" / "s" / "benchmarks.json"
+    meta.write_text(json.dumps({k: {"unit": u, "version": "5-x"} for k, u in UNITS.items()}))
+    cols = ["result", "params", "version"]
+    old = result("2.000000", "uv-py3.12", [1.0, 1.0], [5e8, 5e8], [0.0, 0.0])
+    new = result("3.000000", "uv-py3.12", [2.0, 1.0], [5e8, 5e8], [0.0, 0.0])
+    for data, version in [(old, "3-x"), (new, "5-x")]:
+        data["result_columns"] = cols
+        for row in data["results"].values():
+            row.append(version)
+    write(tmp_path, old)
+    write(tmp_path, new)
+    assert module.changes(tmp_path / "results", "s") == []
+
+
+def test_a_release_with_only_stale_results_is_skipped_over(module: ModuleType, tmp_path: Path):
+    meta = tmp_path / "results" / "s" / "benchmarks.json"
+    meta.write_text(json.dumps({k: {"unit": u, "version": "5-x"} for k, u in UNITS.items()}))
+    env = "uv-py3.12" + STACK
+    files = [
+        (result("1.000000", env, [9.04, 45.0], [5e8, 5e8], [0.0, 0.0]), "5-x"),
+        (result("2.000000", env, [1.0, 1.0], [5e8, 5e8], [0.0, 0.0]), "3-x"),
+        (result("3.000000", env, [9.05, 9.05], [5e8, 5e8], [0.0, 0.0]), "5-x"),
+    ]
+    for data, version in files:
+        data["result_columns"] = ["result", "params", "version"]
+        for row in data["results"].values():
+            row.append(version)
+        write(tmp_path, data)
+    rows = module.changes(tmp_path / "results", "s")
+    assert [(c.old_tag, c.new_tag, c.case, c.params) for c in rows] == [
+        ("1.0", "3.0", "SingleScore.time_first_score", "'ecoinvent', 'IterativeLCA'")
+    ]

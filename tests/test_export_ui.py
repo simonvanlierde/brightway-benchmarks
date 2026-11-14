@@ -178,6 +178,42 @@ def test_one_stack_per_commit_and_environment(export_ui: ModuleType, tmp_path: P
     assert value(index, reports["m", commit], ["'ecoinvent'", "'LCA'"], "a")["value"] == pytest.approx(10.4e9)
 
 
+def test_a_result_of_an_older_benchmark_version_is_left_out(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    old, new = "55" * 20, "66" * 20
+    info = {k: v | {"version": "5-x"} for k, v in INFO.items()}
+
+    def stamped(commit: str, stack: str, version: str, v: float) -> dict:
+        data = result(commit, f"a-BWBENCH_STACK{stack}", 0, [v, 1.0], ([v, 1.0], [v, 1.0]))
+        for row in data["results"].values():
+            row[2:3] = [version]  # the TIME row has the column, the others gain it
+        return data
+
+    files = {
+        f"m/{old[:8]}-1": stamped(old, "00000000", "3-x", 10.0),  # only a stale result: no report
+        f"m/{new[:8]}-1": stamped(new, "00000000", "3-x", 10.0),  # lowest stack hash, but stale
+        f"m/{new[:8]}-2": stamped(new, "ffffffff", "5-x", 15.0),
+    }
+    index, reports = run(export_ui, layout(tmp_path, files, info=info), monkeypatch)
+    assert list(reports) == [("m", new)]
+    assert value(index, reports["m", new], ["'ecoinvent'", "'LCA'"], "a")["value"] == pytest.approx(15e9)
+
+
+def test_a_file_keeps_its_current_cases_and_drops_its_stale_ones(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    commit = "77" * 20
+    info = {k: v | {"version": "5-x"} for k, v in INFO.items()}
+    data = result(commit, "a" + STACK, 0, [10.0, 1.0], ([10.0, 1.0], [10.0, 1.0]))
+    data["results"][TIME][2] = "5-x"
+    data["results"]["bench_lca.SingleScore.peakmem_first_score"][2:3] = ["3-x"]
+    index, reports = run(export_ui, layout(tmp_path, {f"m/{commit[:8]}-1": data}, info=info), monkeypatch)
+    report = reports["m", commit]
+    assert value(index, report, ["'ecoinvent'", "'LCA'"], "a")["value"] == pytest.approx(10e9)
+    assert not [m for case in report.values() for m in case if m != "latency"]
+
+
 def test_a_case_written_twice_is_refused(export_ui: ModuleType):
     data = result("ab" * 20, "e" + STACK, 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))
     with pytest.raises(SystemExit, match="twice in one report"):

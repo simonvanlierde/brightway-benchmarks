@@ -14,7 +14,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   ([method](docs/method.md#how-the-results-stay-reproducible)).
 - Every benchmark's history starts again from the rerun after the change to generator version 5 in
   this release. Earlier times stay in the results branch's git history
-  ([method](docs/method.md#how-the-results-stay-reproducible)).
+  ([method](docs/method.md#how-the-results-stay-reproducible)). The site and its release table
+  now leave out the earlier generator versions' times, which had stayed in the histories of the
+  commits the rerun did not cover.
 - The synthetic ecoinvent profile shares supplier lists across activity families and passes its
   structural and solver-fill checks over four seeds ([calibration](docs/generator-calibration.md)).
 - bw_timex's timeline cases (`TimelineLCI`, `HeatingTimeline`) time every sample as a first

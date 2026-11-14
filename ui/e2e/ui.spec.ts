@@ -677,7 +677,7 @@ test("platform setups keep their pins, install command and URL together", async 
   const pins = page.locator(".package-pins");
   await expect(pins).not.toHaveAttribute("open", "");
   await expect(pins.locator("summary")).toHaveText(
-    `What's in this set: ${check.lastPassed.packages.length} packages, files`,
+    `What's in this set: ${check.lastPassed.packages.length} packages and the install files`,
   );
   await expect(page.getByRole("link", { name: "requirements.txt", exact: true })).toBeHidden();
   await pins.locator("summary").click();

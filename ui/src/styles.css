@@ -1223,11 +1223,14 @@ so a chosen control needs a line of its own. */
   overflow-wrap: anywhere;
   font-size: 0.8125rem;
 }
-/* A word breaks only when it is wider than the box on its own, as a flag with a URL is, and then fills each line. */
+/* A word breaks only when it is wider than the box on its own, as a flag with a URL is, and then after a "/". */
 .install-command .word {
   display: inline-block;
   max-width: 100%;
-  word-break: break-all;
+  overflow-wrap: normal;
+}
+.install-command .part {
+  white-space: nowrap;
 }
 .install-command .copy {
   border: 0;

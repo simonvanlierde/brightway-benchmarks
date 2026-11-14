@@ -63,7 +63,7 @@ test("on a phone the install command wraps at spaces, never inside a flag", asyn
         .filter((w) => w.textContent?.startsWith("-"))
         .map((w) => {
           const range = document.createRange();
-          const text = w.firstChild as Text;
+          const text = w.querySelector(".part")?.firstChild as Text;
           range.setStart(text, 0);
           range.setEnd(text, Math.min(4, text.length));
           return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
@@ -71,6 +71,15 @@ test("on a phone the install command wraps at spaces, never inside a flag", asyn
     );
     expect(flags.length).toBeGreaterThan(0);
     expect(flags.every((lines) => lines === 1)).toBe(true);
+    // A long URL breaks after a "/" only: each piece between them sits on one line.
+    const pieces = await command.locator(".part").evaluateAll((parts) =>
+      parts.map((p) => {
+        const range = document.createRange();
+        range.selectNodeContents(p);
+        return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+      }),
+    );
+    expect(pieces.every((lines) => lines === 1)).toBe(true);
     // The words are the command's own, so selecting and copying it by hand gives the same text.
     const text = await command.textContent();
     expect(text).toMatch(/ -c https:/);

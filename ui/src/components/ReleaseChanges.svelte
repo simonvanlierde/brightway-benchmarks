@@ -88,7 +88,7 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
           <div class="scroll gap" role="region" aria-labelledby="flagged-h" use:scrollable>
             <table class="latest-table responsive-table">
               <caption>
-                {flaggedCases} {flaggedCases === 1 ? "case" : "cases"} in {flagged.length} {flagged.length === 1 ? "row" : "rows"}, one per benchmark and machine, largest first, each beside the noise it exceeded.
+                {flaggedCases} {flaggedCases === 1 ? "case" : "cases"} in {flagged.length} {flagged.length === 1 ? "row" : "rows"}, one per benchmark and machine. Largest first, each beside the noise it exceeded.
               </caption>
               <thead>
                 <tr>

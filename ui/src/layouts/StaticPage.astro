@@ -15,8 +15,10 @@ interface Props {
   mainClass: string;
   /** This page, as the nav and the footer name it. */
   current?: StaticPageId;
+  /** The closing "Back to Setup" line; a page that already lists Setup leaves it out. */
+  back?: boolean;
 }
-const { mainClass, current, ...head } = Astro.props;
+const { mainClass, current, back = true, ...head } = Astro.props;
 const page = STATIC_PAGES.find((p) => p.id === current);
 const home = import.meta.env.BASE_URL.replace(/ui\/$/, "");
 const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
@@ -40,7 +42,7 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
     />
     <main class={`static-page ${mainClass}`} id="main" tabindex="-1" data-pagefind-body={head.canonical ? "" : undefined}>
       <slot />
-      <p class="back" data-pagefind-ignore><a href={home}>Back to Setup</a>, where the tested install sets are.</p>
+      {back && <p class="back" data-pagefind-ignore><a href={home}>Back to Setup</a>, where the tested install sets are.</p>}
     </main>
     <footer class="site-footer">
       <nav aria-label="Project">

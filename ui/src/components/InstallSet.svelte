@@ -26,14 +26,18 @@ let {
 } = $props();
 
 // A command line's words, each flag kept with the word after it ("-c URL"), so the two wrap together.
-function wordsOf(line: string): string[] {
+// A word is cut after each path "/" (not the "//" of a scheme): a long URL breaks there, never mid-name.
+function wordsOf(line: string): { lead: string; rest: string[] }[] {
   const out: string[] = [];
   for (const word of line.split(" ")) {
     const last = out.at(-1);
     if (last?.startsWith("-") && !last.includes(" ") && !word.startsWith("-")) out[out.length - 1] = `${last} ${word}`;
     else out.push(word);
   }
-  return out;
+  return out.map((word) => {
+    const [lead = "", ...rest] = word.split(/(?<=[^/]\/)(?!\/)/);
+    return { lead, rest };
+  });
 }
 
 function stored(): Manager {
@@ -165,7 +169,7 @@ async function copy(text: string, what: string) {
       </details>
     {/if}
     <details class="package-pins">
-      <summary>What's in this set: {saved.packages.length} packages, files</summary>
+      <summary>What's in this set: {saved.packages.length} packages and the install files</summary>
       <table aria-label="Tested package versions"><tbody>{#each saved.packages as pkg (pkg.name)}<tr><th scope="row">{pkg.name}</th><td>{pkg.version}</td></tr>{/each}</tbody></table>
       <p class="install-files"><span class="files-label">Files</span> {#each saved.files as file (file.url)}<a href={file.url}>{file.label}</a>{/each}<a href={saved.run}>Passing run</a></p>
       {#if saved.pinned && install.latest}
@@ -181,5 +185,5 @@ async function copy(text: string, what: string) {
   {/if}
 </section>
 
-<!-- Each word in a box of its own, so a line breaks at a space and never inside a flag such as -c. -->
-{#snippet words(text: string)}{#each text.split("\n") as line, l (l)}{l ? "\n" : ""}{#each wordsOf(line) as word, i (i)}{i ? " " : ""}<span class="word">{word}</span>{/each}{/each}{/snippet}
+<!-- Each word in a box of its own, so a line breaks at a space or a URL's "/", never inside a flag such as -c. -->
+{#snippet words(text: string)}{#each text.split("\n") as line, l (l)}{l ? "\n" : ""}{#each wordsOf(line) as word, i (i)}{i ? " " : ""}<span class="word"><span class="part">{word.lead}</span>{#each word.rest as part, j (j)}<wbr /><span class="part">{part}</span>{/each}</span>{/each}{/each}{/snippet}

@@ -19,6 +19,15 @@ const oses = $derived([...new Set((ratios?.machines ?? []).map((m) => m.os))]);
 const TIERS = { reference: "Reference", hosted: "Hosted", contributed: "Contributed, unverified" };
 const ms = (s: number) => `${sig(s * 1000)} ms`;
 const tone = (way: string) => (way === "faster" ? "better" : way === "slower" ? "worse" : "");
+type Comparison = Ratios["comparisons"][number];
+// The case and params most tables time, described once above them; a table names its own only when it differs.
+const caseOf = (c: Comparison) => JSON.stringify([c.case, c.params]);
+const shared = $derived.by(() => {
+  const all = ratios?.comparisons ?? [];
+  const count = (c: Comparison) => all.filter((d) => caseOf(d) === caseOf(c)).length;
+  const most = all.reduce<Comparison | undefined>((a, c) => (a && count(a) >= count(c) ? a : c), undefined);
+  return most && count(most) > 1 ? most : undefined;
+});
 const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` : "");
 </script>
 
@@ -54,13 +63,12 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
     <dd>Hosted rows ran in this project's weekly workflow, which signs each file. Contributed rows come from other people's machines and are not verified.{#if method}{" "}<a href={method}>How the ratios are measured</a>.{/if}</dd>
   </dl>
 
+  {#if shared}<p class="ratio-case ratio-shared">Unless a table says otherwise, each times {@render about(shared)}</p>{/if}
+
   {#each ratios.comparisons as c (c.key)}
     <section class="ratio-comparison" aria-labelledby="ratio-{c.key}">
       <h3 id="ratio-{c.key}">{c.title}</h3>
-      <p class="ratio-case">
-        <strong>{c.case_name}</strong>{c.description ? `: ${c.description}` : ""}
-        {#each c.params as p (p.name)}{" "}<span>{p.name}: <strong>{p.value}</strong>{p.note ? ` (${p.note.replace(/\.$/, "")})` : ""}.</span>{/each}
-      </p>
+      {#if !shared || caseOf(c) !== caseOf(shared)}<p class="ratio-case">{@render about(c)}</p>{/if}
       {#if c.caveat}<p class="ratio-case">{c.caveat}</p>{/if}
       <div class="scroll" role="region" aria-label="{c.title}, table" use:scrollable>
         <!-- svelte-ignore a11y_no_redundant_roles -->
@@ -128,6 +136,11 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
   {/each}
 {/if}
 
+{#snippet about(c: Comparison)}
+  <strong>{c.case_name}</strong>{c.description ? `: ${c.description}` : ""}
+  {#each c.params as p (p.name)}{" "}<span>{p.name}: <strong>{p.value}</strong>{p.note ? ` (${p.note.replace(/\.$/, "")})` : ""}.</span>{/each}
+{/snippet}
+
 <style>
   .compare-key {
     display: grid;
@@ -148,6 +161,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
   }
   .ratio-comparison {
     margin-top: 44px;
+  }
+  .ratio-case.ratio-shared {
+    margin-top: 20px;
   }
   .ratio-comparison h3 {
     font-size: 1.35rem;

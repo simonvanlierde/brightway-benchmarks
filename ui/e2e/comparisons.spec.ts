@@ -133,3 +133,12 @@ test("On a phone the table keeps its semantics, labels every cell and reads in v
   const tops = await row.locator("th, td").evaluateAll((cells) => cells.map((c) => c.getBoundingClientRect().top));
   expect(tops).toEqual([...tops].sort((a, b) => a - b));
 });
+
+test("The case most tables time is described once, above them", async ({ page }) => {
+  await page.goto("?page=compare");
+  await expect(page.locator(".ratio-row").first()).toBeVisible();
+  await expect(page.getByText(/One demand and one impact method from scratch/)).toHaveCount(1);
+  // A table that times another case still names it.
+  const release = page.getByRole("region", { name: "bw2data release", exact: true });
+  await expect(release.locator(".ratio-case")).toContainText("Database write");
+});

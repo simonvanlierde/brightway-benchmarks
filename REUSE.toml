@@ -21,3 +21,9 @@ SPDX-License-Identifier = "CC-BY-SA-4.0"
 path = "docker/seccomp-noaslr.json"
 SPDX-FileCopyrightText = "Docker, Inc. and the moby/profiles contributors"
 SPDX-License-Identifier = "Apache-2.0"
+
+# Result files that contributors add by pull request (docs/running.md#contribute-a-run).
+[[annotations]]
+path = "ratios/contributed/**"
+SPDX-FileCopyrightText = "2026 brightway-benchmarks contributors"
+SPDX-License-Identifier = "BSD-3-Clause"

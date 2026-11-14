@@ -108,7 +108,7 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
                   </th>
                   <td class="ratio-source" role="cell" data-label="Source">
                     {m ? TIERS[m.tier] : ""}
-                    {#if m}<span class="ratio-meta">{#if m.run}<a href={m.run}>{dateLabel(m.created)}<span class="sr">, the run</span></a>{:else}{dateLabel(m.created)}{/if}</span>{/if}
+                    {#if m}<span class="ratio-meta">{dateLabel(m.created)}{#if m.run}{" · "}<a href={m.run}>open the run</a>{/if}</span>{/if}
                   </td>
                   <td class="num" role="cell" data-label="Ratio">{r.ratio === null ? "–" : sig(r.ratio)}</td>
                   <td class="num" role="cell" data-label="95% interval">{r.ci95 ? interval(r) : "–"}</td>
@@ -234,6 +234,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
   .ratio-reading .ratio-meta {
     max-width: 32ch;
   }
+  .ratio-source .ratio-meta {
+    white-space: nowrap;
+  }
   .ratio-axis-head,
   .ratio-graphic {
     width: 26%;
@@ -337,6 +340,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
     }
     .ratio-source {
       grid-column: 1 / -1;
+    }
+    .ratio-source .ratio-meta {
+      white-space: normal;
     }
     .ratio-axis {
       display: flex;

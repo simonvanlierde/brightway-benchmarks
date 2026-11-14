@@ -44,9 +44,13 @@ test("Across machines reads one row per machine under each choice, with its summ
   await expect(mac.getByRole("cell").nth(1)).toHaveText("–");
   await expect(mac.getByRole("cell").last()).toContainText("Not measured");
   await expect(mac.getByRole("cell").last()).toContainText("pypardiso did not install");
-  // Hosted rows link the run that wrote them.
-  await expect(windows.getByRole("link", { name: /the run$/ })).toHaveAttribute("href", /actions\/runs\/43604589027$/);
+  // Hosted rows link the run that wrote them, beside its date, as Setup does.
+  await expect(windows.getByRole("link", { name: "open the run", exact: true })).toHaveAttribute(
+    "href",
+    /actions\/runs\/43604589027$/,
+  );
   await expect(windows).toContainText("Hosted");
+  await expect(windows.locator(".ratio-source .ratio-meta")).toHaveText("Nov 14, 2026 · open the run");
   // Directions that disagree say so.
   const python = page.getByRole("region", { name: "Python version", exact: true });
   await expect(

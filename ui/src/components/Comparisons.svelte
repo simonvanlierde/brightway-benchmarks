@@ -61,9 +61,7 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
         <strong>{c.case_name}</strong>{c.description ? `: ${c.description}` : ""}
         {#each c.params as p (p.name)}{" "}<span>{p.name}: <strong>{p.value}</strong>{p.note ? ` (${p.note.replace(/\.$/, "")})` : ""}.</span>{/each}
       </p>
-      {#if c.id === "solvers"}
-        <p class="ratio-case">At this size the factorization is too small to show which solver is faster. On an ecoinvent-sized database PyPardiso and UMFPACK give a score 2 to 5 times faster than SuperLU.</p>
-      {/if}
+      {#if c.caveat}<p class="ratio-case">{c.caveat}</p>{/if}
       <div class="scroll" role="region" aria-label="{c.title}, table" use:scrollable>
         <!-- svelte-ignore a11y_no_redundant_roles -->
         <!-- Explicit roles: phones lay the table out as blocks, which can drop its semantics in Chromium and WebKit. -->
@@ -89,7 +87,7 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
               <tr class="ratio-candidate" role="row">
                 <th role="rowheader" scope="rowgroup" colspan="6">
                   <span class="ratio-label">{k.label}</span>
-                  <span class="ratio-summary {tone(k.summary.direction)}">{k.summary.text}</span>
+                  <span class="ratio-summary {c.caveat ? 'muted' : tone(k.summary.direction)}">{k.summary.text}</span>
                 </th>
               </tr>
               {#each k.rows as r (r.machine)}
@@ -199,6 +197,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
   }
   .ratio-summary {
     font-weight: 600;
+  }
+  .ratio-summary.muted {
+    color: var(--muted);
   }
   .ratio-row th {
     font-weight: 550;

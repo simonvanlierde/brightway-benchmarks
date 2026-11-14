@@ -49,6 +49,10 @@ export interface RatioComparisons {
       note: string | null;
     }[];
     baseline: string;
+    /**
+     * Why the case, at this size, cannot show the difference the comparison asks about; its summaries then say so.
+     */
+    caveat: string | null;
     candidates: {
       name: string;
       /**

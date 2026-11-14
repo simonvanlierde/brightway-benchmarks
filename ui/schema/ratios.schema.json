@@ -42,7 +42,18 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "key", "title", "case", "case_name", "description", "params", "baseline", "candidates"],
+        "required": [
+          "id",
+          "key",
+          "title",
+          "case",
+          "case_name",
+          "description",
+          "params",
+          "baseline",
+          "caveat",
+          "candidates"
+        ],
         "properties": {
           "id": { "type": "string", "minLength": 1 },
           "key": {
@@ -68,6 +79,10 @@
             }
           },
           "baseline": { "type": "string" },
+          "caveat": {
+            "type": ["string", "null"],
+            "description": "Why the case, at this size, cannot show the difference the comparison asks about; its summaries then say so."
+          },
           "candidates": {
             "type": "array",
             "items": {

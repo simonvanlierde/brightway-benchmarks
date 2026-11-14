@@ -131,7 +131,7 @@ def test_export_writes_one_row_per_machine_from_the_newest_file(module: ModuleTy
     assert mac["ratio"] is None
     assert mac["verdict"] == "missing"
     assert mac["missing"] == "bw2calc used umfpack, not pypardiso: pypardiso did not install"
-    assert pardiso["summary"] == {"direction": "slower", "text": "1.21 to 19.9x slower on 2 machines, 2 OSes"}
+    assert pardiso["summary"]["text"].endswith("1.21 to 19.9x slower on 2 machines, 2 OSes")
     # The two releases ran on macOS and Windows only; Linux gets no row rather than a missing one.
     release = next(c for c in out["comparisons"] if c["id"] == "bw2calc-release")
     assert release["candidates"][0]["label"] == "bw2calc 3.1.0 against 3.0.0"
@@ -273,3 +273,13 @@ def test_small_differences_read_as_percentages_and_large_ones_as_whole_multiples
         "direction": "slower",
         "text": "4% to 1.50x slower on 2 machines, 2 OSes",
     }
+
+
+def test_a_comparison_too_small_to_judge_says_so_in_its_summary(module: ModuleType, tmp_path: Path):
+    out = export(module, hosted(tmp_path), None, tmp_path / "data")
+
+    solvers = next(c for c in out["comparisons"] if c["id"] == "solvers")
+    assert solvers["caveat"].startswith("At this size the factorization is too small")
+    pardiso = next(k for k in solvers["candidates"] if k["name"] == "pypardiso")
+    assert pardiso["summary"]["text"] == "Too small to judge at this size: 1.21 to 19.9x slower on 2 machines, 2 OSes"
+    assert all(c["caveat"] is None for c in out["comparisons"] if c["id"] != "solvers")

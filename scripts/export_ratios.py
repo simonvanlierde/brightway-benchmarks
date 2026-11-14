@@ -46,6 +46,11 @@ ARMS = {
     "conda-forge": "conda-forge (pixi)",
 }
 REASON_CHARS = 200
+# Comparisons whose case, at a given size, is too small to show the difference they ask about.
+TOO_SMALL = {
+    ("solvers", "smoke"): "At this size the factorization is too small to show which solver is faster. On an"
+    " ecoinvent-sized database PyPardiso and UMFPACK give a score 2 to 5 times faster than SuperLU.",
+}
 
 
 def times(x: float) -> str:
@@ -208,6 +213,7 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
     ids = [cid for cid, *_ in groups]
     for (cid, case, params, baseline), group in groups.items():
         first = group["comparison"]
+        caveat = TOO_SMALL.get((cid, str(first["params"].get("size"))))
         candidates: dict[str, list] = {}
         for machine, os_name, c in group["runs"]:
             for r in c["ratios"]:
@@ -228,11 +234,14 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
                 )
         out_candidates = []
         for name, rows in candidates.items():
+            said = summary([{**r, "os": r["_os"], "tier": r["_tier"]} for r in rows])
+            if caveat and said["direction"] in ("faster", "slower", "mixed"):
+                said["text"] = f"Too small to judge at this size: {said['text']}"
             out_candidates.append(
                 {
                     "name": name,
                     "label": _label(first, name, [r["_comparison"] for r in rows]),
-                    "summary": summary([{**r, "os": r["_os"], "tier": r["_tier"]} for r in rows]),
+                    "summary": said,
                     "rows": [{k: v for k, v in r.items() if not k.startswith("_")} for r in rows],
                 }
             )
@@ -256,6 +265,7 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
                     for k, v in first["params"].items()
                 ],
                 "baseline": baseline,
+                "caveat": caveat,
                 "candidates": out_candidates,
             }
         )

@@ -56,6 +56,7 @@
         }
       ],
       "baseline": "superlu",
+      "caveat": "At this size the factorization is too small to show which solver is faster. On an ecoinvent-sized database PyPardiso and UMFPACK give a score 2 to 5 times faster than SuperLU.",
       "candidates": [
         {
           "name": "umfpack",
@@ -111,7 +112,7 @@
           "label": "PyPardiso against SuperLU",
           "summary": {
             "direction": "slower",
-            "text": "1.21 to 19.9x slower on 2 machines, 2 OSes"
+            "text": "Too small to judge at this size: 1.21 to 19.9x slower on 2 machines, 2 OSes"
           },
           "rows": [
             {
@@ -177,6 +178,7 @@
         }
       ],
       "baseline": "pypi",
+      "caveat": null,
       "candidates": [
         {
           "name": "conda-forge",
@@ -255,6 +257,7 @@
         }
       ],
       "baseline": "3.13",
+      "caveat": null,
       "candidates": [
         {
           "name": "3.12",
@@ -443,6 +446,7 @@
         }
       ],
       "baseline": "previous",
+      "caveat": null,
       "candidates": [
         {
           "name": "latest",
@@ -501,6 +505,7 @@
         }
       ],
       "baseline": "previous",
+      "caveat": null,
       "candidates": [
         {
           "name": "latest",

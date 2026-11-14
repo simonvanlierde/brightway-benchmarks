@@ -30,7 +30,11 @@ test("Across machines reads one row per machine under each choice, with its summ
   ]);
   // The rowgroup header names the choice and its range over the machines where the difference is clear.
   const pardiso = solvers.getByRole("rowgroup").filter({ hasText: "PyPardiso against SuperLU" });
-  await expect(pardiso.locator(".ratio-summary")).toHaveText("1.21 to 19.9x slower on 2 machines, 2 OSes");
+  // At smoke size the solvers cannot show a difference, so the headline says so and takes no colour.
+  await expect(pardiso.locator(".ratio-summary")).toHaveText(
+    "Too small to judge at this size: 1.21 to 19.9x slower on 2 machines, 2 OSes",
+  );
+  await expect(pardiso.locator(".ratio-summary")).not.toHaveClass(/worse/);
   const windows = pardiso.getByRole("row").filter({ hasText: "GitHub win25-vs2026" });
   await expect(windows.getByRole("cell").nth(1)).toHaveText("19.9");
   await expect(windows.getByRole("cell").nth(2)).toHaveText("19.1 to 20.5");

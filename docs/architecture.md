@@ -112,6 +112,5 @@ All of them are in [`.github/workflows/`](../.github/workflows/).
   tested set in a clean container), `links` (weekly web link check), `fair` (weekly),
   `advisories`, `scorecard`, `ratios` (weekly interleaved ratios on three OSes, attested, onto the
   `ratios` branch; [method](method.md#hosted-ratios)).
-- Manual: `noise-hosted` (the noise floor on a hosted runner) and `solvers-macos` (the solver
-  comparison on an Apple Silicon runner).
+- Manual: `noise-hosted` (the noise floor on a hosted runner).
 - `release` makes the GitHub release when a `vX.Y.Z` tag is pushed.

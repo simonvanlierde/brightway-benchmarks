@@ -52,7 +52,7 @@ from `ui`, `pull request title` from `pr-title` and `DCO sign-off` from `dco`
 - `advisories` audits `uv.lock` and the workflows again every Monday, `links` checks every web
   link weekly, and `fair` scores the repository on fair-software.eu's recommendations weekly.
 - `site` rebuilds the history pages daily after `compat`, and by hand after new results.
-- `noise-hosted` and `solvers-macos` run by hand.
+- `noise-hosted` runs by hand.
 - `ratios` runs `bwbench compare all` weekly on Linux, macOS and Windows runners, attests the
   result files and, on `main`, commits them to the `ratios` branch.
 - `scorecard` rates the repository for the OpenSSF Scorecard badge.

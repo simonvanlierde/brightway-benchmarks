@@ -7,7 +7,8 @@ Each comparison times one catalogue case in two or more environments (arms). Eac
 environment is built here under ``--work``: a uv virtual environment from PyPI, or a pixi
 environment from conda-forge. Then the arms run in interleaved rounds (``bwbench.ratios``),
 each call in a fresh process (``bwbench.timecase``). An arm that cannot be installed or run
-here is recorded as missing, with the reason. The comparisons:
+here is recorded as missing, with the reason. Every arm installs only releases published a week
+or more before the run started, one cutoff for uv and pixi alike. The comparisons:
 
 - ``solvers``: UMFPACK and PyPardiso against SuperLU in one environment, by hiding the others.
 - ``install-path``: bw2calc from conda-forge (pixi) against PyPI (uv).
@@ -19,7 +20,8 @@ Every arm other than the solvers' runs SuperLU, so its ratio is the install's, t
 interpreter's or the release's, not a solver change. Run it from a checkout: the cases live in
 ``benchmarks/``. It needs ``uv``, and ``pixi`` for ``install-path``.
 
-Exit codes: 0 written (or valid), 1 a file has problems (validate), 2 usage error, 3 could not run.
+Exit codes: 0 written (or valid), 1 a file has problems (validate), 2 usage error, 3 could not
+run, 4 written, but no ratio has a value (every comparison lacks an arm; the file says why).
 """
 
 from __future__ import annotations
@@ -36,8 +38,9 @@ import statistics
 import subprocess
 import sys
 import tempfile
+import unicodedata
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from bwbench.fingerprint import fingerprint
@@ -56,6 +59,7 @@ SRC = Path(__file__).resolve().parents[1]
 PROBE = SRC / "bwbench" / "fingerprint.py"
 SOLVERS = ("pypardiso", "scikits.umfpack")  # what bw2calc picks over SuperLU when it can import it
 TIMEOUT = 900  # seconds for one install or one timed process
+CUTOFF_AGE = timedelta(weeks=1)  # every arm installs releases at least this old, as the project's uv.lock does
 FIRST_SCORE = ("bench_lca.SingleScore.time_first_score", {"size": "smoke", "cls": "LCA"})
 WRITE = ("bench_write.DatabaseWrite.time_write", {"size": "smoke"})
 
@@ -153,10 +157,13 @@ def _tail(proc: subprocess.CompletedProcess[str], lines: int = 5) -> str:
     return " / ".join(text[-lines:]) or f"exit {proc.returncode}"
 
 
-def latest_release(package: str, work: Path) -> str:
-    """The newest release of PACKAGE that uv resolves for Python 3.13 (it honours ``UV_EXCLUDE_NEWER``)."""
+def latest_release(package: str, work: Path, cutoff: str) -> str:
+    """The newest release of PACKAGE, published before CUTOFF, that uv resolves for Python 3.13."""
     proc = _run(
-        ["uv", "pip", "compile", "--python-version", "3.13", "--no-header", "--no-annotate", "-"], work, input=package
+        ["uv", "pip", "compile", "--python-version", "3.13", "--no-header", "--no-annotate", "-"],
+        work,
+        input=package,
+        env=os.environ | {"UV_EXCLUDE_NEWER": cutoff},
     )
     for line in proc.stdout.splitlines():
         name, _, version = line.partition("==")
@@ -175,14 +182,15 @@ PIXI_PLATFORMS = {
 }
 
 
-def build(env: Env, folder: Path) -> Built:
-    """Build ENV in FOLDER, record its resolved set as its lock and fingerprint it.
+def build(env: Env, folder: Path, cutoff: str) -> Built:
+    """Build ENV in FOLDER from releases published before CUTOFF (RFC 3339); lock and fingerprint it.
 
     FOLDER is emptied first: uv refuses to create a venv over one a former run left there.
+    One CUTOFF for every arm, so uv and pixi leave out the same new releases.
     """
     shutil.rmtree(folder, ignore_errors=True)
     folder.mkdir(parents=True)
-    built = _build_pixi(env, folder) if env.installer == "pixi" else _build_uv(env, folder)
+    built = _build_pixi(env, folder, cutoff) if env.installer == "pixi" else _build_uv(env, folder, cutoff)
     if built.failed is None and built.python is not None:
         proc = _run([str(built.python), "-I", str(PROBE), str(built.lock)], folder)
         with contextlib.suppress(ValueError):
@@ -192,19 +200,20 @@ def build(env: Env, folder: Path) -> Built:
     return built
 
 
-def _build_uv(env: Env, folder: Path) -> Built:
+def _build_uv(env: Env, folder: Path, cutoff: str) -> Built:
     venv = folder / "venv"
+    cut = os.environ | {"UV_EXCLUDE_NEWER": cutoff}
     proc = _run(["uv", "venv", "--quiet", "--python", env.python, str(venv)], folder)
     if proc.returncode:
         return Built(failed=f"uv venv --python {env.python}: {_tail(proc)}")
     py = venv / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
-    proc = _run(["uv", "pip", "install", "--quiet", "--python", str(py), *env.requirements], folder)
+    proc = _run(["uv", "pip", "install", "--quiet", "--python", str(py), *env.requirements], folder, env=cut)
     if proc.returncode:
         return Built(failed=f"uv pip install {' '.join(env.requirements)}: {_tail(proc)}")
     lock = folder / "requirements.txt"
     built = Built(python=py, lock=lock)
     for extra in env.optional:  # one at a time, so one that cannot build here leaves the others
-        proc = _run(["uv", "pip", "install", "--quiet", "--python", str(py), extra], folder)
+        proc = _run(["uv", "pip", "install", "--quiet", "--python", str(py), extra], folder, env=cut)
         if proc.returncode:
             built.left_out[extra] = _tail(proc)
     proc = _run(["uv", "pip", "freeze", "--python", str(py)], folder)
@@ -214,7 +223,7 @@ def _build_uv(env: Env, folder: Path) -> Built:
     return built
 
 
-def _build_pixi(env: Env, folder: Path) -> Built:
+def _build_pixi(env: Env, folder: Path, cutoff: str) -> Built:
     if shutil.which("pixi") is None:
         return Built(failed="pixi is not installed")
     plat = PIXI_PLATFORMS.get((platform.system(), platform.machine()))
@@ -222,7 +231,8 @@ def _build_pixi(env: Env, folder: Path) -> Built:
         return Built(failed=f"no conda-forge platform for {platform.system()} {platform.machine()}")
     deps = "\n".join(f'{r} = "*"' for r in env.requirements)
     (folder / "pixi.toml").write_text(
-        f'[workspace]\nname = "bwbench-arm"\nchannels = ["conda-forge"]\nplatforms = ["{plat}"]\n\n'
+        f'[workspace]\nname = "bwbench-arm"\nchannels = ["conda-forge"]\nplatforms = ["{plat}"]\n'
+        f'exclude-newer = "{cutoff}"\n\n'
         f'[dependencies]\npython = "{env.python}.*"\n{deps}\n',
         encoding="utf-8",
     )
@@ -325,12 +335,17 @@ def ratio(base: dict, cand: dict, name: str, seed: int) -> dict:
 
 
 def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, machine: str | None, work: Path) -> dict:
-    """Build the arms of the comparisons IDS, measure them and write the result file to OUT."""
+    """Build the arms of the comparisons IDS, measure them and write the result file to OUT.
+
+    OUT is written again after each comparison, so a run stopped partway keeps the ones it finished.
+    """
     work.mkdir(parents=True, exist_ok=True)
-    created = datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+    now = datetime.now(UTC)
+    created = now.isoformat(timespec="seconds").replace("+00:00", "Z")
+    cutoff = (now - CUTOFF_AGE).isoformat(timespec="seconds").replace("+00:00", "Z")
     system = platform.system()
     wants_release = {"all", "bw2calc-release", "bw2data-release"} & set(ids) and system in {"Darwin", "Windows"}
-    latest = {p: latest_release(p, work) for p in ("bw2calc", "bw2data")} if wants_release else {}
+    latest = {p: latest_release(p, work, cutoff) for p in ("bw2calc", "bw2data")} if wants_release else {}
     available = comparisons(system, latest)
     chosen = list(available.values()) if "all" in ids else [available[i] for i in ids]
     built: dict[Env, Built] = {}
@@ -340,7 +355,7 @@ def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, mac
                 print(
                     f"compare: building {a.env.installer} Python {a.env.python} {a.env.requirements}", file=sys.stderr
                 )
-                built[a.env] = build(a.env, work / f"env{len(built)}")
+                built[a.env] = build(a.env, work / f"env{len(built)}", cutoff)
     seed = random.SystemRandom().randrange(2**32)
     head = os.environ.get("GITHUB_SHA") or os.environ.get("BWBENCH_COMMIT") or _git_head()  # box.sh sets BWBENCH_COMMIT
     run = None
@@ -359,10 +374,14 @@ def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, mac
         "seed": seed,
         "resamples": RESAMPLES,
         "fingerprint": fp,
-        "comparisons": [measure(c, built, rounds, repeats, seed, work) for c in chosen],
+        "comparisons": [],
     }
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8")
+    for c in chosen:
+        doc["comparisons"].append(measure(c, built, rounds, repeats, seed, work))
+        tmp = out.with_name(f"{out.name}.tmp")
+        tmp.write_text(json.dumps(doc, indent=1) + "\n", encoding="utf-8")
+        tmp.replace(out)  # atomic: a reader never sees half a file
     return doc
 
 
@@ -390,14 +409,19 @@ def validate(files: list[Path]) -> int:
 
 def parser() -> argparse.ArgumentParser:
     """The command line."""
-    p = argparse.ArgumentParser(prog="bwbench", description="Interleaved ratios between Brightway environments.")
+    p = argparse.ArgumentParser(
+        prog="bwbench",
+        description="Interleaved ratios between Brightway environments.",
+        epilog=__doc__.rstrip().split("\n\n")[-1],
+    )
     sub = p.add_subparsers(dest="command", required=True)
     ids = ["all", "solvers", "install-path", "python", "bw2calc-release", "bw2data-release"]
     c = sub.add_parser(
         "compare",
         help="measure ratios on this machine",
         description=__doc__.split("\n\n")[2],
-        epilog="example: bwbench compare solvers install-path -o ratios.json",
+        epilog="example: bwbench compare solvers install-path -o ratios.json\n\n" + __doc__.rstrip().split("\n\n")[-1],
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     c.add_argument(
         "ids",
@@ -440,14 +464,17 @@ def main(argv: list[str] | None = None) -> int:
         parser().error("--rounds must be at least 2 and --repeats at least 1")
     if {"bw2calc-release", "bw2data-release"} & set(args.ids) and platform.system() not in {"Darwin", "Windows"}:
         parser().error("the release comparisons run on macOS and Windows only")
-    if args.machine is not None and not 0 < len(args.machine) <= 100:
-        parser().error("--machine must be 1 to 100 characters")
+    label = args.machine
+    hidden = label is not None and any(unicodedata.category(c) in {"Cc", "Cf"} for c in label)  # as ratios.py refuses
+    if label is not None and (hidden or not 0 < len(label) <= 100):
+        parser().error("--machine must be 1 to 100 characters, with no control or format character")
     try:
         if args.work is None:
             with tempfile.TemporaryDirectory(prefix="bwbench-compare-") as tmp:
-                compare(args.ids, args.output, args.rounds, args.repeats, args.tier, args.machine, Path(tmp))
+                doc = compare(args.ids, args.output, args.rounds, args.repeats, args.tier, args.machine, Path(tmp))
         else:
-            compare(args.ids, args.output, args.rounds, args.repeats, args.tier, args.machine, args.work.resolve())
+            work = args.work.resolve()
+            doc = compare(args.ids, args.output, args.rounds, args.repeats, args.tier, args.machine, work)
     except KeyboardInterrupt:
         print("bwbench: interrupted", file=sys.stderr)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -457,6 +484,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 3
     print(args.output.as_posix())
+    if not any(r["ratio"] is not None for c in doc["comparisons"] for r in c["ratios"]):
+        print("error: no ratio has a value: every comparison lacks an arm (the file says why)", file=sys.stderr)
+        return 4
     return 0
 
 

@@ -1,15 +1,24 @@
 #!/usr/bin/env python3
 """Put a fingerprint on asv result files, or check that results carry one.
 
-``fingerprints.py stamp ENV_ROOT FILE...`` (asv.sh, in the box, after ``asv run``): for each
-asv result FILE, find the environment under ENV_ROOT (``.asv/env/SUBJECT``) that ran it, run
+``fingerprints.py snapshot DIR`` (asv.sh, before ``asv run``): print, as one JSON object, the
+fingerprints each result file in DIR holds now, by path: its ``kept_fingerprints`` and then its
+``fingerprint`` (``null`` when it has none).
+
+``fingerprints.py stamp ENV_ROOT SNAPSHOT FILE...`` (asv.sh, in the box, after ``asv run``): for
+each asv result FILE, find the environment under ENV_ROOT (``.asv/env/SUBJECT``) that ran it, run
 ``src/bwbench/fingerprint.py`` with that environment's Python and the lock file asv.sh wrote
 for it beside FILE, and store the object under the file's ``"fingerprint"`` key. Files that
-are not results (machine.json, benchmarks.json) are skipped.
+are not results (machine.json, benchmarks.json) are skipped. asv rewrites a file without the
+keys it does not know, yet keeps the cells an earlier run timed (``--skip-existing-successful``),
+so the fingerprints SNAPSHOT (an empty file for none) lists for FILE go into its
+``kept_fingerprints``, without duplicates and without the new fingerprint. A rerun that timed
+every cell again still lists them: the list may name more environments than the cells came from.
 
-``fingerprints.py check TREE`` (results-commit.sh): every JSON file staged as new or changed in
-the git worktree TREE, other than asv's machine.json and benchmarks.json and the RO-Crate, must
-carry a valid fingerprint (``bwbench.fingerprint.problems``); an asv result (one with
+``fingerprints.py check TREE`` (results-commit.sh, after merge_results.py): every JSON file
+staged as new or changed in the git worktree TREE, other than asv's machine.json and
+benchmarks.json and the RO-Crate, must carry a valid fingerprint
+(``bwbench.fingerprint.problems``); an asv result (one with
 ``result_columns``) must also name its lock. A ``kept_fingerprints`` list, which
 merge_results.py writes for cells kept from earlier runs, must hold only valid asv
 fingerprints or ``null``. Files already committed are not checked again: results from before
@@ -47,8 +56,21 @@ def environments(root: Path) -> dict[str, Path]:
     return out
 
 
-def stamp(root: Path, files: list[Path]) -> int:
-    """Stamp FILES with their environments' fingerprints; 1 if any could not be."""
+def snapshot(folder: Path) -> dict[str, list]:
+    """The fingerprints each result file in FOLDER holds: its kept_fingerprints, then its fingerprint."""
+    out = {}
+    for path in folder.glob("*-*.json"):
+        try:
+            data = json.loads(path.read_text())
+        except json.JSONDecodeError:
+            continue  # asv rewrites it or stamp reports it
+        if path.name not in NOT_RESULTS and isinstance(data, dict):
+            out[str(path)] = [*data.get("kept_fingerprints", []), data.get("fingerprint")]
+    return out
+
+
+def stamp(root: Path, before: dict[str, list], files: list[Path]) -> int:
+    """Stamp FILES with their environments' fingerprints, keeping BEFORE's for each; 1 if any could not be."""
     envs, done, status = environments(root), {}, 0
     for path in files:
         if path.name in NOT_RESULTS:
@@ -70,7 +92,9 @@ def stamp(root: Path, files: list[Path]) -> int:
                 continue
             args = [str(env / "bin" / "python"), "-I", str(PROBE), str(lock)]
             done[env] = json.loads(subprocess.run(args, capture_output=True, text=True, check=True).stdout)  # noqa: S603
-        path.write_text(json.dumps(data | {"fingerprint": done[env]}))
+        earlier = [fp for fp in before.get(str(path), []) if fp != done[env]]
+        kept = [fp for i, fp in enumerate(earlier) if fp not in earlier[:i]]
+        path.write_text(json.dumps(data | {"fingerprint": done[env]} | ({"kept_fingerprints": kept} if kept else {})))
     return status
 
 
@@ -119,11 +143,15 @@ def check(tree: Path) -> int:
 
 def main(argv: list[str]) -> int:
     """Run the subcommand in ARGV."""
-    if len(argv) >= 3 and argv[0] == "stamp":
-        return stamp(Path(argv[1]), [Path(a) for a in argv[2:]])
+    if len(argv) == 2 and argv[0] == "snapshot":
+        print(json.dumps(snapshot(Path(argv[1]))))
+        return 0
+    if len(argv) >= 4 and argv[0] == "stamp":
+        before = json.loads(Path(argv[2]).read_text() or "{}")
+        return stamp(Path(argv[1]), before, [Path(a) for a in argv[3:]])
     if len(argv) == 2 and argv[0] == "check":
         return check(Path(argv[1]))
-    print("usage: fingerprints.py stamp ENV_ROOT FILE... | check TREE", file=sys.stderr)
+    print("usage: fingerprints.py snapshot DIR | stamp ENV_ROOT SNAPSHOT FILE... | check TREE", file=sys.stderr)
     return 2
 
 

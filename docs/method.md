@@ -162,7 +162,8 @@ match within `DIRECT_RTOL` (1e-9), or `BAFU_RTOL` (1e-6) for BAFU 2025; an error
   tell is `null`; an asv result must name its lock. It describes the run that last wrote the
   file; a cell kept from an earlier run has its own `started_at`, and when that run's
   fingerprint differs, the file lists it under `"kept_fingerprints"` (`null` for a run from
-  before fingerprints).
+  before fingerprints). The list may name more runs than the cells came from: a rerun that
+  timed every cell again still lists the fingerprint it replaced.
 - Each result file keeps every sample beside the median (asv's `samples` column), so anyone
   can rerun the noise rule below on the `results` branch. Runs before this change kept none.
 - A nightly canary times a fixed workload on the benchmark machine, so drift in the machine
@@ -213,7 +214,8 @@ environment of its own and times one case in each at smoke size: bw2calc's first
   macOS and Windows only. The benchmark machine has the full histories on Linux.
 
 Every arm outside `solvers` runs SuperLU, so its ratio is the install's, the Python's or the
-release's, not a solver change. An arm that can't install or run is recorded as missing, with
+release's, not a solver change. uv and pixi install only releases published a week or more
+before the run started, with one cutoff for both, so `install-path` compares one bw2calc release. An arm that can't install or run is recorded as missing, with
 the reason, and never as zero: PyPardiso on Apple silicon, where MKL has no build, and UMFPACK on
 Windows, where scikit-umfpack does not build.
 
@@ -235,8 +237,16 @@ workflow commits the files to the `ratios` branch as `hosted/<YYYY-MM-DD>-<run i
 the date from the files' `created` and the run the workflow's: a second run on one day gets its
 own folder, and no published file is overwritten. Folder names sort by date, so the newest file
 per OS is in the last folder that holds one.
-`gh attestation verify FILE -R simonvanlierde/brightway-benchmarks` shows that a file came from
-this repository's workflow, unchanged.
+This command shows that a file came from the `ratios` workflow run on `main`, unchanged:
+
+```sh
+gh attestation verify FILE -R simonvanlierde/brightway-benchmarks \
+  --signer-workflow simonvanlierde/brightway-benchmarks/.github/workflows/ratios.yml \
+  --source-ref refs/heads/main
+```
+
+Without the last two flags it accepts a file that any workflow of the repository signed, on any
+branch.
 
 ## Changes on the history pages
 

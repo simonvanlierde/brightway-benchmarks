@@ -134,8 +134,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   of `guidance.json`. A failure shows with its reason; a package no release of which declares the
   Python reads "Not declared".
 - An "Across machines" view under Benchmarks shows the hosted and contributed ratios one row per
-  machine, with the 95% interval drawn around 1 and a summary per choice: the range where the
-  machines agree, or "Depends on platform" when they do not
+  machine, with the 95% interval drawn around 1 and a summary per choice over the reference and
+  hosted machines: the range where they agree, or "Differs between machines" when they do not
   ([decision 0007](docs/decisions/0007-comparisons-across-machines.md)).
 - The viewer links each subject to its Brightway docs and each benchmark to its CodSpeed page.
 

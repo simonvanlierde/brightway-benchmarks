@@ -19,6 +19,15 @@ const oses = $derived([...new Set((ratios?.machines ?? []).map((m) => m.os))]);
 const TIERS = { reference: "Reference", hosted: "Hosted", contributed: "Contributed, unverified" };
 const ms = (s: number) => `${sig(s * 1000)} ms`;
 const tone = (way: string) => (way === "faster" ? "better" : way === "slower" ? "worse" : "");
+type Comparison = Ratios["comparisons"][number];
+// The case and params most tables time, described once above them; a table names its own only when it differs.
+const caseOf = (c: Comparison) => JSON.stringify([c.case, c.params]);
+const shared = $derived.by(() => {
+  const all = ratios?.comparisons ?? [];
+  const count = (c: Comparison) => all.filter((d) => caseOf(d) === caseOf(c)).length;
+  const most = all.reduce<Comparison | undefined>((a, c) => (a && count(a) >= count(c) ? a : c), undefined);
+  return most && count(most) > 1 ? most : undefined;
+});
 const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` : "");
 </script>
 
@@ -49,57 +58,63 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
     <dt>Interval</dt>
     <dd>The ratio's 95% interval, drawn as a bar on a log scale. A bar that reaches the line at 1 shows no clear difference on that machine.</dd>
     <dt>Summary</dt>
-    <dd>Under each choice: the range over the machines where the difference is clear, or "Depends on platform" when they disagree.</dd>
+    <dd>Under each choice: the range over the reference and hosted machines where the difference is clear, or "Differs between machines" when they disagree, and how many show no clear difference. Contributed machines count only when no other machine measured the choice.</dd>
     <dt>Source</dt>
     <dd>Hosted rows ran in this project's weekly workflow, which signs each file. Contributed rows come from other people's machines and are not verified.{#if method}{" "}<a href={method}>How the ratios are measured</a>.{/if}</dd>
   </dl>
 
-  {#each ratios.comparisons as c (c.id + c.case)}
-    <section class="ratio-comparison" aria-labelledby="ratio-{c.id}">
-      <h3 id="ratio-{c.id}">{c.title}</h3>
-      <p class="ratio-case">
-        <strong>{c.case_name}</strong>{c.description ? `: ${c.description}` : ""}
-        {#each c.params as p (p.name)}{" "}<span>{p.name}: <strong>{p.value}</strong>{p.note ? ` (${p.note.replace(/\.$/, "")})` : ""}.</span>{/each}
-      </p>
-      {#if c.id === "solvers"}
-        <p class="ratio-case">At this size the factorization is too small to show which solver is faster. On an ecoinvent-sized database PyPardiso and UMFPACK give a score 2 to 5 times faster than SuperLU.</p>
-      {/if}
+  {#if shared}<p class="ratio-case ratio-shared">Unless a table says otherwise, each times {@render about(shared)}</p>{/if}
+
+  {#each ratios.comparisons as c (c.key)}
+    <section class="ratio-comparison" aria-labelledby="ratio-{c.key}">
+      <h3 id="ratio-{c.key}">{c.title}</h3>
+      {#if !shared || caseOf(c) !== caseOf(shared)}<p class="ratio-case">{@render about(c)}</p>{/if}
+      {#if c.caveat}<p class="ratio-case">{c.caveat}</p>{/if}
       <div class="scroll" role="region" aria-label="{c.title}, table" use:scrollable>
-        <table class="ratio-table">
+        <!-- svelte-ignore a11y_no_redundant_roles -->
+        <!-- Explicit roles: phones lay the table out as blocks, which can drop its semantics in Chromium and WebKit. -->
+        <table class="ratio-table" role="table">
           <caption class="sr">{c.title}: one row per machine; below 1 the alternative is faster.</caption>
-          <thead>
-            <tr>
-              <th scope="col">Machine</th>
-              <th scope="col">Source</th>
-              <th scope="col" class="num">Ratio</th>
-              <th scope="col" class="num">95% interval</th>
-              <th scope="col" class="ratio-axis-head"><span aria-hidden="true"><span>faster</span><span>slower</span></span><span class="sr">Interval drawn around 1</span></th>
-              <th scope="col">Reading</th>
+          <!-- svelte-ignore a11y_no_redundant_roles -->
+          <thead role="rowgroup">
+            <!-- svelte-ignore a11y_no_redundant_roles -->
+            <tr role="row">
+              <th role="columnheader" scope="col">Machine</th>
+              <th role="columnheader" scope="col">Source</th>
+              <th role="columnheader" scope="col" class="num">Ratio</th>
+              <th role="columnheader" scope="col" class="num">95% interval</th>
+              <th role="columnheader" scope="col" class="ratio-axis-head"><span aria-hidden="true"><span>faster</span><span>slower</span></span><span class="sr">Interval drawn around 1</span></th>
+              <th role="columnheader" scope="col">Reading</th>
             </tr>
           </thead>
           {#each c.candidates as k (k.name)}
             {@const x = ratioScale(k.rows)}
-            <tbody>
-              <tr class="ratio-candidate">
-                <th scope="rowgroup" colspan="6">
+            <!-- svelte-ignore a11y_no_redundant_roles -->
+            <tbody role="rowgroup">
+              <!-- svelte-ignore a11y_no_redundant_roles -->
+              <tr class="ratio-candidate" role="row">
+                <th role="rowheader" scope="rowgroup" colspan="6">
                   <span class="ratio-label">{k.label}</span>
-                  <span class="ratio-summary {tone(k.summary.direction)}">{k.summary.text}</span>
+                  <span class="ratio-summary {c.caveat ? 'muted' : tone(k.summary.direction)}">{k.summary.text}</span>
                 </th>
               </tr>
               {#each k.rows as r (r.machine)}
                 {@const m = machines.get(r.machine)}
-                <tr class="ratio-row">
-                  <th scope="row">
+                <!-- svelte-ignore a11y_no_redundant_roles -->
+                <tr class="ratio-row" role="row">
+                  <th role="rowheader" scope="row">
                     {m?.name ?? r.machine}
                     <span class="ratio-meta">{m?.os}{m?.cpu ? ` · ${m.cpu}` : ""}</span>
                   </th>
-                  <td class="ratio-source" data-label="Source">
+                  <td class="ratio-source" role="cell" data-label="Source">
                     {m ? TIERS[m.tier] : ""}
-                    {#if m}<span class="ratio-meta">{#if m.run}<a href={m.run}>{dateLabel(m.created)}<span class="sr">, the run</span></a>{:else}{dateLabel(m.created)}{/if}</span>{/if}
+                    {#if m}<span class="ratio-meta">{dateLabel(m.created)}{#if m.run}{" · "}<a href={m.run}>open the run</a>{/if}</span>{/if}
                   </td>
-                  <td class="num" data-label="Ratio">{r.ratio === null ? "–" : sig(r.ratio)}</td>
-                  <td class="num" data-label="95% interval">{r.ci95 ? interval(r) : "–"}</td>
-                  <td class="ratio-graphic">
+                  <td class="num" role="cell" data-label="Ratio">{r.ratio === null ? "–" : sig(r.ratio)}</td>
+                  <td class="num" role="cell" data-label="95% interval">{r.ci95 ? interval(r) : "–"}</td>
+                  <td class="ratio-graphic" role="cell" data-label="Interval">
+                    <!-- Phones only, where the column header is hidden: "1" over the line at 1, the two directions under the ends. -->
+                    <div class="ratio-axis" aria-hidden="true"><span class="ratio-one-label" style:left="{x(1)}%">1</span></div>
                     <div class="ratio-track" aria-hidden="true">
                       <span class="ratio-one" style:left="{x(1)}%"></span>
                       {#if r.ci95 && r.ratio !== null}
@@ -107,8 +122,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
                         <span class="ratio-dot {tone(r.verdict)}" style:left="{x(r.ratio)}%"></span>
                       {/if}
                     </div>
+                    <div class="ratio-axis" aria-hidden="true"><span>faster</span><span>slower</span></div>
                   </td>
-                  <td class="ratio-reading" data-label="Reading">
+                  <td class="ratio-reading" role="cell" data-label="Reading">
                     <span class={tone(r.verdict)}>{r.text}</span>
                     {#if r.missing}<span class="ratio-meta">{r.missing}</span>
                     {:else if r.seconds}<span class="ratio-meta">{ms(r.seconds.candidate)} against {ms(r.seconds.baseline)}</span>{/if}
@@ -122,6 +138,11 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
     </section>
   {/each}
 {/if}
+
+{#snippet about(c: Comparison)}
+  <strong>{c.case_name}</strong>{c.description ? `: ${c.description}` : ""}
+  {#each c.params as p (p.name)}{" "}<span>{p.name}: <strong>{p.value}</strong>{p.note ? ` (${p.note.replace(/\.$/, "")})` : ""}.</span>{/each}
+{/snippet}
 
 <style>
   .compare-key {
@@ -143,6 +164,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
   }
   .ratio-comparison {
     margin-top: 44px;
+  }
+  .ratio-case.ratio-shared {
+    margin-top: 20px;
   }
   .ratio-comparison h3 {
     font-size: 1.35rem;
@@ -193,6 +217,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
   .ratio-summary {
     font-weight: 600;
   }
+  .ratio-summary.muted {
+    color: var(--muted);
+  }
   .ratio-row th {
     font-weight: 550;
   }
@@ -206,6 +233,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
   }
   .ratio-reading .ratio-meta {
     max-width: 32ch;
+  }
+  .ratio-source .ratio-meta {
+    white-space: nowrap;
   }
   .ratio-axis-head,
   .ratio-graphic {
@@ -253,6 +283,9 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
   .ratio-dot.worse {
     background: var(--worse);
   }
+  .ratio-axis {
+    display: none;
+  }
   @media (forced-colors: active) {
     .ratio-track > span {
       forced-color-adjust: none;
@@ -298,15 +331,31 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
       text-align: left;
       white-space: normal;
     }
-    .ratio-row td.num::before {
+    .ratio-row td::before {
       content: attr(data-label);
+      content: attr(data-label) / "";
       display: block;
       color: var(--muted);
       font-size: var(--text-meta);
     }
     .ratio-source {
       grid-column: 1 / -1;
-      order: 1;
+    }
+    .ratio-source .ratio-meta {
+      white-space: normal;
+    }
+    .ratio-axis {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      min-height: 1.2em;
+      color: var(--muted);
+      font-size: var(--text-meta);
+      line-height: 1.2;
+    }
+    .ratio-one-label {
+      position: absolute;
+      transform: translateX(-50%);
     }
     .ratio-candidate th {
       padding: 22px 0 10px;

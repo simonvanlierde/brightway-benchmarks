@@ -38,6 +38,7 @@
   "comparisons": [
     {
       "id": "solvers",
+      "key": "solvers",
       "title": "Solver",
       "case": "bench_lca.SingleScore.time_first_score",
       "case_name": "First score",
@@ -55,6 +56,7 @@
         }
       ],
       "baseline": "superlu",
+      "caveat": "At this size the factorization is too small to show which solver is faster. On an ecoinvent-sized database PyPardiso and UMFPACK give a score 2 to 5 times faster than SuperLU.",
       "candidates": [
         {
           "name": "umfpack",
@@ -110,7 +112,7 @@
           "label": "PyPardiso against SuperLU",
           "summary": {
             "direction": "slower",
-            "text": "1.21 to 19.9x slower on 2 machines, 2 OSes"
+            "text": "Too small to judge at this size: 1.21 to 19.9x slower on 2 machines, 2 OSes"
           },
           "rows": [
             {
@@ -158,6 +160,7 @@
     },
     {
       "id": "install-path",
+      "key": "install-path",
       "title": "Where bw2calc comes from",
       "case": "bench_lca.SingleScore.time_first_score",
       "case_name": "First score",
@@ -175,13 +178,14 @@
         }
       ],
       "baseline": "pypi",
+      "caveat": null,
       "candidates": [
         {
           "name": "conda-forge",
           "label": "conda-forge (pixi) against PyPI (uv)",
           "summary": {
             "direction": "slower",
-            "text": "1.10x slower on 1 of 3 machines, 1 OS"
+            "text": "10% slower on 1 machine, 1 OS; no clear difference on 2"
           },
           "rows": [
             {
@@ -222,7 +226,7 @@
                 1.1112537586294176
               ],
               "verdict": "slower",
-              "text": "1.10x slower",
+              "text": "10% slower",
               "missing": null,
               "seconds": {
                 "baseline": 0.0043260999999858996,
@@ -235,6 +239,7 @@
     },
     {
       "id": "python",
+      "key": "python",
       "title": "Python version",
       "case": "bench_lca.SingleScore.time_first_score",
       "case_name": "First score",
@@ -252,13 +257,14 @@
         }
       ],
       "baseline": "3.13",
+      "caveat": null,
       "candidates": [
         {
           "name": "3.12",
           "label": "Python 3.12 against Python 3.13",
           "summary": {
             "direction": "mixed",
-            "text": "Depends on platform: faster on 1 machine, slower on 1"
+            "text": "Differs between machines: faster on 1 machine, slower on 1; no clear difference on 1"
           },
           "rows": [
             {
@@ -269,7 +275,7 @@
                 0.9734491701607305
               ],
               "verdict": "faster",
-              "text": "1.05x faster",
+              "text": "5% faster",
               "missing": null,
               "seconds": {
                 "baseline": 0.0037204335000069477,
@@ -284,7 +290,7 @@
                 1.1766408358833274
               ],
               "verdict": "slower",
-              "text": "1.09x slower",
+              "text": "9% slower",
               "missing": null,
               "seconds": {
                 "baseline": 0.0016599585000278694,
@@ -313,7 +319,7 @@
           "label": "Python 3.14 against Python 3.13",
           "summary": {
             "direction": "slower",
-            "text": "1.03x slower on 1 of 3 machines, 1 OS"
+            "text": "3% slower on 1 machine, 1 OS; no clear difference on 2"
           },
           "rows": [
             {
@@ -324,7 +330,7 @@
                 1.0505667811006474
               ],
               "verdict": "slower",
-              "text": "1.03x slower",
+              "text": "3% slower",
               "missing": null,
               "seconds": {
                 "baseline": 0.0037204335000069477,
@@ -368,7 +374,7 @@
           "label": "Python 3.15 against Python 3.13",
           "summary": {
             "direction": "faster",
-            "text": "1.04 to 1.09x faster on 2 of 3 machines, 2 OSes"
+            "text": "4 to 9% faster on 2 machines, 2 OSes; no clear difference on 1"
           },
           "rows": [
             {
@@ -379,7 +385,7 @@
                 0.9819479814237373
               ],
               "verdict": "faster",
-              "text": "1.04x faster",
+              "text": "4% faster",
               "missing": null,
               "seconds": {
                 "baseline": 0.0037204335000069477,
@@ -409,7 +415,7 @@
                 0.928629812311747
               ],
               "verdict": "faster",
-              "text": "1.09x faster",
+              "text": "9% faster",
               "missing": null,
               "seconds": {
                 "baseline": 0.00428820000001906,
@@ -422,6 +428,7 @@
     },
     {
       "id": "bw2calc-release",
+      "key": "bw2calc-release",
       "title": "bw2calc release",
       "case": "bench_lca.SingleScore.time_first_score",
       "case_name": "First score",
@@ -439,6 +446,7 @@
         }
       ],
       "baseline": "previous",
+      "caveat": null,
       "candidates": [
         {
           "name": "latest",
@@ -484,6 +492,7 @@
     },
     {
       "id": "bw2data-release",
+      "key": "bw2data-release",
       "title": "bw2data release",
       "case": "bench_write.DatabaseWrite.time_write",
       "case_name": "Database write",
@@ -496,6 +505,7 @@
         }
       ],
       "baseline": "previous",
+      "caveat": null,
       "candidates": [
         {
           "name": "latest",

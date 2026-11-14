@@ -146,8 +146,11 @@ site:
     else echo "no compat branch yet, so the site has no setup guidance" >&2
     fi
     rm -rf build/ratios && mkdir -p build/ratios
-    if git fetch --quiet origin ratios 2>/dev/null; then git archive FETCH_HEAD | tar -x -C build/ratios
-    else echo "no ratios branch yet, so the site has no comparisons across machines" >&2
+    # ls-remote exits 2 when the branch is missing, which is fine; any other failure stops the build.
+    status=0 && git ls-remote --quiet --exit-code origin refs/heads/ratios >/dev/null || status=$?
+    if [ "$status" = 0 ]; then git fetch --quiet origin ratios && git archive FETCH_HEAD | tar -x -C build/ratios
+    elif [ "$status" = 2 ]; then echo "no ratios branch yet, so the site has no comparisons across machines" >&2
+    else echo "could not reach origin for the ratios branch (git ls-remote exit $status)" >&2 && exit 1
     fi
     for conf in asv/*.json; do
       s=$(basename "$conf" .json)
@@ -174,12 +177,14 @@ ui-serve port="4400":
 # Write the UI's data from results/ to OUT (scripts/export_ui.py says what it reads), and the setup
 # guidance from site/compat/status.json, which `just site` fetches; without it there is none. The
 # Python support table comes from site/compat/python-probe.json (scripts/probe_site.py); without it there is none.
-# The comparisons across machines come from build/ratios (`just site`) and ratios/contributed.
+# The comparisons across machines come from build/ratios (`just site`) and ratios/contributed. Their validator runs
+# with uv.lock's packages only, without building the project: its build backend is not in the lock.
 # Needs uv: change points come from Apache Otava, in an environment of its own.
 ui-data out:
     python3 scripts/export_ui.py results {{ out }}
     python3 scripts/export_guidance.py site/compat/status.json {{ out }} --probe site/compat/python-probe.json
-    uv run --locked python scripts/export_ratios.py build/ratios ratios/contributed {{ out }}
+    uv sync --frozen --no-install-project
+    PYTHONPATH=src uv run --no-sync python scripts/export_ratios.py build/ratios ratios/contributed {{ out }}
 
 # Commit results/ to the local `results` branch for the site; refuses results that name this host.
 results-commit:

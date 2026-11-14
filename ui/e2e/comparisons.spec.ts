@@ -30,7 +30,11 @@ test("Across machines reads one row per machine under each choice, with its summ
   ]);
   // The rowgroup header names the choice and its range over the machines where the difference is clear.
   const pardiso = solvers.getByRole("rowgroup").filter({ hasText: "PyPardiso against SuperLU" });
-  await expect(pardiso.locator(".ratio-summary")).toHaveText("1.21 to 19.9x slower on 2 machines, 2 OSes");
+  // At smoke size the solvers cannot show a difference, so the headline says so and takes no colour.
+  await expect(pardiso.locator(".ratio-summary")).toHaveText(
+    "Too small to judge at this size: 1.21 to 19.9x slower on 2 machines, 2 OSes",
+  );
+  await expect(pardiso.locator(".ratio-summary")).not.toHaveClass(/worse/);
   const windows = pardiso.getByRole("row").filter({ hasText: "GitHub win25-vs2026" });
   await expect(windows.getByRole("cell").nth(1)).toHaveText("19.9");
   await expect(windows.getByRole("cell").nth(2)).toHaveText("19.1 to 20.5");
@@ -40,14 +44,18 @@ test("Across machines reads one row per machine under each choice, with its summ
   await expect(mac.getByRole("cell").nth(1)).toHaveText("–");
   await expect(mac.getByRole("cell").last()).toContainText("Not measured");
   await expect(mac.getByRole("cell").last()).toContainText("pypardiso did not install");
-  // Hosted rows link the run that wrote them.
-  await expect(windows.getByRole("link", { name: /the run$/ })).toHaveAttribute("href", /actions\/runs\/43604589027$/);
+  // Hosted rows link the run that wrote them, beside its date, as Setup does.
+  await expect(windows.getByRole("link", { name: "open the run", exact: true })).toHaveAttribute(
+    "href",
+    /actions\/runs\/43604589027$/,
+  );
   await expect(windows).toContainText("Hosted");
+  await expect(windows.locator(".ratio-source .ratio-meta")).toHaveText("Nov 14, 2026 · open the run");
   // Directions that disagree say so.
   const python = page.getByRole("region", { name: "Python version", exact: true });
   await expect(
     python.getByRole("rowgroup").filter({ hasText: "Python 3.12 against" }).locator(".ratio-summary"),
-  ).toHaveText("Depends on platform: faster on 1 machine, slower on 1");
+  ).toHaveText("Differs between machines: faster on 1 machine, slower on 1; no clear difference on 1");
   await page.screenshot({ path: `${shots}/comparisons-light.png`, fullPage: true });
   await accessible(page);
 });
@@ -91,4 +99,61 @@ test("Across machines in dark mode on a laptop passes axe", async ({ page }) => 
   await expect(page.locator(".ratio-row").first()).toBeVisible();
   await page.screenshot({ path: `${shots}/comparisons-dark.png`, fullPage: true });
   await accessible(page);
+});
+
+test("One comparison run with two parameter sets shows two tables", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.route("**/data/ratios.json", async (route) => {
+    const data = await (await route.fetch()).json();
+    const solvers = data.comparisons.find((c: { id: string }) => c.id === "solvers");
+    const medium = { ...solvers, key: "solvers-medium", params: [{ name: "Size", value: "medium", note: null }] };
+    data.comparisons.splice(data.comparisons.indexOf(solvers) + 1, 0, medium);
+    await route.fulfill({ json: data });
+  });
+  await page.goto("?page=compare");
+  await expect(page.getByRole("heading", { level: 3, name: "Solver" })).toHaveCount(2);
+  const ids = await page.locator(".ratio-comparison h3").evaluateAll((hs) => hs.map((h) => h.id));
+  expect(new Set(ids).size).toBe(ids.length);
+  expect(errors).toEqual([]);
+});
+
+test("On a phone the table keeps its semantics, labels every cell and reads in visual order", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("?page=compare");
+  await expect(page.locator(".ratio-row").first()).toBeVisible();
+  // Chromium's own accessibility tree, not Playwright's role engine, which ignores display:block.
+  const cdp = await page.context().newCDPSession(page);
+  const { nodes } = await cdp.send("Accessibility.getFullAXTree");
+  const roles = nodes.filter((n) => !n.ignored).map((n) => n.role?.value);
+  for (const role of ["table", "rowgroup", "row", "columnheader", "rowheader", "cell"])
+    expect(roles, role).toContain(role);
+  const row = page.locator(".ratio-row").first();
+  const labels = await row
+    .locator("td")
+    .evaluateAll((tds) => tds.map((td) => getComputedStyle(td, "::before").content));
+  expect(labels.filter((c) => c === "none" || c === "normal")).toEqual([]);
+  // Focus follows the DOM, so each cell must sit no higher than the one before it.
+  const tops = await row.locator("th, td").evaluateAll((cells) => cells.map((c) => c.getBoundingClientRect().top));
+  expect(tops).toEqual([...tops].sort((a, b) => a - b));
+});
+
+test("The case most tables time is described once, above them", async ({ page }) => {
+  await page.goto("?page=compare");
+  await expect(page.locator(".ratio-row").first()).toBeVisible();
+  await expect(page.getByText(/One demand and one impact method from scratch/)).toHaveCount(1);
+  // A table that times another case still names it.
+  const release = page.getByRole("region", { name: "bw2data release", exact: true });
+  await expect(release.locator(".ratio-case")).toContainText("Database write");
+});
+
+test("On a phone each interval keeps its axis: faster, the line at 1, slower", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("?page=compare");
+  const axis = page.locator(".ratio-row").first().locator(".ratio-axis");
+  await expect(axis).toHaveText(["1", /faster\s*slower/]);
+  await expect(axis.first()).toBeVisible();
+  await expect(axis.last()).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(axis.first()).toBeHidden(); // the column header carries it on wider screens
 });

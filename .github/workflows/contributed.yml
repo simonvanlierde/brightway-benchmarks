@@ -48,16 +48,19 @@ jobs:
           version: "0.13.6"
 
       # `! -type d` passes symlinks too, so the validator refuses them. The environment comes
-      # from the base branch's lock, so a pull request cannot swap the validator's dependencies.
+      # from the base branch's lock, so a pull request cannot swap the validator's dependencies,
+      # and holds the lock's packages only: no build of the project, whose build backend is not
+      # in the lock.
       - name: bwbench validate --contribution
         shell: bash # pipefail, so a failing find fails the step
         run: |-
           [ -d ratios/contributed ] || exit 0
+          uv sync --frozen --no-dev --no-install-project --project base
           srcs=src
           # A base from before the contribution checks has no validator to run.
           if grep -qs contribution_problems base/src/bwbench/ratios.py; then srcs="base/src src"; fi
           for src in $srcs; do
             find ratios/contributed ! -type d -print0 |
-              xargs -0 --no-run-if-empty env PYTHONPATH="$src" uv run --locked --no-dev \
+              xargs -0 --no-run-if-empty env PYTHONPATH="$src" uv run --no-sync \
                 --project base python -m bwbench.compare validate --contribution
           done

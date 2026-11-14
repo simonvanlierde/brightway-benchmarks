@@ -28,10 +28,17 @@ export interface RatioComparisons {
      * The workflow run that wrote a hosted file, or null.
      */
     run: string | null;
-    commit: string;
+    /**
+     * The commit that measured, or null outside a checkout.
+     */
+    commit: string | null;
   }[];
   comparisons: {
     id: string;
+    /**
+     * Unique in the file: the id, or the id, case, params and baseline when one comparison ran more than one way.
+     */
+    key: string;
     title: string;
     case: string;
     case_name: string;
@@ -42,6 +49,10 @@ export interface RatioComparisons {
       note: string | null;
     }[];
     baseline: string;
+    /**
+     * Why the case, at this size, cannot show the difference the comparison asks about; its summaries then say so.
+     */
+    caveat: string | null;
     candidates: {
       name: string;
       /**

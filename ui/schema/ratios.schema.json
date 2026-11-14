@@ -30,7 +30,10 @@
             "pattern": "^https://",
             "description": "The workflow run that wrote a hosted file, or null."
           },
-          "commit": { "type": "string" }
+          "commit": {
+            "type": ["string", "null"],
+            "description": "The commit that measured, or null outside a checkout."
+          }
         }
       }
     },
@@ -39,9 +42,25 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "title", "case", "case_name", "description", "params", "baseline", "candidates"],
+        "required": [
+          "id",
+          "key",
+          "title",
+          "case",
+          "case_name",
+          "description",
+          "params",
+          "baseline",
+          "caveat",
+          "candidates"
+        ],
         "properties": {
           "id": { "type": "string", "minLength": 1 },
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "description": "Unique in the file: the id, or the id, case, params and baseline when one comparison ran more than one way."
+          },
           "title": { "type": "string", "minLength": 1 },
           "case": { "type": "string" },
           "case_name": { "type": "string" },
@@ -60,6 +79,10 @@
             }
           },
           "baseline": { "type": "string" },
+          "caveat": {
+            "type": ["string", "null"],
+            "description": "Why the case, at this size, cannot show the difference the comparison asks about; its summaries then say so."
+          },
           "candidates": {
             "type": "array",
             "items": {

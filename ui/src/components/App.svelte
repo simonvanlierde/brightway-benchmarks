@@ -526,10 +526,14 @@ $effect(() => {
         <Comparisons {ratios} ready={ratiosReady} error={ratiosError} method={methodHash} />
       {:else if !bench}
         {#if view.bench}<p class="empty" role="status">This benchmark is not in the current data. Choose one from the catalogue.</p>{/if}
-        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Open a change or a benchmark from the catalogue for its history, or read <a href={findingsPage}>what the benchmarks found</a>.{#if ratios}{" "}To see whether a choice holds on other machines, <a href={writeView(compareView)} onclick={(e) => follow(e, compareView)}>compare it across machines</a>.{/if}</p></header>
-        {#if guidance?.solverComparison}<SolverComparison comparison={guidance.solverComparison} {story} />{/if}
-        <ReleaseChanges {index} {view} {go} {follow} loaded={overview} />
-        {#if guidance}<PythonSupport {guidance} /><PythonSupport {guidance} eol />{/if}
+        <header class="overview-intro"><h2>Benchmarks</h2><p class="lede">How fast each Brightway release runs everyday LCA calculations. Open a change or a benchmark from the catalogue for its history, or read <a href={findingsPage}>what the benchmarks found</a>.{#if ratios || !ratiosReady}{" "}To see whether a choice holds on other machines, <a href={writeView(compareView)} onclick={(e) => follow(e, compareView)}>compare it across machines</a>.{/if}</p></header>
+        <!-- The solver section sits above the release changes: wait for guidance, so they do not jump down. -->
+        {#if !guidanceReady}<div class="skeleton" aria-busy="true"></div>
+        {:else}
+          {#if guidance?.solverComparison}<SolverComparison comparison={guidance.solverComparison} {story} />{/if}
+          <ReleaseChanges {index} {view} {go} {follow} loaded={overview} />
+          {#if guidance}<PythonSupport {guidance} /><PythonSupport {guidance} eol />{/if}
+        {/if}
 
       {:else}
         <header class="bench-header">

@@ -31,7 +31,11 @@ masthead marks Benchmarks and the catalogue stays beside it. The Benchmarks intr
   interval, the interval drawn on a log scale around 1, and its source (reference, hosted with a
   link to its run, or contributed, unverified).
 - Each candidate's summary is a range over the machines whose interval leaves out 1, when they
-  agree in direction, and "Depends on platform" when they do not. Never a pooled estimate.
+  agree in direction, and "Differs between machines" when they do not, followed by how many
+  machines show no clear difference. Never a pooled estimate.
+- Only reference and hosted machines count towards the summary. Contributed rows are still shown,
+  marked unverified. When no reference or hosted machine measured a candidate, the summary covers
+  the contributed machines and says so.
 - `scripts/export_ratios.py` writes `ratios.json` beside `index.json`, summary included, so the
   viewer computes none. The file is optional: without it the view says none are published.
 

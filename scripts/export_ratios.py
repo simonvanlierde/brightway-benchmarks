@@ -9,14 +9,16 @@ its folder: a contributed file that claims another tier is skipped, as is one th
 ``bwbench.ratios.problems`` rejects, each with a warning. Writes OUT/ratios.json in the shape
 ui/schema/ratios.schema.json gives, or nothing when there are no files.
 
-Each candidate gets one row per machine that ran its comparison and a summary over the machines
-whose 95% interval leaves out 1: a range of speed-ups when they agree, "Depends on platform"
-when they do not. A range, not a pooled estimate: the machines differ on purpose. The summary is
-worked out here so the viewer computes none.
+Each candidate gets one row per machine that ran its comparison and a summary over the reference
+and hosted machines whose 95% interval leaves out 1: a range of speed-ups when they agree,
+"Differs between machines" when they do not, and how many showed no clear difference. Contributed
+machines count only when no other machine measured, and the text says so. A range, not a pooled
+estimate: the machines differ on purpose. The summary is worked out here so the viewer computes none.
 """
 
 import argparse
 import json
+import re
 import sys
 import tomllib
 from datetime import datetime
@@ -44,11 +46,19 @@ ARMS = {
     "conda-forge": "conda-forge (pixi)",
 }
 REASON_CHARS = 200
+# Comparisons whose case, at a given size, is too small to show the difference they ask about.
+TOO_SMALL = {
+    ("solvers", "smoke"): "At this size the factorization is too small to show which solver is faster. On an"
+    " ecoinvent-sized database PyPardiso and UMFPACK give a score 2 to 5 times faster than SuperLU.",
+}
 
 
 def times(x: float) -> str:
-    """X as a multiplier to three significant figures: 1.10, 2.44, 19.9."""
-    return f"{x:#.3g}".rstrip(".")
+    """Factor X (1 or more) in words: 0.04%, 0.4% and 4% below 1.1, then 2.44x, 19.9x, and 1230x from 100."""
+    if x < 1.1:  # noqa: PLR2004 - three figures would read 1.00x here
+        pct = (x - 1) * 100
+        return f"{pct:.1g}%" if pct < 0.1 else f"{pct:.1f}%" if pct < 2 else f"{pct:.0f}%"  # noqa: PLR2004
+    return f"{x:.0f}x" if x >= 100 else f"{x:#.3g}".rstrip(".") + "x"
 
 
 def _clear(ratio: float | None, ci95: list[float] | None) -> str:
@@ -69,7 +79,7 @@ def verdict(ratio: float | None, ci95: list[float] | None) -> tuple[str, str]:
     if way == "unclear":
         return way, "No clear difference"
     assert ratio is not None  # noqa: S101 - _clear said so
-    return way, f"{times(1 / ratio if way == 'faster' else ratio)}x {way}"
+    return way, f"{times(1 / ratio if way == 'faster' else ratio)} {way}"
 
 
 def _count(n: int, word: str) -> str:
@@ -77,29 +87,32 @@ def _count(n: int, word: str) -> str:
 
 
 def summary(rows: list[dict]) -> dict:
-    """The range summary over ROWS (each with ratio, ci95 and os): direction and text."""
+    """The range summary over ROWS (each with ratio, ci95, os and tier): direction and text.
+
+    Only reference and hosted rows count; contributed ones only when no other machine measured.
+    """
     measured = [r for r in rows if r["ratio"] is not None]
-    clear = [(_clear(r["ratio"], r["ci95"]), r) for r in measured]
-    clear = [(way, r) for way, r in clear if way != "unclear"]
     if not measured:
         return {"direction": "none", "text": "Not measured on any machine"}
+    verified = [r for r in measured if r["tier"] != "contributed"]
+    note = "" if verified else " (contributed machines only, unverified)"
+    measured = verified or measured
+    clear = [(way, r) for r in measured if (way := _clear(r["ratio"], r["ci95"])) != "unclear"]
     if not clear:
-        return {"direction": "unclear", "text": f"No clear difference on {_count(len(measured), 'machine')}"}
+        return {"direction": "unclear", "text": f"No clear difference on {_count(len(measured), 'machine')}{note}"}
+    rest = f"; no clear difference on {len(measured) - len(clear)}" if len(clear) < len(measured) else ""
     ways = {way for way, _ in clear}
     if len(ways) > 1:
         faster = sum(way == "faster" for way, _ in clear)
-        return {
-            "direction": "mixed",
-            "text": f"Depends on platform: faster on {_count(faster, 'machine')}, slower on {len(clear) - faster}",
-        }
+        text = f"Differs between machines: faster on {_count(faster, 'machine')}, slower on {len(clear) - faster}"
+        return {"direction": "mixed", "text": text + rest + note}
     (way,) = ways
     factors = sorted(1 / r["ratio"] if way == "faster" else r["ratio"] for _, r in clear)
-    span = (
-        times(factors[0]) if times(factors[0]) == times(factors[-1]) else f"{times(factors[0])} to {times(factors[-1])}"
-    )
-    on = f"{len(clear)} of {len(measured)} machines" if len(clear) < len(measured) else _count(len(clear), "machine")
+    low, high = times(factors[0]), times(factors[-1])
+    span = low if low == high else f"{low[:-1] if low[-1] == high[-1] else low} to {high}"
     oses = len({r["os"] for _, r in clear})
-    return {"direction": way, "text": f"{span}x {way} on {on}, {_count(oses, 'OS')}"}
+    text = f"{span} {way} on {_count(len(clear), 'machine')}, {_count(oses, 'OS')}"
+    return {"direction": way, "text": text + rest + note}
 
 
 def _read(path: Path, tier: str) -> dict | None:
@@ -109,11 +122,12 @@ def _read(path: Path, tier: str) -> dict | None:
     except (OSError, ValueError) as error:
         print(f"export_ratios: skipped {path}: {error}", file=sys.stderr)
         return None
-    if found := problems(doc):
+    try:
+        found = problems(doc) or ([] if doc["tier"] == tier else [f"it says {doc['tier']}, its folder {tier}"])
+    except Exception as error:  # noqa: BLE001 - one file must never stop the site build
+        found = [f"{type(error).__name__}: {error}"]
+    if found:
         print(f"export_ratios: skipped {path}: {'; '.join(found[:3])}", file=sys.stderr)
-        return None
-    if doc["tier"] != tier:
-        print(f"export_ratios: skipped {path}: it says {doc['tier']}, its folder {tier}", file=sys.stderr)
         return None
     return doc
 
@@ -157,7 +171,7 @@ def _label(comparison: dict, candidate: str, docs: list[dict]) -> str:
     return f"{_arm(candidate, comparison)} against {_arm(comparison['baseline'], comparison)}"
 
 
-def _reason(comparison: dict, ratio: dict) -> str | None:
+def reason(comparison: dict, ratio: dict) -> str | None:
     """Why RATIO has none: the missing arm's own reason, up to the installer's output.
 
     compare.py writes "<what bw2calc used>: <what failed>: <the tool's own output>"; the page shows
@@ -167,7 +181,7 @@ def _reason(comparison: dict, ratio: dict) -> str | None:
         return None
     arms = comparison["arms"]
     text = arms[ratio["candidate"]]["missing"] or arms[comparison["baseline"]]["missing"] or ratio["missing"]
-    text = ": ".join(text.splitlines()[0].split(": ")[:2]).strip()
+    text = ": ".join((text.splitlines() or [""])[0].split(": ")[:2]).strip()
     return text if len(text) <= REASON_CHARS else text[: REASON_CHARS - 1].rstrip() + "…"
 
 
@@ -175,6 +189,7 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
     """The page's data from each machine's (id, tier, file), comparisons in TITLES' order."""
     about = tomllib.loads(DESCRIPTIONS.read_text(encoding="utf-8"))
     out_machines = []
+    tier_of = {machine: tier for machine, tier, _ in machines}
     groups: dict[tuple, dict] = {}  # (id, case, params, baseline) -> comparison, machines in order
     for machine, tier, doc in machines:
         fp = doc["fingerprint"]
@@ -195,8 +210,10 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
             key = (c["id"], c["case"], json.dumps(c["params"], sort_keys=True), c["baseline"])
             groups.setdefault(key, {"comparison": c, "runs": []})["runs"].append((machine, out_machines[-1]["os"], c))
     comparisons = []
-    for (cid, case, _, baseline), group in groups.items():
+    ids = [cid for cid, *_ in groups]
+    for (cid, case, params, baseline), group in groups.items():
         first = group["comparison"]
+        caveat = TOO_SMALL.get((cid, str(first["params"].get("size"))))
         candidates: dict[str, list] = {}
         for machine, os_name, c in group["runs"]:
             for r in c["ratios"]:
@@ -208,25 +225,33 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
                         "ci95": r["ci95"],
                         "verdict": way,
                         "text": text,
-                        "missing": _reason(c, r),
+                        "missing": reason(c, r),
                         "seconds": r["seconds"],
                         "_os": os_name,
+                        "_tier": tier_of[machine],
                         "_comparison": c,
                     }
                 )
         out_candidates = []
         for name, rows in candidates.items():
+            said = summary([{**r, "os": r["_os"], "tier": r["_tier"]} for r in rows])
+            if caveat and said["direction"] in ("faster", "slower", "mixed"):
+                said["text"] = f"Too small to judge at this size: {said['text']}"
             out_candidates.append(
                 {
                     "name": name,
                     "label": _label(first, name, [r["_comparison"] for r in rows]),
-                    "summary": summary([{**r, "os": r["_os"]} for r in rows]),
+                    "summary": said,
                     "rows": [{k: v for k, v in r.items() if not k.startswith("_")} for r in rows],
                 }
             )
         comparisons.append(
             {
                 "id": cid,
+                # The page keys its tables and anchors on this; the id alone when it is unique.
+                "key": cid
+                if ids.count(cid) == 1
+                else re.sub(r"[^a-z0-9]+", "-", f"{cid} {case} {params} {baseline}".lower()).strip("-"),
                 "title": TITLES.get(cid, cid),
                 "case": case,
                 "case_name": about["labels"]["benchmarks"].get(case, case),
@@ -234,12 +259,13 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
                 "params": [
                     {
                         "name": about["labels"]["params"].get(k, k),
-                        "value": v,
-                        "note": about.get("values", {}).get(k, {}).get(v),
+                        "value": str(v),
+                        "note": about.get("values", {}).get(k, {}).get(str(v)),
                     }
                     for k, v in first["params"].items()
                 ],
                 "baseline": baseline,
+                "caveat": caveat,
                 "candidates": out_candidates,
             }
         )
@@ -248,9 +274,19 @@ def build(machines: list[tuple[str, str, dict]]) -> dict:
     return {"format_version": 1, "machines": out_machines, "comparisons": comparisons}
 
 
+def _builds(machine: tuple[str, str, dict]) -> bool:
+    """Whether MACHINE's file builds on its own; one that does not is skipped, with a warning."""
+    try:
+        build([machine])
+    except Exception as error:  # noqa: BLE001 - one file must never stop the site build
+        print(f"export_ratios: skipped {machine[0]}: {type(error).__name__}: {error}", file=sys.stderr)
+        return False
+    return True
+
+
 def export(ratios: Path | None, contributed: Path | None, out: Path) -> dict | None:
     """Write OUT/ratios.json from the newest files; None, and no file, when there are none."""
-    machines = collect(ratios, contributed)
+    machines = [m for m in collect(ratios, contributed) if _builds(m)]
     if not machines:
         print("export_ratios: no ratio files, so the site has no comparison page data", file=sys.stderr)
         return None

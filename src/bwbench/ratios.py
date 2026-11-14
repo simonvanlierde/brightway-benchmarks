@@ -9,10 +9,10 @@ percentile bootstrap interval over rounds. Below 1 the candidate is faster. The 
 context only: on a shared runner they move from week to week, the ratio much less.
 
 The file's shape is ``ratios.schema.json`` beside this module, which documents every field.
-``problems(doc)`` checks a file against it and against what the schema cannot express: an
-RFC 3339 ``created``, valid fingerprints (each arm's with its lock), one time per round, one
-ratio per candidate arm, and a ratio and interval that follow from the times and the seed
-(``ratio_seed``), recomputed.
+``problems(doc)`` checks a file against it and against what the schema cannot express: no
+control or format character in any key or string, an RFC 3339 ``created``, valid fingerprints
+(each arm's with its lock), one time per round, one ratio per candidate arm, and a ratio and
+interval that follow from the times and the seed (``ratio_seed``), recomputed.
 Standard library only, apart from ``jsonschema`` in ``problems``.
 """
 
@@ -23,6 +23,7 @@ import math
 import random
 import re
 import statistics
+import unicodedata
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -108,6 +109,7 @@ def problems(doc: object) -> list[str]:
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     validator = Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
     found = [f"{'/'.join(map(str, e.absolute_path)) or '(top)'}: {e.message}" for e in validator.iter_errors(doc)]
+    found += _text_problems(doc)
     if found or not isinstance(doc, dict):
         return found  # the checks below assume the shape
     found += _created_problems(doc["created"])
@@ -116,6 +118,24 @@ def problems(doc: object) -> list[str]:
     found += [f"comparisons: comparison {i!r} twice" for i, n in ids.items() if n > 1]
     for c in doc["comparisons"]:
         found += _comparison_problems(c, doc["rounds"], doc["seed"], doc["resamples"])
+    return found
+
+
+def _text_problems(value: object, where: str = "") -> list[str]:
+    """Control and format characters (Unicode Cc, Cf) in VALUE's keys and strings: the site shows them.
+
+    A bidi override or an escape sequence would change how a public page or a terminal reads.
+    """
+    if isinstance(value, str):
+        bad = sorted({f"U+{ord(ch):04X}" for ch in value if unicodedata.category(ch) in {"Cc", "Cf"}})
+        return [f"{where or '(top)'}: control or format character {', '.join(bad)}"] if bad else []
+    items = value.items() if isinstance(value, dict) else enumerate(value) if isinstance(value, list) else ()
+    found = []
+    for key, v in items:
+        path = f"{where}/{ascii(key)[1:-1]}" if where else ascii(key)[1:-1]
+        if isinstance(key, str):
+            found += [f"{p} (a key)" for p in _text_problems(key, path)]
+        found += _text_problems(v, path)
     return found
 
 

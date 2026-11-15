@@ -112,7 +112,7 @@ const interval = (r: Row) => (r.ci95 ? `${sig(r.ci95[0])} to ${sig(r.ci95[1])}` 
                   </td>
                   <td class="num" role="cell" data-label="Ratio">{r.ratio === null ? "–" : sig(r.ratio)}</td>
                   <td class="num" role="cell" data-label="95% interval">{r.ci95 ? interval(r) : "–"}</td>
-                  <td class="ratio-graphic" role="cell" data-label="Interval">
+                  <td class="ratio-graphic" role="cell" data-label="Against 1">
                     <!-- Phones only, where the column header is hidden: "1" over the line at 1, the two directions under the ends. -->
                     <div class="ratio-axis" aria-hidden="true"><span class="ratio-one-label" style:left="{x(1)}%">1</span></div>
                     <div class="ratio-track" aria-hidden="true">

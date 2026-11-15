@@ -157,3 +157,33 @@ test("On a phone each interval keeps its axis: faster, the line at 1, slower", a
   await page.setViewportSize({ width: 1440, height: 900 });
   await expect(axis.first()).toBeHidden(); // the column header carries it on wider screens
 });
+
+for (const width of [320, 360, 390, 768]) {
+  test(`At ${width}px every cell label names its own column and nothing overflows`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("?page=compare");
+    await expect(page.locator(".ratio-row").first()).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const rows = await page.locator(".ratio-row").all();
+    for (const row of rows) {
+      const labels = await row.locator("td").evaluateAll((tds) => tds.map((td) => td.getAttribute("data-label") ?? ""));
+      // A label that repeats another ("Interval" under "95% interval") reads as the same column twice.
+      for (const a of labels)
+        for (const b of labels) if (a !== b) expect(b.toLowerCase()).not.toContain(a.toLowerCase());
+      const boxes = await row.locator("th, td").evaluateAll((cells) =>
+        cells.map((c) => {
+          const { left, right, top, bottom } = c.getBoundingClientRect();
+          return { left, right, top, bottom };
+        }),
+      );
+      for (const [i, a] of boxes.entries()) {
+        expect(a.left).toBeGreaterThanOrEqual(0);
+        expect(a.right).toBeLessThanOrEqual(width);
+        for (const b of boxes.slice(i + 1))
+          expect(
+            a.right <= b.left + 0.5 || b.right <= a.left + 0.5 || a.bottom <= b.top + 0.5 || b.bottom <= a.top + 0.5,
+          ).toBe(true);
+      }
+    }
+  });
+}

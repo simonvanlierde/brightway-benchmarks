@@ -22,7 +22,8 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'"
             ]
         ],
         "timeout": 1800,
@@ -40,10 +41,11 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'"
             ]
         ],
-        "rounds": 2,
+        "rounds": 1,
         "sample_time": 0.01,
         "timeout": 1800,
         "type": "time",
@@ -59,7 +61,8 @@
         ],
         "params": [
             [
-                "'ecoinvent'"
+                "'ecoinvent'",
+                "'bafu'"
             ]
         ],
         "timeout": 1800,

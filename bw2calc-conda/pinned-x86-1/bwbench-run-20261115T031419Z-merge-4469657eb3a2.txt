@@ -1,0 +1,3 @@
+commit 4469657eb3a2db23c5593a1ea26d7ad8a8b49b50
+generator 5
+b78a3831cf3220c7a73ab9a9ebf674993a9946e92924fc3c7dd37bbe62c28aa6  bw2calc-conda/pinned-x86-1/fb9d6561-rattler-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json

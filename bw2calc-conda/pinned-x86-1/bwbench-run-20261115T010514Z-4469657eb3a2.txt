@@ -1,0 +1,9 @@
+commit 4469657eb3a2db23c5593a1ea26d7ad8a8b49b50
+generator 5
+630c4f071c7a68f566754d3aa6ff6fefca36917822a04ab2875dab0e95fa258b  .asv/../results/bw2calc-conda/benchmarks.json
+a0f5b15072d50d186a64dff43ec62bf7000e844f09687b65287234d78c5b263d  .asv/../results/bw2calc-conda/pinned-x86-1/versions-168669f0fb01f8fc996759a341cfd2cd.txt
+5cfc62ea56a8801c0f7fd86bb9f87173367d9f9a17d049fbd9d4278a9b41afa2  .asv/../results/bw2calc-conda/pinned-x86-1/machine.json
+845fce4d19cae2f77618726b5fbc1717bee83baccd32bbd1aac13749d3f49d38  .asv/../results/bw2calc-conda/pinned-x86-1/versions-fc5683d9347b67c1dbd3ef983ea2dd6d.txt
+e49bb627f186b1df6576a0ffce4655f73196d0cd6dd363733307128a6c47dcf2  .asv/../results/bw2calc-conda/pinned-x86-1/versions-6afec304fdd2ec8cc3eb4e9141051411.txt
+93f5dd2e850e6fe1d0f6740202398eeeff166e913a7acfbec1d7dac848e3cc66  .asv/../results/bw2calc-conda/pinned-x86-1/versions-0f07c0462ef8da4e7087b07d58896e20.txt
+0b9a8626894e128d497157c16f42485468f48740f2a786b6d1ab77479b074b55  .asv/../results/bw2calc-conda/pinned-x86-1/fb9d6561-rattler-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACKf7c32611.json

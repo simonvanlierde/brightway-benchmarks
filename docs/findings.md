@@ -335,7 +335,9 @@ instead of a quarter of a second.**
 [What to do](faster.md).
 
 At `max_calc=2` on bw2calc 2.5.0, a traversal takes 39.4 s with SuperLU on bw_graph_tools 0.8,
-and 2.1 minutes from 0.9 on, against 0.21 to 0.23 s with PyPardiso. On an earlier generator, a
+and 2.1 minutes from 0.9 on, against 0.21 to 0.23 s with PyPardiso. Version 0.8 solved with
+`spsolve`, which factorizes Aᵀ for bw2calc's CSR matrix. From 0.9 it calls `decompose_technosphere`,
+which on bw2calc 2.5.0 factorizes A: 92 s against 3.7 s for Aᵀ on real ecoinvent 3.12, one thread. On an earlier generator, a
 profile put 234 of 235 s at factorizing A, and bw2calc 3.1.0, which factorizes Aᵀ, took 27.8 s. [bw_graph_tools#58](https://github.com/brightway-lca/bw_graph_tools/issues/58) proposes
 reusing the LCA's factorization.
 

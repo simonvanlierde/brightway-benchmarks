@@ -143,7 +143,7 @@ def test_refuses_a_branch_that_diverged_from_origin(repo: Path, env: dict[str, s
     git(clone, env, "fetch", "-q", "origin")
     run = commit_results(clone, env)
     assert run.returncode == 1
-    assert "diverged" in run.stderr
+    assert "rebuild the local results branch from origin/results, then rerun" in run.stderr
 
 
 @pytest.mark.parametrize(

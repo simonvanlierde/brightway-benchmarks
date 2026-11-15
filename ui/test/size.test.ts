@@ -58,6 +58,16 @@ it("includes lazy JavaScript chunks in the viewer budget", () => {
   expect(result.stdout).toMatch(new RegExp(`index.html \\d+\\.\\d KB gzipped, budget ${VIEWER} KB`));
 });
 
+it("refuses a separate history chunk before the viewer", () => {
+  const dir = fixture();
+  writeFileSync(join(dir, "dist/index.html"), '<script src="/_astro/app.js"></script>');
+  writeFileSync(join(dir, "dist/_astro/app.js"), "import './history.123.js';");
+  writeFileSync(join(dir, "dist/_astro/history.123.js"), "export const history = true;");
+  const result = run(dir);
+  expect(result.status).toBe(1);
+  expect(result.stderr).toContain("history.123.js adds a request before the viewer can run");
+});
+
 it("fails when a static page itself exceeds the budget", () => {
   const dir = fixture();
   writeFileSync(join(dir, "dist/index.html"), "<main>Viewer</main>");

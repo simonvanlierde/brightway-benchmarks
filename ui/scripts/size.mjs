@@ -25,6 +25,11 @@ const sizes = new Map(shipped.map((file) => [file, gzipSync(readFileSync(file)).
 const scripts = shipped.filter((file) => file.endsWith(".js"));
 const styles = shipped.filter((file) => file.endsWith(".css")).sort((a, b) => name(b).length - name(a).length);
 let failed = false;
+const historyChunk = scripts.find((file) => /^_astro\/history\.[^.]+\.js$/.test(name(file)));
+if (historyChunk) {
+  console.error(`size: ${name(historyChunk)} adds a request before the viewer can run`);
+  failed = true;
+}
 for (const page of shipped.filter((file) => file.endsWith(".html"))) {
   const html = readFileSync(page, "utf8");
   // Include lazy chart chunks for interactive pages; static pages do not load them.

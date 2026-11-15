@@ -306,6 +306,11 @@ The file records the CPU model, OS, kernel, Python, BLAS and the installed versi
 host name or user name. Read it before you push: a `missing` reason holds the last lines of an
 installer's error, with your home folder and any other user folder written as `~`.
 
+`just results-commit` treats an omitted file or cell as a partial run and restores it. To remove
+a result, edit or delete it directly in a `results` branch worktree. Then run the main branch's
+`scripts/run_crate.py` against that worktree and commit the result with the rebuilt
+`ro-crate-metadata.json`.
+
 ## Publish the synthetic inputs
 
 `just dataset` writes the synthetic systems at the current generator version to

@@ -189,14 +189,14 @@ const CARDS = {
     title: "Continuous benchmarks for the Brightway LCA stack",
     caption: "One LCA score on an ecoinvent-sized database",
     bars: [
-      { name: "UMFPACK", text: "2.63 s", value: 2.63, color: DARK.umfpack },
-      { name: "PyPardiso", text: "10.0 s", value: 10.0, color: DARK.pypardiso },
-      { name: "SuperLU", text: "27.7 s", value: 27.7, color: DARK.superlu },
+      { name: "UMFPACK", text: "1.03 s", value: 1.03, color: DARK.umfpack },
+      { name: "PyPardiso", text: "2.22 s", value: 2.22, color: DARK.pypardiso },
+      { name: "SuperLU", text: "4.98 s", value: 4.98, color: DARK.superlu },
     ],
   }),
   // The solver story's factorization times on real ecoinvent.
   "story-solver-choice.png": card({
-    title: "Your solver choice can change a Brightway score's time by 5 times or more",
+    title: "Your solver choice can change a Brightway score's time by about 5 times",
     titleSize: 46,
     caption: "Factorizing real ecoinvent 3.12, one thread",
     bars: [
@@ -211,8 +211,8 @@ const CARDS = {
     titleSize: 54,
     caption: "bw2calc IterativeLCA with UMFPACK, one score",
     bars: [
-      { name: "3.0.0", text: "45.0 s", value: 45.0, color: DARK.neutral },
-      { name: "3.1.0", text: "9.04 s", value: 9.04, color: DARK.neutral },
+      { name: "3.0.0", text: "31.3 s", value: 31.3, color: DARK.neutral },
+      { name: "3.1.0", text: "2.54 s", value: 2.54, color: DARK.neutral },
     ],
   }),
   // The heating story's twenty-year climate scores: options, not solvers, so neutral bars.

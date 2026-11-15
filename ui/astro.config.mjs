@@ -27,12 +27,31 @@ const policy = {
         const fixed = meta.replace("script-src 'self'", () => `script-src 'self' ${missing.join(" ")}`);
         writeFileSync(
           file,
-          html.replace(meta, () => "").replace(charset, () => charset + fixed),
+          html
+            .replace(meta, () => "")
+            .replace(charset, () => charset + fixed)
+            .replace("</head>", () => `${modulepreloads(root, html)}</head>`),
         );
       }
     },
   },
 };
+
+// An island loads its renderer and component in parallel, and both import the Svelte runtime: the
+// browser finds that third chunk only after fetching the first two, a round trip later. Preload all
+// three from the HTML, after the stylesheets, so the first paint does not wait for them.
+function modulepreloads(root, html) {
+  const seen = new Set();
+  const walk = (url) => {
+    if (seen.has(url)) return;
+    seen.add(url);
+    const code = readFileSync(`${root}/${url.slice(url.indexOf("/_astro/") + 1)}`, "utf8");
+    for (const [, name] of code.matchAll(/(?:^|[;}])import[^"'`;]*?from\s*["'`]\.\/([^"'`]+)["'`]/g))
+      walk(`${url.slice(0, url.lastIndexOf("/") + 1)}${name}`);
+  };
+  for (const [, url] of html.matchAll(/\b(?:component|renderer)-url="([^"]+)"/g)) walk(url);
+  return [...seen].map((url) => `<link rel="modulepreload" href="${url}">`).join("");
+}
 
 // Static output only: the data is read at run time from PUBLIC_DATA_URL, so no server is needed.
 export default defineConfig({

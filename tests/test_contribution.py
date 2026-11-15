@@ -1,15 +1,18 @@
 """What a contributor's `uvx ... bwbench compare` installs, and the checks a contributed file must pass."""
 
+import csv
 import json
+import re
 import subprocess
 import sys
 import zipfile
+from importlib import resources
 from pathlib import Path
 
 import pytest
 
 from bwbench import compare
-from bwbench.ratios import HOST_LIKE, USER_FOLDER, contribution_problems
+from bwbench.ratios import CCTLDS, HOST_LIKE, USER_FOLDER, contribution_problems
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -186,6 +189,8 @@ def test_user_folder_matches_what_redaction_leaves(text: str, *, user: bool):
         "ada-XPS-15-9520",
         "adas-macbook-pro.local",
         "ada.example.com",
+        "lab-7.example.nl",
+        "ada.co.uk",
         "DESKTOP-4F2K9QX",
     ],
 )
@@ -195,10 +200,20 @@ def test_host_names_are_refused(machine: str):
 
 @pytest.mark.parametrize(
     "machine",
-    ["Apple M3 Pro", "ubuntu-24.04", "m2.max", "ryzen-5.5600X", "Lenovo-ThinkPad-X1", "Intel Xeon machine"],
+    ["Apple M3 Pro", "ubuntu-24.04", "m2.max", "ryzen-5.5600X", "Lenovo-ThinkPad-X1", "Intel Xeon machine", "intel.xe"],
 )
 def test_machine_labels_pass(machine: str):
     assert not HOST_LIKE.search(machine)
+
+
+def test_country_codes_match_country_converter():
+    """country_converter's own table: its ISO2 column, where gb and gr also match uk and el."""
+    table = resources.files("country_converter") / "country_data.tsv"
+    rows = csv.DictReader(table.read_text(encoding="utf-8").splitlines(), delimiter="\t")
+    iso2 = {code for row in rows for code in re.findall(r"[a-z]{2}", row["ISO2"].lower())}
+    codes = CCTLDS.split("|")
+    assert set(codes) == iso2 | {"eu", "ac"}
+    assert len(codes) == len(set(codes))
 
 
 def test_a_label_without_ascii_letters_or_digits_is_refused(tmp_path: Path, capsys: pytest.CaptureFixture[str]):

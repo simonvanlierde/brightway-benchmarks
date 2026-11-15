@@ -37,6 +37,7 @@ LEVEL = 0.95
 RTOL = 1e-6  # a stored ratio against the one recomputed from the stored seconds (JSON keeps 17 digits)
 
 CONTRIBUTED = re.compile(r"(?:^|/)ratios/contributed/([a-z0-9][a-z0-9-]*)/(\d{4}-\d{2}-\d{2})\.json$")
+COUNTS = ("rounds", "repeats", "seed", "resamples")  # the file's integer fields
 MAX_BYTES = 256 * 1024  # the solvers comparison at 20 rounds is about 5 KiB
 # Labels a machine's own name gives: a domain name, a macOS default computer name ("Ada's
 # MacBook Pro", "Adas-MacBook-Pro"), Ubuntu's <user>-<model> ("ada-ThinkPad-X1"), a Windows
@@ -121,6 +122,8 @@ def problems(doc: object) -> list[str]:
     validator = Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
     found = [f"{'/'.join(map(str, e.absolute_path)) or '(top)'}: {e.message}" for e in validator.iter_errors(doc)]
     found += _text_problems(doc)
+    if isinstance(doc, dict):  # the schema's "integer" lets 4.0 through, and range(4.0) fails
+        found += [f"{k}: {doc[k]!r} is not written as a whole number" for k in COUNTS if isinstance(doc.get(k), float)]
     if found or not isinstance(doc, dict):
         return found  # the checks below assume the shape
     found += _created_problems(doc["created"])
@@ -190,6 +193,14 @@ def _comparison_problems(c: dict, rounds: int, seed: int, resamples: int) -> lis
     return found
 
 
+def _close(stored: float, want: float) -> bool:
+    """Whether the STORED number matches the recomputed WANT; a stored integer past float range matches nothing."""
+    try:
+        return math.isclose(stored, want, rel_tol=RTOL)
+    except OverflowError:
+        return False
+
+
 def _ratio_problems(where: str, r: dict, base: dict, cand: dict, rounds: int, bootstrap: tuple[int, int]) -> list[str]:
     """What is wrong with ratio R between BASE and CAND; BOOTSTRAP is its seed and resample count."""
     both = base["missing"] is None and cand["missing"] is None
@@ -199,9 +210,13 @@ def _ratio_problems(where: str, r: dict, base: dict, cand: dict, rounds: int, bo
         return [f"{where}: a ratio from a missing arm"]
     if len(base["seconds"]) != rounds or len(cand["seconds"]) != rounds:
         return []  # reported with the arm
-    want = geometric_mean_ratio(base["seconds"], cand["seconds"])
+    try:
+        want = geometric_mean_ratio(base["seconds"], cand["seconds"])
+        window = bootstrap_interval(base["seconds"], cand["seconds"], *bootstrap)
+    except (ArithmeticError, ValueError):  # a time of 1e400, or one so small a division overflows
+        return [f"{where}: the seconds are too large or too small to give a ratio"]
     out = []
-    if not math.isclose(r["ratio"], want, rel_tol=RTOL):
+    if not _close(r["ratio"], want):
         out.append(f"{where}: ratio {r['ratio']!r}, but the seconds give {want!r}")
     lo, hi = r["ci95"]
     if lo > hi:
@@ -209,8 +224,8 @@ def _ratio_problems(where: str, r: dict, base: dict, cand: dict, rounds: int, bo
     elif not lo <= r["ratio"] <= hi:
         out.append(f"{where}: ratio {r['ratio']!r} outside its interval [{lo!r}, {hi!r}]")
     # 10,000 resamples of 20 rounds take about 0.01 s per ratio.
-    w_lo, w_hi = bootstrap_interval(base["seconds"], cand["seconds"], *bootstrap)
-    if not (math.isclose(lo, w_lo, rel_tol=RTOL) and math.isclose(hi, w_hi, rel_tol=RTOL)):
+    w_lo, w_hi = window
+    if not (_close(lo, w_lo) and _close(hi, w_hi)):
         out.append(f"{where}: interval [{lo!r}, {hi!r}], but the seed gives [{w_lo!r}, {w_hi!r}]")
     return out
 

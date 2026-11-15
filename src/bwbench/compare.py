@@ -476,7 +476,7 @@ def validate(files: list[Path], *, contribution: bool = False) -> int:
             found = problems(doc)
             if contribution:
                 found += contribution_problems(path, doc if isinstance(doc, dict) else {})
-        except (OSError, ValueError) as e:
+        except (OSError, ValueError, RecursionError) as e:  # a deeply nested file overflows the parser
             found = [f"cannot read: {e}"]
         for p in found:
             print(f"{path.as_posix()}: {p}", file=sys.stderr)

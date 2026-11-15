@@ -136,6 +136,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `bwbench validate --contribution` refuses a result file that used to crash or hang it, instead of
+  failing with a traceback: JSON nested thousands deep, a time or interval of 1e400, a `rounds` or
+  `resamples` written as `4.0`, and `resamples` above 100,000 (the schema now caps it).
 - `HeatingTimeline` skips bw_timex 1.1.0 and 1.2.0 with `NotApplicable`. Their biosphere `flip_array` has one
   entry however many flows a process has, which bw_processing 1.5 and later reject with `ShapeMismatch`
   on BAFU's multi-flow processes. bw_timex 1.2.1 fixed it

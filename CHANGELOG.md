@@ -225,6 +225,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   about 2 s sooner. Changes past twice or half read "about 5 times faster", the install command
   wraps at spaces only, phone charts keep their marker shapes, each page's title is its one h1,
   and an empty search links the catalogue.
+- On a phone, the interval graphic on Across machines is labelled "Against 1", not "Interval", which sat directly under the "95% interval" value and read as the same column twice.
 
 ## [0.2.0] - 2026-11-01
 

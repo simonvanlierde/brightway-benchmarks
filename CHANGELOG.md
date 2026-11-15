@@ -168,6 +168,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 #### Changed
 
+- The Benchmarks view draws its first content about 24% sooner: 2.70 s to 2.06 s for both the
+  first heading and LCP (median of 9 runs), with first contentful paint and layout shift unchanged. The page now preloads the
+  viewer's three script chunks from its HTML, so the browser no longer finds the Svelte runtime a
+  round trip after the other two. Measured on a 390 px phone with Chromium's Fast 3G profile (1.6
+  Mbit/s down, 562 ms round trip) and a 4x CPU slowdown, from a gzipping server.
 - Setup is about installing ([decision 0006](docs/decisions/0006-setup-installs.md)): the solver
   comparison, the Python versions table and the release changes moved to Benchmarks, and a short
   "From the benchmarks" list links to them. The check grid sits beside the install set, the check

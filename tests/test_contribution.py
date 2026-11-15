@@ -186,6 +186,8 @@ def test_user_folder_matches_what_redaction_leaves(text: str, *, user: bool):
         "ada-XPS-15-9520",
         "adas-macbook-pro.local",
         "ada.example.com",
+        "lab-7.example.nl",
+        "ada.co.uk",
         "DESKTOP-4F2K9QX",
     ],
 )
@@ -195,7 +197,7 @@ def test_host_names_are_refused(machine: str):
 
 @pytest.mark.parametrize(
     "machine",
-    ["Apple M3 Pro", "ubuntu-24.04", "m2.max", "ryzen-5.5600X", "Lenovo-ThinkPad-X1", "Intel Xeon machine"],
+    ["Apple M3 Pro", "ubuntu-24.04", "m2.max", "ryzen-5.5600X", "Lenovo-ThinkPad-X1", "Intel Xeon machine", "intel.xe"],
 )
 def test_machine_labels_pass(machine: str):
     assert not HOST_LIKE.search(machine)

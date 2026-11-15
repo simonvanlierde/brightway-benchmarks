@@ -134,6 +134,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - A run at one database size no longer wipes the other sizes' results.
+- `bwbench validate --contribution` takes a machine label such as `intel.xe`: only a real
+  country-code domain counts as a host name, not every label ending in two letters.
 - `BWBENCH_MEM` now reaches a host's runner too; it used to keep the runner's own memory limit.
 
 ### Viewer

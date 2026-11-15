@@ -3,6 +3,7 @@
 extend-ignore-re = [
   "`[0-9a-f]{7,40}`", # git commit ids in prose, such as `a71ede78`
   "PACKAGEs",         # the plural of a PACKAGE argument
+  '"(?:[a-z]{2}\|)+(?:[a-z]{2})?"', # country codes, as in ratios.py's CCTLDS
 ]
 
 [default.extend-words]

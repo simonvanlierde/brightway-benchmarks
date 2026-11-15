@@ -4,8 +4,9 @@ name: release
 # build provenance attestation of both, with the version's CHANGELOG section as notes. The
 # attestation's Sigstore bundle is attached as `.intoto.jsonl`, which is what OpenSSF
 # Scorecard's Signed-Releases check looks for. Publishing the release makes Zenodo archive
-# it (CITATION.cff). Nothing goes to PyPI. Do not create the release by hand. No
-# workflow_dispatch: a manual run could release from any branch.
+# it (CITATION.cff), and a second job dispatches the site workflow. Nothing goes to PyPI. Do
+# not create the release by hand. No workflow_dispatch: a manual run could release from any
+# branch.
 on:
   push:
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
@@ -89,3 +90,18 @@ jobs:
         run: |-
           cp "$BUNDLE" "release/brightway-benchmarks-${TAG#v}.intoto.jsonl"
           gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md release/*
+
+  # A release made with GITHUB_TOKEN starts no other workflow, so the site's build label would
+  # keep the previous tag until its daily run.
+  site:
+    name: rebuild the site
+    needs: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write # to dispatch site.yml
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: gh workflow run site.yml --repo "$REPO" --ref main

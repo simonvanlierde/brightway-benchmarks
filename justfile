@@ -13,9 +13,21 @@ import? 'just/docker.just'
 default:
     @just --list
 
-# The stack checks CI runs. `just hooks` runs the git hooks, which CI also runs.
+# `just hooks` runs the git hooks, as the checks workflow does.
+# What the python and ui workflows run, without the browser tests (`cd ui && pnpm run e2e`).
 check:
     @just py-check
+    @just ui-check
+
+# What the ui workflow runs before its browser tests. Fails when the generated types are stale.
+ui-check:
+    cd ui && pnpm install --frozen-lockfile
+    cd ui && pnpm run types && git diff --exit-code src/lib
+    cd ui && pnpm run check
+    cd ui && pnpm run test
+    cd ui && pnpm run build
+    cd ui && pnpm run size
+    cd ui && pnpm audit --prod --audit-level=moderate
 
 # Fix and format every stack here, as each stack's `fmt` recipe does.
 fmt:
@@ -165,13 +177,14 @@ ui-serve port="4400":
 # Write the UI's data from results/ to OUT (scripts/export_ui.py says what it reads), and the setup
 # guidance from site/compat/status.json, which `just site` fetches; without it there is none. The
 # Python support table comes from site/compat/python-probe.json (scripts/probe_site.py); without it there is none.
-# The comparisons across machines come from build/ratios (`just site`) and ratios/contributed.
+# The comparisons across machines come from build/ratios (`just site`) and ratios/contributed. Their validator runs
+# with uv.lock's packages only, without building the project: its build backend is not in the lock.
 # Needs uv: change points come from Apache Otava, in an environment of its own.
 ui-data out:
     python3 scripts/export_ui.py results {{ out }}
     python3 scripts/export_guidance.py site/compat/status.json {{ out }} --probe site/compat/python-probe.json
-    PYTHONPATH=src uv run --no-project --python 3.13 --with jsonschema==4.26.0 --with rfc3339-validator==0.1.4 \
-      python scripts/export_ratios.py build/ratios ratios/contributed {{ out }}
+    uv sync --frozen --no-install-project
+    PYTHONPATH=src uv run --no-sync python scripts/export_ratios.py build/ratios ratios/contributed {{ out }}
 
 # Commit results/ to the local `results` branch for the site; refuses results that name this host.
 results-commit:

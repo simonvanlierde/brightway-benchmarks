@@ -1,0 +1,7 @@
+# Advisories that OSV-Scanner, and so the OpenSSF Scorecard Vulnerabilities check, skips until
+# the date given. Each one needs a reason; when the date passes, check for a fixed release again.
+
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+ignoreUntil = 2027-02-14
+reason = "deepmerge 4.3.1 is the latest release and has no fix. It is a build-time dependency of @sveltejs/vite-plugin-svelte (ui/pnpm-lock.yaml) that merges the build's own config, never site data, and ships nothing to the pages."

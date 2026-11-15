@@ -15,8 +15,7 @@ SOLVER is one of:
 SIZE is a profile name, ``ecoinvent`` by default. Prints the time of one score (a new
 ``LCA``, ``lci()``, ``lcia()``) and of ``lci(factorize=True)``, the median of 3 runs,
 or one run when a run takes over a minute. Exits non-zero when a score is off by more
-than ``DIRECT_RTOL``. Brightway runs only in the box (``just solver-lci``) or on a
-hosted runner.
+than ``DIRECT_RTOL``. Run it in the box: ``just solver-lci``.
 """
 
 # Hide what this solver must not see before bwbench, scipy or bw2calc import it.

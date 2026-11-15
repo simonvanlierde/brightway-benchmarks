@@ -2,12 +2,12 @@
 py-sync:
     uv sync
 
-# What CI runs: lint, format check, types, tests, dependency audit.
+# What CI runs: lint, format check, types, tests with the coverage gate, dependency audit.
 py-check:
     uv run ruff check
     uv run ruff format --check
     uv run ty check
-    uv run pytest
+    uv run pytest --cov
     uv audit --locked --preview-features audit-command
 
 # Fix what ruff can fix, then format.
@@ -25,4 +25,4 @@ py-test *args:
 
 # The tests on every Python version python.yml tests, each in a throwaway environment.
 py-matrix:
-    for v in 3.13; do uv run --isolated --locked --python "$v" pytest || exit 1; done
+    for v in 3.13 3.14 3.15; do uv run --isolated --locked --python "$v" pytest || exit 1; done

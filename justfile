@@ -98,8 +98,8 @@ noise subject runs="10":
 ratios *comparisons:
     scripts/box.sh env PYTHONPATH=src python -m bwbench.compare compare {{ comparisons }} --work .asv/ratio-work -o .asv/ratios/box.json
 
-# Results go to results/canary/BWBENCH_MACHINE/, which no Brightway history reads; the night
-# queue runs it once a night on the benchmark node, then `just results-commit` and `just canary-check`.
+# Results go to results/canary/BWBENCH_MACHINE/, which no Brightway history reads. The benchmark
+# node runs it nightly, then `just results-commit` and `just canary-check`.
 # The nightly canary: a fixed stdlib workload, so a move is the machine's (scripts/canary.py).
 canary:
     scripts/box.sh python3 scripts/canary.py run "results/canary/${BWBENCH_MACHINE:?set BWBENCH_MACHINE to the results machine name}"

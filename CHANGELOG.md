@@ -36,6 +36,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- An Atheris harness over `bwbench validate --contribution` (`tests/fuzz_ratios.py`) runs in the
+  `fuzz` workflow in place of the release report's, and a Hypothesis test holds the same contract
+  in `pytest`: a result file from outside is refused with its problems, never a traceback or a hang.
 - A weekly `ratios` workflow on GitHub's Linux, macOS and Windows runners: interleaved ratios with
   95% intervals between solvers, install paths (PyPI against conda-forge), Pythons (3.12, 3.14 and
   3.15 against 3.13) and, on macOS and Windows, each of bw2calc's and bw2data's latest two

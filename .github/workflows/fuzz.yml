@@ -1,14 +1,19 @@
 name: fuzz
 
-# A short Atheris run of tests/fuzz_release_report.py on each pull request. The input is
-# not untrusted: the point is the OpenSSF Scorecard Fuzzing check, not a security boundary.
+# A short Atheris run of tests/fuzz_ratios.py on each pull request. The input is untrusted:
+# `bwbench validate --contribution` reads result files that outside contributors send by pull
+# request (the `contributed` workflow). The harness holds it to refusing a file, never crashing
+# or hanging on one. It also satisfies the OpenSSF Scorecard Fuzzing check.
 
 on:
   pull_request:
-    # Scorecard only looks for the harness; running it is worth it when the parser changes.
     paths:
-      - scripts/release_report.py
-      - tests/fuzz_release_report.py
+      - src/bwbench/ratios.py
+      - src/bwbench/ratios.schema.json
+      - src/bwbench/fingerprint.py
+      - src/bwbench/compare.py
+      - tests/fuzz_ratios.py
+      - tests/ratios_corpus.py
       - .github/workflows/fuzz.yml
   workflow_dispatch:
 
@@ -34,4 +39,9 @@ jobs:
           enable-cache: false
           version: "0.13.6"
 
-      - run: uv run --no-project --python 3.13 --with atheris==3.1.0 python tests/fuzz_release_report.py -max_total_time=60
+      # -timeout: a file that makes the validator run for 10 s is a bug, as a crash is.
+      - run: >-
+          uv run --no-project --python 3.13 --with atheris==3.1.0 --with jsonschema==4.26.0
+          --with rfc3339-validator==0.1.4 python tests/fuzz_ratios.py -max_total_time=60 -timeout=10
+        env:
+          PYTHONPATH: src

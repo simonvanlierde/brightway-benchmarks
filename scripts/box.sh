@@ -2,8 +2,13 @@
 # Run a command in a throwaway container that sees only this repo. Brightway's code
 # (installed by asv into its environments) never runs on the host.
 #
-# On a host with `oss-bench` (a CPU-slot runner from the author's dotfiles) the container gets a pinned CPU slot;
-# elsewhere it is a plain `docker run`. BWBENCH_* variables are passed through.
+# A plain `docker run` by default. A host can hand the run to its own runner instead, to pin the
+# box to a CPU slot, say: BWBENCH_RUNNER, or `bwbench-runner` on PATH (BWBENCH_RUNNER= turns that
+# off). It is called as `RUNNER REPO CMD...` with BWBENCH_RUNNER_IMAGE (the image),
+# BWBENCH_RUNNER_RW (the folders it mounts writable; the rest of the repo read-only),
+# BWBENCH_RUNNER_TMPFS (the size of /tmp, a tmpfs that allows exec), BWBENCH_RUNNER_MEM (only when
+# BWBENCH_MEM is set) and BWBENCH_RUNNER_NOASLR=1 (codspeed: it must allow personality(ADDR_NO_RANDOMIZE)).
+# It drops capabilities and caps processes as the docker run below does. BWBENCH_* variables are passed through.
 set -euo pipefail
 repo=$(cd "$(dirname "$0")/.." && pwd)
 # BWBENCH_TARGET picks the Dockerfile stage: box (the default), codspeed or conda. Its tag is the
@@ -40,7 +45,7 @@ export BWBENCH_COMMIT
 # BWBENCH_ENERGY=1 shows the box the CPU package's energy counter (Intel RAPL), read-only. Docker
 # hides /sys/devices/virtual/powercap in every container, so it is mounted at /run/rapl instead.
 # On the host BWBENCH_RAPL names the counter's folder, for the test.
-energy=() cpus=${BWBENCH_CPUSET:-16-23}
+energy=() cpus=${BWBENCH_CPUSET:-}
 if [ "${BWBENCH_ENERGY:-}" = 1 ]; then
     rapl=${BWBENCH_RAPL:-/sys/class/powercap/intel-rapl:0}
     [ -r "$rapl/energy_uj" ] || {
@@ -63,25 +68,13 @@ writable=".asv results site"
 # venvs live under .asv/. It allows exec, as tools may still run programs from /tmp.
 tmpfs_size=6g
 
-# An oss-bench without OSS_BENCH_RW would mount the repo read-write, so use it only if it has it.
-# It takes no extra mounts, so an energy run goes to docker, on BWBENCH_CPUSET's CPUs if set.
-if [ "${BWBENCH_ENERGY:-}" != 1 ] && command -v oss-bench >/dev/null && grep -q OSS_BENCH_RW "$(command -v oss-bench)"; then
-    # oss-bench drops capabilities and caps processes itself. OSS_BENCH_NOASLR swaps in its own
-    # copy of the same profile (moby/profiles seccomp/v0.2.4 plus the personality rule).
-    if [ "$target" = codspeed ]; then
-        grep -q OSS_BENCH_NOASLR "$(command -v oss-bench)" || {
-            echo "box.sh: this oss-bench cannot turn ASLR off (no OSS_BENCH_NOASLR)" >&2
-            exit 2
-        }
-        export OSS_BENCH_NOASLR=1
-    fi
-    grep -qF "rw,exec,size=\$OSS_BENCH_TMPFS" "$(command -v oss-bench)" || {
-        echo "box.sh: this oss-bench cannot put /tmp on an exec tmpfs (OSS_BENCH_TMPFS)" >&2
-        exit 2
-    }
-    export OSS_BENCH_TMPFS=$tmpfs_size
-    OSS_BENCH_IMAGE=$image OSS_BENCH_RW=$writable exec oss-bench "$repo" \
-        env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
+runner=${BWBENCH_RUNNER-$(command -v bwbench-runner || true)}
+# An energy run needs mounts a runner does not take, so it goes to docker.
+if [ "${BWBENCH_ENERGY:-}" != 1 ] && [ -n "$runner" ]; then
+    export BWBENCH_RUNNER_IMAGE=$image BWBENCH_RUNNER_RW=$writable BWBENCH_RUNNER_TMPFS=$tmpfs_size
+    [ "$target" != codspeed ] || export BWBENCH_RUNNER_NOASLR=1
+    [ -z "${BWBENCH_MEM:-}" ] || export BWBENCH_RUNNER_MEM=$BWBENCH_MEM
+    exec "$runner" "$repo" env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
 fi
 mounts=(-v "$repo":/src:ro)
 noaslr=()
@@ -90,17 +83,17 @@ for d in $writable; do
     mkdir -p "$repo/$d"
     mounts+=(-v "$repo/$d":"/src/$d")
 done
-# An energy run skips oss-bench, so it takes the host's quiet gate itself, on the CPUs the box
-# runs on (at once inside a queue job that already holds it there): the package counter must not
-# see other jobs. Without a gate there is no energy run. BWBENCH_GATE names another program that
-# takes `quiet -- cmd...` and honours NODE_GATE_CPUS, on a host without node-gate.
-gate=() g=${BWBENCH_GATE:-${HOME:-}/.local/bin/node-gate}
+# The CPU package counter must not see other work, so an energy run waits for a quiet machine:
+# BWBENCH_GATE, or `bwbench-gate` on PATH, a program that runs `GATE CMD...` once nothing else runs
+# on BWBENCH_GATE_CPUS (inside a gate the caller already holds there, at once). The box runs on
+# BWBENCH_CPUSET. Without both there is no energy run.
+gate=() g=${BWBENCH_GATE:-$(command -v bwbench-gate || true)}
 if [ -n "${energy[*]}" ]; then
-    [ -x "$g" ] || {
-        echo "box.sh: BWBENCH_ENERGY=1 needs the quiet gate $g (or BWBENCH_GATE)" >&2
+    [ -n "$g" ] && [ -x "$g" ] && [ -n "$cpus" ] || {
+        echo "box.sh: BWBENCH_ENERGY=1 needs a quiet gate (BWBENCH_GATE or bwbench-gate) and BWBENCH_CPUSET" >&2
         exit 2
     }
-    gate=(env NODE_GATE_CPUS="$cpus" "$g" quiet --)
+    gate=(env BWBENCH_GATE_CPUS="$cpus" "$g")
 fi
 exec ${gate[@]+"${gate[@]}"} docker run --rm -i --init --name "tmp-bwbench-$$" --hostname "$(hostname -s)-box" --user "$(id -u):$(id -g)" \
     --cap-drop ALL --security-opt no-new-privileges ${noaslr[@]+"${noaslr[@]}"} --pids-limit 4096 \

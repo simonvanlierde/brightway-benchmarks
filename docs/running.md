@@ -92,7 +92,7 @@ samples, their medians and the fingerprint. `just results-commit` puts it on the
 apart from the histories. `just canary-check` compares the newest night with up to 14 before it
 and exits 1 when a median moved by more than 3% or three times the earlier nights' spread. It
 also prints each fingerprint field that changed since the night before, such as a new kernel.
-The benchmark node's night queue runs all three once a night.
+The benchmark node runs all three nightly.
 
 #### Energy per operation
 
@@ -106,7 +106,8 @@ operation adds, sample the idle draw first and then run the benchmark, both insi
 with no other work running:
 
 ```sh
-node-gate quiet -- sh -c 'python3 scripts/idle_energy.py .asv/idle-energy.json &&
+export BWBENCH_CPUSET=0-7 BWBENCH_GATE_CPUS=0-7
+bwbench-gate sh -c 'python3 scripts/idle_energy.py .asv/idle-energy.json &&
     BWBENCH_ENERGY=1 just noise bw2calc 3'
 python3 scripts/energy_summary.py .asv/noise/bw2calc/rounds.jsonl \
     --idle-w "$(jq .idle_w .asv/idle-energy.json)"
@@ -118,11 +119,11 @@ sample's energy is summed the same way, from readings five seconds apart. When a
 comes over 60 seconds after the last, the counter may have wrapped unseen, so that sample logs no
 energy.
 
-The box cannot reach the counter through `oss-bench`, so an energy run takes the host's quiet gate
-itself, `node-gate` from the author's dotfiles, on the CPUs it runs on: 16 to 23, or
-`BWBENCH_CPUSET` (give the outer gate the same CPUs with `NODE_GATE_CPUS`). Without the gate,
-`box.sh` refuses the run. On another host, `BWBENCH_GATE` names a program that takes
-`quiet -- cmd...` and keeps other work off `NODE_GATE_CPUS`.
+An energy run always uses the plain `docker run`, never a host's `BWBENCH_RUNNER`, pinned to the CPUs
+in `BWBENCH_CPUSET`. It runs through a quiet gate: `BWBENCH_GATE`, or `bwbench-gate` on `PATH`, a
+program that runs `GATE CMD...` once no other work runs on the CPUs in `BWBENCH_GATE_CPUS`, which
+`box.sh` sets to `BWBENCH_CPUSET`. An outer gate, as above, protects the same CPUs. Without a gate
+and `BWBENCH_CPUSET`, `box.sh` refuses the run.
 
 A bench run logs energy too when it names a log, as in
 `BWBENCH_ENERGY=1 BWBENCH_MACHINE=noise BWBENCH_ROUNDLOG=/src/.asv/energy.jsonl just bench bw2calc "3.1.0^!"`.
@@ -347,7 +348,10 @@ fields, then publish.
 | `BWBENCH_SOLVERS` | `superlu,pypardiso,umfpack` (no `pypardiso` off x86_64) | Solver environments |
 | `BWBENCH_ROUNDS` | `2` | asv rounds per case |
 | `BWBENCH_CPUS` | `2` | CPUs for the box |
-| `BWBENCH_MEM` | `2g`; `6g` compat, `12g` solver-lci | Box memory, no swap |
+| `BWBENCH_MEM` | `2g` (a runner's own default under `BWBENCH_RUNNER`); `6g` compat, `12g` solver-lci | Box memory, no swap |
+| `BWBENCH_RUNNER` | `bwbench-runner` on `PATH`, if any | A host's own program for the box, such as a CPU-slot runner; empty for the plain `docker run`. Its contract is at the top of `scripts/box.sh` |
+| `BWBENCH_GATE` | `bwbench-gate` on `PATH`, if any | Quiet gate for energy runs |
+| `BWBENCH_CPUSET` | none | CPUs an energy run is pinned to |
 | `BWBENCH_THREADS` | `1` | BLAS and OpenMP threads |
 | `BWBENCH_MACHINE` | `box-<slot>` or `box` | asv machine name; resume needs the same one |
 | `BWBENCH_PRIVATE_NAMES` | empty | Names `just results-commit` refuses |

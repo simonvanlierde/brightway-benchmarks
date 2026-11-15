@@ -163,14 +163,42 @@ def test_box_lets_codspeed_turn_aslr_off_with_seccomp_on(box: tuple[Path, Path])
         assert flag in args
 
 
-def test_box_refuses_codspeed_on_an_oss_bench_that_cannot_turn_aslr_off(box: tuple[Path, Path]):
-    repo, _ = box
-    stub = repo / "stub" / "oss-bench"
-    stub.write_text("#!/bin/sh\n# knows OSS_BENCH_RW only\nexit 0\n")
+def runner(repo: Path) -> Path:
+    """A runner on PATH that logs the contract variables box.sh hands it, then its arguments."""
+    stub = repo / "stub" / "bwbench-runner"
+    stub.write_text(
+        "#!/bin/sh\nfor v in IMAGE RW TMPFS MEM NOASLR; do "
+        'eval "echo $v=\\${BWBENCH_RUNNER_$v-unset}"; done >&2\necho "args $*" >&2\n'
+    )
     stub.chmod(0o755)
-    out = run_box(repo, BWBENCH_TARGET="codspeed")
-    assert out.returncode == 2
-    assert "cannot turn ASLR off" in out.stderr
+    return stub
+
+
+def test_box_hands_the_run_to_a_runner_on_path(box: tuple[Path, Path]):
+    repo, log = box
+    runner(repo)
+    out = run_box(repo, BWBENCH_TARGET="codspeed", BWBENCH_MEM="16g")
+    assert out.returncode == 0, out.stderr
+    assert "RW=.asv results site" in out.stderr
+    assert "TMPFS=6g" in out.stderr
+    assert "MEM=16g" in out.stderr
+    assert "NOASLR=1" in out.stderr
+    assert f"args {repo} env " in out.stderr
+    assert out.stderr.rstrip().endswith("scripts/in-box.sh echo hi")
+    assert "run" not in log.read_text().split("\n"), "docker ran as well"
+    # Unset, the runner keeps its own memory default; a plain box sets no ASLR flag.
+    out = run_box(repo)
+    assert "MEM=unset" in out.stderr
+    assert "NOASLR=unset" in out.stderr
+
+
+def test_box_runner_can_be_turned_off(box: tuple[Path, Path]):
+    repo, log = box
+    runner(repo)
+    out = run_box(repo, BWBENCH_RUNNER="")
+    assert out.returncode == 0, out.stderr
+    assert "IMAGE=" not in out.stderr
+    assert "run" in log.read_text().split("\n")
 
 
 def test_seccomp_profile_is_dockers_default_plus_addr_no_randomize():
@@ -198,24 +226,22 @@ def energy_box(repo: Path, gate: str | None = "ok", **env: str) -> subprocess.Co
     rapl = repo / "rapl"
     rapl.mkdir(exist_ok=True)
     (rapl / "energy_uj").write_text("1000\n")
-    stub = repo / "stub" / "oss-bench"
-    stub.write_text("#!/bin/sh\n# OSS_BENCH_RW\necho oss-bench >&2\n")
-    stub.chmod(0o755)
-    path = repo / "stub" / "node-gate"
+    runner(repo)
+    path = repo / "stub" / "bwbench-gate"
     if gate is not None:
-        path.write_text('#!/bin/sh\necho "gate $1 on ${NODE_GATE_CPUS-unset}" >&2\nshift 2\nexec "$@"\n')
+        path.write_text('#!/bin/sh\necho "gate on ${BWBENCH_GATE_CPUS-unset}" >&2\nexec "$@"\n')
         path.chmod(0o755 if gate == "ok" else 0o644)
-    return run_box(repo, BWBENCH_ENERGY="1", BWBENCH_RAPL=str(rapl), BWBENCH_GATE=str(path), **env)
+    return run_box(repo, BWBENCH_ENERGY="1", BWBENCH_RAPL=str(rapl), **env)
 
 
-@pytest.mark.parametrize(("cpuset", "cpus"), [(None, "16-23"), ("0-5", "0-5")])
-def test_box_energy_run_gates_the_cpus_it_runs_on(box: tuple[Path, Path], cpuset: str | None, cpus: str):
-    """oss-bench takes no extra mounts, so an energy run goes to docker, through the quiet gate."""
+def test_box_energy_run_gates_the_cpus_it_runs_on(box: tuple[Path, Path]):
+    """A runner takes no extra mounts, so an energy run goes to docker, through the quiet gate."""
     repo, log = box
-    out = energy_box(repo, **({"BWBENCH_CPUSET": cpuset} if cpuset else {}))
+    cpus = "0-5"
+    out = energy_box(repo, BWBENCH_CPUSET=cpus)
     assert out.returncode == 0, out.stderr
-    assert "oss-bench" not in out.stderr
-    assert f"gate quiet on {cpus}" in out.stderr, "the quiet gate does not protect the CPUs the box runs on"
+    assert "IMAGE=" not in out.stderr, "the runner took an energy run"
+    assert f"gate on {cpus}" in out.stderr, "the quiet gate does not protect the CPUs the box runs on"
     args = log.read_text().split("\n")
     # Docker masks /sys/devices/virtual/powercap in the box, so the counter goes elsewhere.
     assert f"type=bind,source={repo / 'rapl'},target=/run/rapl,readonly" in args
@@ -224,10 +250,12 @@ def test_box_energy_run_gates_the_cpus_it_runs_on(box: tuple[Path, Path], cpuset
     assert "BWBENCH_RAPL=/run/rapl" in args
 
 
-@pytest.mark.parametrize("gate", [None, "not executable"])
-def test_box_energy_run_refuses_to_run_without_the_quiet_gate(box: tuple[Path, Path], gate: str | None):
+@pytest.mark.parametrize(("gate", "cpuset"), [(None, "0-5"), ("not executable", "0-5"), ("ok", None)])
+def test_box_energy_run_refuses_to_run_without_the_quiet_gate(
+    box: tuple[Path, Path], gate: str | None, cpuset: str | None
+):
     repo, log = box
-    out = energy_box(repo, gate=gate)
+    out = energy_box(repo, gate=gate, **({"BWBENCH_CPUSET": cpuset} if cpuset else {}))
     assert out.returncode == 2
     assert "quiet gate" in out.stderr
     assert "run" not in log.read_text().split("\n")
@@ -239,21 +267,3 @@ def test_box_puts_tmp_on_a_tmpfs(box: tuple[Path, Path]):
     assert run_box(repo).returncode == 0
     args = log.read_text().split("\n")
     assert args[args.index("--tmpfs") + 1] == "/tmp:rw,exec,size=6g,mode=1777"  # noqa: S108 - the container's /tmp, not the host's
-
-
-def test_box_asks_oss_bench_for_a_tmpfs_and_refuses_one_without_it(box: tuple[Path, Path]):
-    repo, _ = box
-    stub = repo / "stub" / "oss-bench"
-    stub.write_text(
-        '#!/bin/sh\n# OSS_BENCH_RW rw,exec,size=$OSS_BENCH_TMPFS\necho "tmpfs ${OSS_BENCH_TMPFS-unset}" >&2\n'
-    )
-    stub.chmod(0o755)
-    out = run_box(repo)
-    assert out.returncode == 0, out.stderr
-    assert "tmpfs 6g" in out.stderr
-    # The first oss-bench with the knob mounted it noexec, which broke the venvs made in /tmp.
-    for old in ("# OSS_BENCH_RW only", "# OSS_BENCH_RW rw,size=$OSS_BENCH_TMPFS"):
-        stub.write_text(f"#!/bin/sh\n{old}\nexit 0\n")
-        out = run_box(repo)
-        assert out.returncode == 2
-        assert "OSS_BENCH_TMPFS" in out.stderr

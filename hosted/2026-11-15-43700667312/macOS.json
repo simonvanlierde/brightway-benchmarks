@@ -1,0 +1,870 @@
+{
+ "format": "bwbench-ratios/1",
+ "tier": "hosted",
+ "machine": "GitHub macos26",
+ "created": "2026-11-15T09:45:09Z",
+ "source": {
+  "commit": "3d3dc80b968acc7a7f190cee7c6e128fb921a97b",
+  "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/43700667312"
+ },
+ "rounds": 20,
+ "repeats": 3,
+ "seed": 3449239937,
+ "resamples": 10000,
+ "fingerprint": {
+  "version": 1,
+  "os": "Darwin",
+  "kernel": "25.6.0",
+  "arch": "arm64",
+  "cpu_model": "Apple M1 (Virtual)",
+  "core_type": null,
+  "smt": false,
+  "governor": null,
+  "power_profile": null,
+  "python": "CPython 3.13.17",
+  "blas": null,
+  "lock": null
+ },
+ "comparisons": [
+  {
+   "id": "solvers",
+   "case": "bench_lca.SingleScore.time_first_score",
+   "params": {
+    "size": "smoke",
+    "cls": "LCA"
+   },
+   "baseline": "superlu",
+   "arms": {
+    "superlu": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc",
+      "scikit-umfpack",
+      "pypardiso"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "scikit-umfpack": "0.4.2"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "19d37d023bd40f6399e5d0008aafe786dd463c089904fc351d74932597f225cb"
+      }
+     },
+     "seconds": [
+      0.0027091250000239597,
+      0.001840624999999818,
+      0.004309541000054651,
+      0.001989000000037322,
+      0.003767792000019199,
+      0.002695500000015727,
+      0.0023471659999927397,
+      0.00278916700000309,
+      0.002548665999995592,
+      0.0035216250000189575,
+      0.003033833000017694,
+      0.009094874999959757,
+      0.004193083000018305,
+      0.002755083000010927,
+      0.002594375000001037,
+      0.003449082999964048,
+      0.002014500000029784,
+      0.0035238750000416985,
+      0.00184850000005099,
+      0.0024990420000108315
+     ],
+     "missing": null
+    },
+    "umfpack": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc",
+      "scikit-umfpack",
+      "pypardiso"
+     ],
+     "solver": "umfpack",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "scikit-umfpack": "0.4.2"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "19d37d023bd40f6399e5d0008aafe786dd463c089904fc351d74932597f225cb"
+      }
+     },
+     "seconds": [
+      0.0030276669999693695,
+      0.003782749999970747,
+      0.0034395419999668775,
+      0.002322416999959387,
+      0.002487165999980334,
+      0.00269145900000467,
+      0.0028877500000135115,
+      0.0023646669999948244,
+      0.0033027910000100746,
+      0.005608209000001807,
+      0.004293958000005205,
+      0.004783874999986892,
+      0.002522958000042763,
+      0.002819415999965713,
+      0.002793416999963938,
+      0.0026558750000162945,
+      0.0022103750000042055,
+      0.003241000000002714,
+      0.002023791999988589,
+      0.003502749999995558
+     ],
+     "missing": null
+    },
+    "pypardiso": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc",
+      "scikit-umfpack",
+      "pypardiso"
+     ],
+     "solver": null,
+     "versions": {},
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "19d37d023bd40f6399e5d0008aafe786dd463c089904fc351d74932597f225cb"
+      }
+     },
+     "seconds": [],
+     "missing": "bw2calc used umfpack, not pypardiso: pypardiso did not install: hint: Wheels are available for `mkl` (v2026.2.0) on the following platforms: `manylinux_2_28_x86_64`, `win_amd64` /  / hint: You require CPython 3.13 (`cp313`), but we only found wheels for `mkl-service` (v2.5.0) with the following Python ABI tags: `cp39`, `cp310`, `cp311`, `cp312` /  / hint: Wheels are available for `mkl-service` (v2.9.0) on the following platforms: `manylinux_2_28_x86_64`, `win_amd64`"
+    }
+   },
+   "ratios": [
+    {
+     "candidate": "umfpack",
+     "ratio": 1.0294635732172739,
+     "ci95": [
+      0.8908396165643494,
+      1.1853711325529612
+     ],
+     "seconds": {
+      "baseline": 0.0027321040000174435,
+      "candidate": 0.0028535829999896123
+     },
+     "missing": null
+    },
+    {
+     "candidate": "pypardiso",
+     "ratio": null,
+     "ci95": null,
+     "seconds": null,
+     "missing": "candidate missing"
+    }
+   ]
+  },
+  {
+   "id": "install-path",
+   "case": "bench_lca.SingleScore.time_first_score",
+   "params": {
+    "size": "smoke",
+    "cls": "LCA"
+   },
+   "baseline": "pypi",
+   "arms": {
+    "pypi": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "31068a025f99dad26c044255407d0e1bd1ca60ae8b28fdb169784fb4338ddcf1"
+      }
+     },
+     "seconds": [
+      0.0021737079999866182,
+      0.002344499999992422,
+      0.002844583000012335,
+      0.003080833000012717,
+      0.0026088750000212713,
+      0.00608579199996484,
+      0.0027560830000084025,
+      0.0019167500000207838,
+      0.0031307499999684296,
+      0.0019446669999751975,
+      0.002436332999991464,
+      0.0022735000000011496,
+      0.0019129159999806689,
+      0.002058625000017855,
+      0.00208025000000589,
+      0.0037510829999973794,
+      0.004863290999992387,
+      0.003018541000017194,
+      0.0025102920000108497,
+      0.0028676669999754267
+     ],
+     "missing": null
+    },
+    "conda-forge": {
+     "installer": "pixi",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "scikit-umfpack": "0.4.2"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.18",
+      "blas": "libblas-3.11.0-12_h51639a9_openblas",
+      "lock": {
+       "name": "pixi.lock",
+       "sha256": "7ca6501572eda343c90d05add8eae85e198ccab519564f5a7c33112873b78350"
+      }
+     },
+     "seconds": [
+      0.0023523330000330134,
+      0.0038183749999802785,
+      0.0026136669999914375,
+      0.0026291660000197226,
+      0.0023685829999635644,
+      0.0021039169999994556,
+      0.004490709000037896,
+      0.002037666999967769,
+      0.002965082999992319,
+      0.0020112499999527245,
+      0.0025927500000193504,
+      0.002514834000010069,
+      0.0019754999999577194,
+      0.002035041999988607,
+      0.002769083000032424,
+      0.00198275000002468,
+      0.003674208000006729,
+      0.002620749999948657,
+      0.002656000000001768,
+      0.0030444169999555015
+     ],
+     "missing": null
+    }
+   },
+   "ratios": [
+    {
+     "candidate": "conda-forge",
+     "ratio": 0.961760918519847,
+     "ci95": [
+      0.8203131047391227,
+      1.1055649108925574
+     ],
+     "seconds": {
+      "baseline": 0.0025595835000160605,
+      "candidate": 0.002603208500005394
+     },
+     "missing": null
+    }
+   ]
+  },
+  {
+   "id": "python",
+   "case": "bench_lca.SingleScore.time_first_score",
+   "params": {
+    "size": "smoke",
+    "cls": "LCA"
+   },
+   "baseline": "3.13",
+   "arms": {
+    "3.13": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "31068a025f99dad26c044255407d0e1bd1ca60ae8b28fdb169784fb4338ddcf1"
+      }
+     },
+     "seconds": [
+      0.0024078750000171567,
+      0.0026944999999614083,
+      0.0023153330000127426,
+      0.004048375000024862,
+      0.0024778330000003734,
+      0.00642233300004591,
+      0.002156042000024172,
+      0.0020455420000189406,
+      0.002745207999964805,
+      0.002908166999986861,
+      0.003138207999995757,
+      0.0023349580000058268,
+      0.0027859169999828737,
+      0.0020401660000288757,
+      0.002197707999926024,
+      0.003255416999991212,
+      0.002200165999965975,
+      0.005791165999994519,
+      0.0027779999999211213,
+      0.002752333999978873
+     ],
+     "missing": null
+    },
+    "3.12": {
+     "installer": "uv",
+     "python": "3.12",
+     "requirements": [
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.12.10",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "31068a025f99dad26c044255407d0e1bd1ca60ae8b28fdb169784fb4338ddcf1"
+      }
+     },
+     "seconds": [
+      0.0035613750000038635,
+      0.0023784589999991113,
+      0.0025968329999841444,
+      0.0022336670000413505,
+      0.0027359169999954247,
+      0.003154166999934205,
+      0.002755124999907821,
+      0.0021511250000685322,
+      0.0021317910000107076,
+      0.004113458000006176,
+      0.00271308300000328,
+      0.003951416999939283,
+      0.0021610000000009677,
+      0.001928375000034066,
+      0.002865250000013475,
+      0.0054728329999989,
+      0.0029607079999323105,
+      0.00287341600005675,
+      0.0028617909999866242,
+      0.005195332999960556
+     ],
+     "missing": null
+    },
+    "3.14": {
+     "installer": "uv",
+     "python": "3.14",
+     "requirements": [
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.14.10",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "31068a025f99dad26c044255407d0e1bd1ca60ae8b28fdb169784fb4338ddcf1"
+      }
+     },
+     "seconds": [
+      0.002293833999999606,
+      0.002083874999982527,
+      0.0025444580000453243,
+      0.0025821250000035434,
+      0.005297665999989931,
+      0.005994166000050427,
+      0.002127041999983703,
+      0.003176957999926344,
+      0.006883208000090235,
+      0.0026436670000293816,
+      0.0036412910000080956,
+      0.003911790999950426,
+      0.003157125000029737,
+      0.0028144169999677615,
+      0.002117625000096268,
+      0.004244749999998021,
+      0.0031290839999655873,
+      0.002499958999919727,
+      0.0023145000000113214,
+      0.00286087500001031
+     ],
+     "missing": null
+    },
+    "3.15": {
+     "installer": "uv",
+     "python": "3.15",
+     "requirements": [
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.15.2",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "31068a025f99dad26c044255407d0e1bd1ca60ae8b28fdb169784fb4338ddcf1"
+      }
+     },
+     "seconds": [
+      0.002132290999952602,
+      0.003955874999974185,
+      0.006248583999990842,
+      0.0022744579999880443,
+      0.0033148750000009386,
+      0.0021098749999737265,
+      0.003630083999951239,
+      0.0022340419999409278,
+      0.005196749999981876,
+      0.0062332499999229185,
+      0.002305707999994411,
+      0.002506000000039421,
+      0.0022617910000235497,
+      0.004065707999984625,
+      0.0039617919999273,
+      0.0026570830000309797,
+      0.0020816249999597858,
+      0.002625249999937296,
+      0.0023548330000267015,
+      0.0030650829999103735
+     ],
+     "missing": null
+    }
+   },
+   "ratios": [
+    {
+     "candidate": "3.12",
+     "ratio": 1.034587799992622,
+     "ci95": [
+      0.8736783623632891,
+      1.2173850960048918
+     ],
+     "seconds": {
+      "baseline": 0.0027198539999631066,
+      "candidate": 0.0028084579999472226
+     },
+     "missing": null
+    },
+    {
+     "candidate": "3.14",
+     "ratio": 1.1045447099812993,
+     "ci95": [
+      0.9317164587101097,
+      1.3105766625161364
+     ],
+     "seconds": {
+      "baseline": 0.0027198539999631066,
+      "candidate": 0.0028376459999890358
+     },
+     "missing": null
+    },
+    {
+     "candidate": "3.15",
+     "ratio": 1.0828437447034063,
+     "ci95": [
+      0.8530620175943131,
+      1.3572239369998664
+     ],
+     "seconds": {
+      "baseline": 0.0027198539999631066,
+      "candidate": 0.0026411664999841378
+     },
+     "missing": null
+    }
+   ]
+  },
+  {
+   "id": "bw2calc-release",
+   "case": "bench_lca.SingleScore.time_first_score",
+   "params": {
+    "size": "smoke",
+    "cls": "LCA"
+   },
+   "baseline": "previous",
+   "arms": {
+    "previous": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc<3.1.0"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.0.0",
+      "bw2data": "4.8",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "aed4a56c87cb889e980d08b2e702301e24d2b39efecc407599d6915fdcbed702"
+      }
+     },
+     "seconds": [
+      0.003668916000037825,
+      0.0021272919999546502,
+      0.0021746670000766244,
+      0.002635375000068052,
+      0.0021761250000054133,
+      0.0025895420000097147,
+      0.0038465829999267953,
+      0.0019079999999576103,
+      0.002680458999975599,
+      0.003826624999987871,
+      0.0021254170000020167,
+      0.004283166000050187,
+      0.002015375000041786,
+      0.002017707999925733,
+      0.002121084000009432,
+      0.002744541999959438,
+      0.0020340840000017124,
+      0.0018718750000061846,
+      0.002287709000029281,
+      0.002041416000110985
+     ],
+     "missing": null
+    },
+    "latest": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc==3.1.0"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "31068a025f99dad26c044255407d0e1bd1ca60ae8b28fdb169784fb4338ddcf1"
+      }
+     },
+     "seconds": [
+      0.002146917000004578,
+      0.00426854199997706,
+      0.0021721249999018255,
+      0.0021442089999936798,
+      0.0026236659999767653,
+      0.0037184579999802736,
+      0.0023034160000179327,
+      0.002415833000100065,
+      0.003630250000014712,
+      0.0021500420000393206,
+      0.002061874999981228,
+      0.002283750000060536,
+      0.0021715829999493508,
+      0.0026943330000221977,
+      0.0025091669999710575,
+      0.002204666000011457,
+      0.0018813330000284623,
+      0.0019793750000189902,
+      0.0037879169999541773,
+      0.005400582999982362
+     ],
+     "missing": null
+    }
+   },
+   "ratios": [
+    {
+     "candidate": "latest",
+     "ratio": 1.0544563750980058,
+     "ci95": [
+      0.8815121330737568,
+      1.2641302119766127
+     ],
+     "seconds": {
+      "baseline": 0.002175396000041019,
+      "candidate": 0.0022935830000392343
+     },
+     "missing": null
+    }
+   ]
+  },
+  {
+   "id": "bw2data-release",
+   "case": "bench_write.DatabaseWrite.time_write",
+   "params": {
+    "size": "smoke"
+   },
+   "baseline": "previous",
+   "arms": {
+    "previous": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2data<4.8",
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "bw2data": "4.7",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "2e3d990395a5747a143c44c0c05d4fa167c71adb1ef41fea44d26b16f28b9da2"
+      }
+     },
+     "seconds": [
+      0.10431333300005008,
+      0.06355383300001449,
+      0.10841845799996008,
+      0.09126133400002345,
+      0.09166704199992637,
+      0.11608191699997406,
+      0.08215616699999373,
+      0.12353795800004264,
+      0.07536783299997296,
+      0.08513841699993918,
+      0.05160945800002992,
+      0.054813833000025625,
+      0.05658345799997733,
+      0.06756008299998939,
+      0.0693025000000489,
+      0.09052287500003331,
+      0.10881625000001804,
+      0.1073617079999849,
+      0.08549929100001918,
+      0.09052620800002842
+     ],
+     "missing": null
+    },
+    "latest": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2data==4.8",
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "bw2data": "4.8",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "25.6.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1 (Virtual)",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "7ac23cf0c2c9b07a8645b99400f59e9de8fe739d585a895952120068bf57b518"
+      }
+     },
+     "seconds": [
+      0.11272170900008405,
+      0.07534783300002346,
+      0.06937391700000717,
+      0.13775887500003137,
+      0.1062861249999969,
+      0.09161620800000492,
+      0.07311187499999505,
+      0.08858066599998438,
+      0.08056041700001515,
+      0.08448170799999843,
+      0.05099774999996498,
+      0.05951545800007807,
+      0.05498508400000901,
+      0.08804937500008236,
+      0.09496420899995428,
+      0.08074266599999191,
+      0.08682787500003997,
+      0.09676612500004467,
+      0.07327570799998284,
+      0.07209754199993768
+     ],
+     "missing": null
+    }
+   },
+   "ratios": [
+    {
+     "candidate": "latest",
+     "ratio": 0.9767585377917839,
+     "ci95": [
+      0.8896149463753467,
+      1.0728505621865407
+     ],
+     "seconds": {
+      "baseline": 0.08801108300002625,
+      "candidate": 0.08261218699999517
+     },
+     "missing": null
+    }
+   ]
+  }
+ ]
+}

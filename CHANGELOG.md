@@ -129,6 +129,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `HeatingTimeline` skips bw_timex 1.1.0 and 1.2.0 with `NotApplicable`. Their biosphere `flip_array` has one
+  entry however many flows a process has, which bw_processing 1.5 and later reject with `ShapeMismatch`
+  on BAFU's multi-flow processes. bw_timex 1.2.1 fixed it
+  ([issue 212](https://github.com/brightway-lca/bw_timex/issues/212)).
 - A run at one database size no longer wipes the other sizes' results.
 
 ### Viewer

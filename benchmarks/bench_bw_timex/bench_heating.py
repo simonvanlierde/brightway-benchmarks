@@ -6,7 +6,9 @@ This is an explicit benchmark assumption, not a separate installation-and-operat
 """
 
 import functools
+import re
 from datetime import datetime
+from importlib import metadata
 
 from bwbench import DIRECT_RTOL, bafu, check, first_time, heating, knob, temporary_brightway_dir
 
@@ -42,6 +44,10 @@ def background() -> tuple[System, dict[str, int]]:
 def heating_lci(size: str, option: str) -> BenchSetup:
     if size != "bafu":
         raise NotApplicable("the heating foreground requires BWBENCH_TIMEX_SIZES=bafu")
+    # bw_timex < 1.2.1 passes a length-1 flip_array for every producer's biosphere flows, which
+    # bw_processing 1.5+ rejects once a process has several (fixed in bw_timex e6406e5, issue #212).
+    if tuple(int(n) for n in re.findall(r"\d+", metadata.version("bw_timex"))[:3]) < (1, 2, 1):  # 1.3.0rc1 too
+        raise NotApplicable("bw_timex before 1.2.1 builds a mismatched biosphere flip_array (bw_timex #212)")
     bd.projects.set_current("heating-timex")
     s, at = background()
     if first_time("heating background"):  # once per process; each sample writes only the foreground

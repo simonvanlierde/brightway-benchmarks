@@ -30,7 +30,7 @@ repos:
 
   # Commit messages follow committed.toml: Conventional Commits, imperative, no period.
   - repo: https://github.com/crate-ci/committed
-    rev: faeed42f2e10c244533a01525f13c4d8b6ce383f # frozen: v1.1.11
+    rev: 02af07ed1d11ad69a96ab75f08c9831a4e2c00da # frozen: v1.1.12
     hooks:
       - id: committed
         # git writes a merge commit's message itself, so skip the check during a merge.
@@ -48,7 +48,7 @@ repos:
 
   # Every file has a copyright and license, from REUSE.toml or its own header.
   - repo: https://github.com/fsfe/reuse-tool
-    rev: a1bb792acda6fd0724936b4ebbdbc8eceb9c0459 # frozen: v6.2.0
+    rev: ea739bff9c6daa1c4c8a5c5dfd069f3fb0374728 # frozen: v6.3.0
     hooks:
       - id: reuse
 
@@ -56,7 +56,7 @@ repos:
   # .json files are read as JSON5, so comments and trailing commas in tsconfig
   # and VS Code settings pass; syntax errors and duplicate keys fail.
   - repo: https://github.com/simonvanlierde/jsonvet
-    rev: 022d320d5b971eccb28cfa6ce205152cbb382e53 # frozen: v3.2.0
+    rev: 83df66110a108e0fa4b7d2b2adcef6831f618e05 # frozen: v3.3.1
     hooks:
       - id: jsonvet
 
@@ -75,7 +75,7 @@ repos:
 
   # gitleaks' successor from the same authors. gitleaks takes security fixes only.
   - repo: https://github.com/betterleaks/betterleaks
-    rev: 81aff7a638638aae3a659845d089043e1d8fe9ac # frozen: v1.9.0
+    rev: 8d77e1712fb06fd14444cc648686f1d5655e28a8 # frozen: v1.10.0
     hooks:
       - id: betterleaks
 
@@ -83,7 +83,7 @@ repos:
   # and impostor commits. Set GH_TOKEN to enable the audits that need the API;
   # without it only the offline subset runs.
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
-    rev: c92afdf2c6ca336aaa8f39e2bd8d48f62dbd8e1f # frozen: v1.31.1
+    rev: 06a39750ec31860bb44f2acf67182c40016cd1e7 # frozen: v1.32.0
     hooks:
       - id: zizmor
 
@@ -91,7 +91,7 @@ repos:
   # and shellcheck over every `run:` when shellcheck is on PATH. jactionlint is a
   # maintained fork of actionlint that adds release, cache and concurrency checks.
   - repo: https://github.com/jdx/jactionlint
-    rev: baa8d685e2b27ff5821558c9eeabb2051c1da61b # frozen: v2.4.0
+    rev: 9e87e8f34edfc00b849a27807e26eff9d00b936d # frozen: v2.5.0
     hooks:
       - id: jactionlint
 
@@ -105,7 +105,7 @@ repos:
   # CITATION.cff is the source: codemeta.json, any .zenodo.json and the package manifests
   # must agree with it. `just citation` runs the manual-stage writer to fix them.
   - repo: https://github.com/simonvanlierde/citesync
-    rev: a3c5a9794449e78a33583e456af41bb24ebd240e # frozen: v0.1.0
+    rev: 27c649e635302721583fd9a043865bfb98116225 # frozen: v0.4.0
     hooks:
       - id: citesync
       - id: citesync-write
@@ -124,7 +124,7 @@ repos:
   # Misspelt words in code, comments and docs. It fixes the ones it is sure of and
   # fails, so you review the fix. List a word it must leave alone in _typos.toml.
   - repo: https://github.com/crate-ci/typos
-    rev: 7f9d0819ca1c008ade73f4b41fa9d258d48f605b # frozen: v1.51.1
+    rev: 4c8b7f51ca60df14e3c5ca82770dfbbe6c3dae85 # frozen: v1.52.0
     hooks:
       - id: typos
         # Copier writes the template's commit id here, and a hex id can spell a word

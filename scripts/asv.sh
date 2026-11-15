@@ -2,8 +2,8 @@
 # asv for one subject, inside the box: scripts/asv.sh SUBJECT ASV-COMMAND [ARGS...]
 #
 # BWBENCH_MACHINE labels the results. It defaults to box-<slot> (box-e0, box-p1-quiet), or
-# box without a slot. The container's hostname is <host>-<slot> under oss-bench and <host>-box
-# under box.sh, so only its slot is kept: results-commit refuses a name with the host in it.
+# box without a slot. The container's hostname is <host>-<slot> under a slot runner
+# (box.sh's BWBENCH_RUNNER) and <host>-box under its plain docker run, so only its slot is kept: results-commit refuses a name with the host in it.
 # BWBENCH_SOLVERS picks the solver environments of bw2calc and bw_graph_tools: superlu (the
 # base environment, with neither pypardiso nor umfpack), pypardiso and umfpack. The default
 # is all three, without pypardiso off x86_64, where MKL has no wheels. bw2calc also has two

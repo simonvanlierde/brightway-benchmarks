@@ -99,6 +99,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `scripts/box.sh` hands the box to a host's own runner, such as a CPU-slot runner, through
+  `BWBENCH_RUNNER` or `bwbench-runner` on `PATH`, with the contract at the top of the script. An
+  energy run needs a quiet gate (`BWBENCH_GATE` or `bwbench-gate`) and `BWBENCH_CPUSET`; neither
+  has a default any more.
 - The bw_timex cases write their background databases once per process, not before every
   sample: about 25 s a sample at the ecoinvent size.
 - The heating cases cache their expanded factors and process indices beside the BAFU archive, so
@@ -130,6 +134,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - A run at one database size no longer wipes the other sizes' results.
+- `BWBENCH_MEM` now reaches a host's runner too; it used to keep the runner's own memory limit.
 
 ### Viewer
 

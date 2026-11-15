@@ -1,0 +1,872 @@
+{
+ "format": "bwbench-ratios/1",
+ "tier": "hosted",
+ "machine": "GitHub win25-vs2026",
+ "created": "2026-11-14T14:23:30Z",
+ "source": {
+  "commit": "b58ecd2fe752c205a23bdae8297ad4ea5c812b31",
+  "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/43604589027"
+ },
+ "rounds": 20,
+ "repeats": 3,
+ "seed": 1758076926,
+ "resamples": 10000,
+ "fingerprint": {
+  "version": 1,
+  "os": "Windows",
+  "kernel": "2025Server",
+  "arch": "AMD64",
+  "cpu_model": "AMD EPYC 7763 64-Core Processor",
+  "core_type": null,
+  "smt": null,
+  "governor": null,
+  "power_profile": null,
+  "python": "CPython 3.13.17",
+  "blas": null,
+  "lock": null
+ },
+ "comparisons": [
+  {
+   "id": "solvers",
+   "case": "bench_lca.SingleScore.time_first_score",
+   "params": {
+    "size": "smoke",
+    "cls": "LCA"
+   },
+   "baseline": "superlu",
+   "arms": {
+    "superlu": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc",
+      "scikit-umfpack",
+      "pypardiso"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "pypardiso": "0.4.7",
+      "mkl": "2026.2.0"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "scipy-openblas 0.3.34.106.0",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "4019c3d5ba33bcbe8ebd712c56ed6bb61c022ec7f0d2e9ce00cb4602b53fb1cb"
+      }
+     },
+     "seconds": [
+      0.004238500000013801,
+      0.004255300000011175,
+      0.004360499999989997,
+      0.0042457000000126754,
+      0.004257899999998926,
+      0.004250799999994115,
+      0.004264000000006263,
+      0.004173000000008642,
+      0.004217100000005303,
+      0.004255699999987428,
+      0.005654300000003332,
+      0.004245099999991453,
+      0.0042515000000094005,
+      0.004180899999994381,
+      0.004393800000002557,
+      0.004218400000013389,
+      0.004214699999977256,
+      0.004385099999979047,
+      0.004279300000007424,
+      0.00423200000000179
+     ],
+     "missing": null
+    },
+    "umfpack": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc",
+      "scikit-umfpack",
+      "pypardiso"
+     ],
+     "solver": null,
+     "versions": {},
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "scipy-openblas 0.3.34.106.0",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "4019c3d5ba33bcbe8ebd712c56ed6bb61c022ec7f0d2e9ce00cb4602b53fb1cb"
+      }
+     },
+     "seconds": [],
+     "missing": "bw2calc used superlu, not umfpack: scikit-umfpack did not install:          ..\\meson.build:69:19: ERROR: C header 'umfpack.h' not found /  /          ::endgroup:: /  / hint: Build failures usually indicate a problem with the package or the build environment"
+    },
+    "pypardiso": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc",
+      "scikit-umfpack",
+      "pypardiso"
+     ],
+     "solver": "pypardiso",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "pypardiso": "0.4.7",
+      "mkl": "2026.2.0"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "scipy-openblas 0.3.34.106.0",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "4019c3d5ba33bcbe8ebd712c56ed6bb61c022ec7f0d2e9ce00cb4602b53fb1cb"
+      }
+     },
+     "seconds": [
+      0.08518549999999436,
+      0.08529300000000717,
+      0.08658690000001457,
+      0.09330630000002316,
+      0.10235420000000772,
+      0.08453530000002729,
+      0.08345070000001442,
+      0.08427990000001273,
+      0.08314560000002302,
+      0.08463770000000181,
+      0.08451399999995601,
+      0.08426369999995131,
+      0.08531390000001693,
+      0.08302829999996675,
+      0.08354880000001685,
+      0.08457320000002255,
+      0.08328319999998257,
+      0.08629659999996875,
+      0.08654779999994844,
+      0.08533260000001519
+     ],
+     "missing": null
+    }
+   },
+   "ratios": [
+    {
+     "candidate": "umfpack",
+     "ratio": null,
+     "ci95": null,
+     "seconds": null,
+     "missing": "candidate missing"
+    },
+    {
+     "candidate": "pypardiso",
+     "ratio": 19.88148728555022,
+     "ci95": [
+      19.112658418409435,
+      20.537052581152142
+     ],
+     "seconds": {
+      "baseline": 0.004251150000001758,
+      "candidate": 0.08460545000001218
+     },
+     "missing": null
+    }
+   ]
+  },
+  {
+   "id": "install-path",
+   "case": "bench_lca.SingleScore.time_first_score",
+   "params": {
+    "size": "smoke",
+    "cls": "LCA"
+   },
+   "baseline": "pypi",
+   "arms": {
+    "pypi": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "scipy-openblas 0.3.34.106.0",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "0f29700f73eedadf8689dc0844e672b2565ac430dd195e7731eb5688b36c0e56"
+      }
+     },
+     "seconds": [
+      0.0042488999999932275,
+      0.004510199999970155,
+      0.004332900000008522,
+      0.004292599999985214,
+      0.004244299999982104,
+      0.0043192999999632775,
+      0.004203499999960059,
+      0.00433999999995649,
+      0.004202500000019427,
+      0.004241500000034648,
+      0.004258400000026086,
+      0.004217000000039661,
+      0.0043764000000123815,
+      0.004234300000007352,
+      0.004383500000017193,
+      0.00455579999999145,
+      0.004519899999991139,
+      0.004437999999993281,
+      0.004435800000010204,
+      0.004636700000048677
+     ],
+     "missing": null
+    },
+    "conda-forge": {
+     "installer": "pixi",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "pypardiso": "0.4.7"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.18",
+      "blas": "libblas-3.11.0-12_h8455456_mkl",
+      "lock": {
+       "name": "pixi.lock",
+       "sha256": "9b6d6de1aae66334ee8f76965c12c3524cd2df098818bc4cf85bf1c4ac0c7353"
+      }
+     },
+     "seconds": [
+      0.004665500000044176,
+      0.004638999999997395,
+      0.00472500000000764,
+      0.0047521000000188,
+      0.004914700000028915,
+      0.004762000000027911,
+      0.004738999999972293,
+      0.004725099999973281,
+      0.004718599999989692,
+      0.004615999999998621,
+      0.004682500000001255,
+      0.0046866999999792824,
+      0.004794800000013311,
+      0.00465350000001763,
+      0.004700000000013915,
+      0.0050880000000006476,
+      0.0048632000000452535,
+      0.005082500000014534,
+      0.004928600000027927,
+      0.0047890000000165855
+     ],
+     "missing": null
+    }
+   },
+   "ratios": [
+    {
+     "candidate": "conda-forge",
+     "ratio": 1.0981496856281905,
+     "ci95": [
+      1.0843654846657071,
+      1.1112537586294176
+     ],
+     "seconds": {
+      "baseline": 0.0043260999999858996,
+      "candidate": 0.004732049999972787
+     },
+     "missing": null
+    }
+   ]
+  },
+  {
+   "id": "python",
+   "case": "bench_lca.SingleScore.time_first_score",
+   "params": {
+    "size": "smoke",
+    "cls": "LCA"
+   },
+   "baseline": "3.13",
+   "arms": {
+    "3.13": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "scipy-openblas 0.3.34.106.0",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "0f29700f73eedadf8689dc0844e672b2565ac430dd195e7731eb5688b36c0e56"
+      }
+     },
+     "seconds": [
+      0.004529999999988377,
+      0.004537099999993188,
+      0.004333900000005997,
+      0.004414900000028865,
+      0.004266700000016499,
+      0.004310300000042844,
+      0.00429500000001326,
+      0.004286700000022847,
+      0.004203500000016902,
+      0.004222500000025775,
+      0.004248700000005101,
+      0.004206799999963096,
+      0.004414499999995769,
+      0.00423879999999599,
+      0.004326999999989312,
+      0.004230000000006839,
+      0.00427639999998064,
+      0.004222900000002028,
+      0.004780900000014299,
+      0.004289700000015273
+     ],
+     "missing": null
+    },
+    "3.12": {
+     "installer": "uv",
+     "python": "3.12",
+     "requirements": [
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.12.10",
+      "blas": "scipy-openblas 0.3.34.106.0",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "0f29700f73eedadf8689dc0844e672b2565ac430dd195e7731eb5688b36c0e56"
+      }
+     },
+     "seconds": [
+      0.004344500000001972,
+      0.004210499999999229,
+      0.00426590000000715,
+      0.004364300000020194,
+      0.004362800000023981,
+      0.004219900000009602,
+      0.004191999999989093,
+      0.004149899999958961,
+      0.0042285000000106265,
+      0.004121999999995296,
+      0.004172799999992094,
+      0.004176500000028227,
+      0.004328700000030494,
+      0.00418000000001939,
+      0.004192799999998442,
+      0.004338100000040868,
+      0.004821599999957016,
+      0.004189400000029764,
+      0.004261999999982891,
+      0.004229099999975006
+     ],
+     "missing": null
+    },
+    "3.14": {
+     "installer": "uv",
+     "python": "3.14",
+     "requirements": [
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.14.10",
+      "blas": "scipy-openblas 0.3.34.106.0",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "0f29700f73eedadf8689dc0844e672b2565ac430dd195e7731eb5688b36c0e56"
+      }
+     },
+     "seconds": [
+      0.004313499999966552,
+      0.004306900000017322,
+      0.004320599999971364,
+      0.004568400000039219,
+      0.004378599999995458,
+      0.004324400000029982,
+      0.004316899999992074,
+      0.004303500000048643,
+      0.004360200000007808,
+      0.0043622999999684,
+      0.004508199999975204,
+      0.004275300000017523,
+      0.004326300000002448,
+      0.004300000000000637,
+      0.00435770000001412,
+      0.004364899999984573,
+      0.004319799999962015,
+      0.004312000000027183,
+      0.004267500000025848,
+      0.004318300000022646
+     ],
+     "missing": null
+    },
+    "3.15": {
+     "installer": "uv",
+     "python": "3.15",
+     "requirements": [
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.15.2",
+      "blas": "scipy-openblas 0.3.34.106.0",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "0f29700f73eedadf8689dc0844e672b2565ac430dd195e7731eb5688b36c0e56"
+      }
+     },
+     "seconds": [
+      0.003951400000005378,
+      0.004012100000011287,
+      0.004041799999981777,
+      0.004079300000000785,
+      0.003947500000037962,
+      0.003922999999986132,
+      0.003968400000019301,
+      0.003917899999976271,
+      0.003960599999970782,
+      0.0039664000000243504,
+      0.004027000000007774,
+      0.00395259999999098,
+      0.003965600000015002,
+      0.003998899999999139,
+      0.003892399999983809,
+      0.0038979999999924075,
+      0.003999999999962256,
+      0.0039874999999938154,
+      0.003967100000011214,
+      0.003932399999996505
+     ],
+     "missing": null
+    }
+   },
+   "ratios": [
+    {
+     "candidate": "3.12",
+     "ratio": 0.9851189132971757,
+     "ci95": [
+      0.967760587470243,
+      1.004740420092237
+     ],
+     "seconds": {
+      "baseline": 0.00428820000001906,
+      "candidate": 0.004224200000010114
+     },
+     "missing": null
+    },
+    {
+     "candidate": "3.14",
+     "ratio": 1.0034790998386591,
+     "ci95": [
+      0.9855914312784834,
+      1.018414783677994
+     ],
+     "seconds": {
+      "baseline": 0.00428820000001906,
+      "candidate": 0.00432019999996669
+     },
+     "missing": null
+    },
+    {
+     "candidate": "3.15",
+     "ratio": 0.9167571881624191,
+     "ci95": [
+      0.9032058595813608,
+      0.928629812311747
+     ],
+     "seconds": {
+      "baseline": 0.00428820000001906,
+      "candidate": 0.003966000000019676
+     },
+     "missing": null
+    }
+   ]
+  },
+  {
+   "id": "bw2calc-release",
+   "case": "bench_lca.SingleScore.time_first_score",
+   "params": {
+    "size": "smoke",
+    "cls": "LCA"
+   },
+   "baseline": "previous",
+   "arms": {
+    "previous": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc<3.1.0"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.0.0",
+      "bw2data": "4.8",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "scipy-openblas 0.3.34.106.0",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "9f3d0d704d843885a8abc3986a677a9cb5cd11cc23bbb19aede9cb510f9bca89"
+      }
+     },
+     "seconds": [
+      0.004188600000020415,
+      0.004239600000005339,
+      0.004254400000036185,
+      0.0041859000000386,
+      0.004273899999986952,
+      0.00460129999999026,
+      0.004237999999986641,
+      0.00425799999999299,
+      0.0042305999999712185,
+      0.004254399999979341,
+      0.004171000000042113,
+      0.004284799999993538,
+      0.004660999999998694,
+      0.0047936999999933505,
+      0.004340299999967101,
+      0.004215299999998479,
+      0.004312599999991562,
+      0.004242900000008376,
+      0.004253900000037447,
+      0.004220900000007077
+     ],
+     "missing": null
+    },
+    "latest": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc==3.1.0"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "scipy-openblas 0.3.34.106.0",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "0f29700f73eedadf8689dc0844e672b2565ac430dd195e7731eb5688b36c0e56"
+      }
+     },
+     "seconds": [
+      0.0042022000000088156,
+      0.004354700000021694,
+      0.004253699999992477,
+      0.004283999999984189,
+      0.004361500000015894,
+      0.004538000000025022,
+      0.004263100000002851,
+      0.004234199999984867,
+      0.0042654000000084125,
+      0.004218499999979031,
+      0.004174799999987044,
+      0.004241799999988416,
+      0.004243400000007114,
+      0.004213099999958558,
+      0.004223600000045735,
+      0.0041970999999989544,
+      0.004302299999949355,
+      0.004225800000028812,
+      0.004388099999971473,
+      0.004200599999990118
+     ],
+     "missing": null
+    }
+   },
+   "ratios": [
+    {
+     "candidate": "latest",
+     "ratio": 0.9908207126228148,
+     "ci95": [
+      0.9735522666239299,
+      1.0050258051095908
+     ],
+     "seconds": {
+      "baseline": 0.004254150000008394,
+      "candidate": 0.004242599999997765
+     },
+     "missing": null
+    }
+   ]
+  },
+  {
+   "id": "bw2data-release",
+   "case": "bench_write.DatabaseWrite.time_write",
+   "params": {
+    "size": "smoke"
+   },
+   "baseline": "previous",
+   "arms": {
+    "previous": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2data<4.8",
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "bw2data": "4.7",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "scipy-openblas 0.3.34.106.0",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "3d8c15ed699d22eb6c86c35a52f0d18e2f5c92b80b69e877e97a33bc543b98cd"
+      }
+     },
+     "seconds": [
+      0.2940105999999787,
+      0.2942273999999543,
+      0.2877560999999105,
+      0.29718339999999444,
+      0.290036299999997,
+      0.2944919999999911,
+      0.3011771999999837,
+      0.3091220000000021,
+      0.31970130000001973,
+      0.31919249999998556,
+      0.3056064999999535,
+      0.29984860000001845,
+      0.3167401000000609,
+      0.30312800000001516,
+      0.29769790000000285,
+      0.30423980000000483,
+      0.30819609999991826,
+      0.29586699999993016,
+      0.3118398999999954,
+      0.3292284000000336
+     ],
+     "missing": null
+    },
+    "latest": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2data==4.8",
+      "bw2calc"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "bw2data": "4.8",
+      "numpy": "2.5.4",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Windows",
+      "kernel": "2025Server",
+      "arch": "AMD64",
+      "cpu_model": "AMD EPYC 7763 64-Core Processor",
+      "core_type": null,
+      "smt": null,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.17",
+      "blas": "scipy-openblas 0.3.34.106.0",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "6db824fa2822a8d28a9b008cb2f1258b3457d52c74e8f63f45d1bac1f3e0c74d"
+      }
+     },
+     "seconds": [
+      0.2697532999999339,
+      0.2557735000000321,
+      0.2550374999999576,
+      0.26161869999998544,
+      0.26719950000006065,
+      0.2796693000000232,
+      0.3000259000000369,
+      0.2596472000000176,
+      0.2725911999999653,
+      0.2921927999999525,
+      0.6838841000000002,
+      0.2820548999999346,
+      0.2756958999999597,
+      0.2647213999999849,
+      0.2711191000000781,
+      0.27780119999999897,
+      0.2920186000000058,
+      0.26010100000007697,
+      0.2837018000000171,
+      0.2696280000000115
+     ],
+     "missing": null
+    }
+   },
+   "ratios": [
+    {
+     "candidate": "latest",
+     "ratio": 0.9405676103734023,
+     "ci95": [
+      0.8849628805432574,
+      1.0385338097587509
+     ],
+     "seconds": {
+      "baseline": 0.30215259999999944,
+      "candidate": 0.2718551500000217
+     },
+     "missing": null
+    }
+   ]
+  }
+ ]
+}

@@ -51,16 +51,19 @@ test("a scroll region takes keyboard focus only while it has something to scroll
 test("the data files are preloaded from the page, and fetched once", async ({ page }) => {
   const asked: string[] = [];
   page.on("request", (r) => {
-    if (/\/data\/(index|guidance)\.json$/.test(r.url())) asked.push(new URL(r.url()).pathname);
+    if (/\/data\/(index|guidance|ratios)\.json$/.test(r.url())) asked.push(new URL(r.url()).pathname);
   });
   await page.goto("");
   await page.locator(".install-set").waitFor();
   const preloads = await page
     .locator('link[rel="preload"][as="fetch"][crossorigin]')
     .evaluateAll((links) => links.map((l) => l.getAttribute("href")));
-  expect(preloads).toEqual(["data/index.json", "data/guidance.json"]);
-  expect(asked.filter((p) => p.endsWith("index.json"))).toHaveLength(1);
-  expect(asked.filter((p) => p.endsWith("guidance.json"))).toHaveLength(1);
+  expect(preloads).toEqual(["data/index.json", "data/guidance.json", "data/ratios.json"]);
+  for (const name of ["index.json", "guidance.json", "ratios.json"])
+    expect(
+      asked.filter((p) => p.endsWith(name)),
+      name,
+    ).toHaveLength(1);
 });
 
 test("an empty check-grid cell is a hidden dash with text for a screen reader", async ({ page }) => {

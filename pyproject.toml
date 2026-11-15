@@ -8,12 +8,16 @@ authors = [{ name = "Simon van Lierde", email = "code@duinlab.nl" }]
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 dependencies = [
+    "jsonschema>=4.26.0",
     "numpy>=2.5.3",
     "scipy>=1.18.1",
 ]
 # PyPI rejects unknown classifiers, so this one blocks an accidental upload.
 # Delete it (and set publish_to_pypi) to publish.
 classifiers = ["Private :: Do Not Upload"]
+
+[project.scripts]
+bwbench = "bwbench.compare:main"
 
 [project.urls]
 Homepage = "https://github.com/simonvanlierde/brightway-benchmarks"
@@ -32,20 +36,24 @@ dev = [
   "ty>=0.0.89",
 ]
 
+# hatchling, not uv_build: the wheel must carry benchmarks/ inside the package, so
+# `uvx --from git+... bwbench compare` finds the cases, and uv_build includes nothing
+# from outside the module folder.
 [build-system]
-requires = ["uv_build>=0.12.19,<0.14.0"]
-build-backend = "uv_build"
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bwbench"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"benchmarks" = "bwbench/cases"
 
 # Resolve only releases at least a week old: a compromised release is usually
 # caught and yanked within that window. The dependency bot waits the same week.
 # Set here, not user-wide, so every machine writes the same uv.lock.
 [tool.uv]
 exclude-newer = "1 week"
-
-# uv_build derives the package dir from the normalized project.name, so pin it
-# for a module_name that differs.
-[tool.uv.build-backend]
-module-name = "bwbench"
 
 # NOTE: self-contained ruff config, deliberately not extended from any shared base.
 # No target-version: ruff derives it from requires-python above.
@@ -70,7 +78,7 @@ ignore = [
 # Tests assert, use literal expectations, and need no docstrings, return
 # annotations, or package __init__.py.
 [tool.ruff.lint.per-file-ignores]
-"**/tests/**" = ["S101", "S603", "D1", "INP001", "PLR2004", "ANN201", "ANN202", "ARG001"]
+"**/tests/**" = ["S101", "S311", "S603", "D1", "INP001", "PLR2004", "ANN201", "ANN202", "ARG001"]
 # The seam passes runners' objects and benchmark results through untyped (ANN401), and
 # asv calls every method with the parameters (ARG001).
 "src/bwbench/{asv,bench,pytest}.py" = ["ANN401", "ARG001"]
@@ -78,6 +86,8 @@ ignore = [
 # (RUF012), and a benchmark's name is its documentation (D1). Checks raise plain errors.
 "benchmarks/**" = ["ARG002", "RUF012", "D1", "EM101", "EM102", "TRY003", "PLR2004", "DTZ001"]
 "scripts/**" = ["INP001", "T201"]
+# The command line and its worker report on stdout and stderr.
+"src/bwbench/{compare,timecase}.py" = ["T201"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

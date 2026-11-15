@@ -75,6 +75,14 @@ build strings, the BLAS among them, to a `versions-*.txt` file.
 ([method.md](method.md#the-noise-floor)). Each sample's CPU time, wall time and context
 switches go to `rounds.jsonl`; `scripts/noise_summary.py` reads them.
 
+### Hosted ratios
+
+`just ratios COMPARISON...` runs `bwbench compare` in the box: interleaved ratios between
+solvers, install paths, Pythons or releases ([method.md](method.md#hosted-ratios)). It writes
+`.asv/ratios/box.json`, which no history or site page reads. With no COMPARISON it runs
+`solvers`; `all` runs every comparison this OS has. The box has no pixi, so its `install-path`
+arm from conda-forge is missing. The `ratios` workflow runs `all` weekly on GitHub's runners.
+
 ### The nightly canary
 
 `just canary` times a fixed workload in the box: a pure-Python loop and a 64 MiB memory copy,
@@ -264,41 +272,51 @@ keep your own packages in another environment. The conda and pixi commands use t
 
 ## Contribute a run
 
-Timings from your own machine are welcome. Timings only compare within one machine, so
-yours go under a machine name of their own.
+You can add your machine's ratios: how much faster UMFPACK and PyPardiso solve an LCA than
+SuperLU there, and with `install-path` how bw2calc from conda-forge compares with PyPI. A
+contribution is one result file from `bwbench compare`
+([method.md](method.md#hosted-ratios)). It holds ratios between set-ups timed in turn on one
+machine, so your machine's speed and noise largely cancel out. The comparison page shows
+contributed rows marked unverified and leaves them out of each summary.
 
-1. Fork the repository and untick "Copy the main branch only", so the fork has a `results`
-   branch, then clone your fork. Without that branch, `just results-commit` starts a new one
-   that GitHub cannot merge into `results`.
-2. Pick a name that says what the machine is, such as `laptop-m3-docker`, and not its host
-   name. Keep it for later runs: a stopped run resumes only under the same name. On a Mac,
-   Docker Desktop runs the box as a Linux (arm64) container in a VM, so the timings are that
-   container's. The arm64 box build is untested.
-3. Set the name and the ecoinvent size, so the noise check and the run both use them:
+The run installs bw2calc and its solvers from PyPI into new virtual environments in a
+temporary folder, and runs them on your machine, outside any container. You need
+[uv](https://docs.astral.sh/uv/) and [git](https://git-scm.com/). On macOS, run
+`brew install suite-sparse swig` first, or the UMFPACK arm is recorded as missing. PyPardiso
+installs only on x86_64; elsewhere its arm is missing too, which is a result, not an error.
 
-   ```sh
-   export BWBENCH_MACHINE=laptop-m3-docker
-   export BWBENCH_SIZES=ecoinvent BWBENCH_MC_SIZES=ecoinvent BWBENCH_WRITE_SIZES=ecoinvent
-   ```
-
-   Without the three size variables, the run falls back to the smoke size. Keep
-   `BWBENCH_THREADS`, `BWBENCH_ROUNDS`, `BWBENCH_CPUS` and `BWBENCH_MEM` at their defaults:
-   the result files do not record them.
-4. Measure your noise floor with `just noise bw2calc`. A laptop is noisier than a pinned
-   benchmark machine, so plug it in and use its performance power mode.
-5. Run the suite. Off x86_64, the PyPardiso column is skipped, as MKL has no wheels there.
+1. Plug a laptop in, set its performance power mode and close other work.
+2. Run the solvers comparison. At 20 rounds it takes about a minute, plus the downloads on
+   the first run:
 
    ```sh
-   just bench bw2calc
+   uvx --from git+https://github.com/simonvanlierde/brightway-benchmarks bwbench compare --machine "Apple M3 Pro" -o result.json
    ```
 
-6. `just results-commit` puts `results/` on your local `results` branch. Its commit is
-   unsigned, and this repository asks for a `Signed-off-by` line
-   ([CONTRIBUTING](../.github/CONTRIBUTING.md#sign-off-your-commits)), so run
-   `git commit --amend -s` on the `results` branch. Then `git push origin results` and open a
-   pull request from your fork's `results` into this repository's `results`. Each result's
-   fingerprint names the CPU and OS; say in the pull request how much memory the machine has,
-   and paste the `just noise` spread.
+   Set `--machine` to a label for the machine, such as its CPU model, never its host name.
+   The label needs ASCII letters or digits, which name its folder. Without it, the CPU model is used. Add `install-path` to the command to time conda-forge
+   against PyPI too; that needs [pixi](https://pixi.sh).
+3. Fork this repository, then copy the file to
+   `ratios/contributed/<machine>/<date>.json`. `<machine>` is your label in lower case with
+   dashes (`apple-m3-pro`), and `<date>` is the day in the file's `created` field
+   (`2026-11-14`).
+4. Check it before you commit:
+
+   ```sh
+   uvx --from git+https://github.com/simonvanlierde/brightway-benchmarks bwbench validate --contribution ratios/contributed/apple-m3-pro/2026-11-14.json
+   ```
+
+   It exits 0 when the file can go in. It refuses a file that is not in its folder, that
+   says a tier other than `contributed`, has a default host name as its label (such as
+   `Ada's MacBook Pro`, `ada-ThinkPad-X1` or `DESKTOP-4F2K9QX`), names a user folder, or is over 256 KiB.
+5. Commit with `git commit -s`
+   ([CONTRIBUTING](../.github/CONTRIBUTING.md#sign-off-your-commits)) and open a pull request
+   against `main`. Add `?template=contribute-a-run.md` to the address of the "Open a pull
+   request" page to get its checklist. The `contributed` workflow runs the same check.
+
+The file records the CPU model, OS, kernel, Python, BLAS and the installed versions, never a
+host name or user name. Read it before you push: a `missing` reason holds the last lines of an
+installer's error, with your home folder and any other user folder written as `~`.
 
 ## Publish the synthetic inputs
 

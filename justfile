@@ -81,6 +81,11 @@ noise subject runs="10":
     done
     uv run --no-project --with numpy==2.5.3 python scripts/noise_summary.py ".asv/noise/{{ subject }}"
 
+# Results go to .asv/ratios/box.json, which no history or site page reads (docs/running.md, "Hosted ratios").
+# Interleaved ratios between environments at smoke size; COMPARISON as `bwbench compare` takes it.
+ratios *comparisons:
+    scripts/box.sh env PYTHONPATH=src python -m bwbench.compare compare {{ comparisons }} --work .asv/ratio-work -o .asv/ratios/box.json
+
 # Results go to results/canary/BWBENCH_MACHINE/, which no Brightway history reads; the night
 # queue runs it once a night on the benchmark node, then `just results-commit` and `just canary-check`.
 # The nightly canary: a fixed stdlib workload, so a move is the machine's (scripts/canary.py).
@@ -118,7 +123,8 @@ compat python="3.13" column="latest":
     BWBENCH_TARGET={{ if column == "conda-forge" { "conda" } else { "box" } }} BWBENCH_MEM=${BWBENCH_MEM:-6g} scripts/box.sh scripts/compat.sh {{ python }} {{ column }}
 
 # Build the static site in site/, around the viewer the site workflow adds: the compat archive (the
-# `compat` branch, which the compat workflow writes) and redirects from the old asv pages.
+# `compat` branch, which the compat workflow writes) and redirects from the old asv pages. The
+# `ratios` branch, which the ratios workflow writes, goes to build/ratios for `just ui-data`.
 site:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -126,6 +132,13 @@ site:
     [ ! -d profiles ] || { mkdir -p site/profiles && cp -r profiles/. site/profiles/; }
     if git fetch --quiet origin compat 2>/dev/null; then git archive FETCH_HEAD compat | tar -x -C site
     else echo "no compat branch yet, so the site has no setup guidance" >&2
+    fi
+    rm -rf build/ratios && mkdir -p build/ratios
+    # ls-remote exits 2 when the branch is missing, which is fine; any other failure stops the build.
+    status=0 && git ls-remote --quiet --exit-code origin refs/heads/ratios >/dev/null || status=$?
+    if [ "$status" = 0 ]; then git fetch --quiet origin ratios && git archive FETCH_HEAD | tar -x -C build/ratios
+    elif [ "$status" = 2 ]; then echo "no ratios branch yet, so the site has no comparisons across machines" >&2
+    else echo "could not reach origin for the ratios branch (git ls-remote exit $status)" >&2 && exit 1
     fi
     for conf in asv/*.json; do
       s=$(basename "$conf" .json)
@@ -152,10 +165,13 @@ ui-serve port="4400":
 # Write the UI's data from results/ to OUT (scripts/export_ui.py says what it reads), and the setup
 # guidance from site/compat/status.json, which `just site` fetches; without it there is none. The
 # Python support table comes from site/compat/python-probe.json (scripts/probe_site.py); without it there is none.
+# The comparisons across machines come from build/ratios (`just site`) and ratios/contributed.
 # Needs uv: change points come from Apache Otava, in an environment of its own.
 ui-data out:
     python3 scripts/export_ui.py results {{ out }}
     python3 scripts/export_guidance.py site/compat/status.json {{ out }} --probe site/compat/python-probe.json
+    PYTHONPATH=src uv run --no-project --python 3.13 --with jsonschema==4.26.0 --with rfc3339-validator==0.1.4 \
+      python scripts/export_ratios.py build/ratios ratios/contributed {{ out }}
 
 # Commit results/ to the local `results` branch for the site; refuses results that name this host.
 results-commit:

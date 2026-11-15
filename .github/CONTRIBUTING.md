@@ -41,6 +41,8 @@ request:
 - `smoke` runs `just smoke` weekly, and `compat` runs `just compat` nightly.
 - `site` rebuilds the history pages daily after `compat`, and by hand after new results.
 - `noise-hosted` and `solvers-macos` run by hand.
+- `ratios` runs `bwbench compare all` weekly on Linux, macOS and Windows runners, attests the
+  result files and, on `main`, commits them to the `ratios` branch.
 - `scorecard` rates the repository for the OpenSSF Scorecard badge.
 - `codspeed` runs the pytest-codspeed suites under CodSpeed's CPU simulation on every push to
   `main` and on pull requests that touch them, and CodSpeed reports changes on the pull request.
@@ -80,6 +82,12 @@ review` job in `checks` blocks a pull request that adds a vulnerable one.
 The packages under test are not dependencies. Their releases are listed in
 `asv/<package>.hashes`, and the dependencies they run on are fixed in
 `asv/<package>.stack.txt`, which only a person moves ([docs/method.md](../docs/method.md#how-the-results-stay-reproducible)).
+
+## Contribute a run
+
+A result file of solver ratios from your own machine goes in `ratios/contributed/` by pull
+request. [docs/running.md](../docs/running.md#contribute-a-run) has the steps, and the
+`contributed` workflow checks the file.
 
 ## Commits and pull requests
 

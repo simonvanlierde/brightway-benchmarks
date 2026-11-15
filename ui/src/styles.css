@@ -242,6 +242,8 @@ code,
   padding: 0;
   gap: 0;
   min-height: calc(100vh - 80px);
+  /* Rows keep their content's height: stretched rows shrink, and shift the page, as data loads. */
+  align-content: start;
 }
 .rail {
   font-size: 0.875rem;

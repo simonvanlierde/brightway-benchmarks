@@ -16,7 +16,7 @@ import pytest
 import bwbench
 from bwbench import asv, synth
 from bwbench import pytest as bw_pytest
-from bwbench.bench import UNCHECKED, NotApplicable, bench
+from bwbench.bench import UNCHECKED, NotApplicable, bench, free_pardiso
 
 
 def module(**namespace: object) -> types.ModuleType:
@@ -664,3 +664,9 @@ def test_a_recorded_track_value_prepares_nothing(monkeypatch: pytest.MonkeyPatch
 def test_knob_strips_spaces_around_each_value(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("BWBENCH_SIZES", "smoke, ecoinvent")
     assert bwbench.knob("sizes", "smoke") == ["smoke", "ecoinvent"]
+
+
+def test_free_pardiso_skips_a_hidden_pypardiso(monkeypatch: pytest.MonkeyPatch):
+    # bwbench.timecase hides a solver with a None entry, which `in sys.modules` still finds.
+    monkeypatch.setitem(sys.modules, "pypardiso", None)
+    free_pardiso()

@@ -125,6 +125,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - A run at one database size no longer wipes the other sizes' results.
+- `BWBENCH_MEM` sets the box's memory on hosts where `oss-bench` runs it too; it used to keep
+  `oss-bench`'s 12 GB whatever the recipe asked for.
 
 ### Viewer
 

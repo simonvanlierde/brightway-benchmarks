@@ -257,3 +257,13 @@ def test_box_asks_oss_bench_for_a_tmpfs_and_refuses_one_without_it(box: tuple[Pa
         out = run_box(repo)
         assert out.returncode == 2
         assert "OSS_BENCH_TMPFS" in out.stderr
+
+
+def test_box_passes_its_memory_to_oss_bench(box: tuple[Path, Path]):
+    """Recipes size the box with BWBENCH_MEM; unset, oss-bench keeps its own default."""
+    repo, _ = box
+    stub = repo / "stub" / "oss-bench"
+    stub.write_text('#!/bin/sh\n# OSS_BENCH_RW rw,exec,size=$OSS_BENCH_TMPFS\necho "mem ${OSS_BENCH_MEM-unset}" >&2\n')
+    stub.chmod(0o755)
+    assert "mem 16g" in run_box(repo, BWBENCH_MEM="16g").stderr
+    assert "mem unset" in run_box(repo).stderr

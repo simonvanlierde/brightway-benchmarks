@@ -80,6 +80,8 @@ if [ "${BWBENCH_ENERGY:-}" != 1 ] && command -v oss-bench >/dev/null && grep -q 
         exit 2
     }
     export OSS_BENCH_TMPFS=$tmpfs_size
+    # Unset, oss-bench keeps its own default (12g), not the plain box's 2g.
+    [ -z "${BWBENCH_MEM:-}" ] || export OSS_BENCH_MEM=$BWBENCH_MEM
     OSS_BENCH_IMAGE=$image OSS_BENCH_RW=$writable exec oss-bench "$repo" \
         env ${knobs[@]+"${knobs[@]}"} scripts/in-box.sh "$@"
 fi

@@ -347,7 +347,7 @@ fields, then publish.
 | `BWBENCH_SOLVERS` | `superlu,pypardiso,umfpack` (no `pypardiso` off x86_64) | Solver environments |
 | `BWBENCH_ROUNDS` | `2` | asv rounds per case |
 | `BWBENCH_CPUS` | `2` | CPUs for the box |
-| `BWBENCH_MEM` | `2g`; `6g` compat, `12g` solver-lci | Box memory, no swap |
+| `BWBENCH_MEM` | `2g` (`oss-bench`'s own default where it runs the box); `6g` compat, `12g` solver-lci | Box memory, no swap |
 | `BWBENCH_THREADS` | `1` | BLAS and OpenMP threads |
 | `BWBENCH_MACHINE` | `box-<slot>` or `box` | asv machine name; resume needs the same one |
 | `BWBENCH_PRIVATE_NAMES` | empty | Names `just results-commit` refuses |

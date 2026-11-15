@@ -36,6 +36,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- An Atheris harness over `bwbench validate --contribution` (`tests/fuzz_ratios.py`) runs in the
+  `fuzz` workflow in place of the release report's, and a Hypothesis test holds the same contract
+  in `pytest`: a result file from outside is refused with its problems, never a traceback or a hang.
 - A weekly `ratios` workflow on GitHub's Linux, macOS and Windows runners: interleaved ratios with
   95% intervals between solvers, install paths (PyPI against conda-forge), Pythons (3.12, 3.14 and
   3.15 against 3.13) and, on macOS and Windows, each of bw2calc's and bw2data's latest two
@@ -133,6 +136,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `bwbench validate --contribution` refuses a result file that used to crash or hang it, instead of
+  failing with a traceback: JSON nested thousands deep, a time or interval of 1e400, a `rounds` or
+  `resamples` written as `4.0`, and `resamples` above 100,000 (the schema now caps it).
 - `HeatingTimeline` skips bw_timex 1.1.0 and 1.2.0 with `NotApplicable`. Their biosphere `flip_array` has one
   entry however many flows a process has, which bw_processing 1.5 and later reject with `ShapeMismatch`
   on BAFU's multi-flow processes. bw_timex 1.2.1 fixed it

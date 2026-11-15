@@ -26,7 +26,7 @@
     "rounds": {"type": "integer", "minimum": 2, "description": "Interleaved rounds per comparison. Every arm that is not missing has one time per round."},
     "repeats": {"type": "integer", "minimum": 1, "description": "Timed calls per arm per round, after one untimed warm-up call in the same process. The round's time is their median."},
     "seed": {"type": "integer", "description": "Seed of the run order and of the bootstrap: each comparison's order follows from it and the comparison's id, each ratio's bootstrap seed from it, the id and the candidate (bwbench.ratios.ratio_seed)."},
-    "resamples": {"type": "integer", "minimum": 100, "description": "Bootstrap resamples behind each interval."},
+    "resamples": {"type": "integer", "minimum": 100, "maximum": 100000, "description": "Bootstrap resamples behind each interval; the validator recomputes each, so the cap keeps a hostile file from running for hours."},
     "fingerprint": {"type": "object", "description": "The machine, from the process that ran the comparisons (src/bwbench/fingerprint.py). Its python and lock describe that process, not the arms."},
     "comparisons": {"type": "array", "items": {"$ref": "#/$defs/comparison"}}
   },

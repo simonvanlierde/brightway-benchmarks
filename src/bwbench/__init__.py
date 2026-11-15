@@ -21,7 +21,9 @@ if "numpy" in sys.modules and any(os.environ.get(v) != THREADS for v in PINNED):
         RuntimeWarning,
         stacklevel=2,
     )
-for _var in PINNED:
+# Accelerate's own pool too: NumPy's BLAS on macOS 14 and newer, and the Accelerate solver arm.
+# Left out of the warning above, which the Linux box would trip by not setting it.
+for _var in (*PINNED, "VECLIB_MAXIMUM_THREADS"):
     os.environ[_var] = THREADS
 
 # Relative tolerances. The generated matrices have 1-norm condition numbers in the hundreds

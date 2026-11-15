@@ -19,8 +19,8 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
   matrices and ecoSpold2 files can be used without running the generator. `just dataset` builds
   it ([running](docs/running.md#publish-the-synthetic-inputs)); nothing is deposited yet.
 - **More solver columns for bw2calc:** NVIDIA cuDSS behind a GPU opt-in, kept out of the default
-  run (`scripts/solver_factorize.py --cudss` already times it on real ecoinvent), and Apple's
-  Accelerate LU on macOS.
+  run (`scripts/solver_factorize.py --cudss` already times it on real ecoinvent). Apple's
+  Accelerate LU already runs in `bwbench compare` on macOS.
 - **Continuous runs on contributed machines:** when someone offers a machine for regular runs,
   a [Bencher](https://bencher.dev) self-hosted runner on it, beside the result files
   contributors add by hand now ([running](docs/running.md#contribute-a-run)).

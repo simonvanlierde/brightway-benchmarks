@@ -40,6 +40,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - An "Across machines" view under Benchmarks shows those ratios one row per machine, with the
   95% interval drawn around 1 and a summary per choice over the reference and hosted machines: the
   range where they agree, or "Differs between machines" when they do not ([decision 0007](docs/decisions/0007-comparisons-across-machines.md)).
+- Apple Accelerate's sparse LU as an arm of `bwbench compare solvers` on macOS 15.5 or newer,
+  patched into bw2calc through a small C wrapper that compiles on first use. Elsewhere the arm
+  is recorded as missing ([running](docs/running.md#contribute-a-run)).
 - Contributed runs: anyone can time the solvers on their own machine with
   `uvx --from git+https://github.com/simonvanlierde/brightway-benchmarks bwbench compare` and add
   the result file by pull request to `ratios/contributed/`. The `contributed` workflow runs

@@ -1090,6 +1090,9 @@
           "@id": "canary/pinned-x86-1/20261115T035605Z.json"
         },
         {
+          "@id": "canary/pinned-x86-1/20261115T180559Z.json"
+        },
+        {
           "@id": "matrix_utils/benchmarks.json"
         },
         {
@@ -1800,6 +1803,9 @@
         },
         {
           "@id": "canary/pinned-x86-1/20261115T035605Z.json"
+        },
+        {
+          "@id": "canary/pinned-x86-1/20261115T180559Z.json"
         },
         {
           "@id": "matrix_utils/pinned-x86-1/versions-0e4121f85ed4d6bafea72abeb49c3f40.txt"
@@ -4978,6 +4984,11 @@
     },
     {
       "@id": "canary/pinned-x86-1/20261115T035605Z.json",
+      "@type": "File",
+      "description": "one night of the machine's canary (scripts/canary.py)"
+    },
+    {
+      "@id": "canary/pinned-x86-1/20261115T180559Z.json",
       "@type": "File",
       "description": "one night of the machine's canary (scripts/canary.py)"
     },

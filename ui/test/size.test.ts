@@ -77,6 +77,23 @@ it("fails when a static page itself exceeds the budget", () => {
   expect(result.stdout).toMatch(new RegExp(`about/index.html \\d+\\.\\d KB gzipped, budget ${STATIC} KB`));
 });
 
+it("counts a static page's island and what it imports, not the viewer's chunks", () => {
+  const dir = fixture();
+  writeFileSync(join(dir, "dist/index.html"), "<main>Viewer</main>");
+  writeFileSync(
+    join(dir, "dist/about/index.html"),
+    '<astro-island component-url="/_astro/masthead.js"></astro-island>',
+  );
+  writeFileSync(join(dir, "dist/_astro/masthead.js"), 'import{a}from"./runtime.js";');
+  writeFileSync(join(dir, "dist/_astro/runtime.js"), `const data = "${content(Math.ceil(STATIC * 0.6))}";`);
+  writeFileSync(join(dir, "dist/_astro/app.js"), `const data = "${content(STATIC)}";`);
+  let result = run(dir);
+  expect(result.status, result.stdout + result.stderr).toBe(0);
+  writeFileSync(join(dir, "dist/_astro/masthead.js"), 'import{a}from"./runtime.js";import"./app.js";');
+  result = run(dir);
+  expect(result.status, result.stdout + result.stderr).toBe(1);
+});
+
 it("counts a linked stylesheet toward a static page's budget", () => {
   const dir = fixture();
   writeFileSync(join(dir, "dist/index.html"), "<main>Viewer</main>");

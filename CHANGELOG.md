@@ -214,7 +214,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - The heating story opens with its totals as bars in tonnes of CO2-eq, one unit throughout, and
     moves the model's assumptions below the table. It links the benchmark charts that run on it.
   - About and the stories share a centred measure, show the current page in the nav and footer, end
-    with a link back to Setup and have a search that opens the Benchmarks catalogue.
+    with a link back to Setup.
   - Setup spans its intro over both columns, groups the install files under "Files for this set",
     puts a failed check's explanation beside its status and makes Copy latest a bordered button.
   - Up to 60rem wide the masthead is one row with the search behind an icon. On a phone benchmark
@@ -236,6 +236,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   about 2 s sooner. Changes past twice or half read "about 5 times faster", the install command
   wraps at spaces only, phone charts keep their marker shapes, each page's title is its one h1,
   and an empty search links the catalogue.
+- The search on Findings, the stories and About lists results as you type, as it does on Setup and
+  Benchmarks. Before, it showed nothing until Enter, and Enter then opened Benchmarks with the
+  words and the results list at once. Enter now opens the first result.
 - On a phone, the interval graphic on Across machines is labelled "Against 1", not "Interval", which sat directly under the "95% interval" value and read as the same column twice.
 
 ## [0.2.0] - 2026-11-01

@@ -1,13 +1,14 @@
 // Fails when what a page loads, gzipped, is over the budget. Run after `pnpm build`.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
 // Observable Plot (with its d3 parts) is about 108 KB of it; the rest is Svelte and our code.
 const VIEWER_BUDGET_KB = 182;
-// /findings/ carries docs/findings.md in full, about 9 KB of it, and grows with each write-up.
-const STATIC_BUDGET_KB = 28;
+// /findings/ carries docs/findings.md in full, about 9 KB of it, and grows with each write-up. The
+// masthead's search is an island of about 25 KB, 17 KB of it Svelte's runtime.
+const STATIC_BUDGET_KB = 53;
 // The first search loads Pagefind's script, worker and WebAssembly (about 85 KB), its index and up to five
 // pages' fragments, which grow with the static pages. Pagefind's own UI bundles are built beside them but never loaded.
 const SEARCH_BUDGET_KB = 130;
@@ -30,12 +31,30 @@ if (historyChunk) {
   console.error(`size: ${name(historyChunk)} adds a request before the viewer can run`);
   failed = true;
 }
+// The chunks a static page's islands and scripts load, with what they import (not import()).
+function reached(html, page) {
+  const todo = [...html.matchAll(/\b(?:component-url|renderer-url|src)\s*=\s*["']([^"']+\.js)["']/gi)].flatMap(
+    ([, href]) => {
+      const path = decodeURIComponent(new URL(href, `https://build.invalid/${name(page)}`).pathname);
+      return scripts.filter((file) => path.endsWith(`/${name(file)}`));
+    },
+  );
+  const seen = new Set();
+  for (let file = todo.pop(); file; file = todo.pop()) {
+    if (seen.has(file)) continue;
+    seen.add(file);
+    for (const [, rel] of readFileSync(file, "utf8").matchAll(/(?:from|import)\s*["'](\.\/[^"']+)["']/g)) {
+      todo.push(join(dirname(file), rel));
+    }
+  }
+  return seen;
+}
 for (const page of shipped.filter((file) => file.endsWith(".html"))) {
   const html = readFileSync(page, "utf8");
-  // Include lazy chart chunks for interactive pages; static pages do not load them.
-  const interactive = /<astro-island\b|<script\b[^>]*\bsrc\s*=/i.test(html);
-  const budget = interactive ? VIEWER_BUDGET_KB : STATIC_BUDGET_KB;
-  const loaded = new Set([page, ...(interactive ? scripts : [])]);
+  // The viewer counts every chunk, its lazy chart's included.
+  const viewer = name(page) === "index.html" && /<astro-island\b|<script\b[^>]*\bsrc\s*=/i.test(html);
+  const budget = viewer ? VIEWER_BUDGET_KB : STATIC_BUDGET_KB;
+  const loaded = new Set([page, ...(viewer ? scripts : reached(html, page))]);
   for (const [, href] of html.matchAll(/<link\b[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/gi)) {
     const path = decodeURIComponent(new URL(href, `https://build.invalid/${name(page)}`).pathname);
     if (!path.endsWith(".css")) continue;
@@ -54,7 +73,7 @@ if (existsSync(pagefind)) {
   const loaded = all.filter((f) =>
     /\/(pagefind\.js|pagefind-worker\.js|pagefind-entry\.json|wasm\.en\.pagefind|[^/]+\.pf_meta|index\/[^/]+)$/.test(f),
   );
-  // Each result shown fetches its page's fragment; App.svelte shows at most five pages.
+  // Each result shown fetches its page's fragment; lib/site-search.svelte.ts shows at most five pages.
   const fragments = all
     .filter((f) => /\/fragment\/[^/]+$/.test(f))
     .map(size)

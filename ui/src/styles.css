@@ -1671,8 +1671,7 @@ table.check-grid td a[aria-current="true"] {
     width: 100%;
     margin: 0 0 8px;
   }
-  .masthead-search.open,
-  .masthead-search:target {
+  .masthead-search.open {
     display: flex;
   }
   .masthead-search label {

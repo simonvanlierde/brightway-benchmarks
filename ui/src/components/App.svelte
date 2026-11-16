@@ -40,6 +40,7 @@ import {
 } from "../lib/history";
 import { staticHref, VIEWER_PAGES } from "../lib/pages";
 import { scrollable } from "../lib/scrollable";
+import { matchBenchmarks, SiteSearch } from "../lib/site-search.svelte";
 import Comparisons from "./Comparisons.svelte";
 import Masthead from "./Masthead.svelte";
 import PythonSupport from "./PythonSupport.svelte";
@@ -291,101 +292,16 @@ const HINTS: Record<ContractError["kind"], string> = {
 };
 const unit = $derived(measure?.unit ?? "");
 let tableOpen = $state(false);
-// Opened from a static page's search, which hands its words over as ?q=.
+// Words handed over as ?q= (an Enter on a static page before its search has loaded) filter the catalogue.
 const handedOver = readView(location.search).q ?? "";
-let search = $state(handedOver);
+const search = new SiteSearch(() => home, handedOver);
 // On a phone the search sits behind an icon in the masthead.
 let searchOpen = $state(handedOver.length > 0);
 function toggleSearch() {
   searchOpen = !searchOpen;
   if (searchOpen) tick().then(() => document.getElementById("benchmark-search")?.focus());
 }
-// The masthead's search lists benchmarks and the static pages' sections as you type; Enter opens the first.
-function openFirst(e: SubmitEvent) {
-  e.preventDefault();
-  const first = matching[0];
-  if (first) go({ bench: first.id, params: [] });
-  // No benchmark matches: open the first page hit for these words, once Pagefind has them.
-  else enterFor = search.trim();
-}
-let enterFor = $state("");
-$effect(() => {
-  if (!enterFor) return;
-  // Typing on cancels the pending Enter.
-  if (enterFor !== search.trim()) enterFor = "";
-  else if (pagesSettled) {
-    enterFor = "";
-    if (pageResult.hits[0]) location.href = pageResult.hits[0].url;
-  }
-});
-// Every word must appear in the benchmark's name, label or package, in any order.
-const matching = $derived.by(() => {
-  const words = search.toLowerCase().split(/\s+/).filter(Boolean);
-  return (
-    index?.benchmarks.filter((b) => {
-      const g = groupOf(b);
-      const text = `${b.name} ${labelOf(b)} ${g?.label ?? ""} ${g?.name ?? ""}`.toLowerCase();
-      return words.every((w) => text.includes(w));
-    }) ?? []
-  );
-});
-
-// Findings, stories and About are indexed by Pagefind after the build (`pnpm build`); `pnpm dev` has no
-// index, so the search lists benchmarks only there.
-interface Pagefind {
-  options(o: { baseUrl: string }): Promise<void>;
-  debouncedSearch(text: string): Promise<{ results: { data(): Promise<PageData> }[] } | null>;
-}
-interface PageSection {
-  url: string;
-  title: string;
-  excerpt: string;
-}
-interface PageData extends PageSection {
-  meta: { title: string };
-  sub_results: PageSection[];
-}
-let pagefind: Promise<Pagefind | undefined> | undefined;
-// A runtime URL: the bundler must not look for Pagefind, which is written after it runs.
-const loadPagefind = (url: string): Promise<Pagefind> => import(/* @vite-ignore */ url);
-// The hits name the words they answer. While Pagefind works on new words the last hits stay in view, marked busy,
-// but Enter and the status line wait for the answer.
-let pageResult = $state<{ text: string; hits: (PageSection & { page: string })[] }>({ text: "", hits: [] });
-const pagesSettled = $derived(pageResult.text === search.trim());
-$effect(() => {
-  const text = search.trim();
-  if (!text) return;
-  pagefind ??= loadPagefind(`${import.meta.env.BASE_URL}pagefind/pagefind.js`)
-    .then(async (pf) => {
-      await pf.options({ baseUrl: home });
-      return pf;
-    })
-    .catch(() => undefined);
-  let stale = false;
-  pagefind.then(async (pf) => {
-    let hits: typeof pageResult.hits = [];
-    // Without an index (`pnpm dev`) or after a failed fetch, the pages have nothing to add.
-    try {
-      const found = pf ? await pf.debouncedSearch(text) : { results: [] };
-      if (!found) return; // superseded by newer words
-      const pages = await Promise.all(found.results.slice(0, 5).map((r) => r.data()));
-      // A page's best sections, not the page itself, when it has headings to land on.
-      hits = pages
-        .flatMap((d) =>
-          (d.sub_results.length ? d.sub_results.slice(0, 3) : [d]).map((x) => ({ ...x, page: d.meta.title })),
-        )
-        .slice(0, 6);
-    } catch {}
-    if (!stale) pageResult = { text, hits };
-  });
-  return () => {
-    stale = true;
-  };
-});
-// Opened from a static page's search: the words arrive in the field, with their results open.
-$effect(() => {
-  if (handedOver) document.getElementById("benchmark-search")?.focus();
-});
+const matching = $derived(matchBenchmarks(index, search.text));
 const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => (index ? benchLabel(index, b) : b.name);
 const groupOf = (b: BenchmarkIndex["benchmarks"][number]) => index?.groups.find((g) => g.id === b.group);
 // A name shared by several packages ("MultiLCA" in bw2calc and bw2calc (conda-forge)) says which one it is.
@@ -456,11 +372,14 @@ $effect(() => {
   bind:nav={masthead}
   onbrand={(e) => follow(e, { params: [] })}
   search={{
-    value: search,
+    value: search.text,
     open: searchOpen,
     toggle: toggleSearch,
-    input: (text: string) => (search = text),
-    submit: openFirst,
+    input: (text: string) => (search.text = text),
+    submit: (e: SubmitEvent) => {
+      const first = matching[0];
+      search.submit(e, first && (() => go({ bench: first.id, params: [] })));
+    },
     results: {
       benchmarks: matching.slice(0, 6).map((b) => {
         const next = { bench: b.id, params: [] };
@@ -468,9 +387,9 @@ $effect(() => {
         return { href: writeView(next), title: labelOf(b), detail: g?.label ?? g?.name ?? "", onclick: (e: MouseEvent) => follow(e, next) };
       }),
       more: matching.length > 6 ? { count: matching.length, href: writeView({ page: "explorer", params: [] }), onclick: (e: MouseEvent) => follow(e, { page: "explorer", params: [] }) } : undefined,
-      catalogue: { href: writeView({ page: "explorer", params: [] }), onclick: (e: MouseEvent) => { search = ""; follow(e, { page: "explorer", params: [] }); } },
-      pages: pageResult.hits.map((h) => ({ href: h.url, title: h.title, detail: h.page, excerpt: h.excerpt })),
-      pending: !pagesSettled,
+      catalogue: { href: writeView({ page: "explorer", params: [] }), onclick: (e: MouseEvent) => { search.text = ""; follow(e, { page: "explorer", params: [] }); } },
+      pages: search.pages.map((h) => ({ href: h.url, title: h.title, detail: h.page, excerpt: h.excerpt })),
+      pending: search.pending,
     },
   }}
 />
@@ -492,19 +411,19 @@ $effect(() => {
   {:else}
     {#if page === "explorer"}
     <nav class="rail" aria-label="Benchmarks">
-      <details class="rail-all" open={wide || search.length > 0}>
+      <details class="rail-all" open={wide || search.text.length > 0}>
         <summary>Benchmark catalogue</summary>
         <a class="home" href={writeView({page:"explorer",params:[]})} aria-current={bench ? undefined : "page"} onclick={(e) => follow(e, { page:"explorer", params: [] })}
           >All benchmarks</a
         >
         <div class="rail-status" role="status">
-          {#if search}
-            {#if matching.length === 0}<p class="rail-empty">No benchmarks match “{search}”.</p>{:else}<p class="rail-found">{matching.length} {matching.length === 1 ? "benchmark" : "benchmarks"}</p>{/if}
+          {#if search.text}
+            {#if matching.length === 0}<p class="rail-empty">No benchmarks match “{search.text}”.</p>{:else}<p class="rail-found">{matching.length} {matching.length === 1 ? "benchmark" : "benchmarks"}</p>{/if}
           {/if}
         </div>
         {#each index.groups.filter((g) => matching.some((b) => b.group === g.id)) as g (g.id)}
           {@const members = matching.filter((b) => b.group === g.id)}
-          <details class="rail-group" open={g.id === bench?.group || search.length > 0}>
+          <details class="rail-group" open={g.id === bench?.group || search.text.length > 0}>
             <summary>{g.label ?? g.name}{" "}<span class="rail-count">({members.length})</span></summary>
             {#if g.description}<p class="rail-about">{g.description}</p>{/if}
             <ul aria-label={g.label ?? g.name}>

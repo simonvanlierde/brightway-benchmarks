@@ -228,6 +228,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 #### Fixed
 
+- Setup's line on Python versions no longer says "The reasons are below the table" when a
+  version fails in part: Setup has no table there, only the link to it on Benchmarks.
 - Moving between Setup and Benchmarks no longer shifts the page: the masthead links keep their width
   when one turns bold, and the scrollbar's gutter is always reserved. The viewer draws its masthead
   before its script runs, so arriving from a static page does not flash an empty page.

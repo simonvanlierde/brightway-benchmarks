@@ -95,7 +95,8 @@ const fastest = $derived(comparison?.rows.find((r) => r.label.startsWith("UMFPAC
 const pythonSupport = $derived(guidance?.pythonSupport && supportTable(guidance.pythonSupport, false));
 const pythonNote = $derived(
   pythonSupport && {
-    text: supportLead(pythonSupport, (id) => guidance?.platforms.find((p) => p.id === id)?.label ?? id),
+    // No table here to point to: the link after the line opens it.
+    text: supportLead(pythonSupport, (id) => guidance?.platforms.find((p) => p.id === id)?.label ?? id, ""),
     href: `${writeView({ page: "explorer", params: [] })}#python-support`,
   },
 );

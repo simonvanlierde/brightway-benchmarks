@@ -96,6 +96,8 @@ describe("supportLead", () => {
     expect(table && supportLead(table)).toBe(
       "3.11, 3.13 and 3.14 work on every system. 3.12 fails for 3 of 9 packages and systems. 3.15 does not install yet: a dependency (cachebox) fails to build. The reasons are below the table.",
     );
+    // Setup has no table under its line, so it leaves the pointer out.
+    expect(table && supportLead(table, undefined, "")).not.toContain("below the table");
   });
   it("points to the reasons once, however many Pythons fail in part", () => {
     const results = support.results.map((r) =>

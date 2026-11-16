@@ -5,6 +5,7 @@ as [SECURITY.md](SECURITY.md) says, not in a public issue.
 
 ## Report a bug or ask for a feature
 
+<<<<<<< before updating
 Open an [issue](https://github.com/simonvanlierde/brightway-benchmarks/issues). For a bug,
 say what you ran, what you expected and what happened. For a result that looks wrong, name
 the package, release, case and database size, and the `just` command.
@@ -137,6 +138,67 @@ archive, `SHA256SUMS` and a signed build provenance attestation. Do not create t
 hand. Zenodo archives each published release from `CITATION.cff`. To check a download:
 `gh attestation verify brightway-benchmarks-X.Y.Z.tar.gz --repo simonvanlierde/brightway-benchmarks
 --signer-workflow simonvanlierde/brightway-benchmarks/.github/workflows/release.yml`.
+=======
+Open an [issue](https://github.com/simonvanlierde/brightway-benchmarks/issues) with the bug or
+feature form. For a bug, say what you did, what you expected and what happened, with the
+release or commit you used. A question the README and docs don't answer is a gap in the docs: open
+a feature request for it.
+
+## Scope and response
+
+One person maintains brightway-benchmarks, in their own time. Expect a reply to an issue or
+pull request within about two weeks.
+
+Before a large pull request, such as a new feature or a change to how something works,
+open an issue and agree on the change there first. A small fix needs no issue. A pull
+request outside what the project sets out to do is closed with a link to this section.
+
+## Set up and check
+
+The [README](../README.md) says how to install the tools, the dependencies
+and the git hooks. `just check` runs the checks CI runs, and `just fmt` fixes and
+formats.
+
+uv locks only releases at least a week old. If `just check` fails on
+a security fix newer than that, add the package to `exclude-newer-package` under `[tool.uv]` in `pyproject.toml`,
+and remove it a week later ([how](https://github.com/simonvanlierde/project-templates/blob/main/docs/tooling.md#dependencies)).
+
+## Write commits and pull requests
+
+- **Commits** follow [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/):
+  `type(scope): summary`, in the imperative, lower case, with no period. Add a body only
+  when the change needs one, with a bullet per logical chunk.
+- **The pull request title** becomes the squash commit subject, so it follows the same rule.
+- **Both are checked** against [`committed.toml`](../committed.toml): a commit-msg
+  hook (installed by `prek install`) refuses a commit message that breaks the rule, and
+  the `pull request title` check fails a pull request whose title does. Lower case isn't
+  checked. A revert is titled `revert: <original subject>`: rename the
+  `Revert "..."` title that GitHub's Revert button writes.
+- **The pull request body** has the shape of
+  [the pull request template](pull_request_template.md): what it fixes and why, three or
+  four bullets, a `Tested:` line with the proof (the command and its result, or a test
+  that fails without the change), and a `Not checked:` line with what did not run and why,
+  and any design choice or security path that only a person can judge. "Nothing" is fine.
+- **The changelog** ([CHANGELOG.md](../CHANGELOG.md)) follows
+  [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/). Write each entry for
+  the people who use the project, not as a commit subject. Mark breaking changes
+  **Breaking**, and put upgrade steps first under the version.
+- **The release notes** are that version's changelog section.
+
+## Make a release
+
+The maintainer runs `just release X.Y.Z`. [Publishing](https://github.com/simonvanlierde/project-templates/blob/main/docs/setup.md#publishing) has the steps and the one-time setup.
+
+## Tests and code style
+
+A pull request that adds or changes behaviour adds or updates the tests for it, and
+`just check` passes before it merges. A bug fix comes with a test that failed before the
+fix.
+
+The code follows the style the linters enforce, and `just fmt` applies most of it:
+
+- Python: [Ruff](https://docs.astral.sh/ruff/) for lint and format, ty for types.
+>>>>>>> after updating
 
 ## Sign off your commits
 

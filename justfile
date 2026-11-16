@@ -1,13 +1,8 @@
 # Task runner: https://just.systems. `just` lists the recipes, `just <name>` runs one.
 #
-# `import?` skips a recipe file you did not scaffold. Recipes are prefixed
-# (`py-`, `ts-`, `rs-`, `go-`) because imports share one namespace, except the few only
-# one kind has, such as `pipeline` or `up`.
+# Each stack's recipes are in just/, prefixed (`py-`) because
+# imports share one namespace, except the few only one kind has, such as `pipeline` or `up`.
 import? 'just/python.just'
-import? 'just/ts.just'
-import? 'just/rust.just'
-import? 'just/go.just'
-import? 'just/docker.just'
 
 # List the recipes (what a bare `just` runs).
 default:
@@ -17,6 +12,7 @@ default:
 # What the python and ui workflows run, without the browser tests (`cd ui && pnpm run e2e`).
 check:
     @just py-check
+<<<<<<< before updating
     @just ui-check
 
 # What the ui workflow runs before its browser tests. Fails when the generated types are stale.
@@ -28,17 +24,22 @@ ui-check:
     cd ui && pnpm run build
     cd ui && pnpm run size
     cd ui && pnpm audit --prod --audit-level=moderate
+=======
+    @if just --show local-check >/dev/null 2>&1; then just local-check; fi
+>>>>>>> after updating
 
 # Fix and format every stack here, as each stack's `fmt` recipe does.
 fmt:
     @just py-fmt
 
-# Run every git hook over the whole repo, not just staged files. The checks workflow skips
-# the hooks in its SKIP list, which the stack workflows run instead. Here they all run, so
-# this can fail where the checks workflow passes.
+# The checks workflow skips the hooks in its SKIP list, which the stack workflows run
+# instead. Here they all run, so this can fail where the checks workflow passes.
+
+# Run every git hook over the whole repo, not just staged files.
 hooks:
     prek run -a
 
+<<<<<<< before updating
 # --- benchmarks --------------------------------------------------------------
 # Everything below runs in the benchmark box, a throwaway `tmp-bwbench-*` container
 # (docs/assurance-case.md). docs/running.md lists the BWBENCH_* variables.
@@ -252,6 +253,12 @@ profile subject case *args:
 
 # Rewrite codemeta.json to agree with CITATION.cff, then check. The writer
 # exits 1 whenever it changes a file, so the check that follows decides the result.
+=======
+# The writer exits 1 whenever it changes a file, so the check that follows decides
+# the result.
+
+# Rewrite codemeta.json to agree with CITATION.cff, then check.
+>>>>>>> after updating
 citation:
     -prek run citesync-write --hook-stage manual --all-files
     prek run citesync --all-files
@@ -274,6 +281,7 @@ release version:
     # changelog bigger than the pipe buffer.
     if git show origin/main:CHANGELOG.md | grep "^## \[$version\] - " >/dev/null; then
         .github/scripts/tag-release.sh "$version"
+        echo "Archive it in Software Heritage: https://archive.softwareheritage.org/save/ (git, $repo). The README badge then links to the SWHID."
         exit 0
     fi
     prev=$(sed -n 's/^## \[\([0-9][0-9.]*\)\].*/\1/p' CHANGELOG.md | head -1)
@@ -294,7 +302,7 @@ release version:
     git commit -s -m "chore: release $version" -- CHANGELOG.md
     echo "Merge this commit to main, then run: just release $version"
 
-# Protect the default branch (no deletion, no force-push, linear history, PRs squash-merged after the always-on checks pass and one approval) and the v* tags. Turn on private vulnerability reporting, CodeQL default setup and Dependabot alerts. Safe to rerun.
+# Protect the default branch (no deletion, no force-push, linear history, PRs squash-merged after the always-on checks pass and one approval) and the v* tags. Turn on secret scanning with push protection, private vulnerability reporting, CodeQL default setup and Dependabot alerts. Safe to rerun.
 repo-settings:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -308,6 +316,13 @@ repo-settings:
     }
     # Merge-method switches live on the repo itself; the ruleset also limits the PR button.
     gh api -X PATCH repos/{owner}/{repo} -F allow_squash_merge=true -F allow_merge_commit=false -F allow_rebase_merge=false -F delete_branch_on_merge=true -F web_commit_signoff_required=true >/dev/null 2>"$err" || fail
+    # Push protection refuses a push that holds a known secret format, before it reaches the repo.
+    # A private repo without Secret Protection refuses this, so it warns instead of failing.
+    if gh api -X PATCH repos/{owner}/{repo} -f 'security_and_analysis[secret_scanning][status]=enabled' -f 'security_and_analysis[secret_scanning_push_protection][status]=enabled' >/dev/null 2>"$err"; then
+        echo "Turned on secret scanning and push protection."
+    else
+        echo "Warning: secret scanning could not be turned on (a private repo needs Secret Protection): $(cat "$err")" >&2
+    fi
     # Adopt an existing ruleset by name, else one with the same target that protects the same
     # refs as the file, updating it in place. The list has no conditions, so each candidate is read.
     for name in main main-checks tags; do
@@ -350,10 +365,11 @@ repo-settings:
     gh api -X PUT repos/{owner}/{repo}/vulnerability-alerts >/dev/null 2>"$err" || fail
     echo "Turned on Dependabot alerts."
     echo "Zenodo: https://zenodo.org/account/settings/github/"
-
+    if [ -f .github/first-release.md ]; then echo "First-release checklist: gh issue create --title 'First release' --body-file .github/first-release.md"; fi
 # Set the GitHub About box from your answers: description and a topic per stack. Adds topics, never removes yours. Safe to rerun.
 repo-about:
     gh repo edit --description 'Continuous benchmarks for the Brightway LCA stack on seeded synthetic matrices' --add-topic python
 
-# A repo's own recipes that copier updates never touch:
+# A repo's own recipes that copier updates never touch. A `local-check` recipe there runs
+# at the end of `just check`.
 import? 'just/local.just'

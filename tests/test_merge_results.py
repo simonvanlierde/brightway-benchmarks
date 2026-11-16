@@ -141,3 +141,14 @@ def test_a_rerun_that_timed_nothing_new_keeps_the_committed_file():
     old = stamped([[1, 9], [["'s'", "'e'"]], "v"], {"kernel": "6.1"}, kept_fingerprints=[None])
     new = stamped([[1, 9], [["'s'", "'e'"]], "v"], None)
     assert merge(old, new) == old
+
+
+def test_cells_read_short_columns_and_a_case_without_parameters():
+    columns = ["result", "params", "stats_q_25"]
+    # One quartile for two combinations: the second has none.
+    assert module.cells([[1.0, 2.0], [["a", "b"]], [0.9]], columns) == {
+        ("a",): {"result": 1.0, "stats_q_25": 0.9},
+        ("b",): {"result": 2.0, "stats_q_25": None},
+    }
+    # A case without parameters, its value written as a single number.
+    assert module.cells([3.0, []], ["result", "params"]) == {(): {"result": 3.0}}

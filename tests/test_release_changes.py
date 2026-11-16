@@ -180,8 +180,9 @@ def test_the_noise_rule_has_a_floor(module: ModuleType):
 
 def test_a_spread_needs_quartiles_that_hold_the_value(module: ModuleType):
     columns = ["result", "params", "stats_q_25", "stats_q_75"]
-    row = [[1.0, 1.0, 0.0, 1.0], [], [0.9, 1.2, 0.0, 0.9], [1.1, 1.4, 0.0, float("nan")]]
-    assert module.spreads(row, columns) == [pytest.approx(0.2), None, None, None]
+    row = [[1.0, 1.0, 0.0, 1.0], [["a", "b", "c", "d"]], [0.9, 1.2, 0.0, 0.9], [1.1, 1.4, 0.0, float("nan")]]
+    spreads = [s for _, s in module.cells(row, columns).values()]
+    assert spreads == [pytest.approx(0.2), None, None, None]
 
 
 def test_cells_line_up_by_parameter_when_the_axis_order_differs(module: ModuleType, tmp_path: Path):

@@ -286,25 +286,37 @@ const headlines = packages
   .findings-rail {
     display: none;
   }
-  @media (min-width: 70rem) {
+  @media (min-width: 60rem) {
     :global(.static-page.findings-page) {
-      max-width: 70rem;
+      max-width: 96rem;
+      margin: 0 auto;
+      padding: 0;
     }
     .findings-layout {
       display: grid;
-      grid-template-columns: 15rem minmax(0, 46rem);
-      gap: 48px;
+      grid-template-columns: 16.5rem minmax(0, 1fr);
+      gap: 0;
+      align-items: start;
     }
     .findings-rail {
       display: block;
       position: sticky;
       top: 0;
       align-self: start;
+      height: 100vh;
       max-height: 100vh;
       overflow-y: auto;
-      padding: 8px 0 24px;
+      border-right: 1px solid var(--line);
+      padding: 28px 24px;
       font-size: 0.875rem;
       line-height: 1.4;
+    }
+    .findings-content {
+      min-width: 0;
+      padding: 42px 40px 36px;
+    }
+    .findings-content > :where(*) {
+      max-width: var(--measure);
     }
     .findings-rail a {
       display: block;
@@ -333,6 +345,12 @@ const headlines = packages
     }
     .writeup-nav {
       display: none;
+    }
+  }
+  @media (min-width: 90rem) {
+    .findings-content {
+      padding-left: 56px;
+      padding-right: 56px;
     }
   }
   @media (max-width: 39rem) {

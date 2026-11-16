@@ -72,10 +72,10 @@ const labelOf = (b: BenchmarkIndex["benchmarks"][number]) => benchLabel(index, b
             <button class:chosen={direction === "worse"} aria-pressed={direction === "worse"} onclick={() => go({ ...view, page: "explorer", direction: "worse" })}>Worse <span class="worse">{worse}</span></button>
             <button class:chosen={direction === "better"} aria-pressed={direction === "better"} onclick={() => go({ ...view, page: "explorer", direction: "better" })}>Better <span class="better">{better}</span></button>
           </div>
+          {#if narrowed}<button type="button" class="clear-filters" onclick={() => go({ ...view, page: "explorer", group: "", direction: "all" })}>Clear filters</button>{/if}
           <div class="package-filter"><label class="sr" for="package-filter">Package</label><select id="package-filter" value={packageId} onchange={(e) => go({ ...view, page: "explorer", group: e.currentTarget.value })}><option value="">All packages</option>{#each index.groups as g (g.id)}<option value={g.id}>{g.label ?? g.name}</option>{/each}</select></div>
         </div>
         <p class="sr" role="status">{filtered.length} of {packageChanges.length} changes shown</p>
-        {#if narrowed}<button type="button" class="clear-filters" onclick={() => go({ ...view, page: "explorer", group: "", direction: "all" })}>Clear filters</button>{/if}
         {#if !exported}
           <p class="empty">Changes were not exported with this data, so there is nothing to compare here.</p>
         {:else if latest.length === 0}

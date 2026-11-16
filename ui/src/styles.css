@@ -415,6 +415,7 @@ code,
   gap: 5px;
 }
 .package-filter {
+  margin-left: auto;
   min-width: min(12rem, 100%);
   max-width: 100%;
 }
@@ -780,7 +781,7 @@ tbody tr:hover {
   font-size: var(--text-evidence);
 }
 .clear-filters {
-  margin: 0 0 12px;
+  margin: 0;
 }
 .solver-evidence thead th {
   font-size: var(--text-evidence);
@@ -991,6 +992,7 @@ details.data[open] summary {
     gap: 12px;
   }
   .package-filter {
+    margin-left: 0;
     flex: 1 1 100%;
   }
   .direction-filter {

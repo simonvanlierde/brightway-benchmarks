@@ -7,6 +7,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-16
+
 ### Upgrading
 
 - Python 3.13 or newer is required (`requires-python = ">=3.13"`). Run `uv sync` on 3.13.
@@ -490,6 +492,7 @@ For readers of the history pages, which were published before this release:
   before the run records existed show the commit as `unknown`, where the crate used to name
   whatever commit last wrote it.
 
-[Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/simonvanlierde/brightway-benchmarks/releases/tag/v0.1.0

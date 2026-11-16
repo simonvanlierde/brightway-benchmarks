@@ -65,7 +65,7 @@ test("Benchmarks and Setup link to the comparisons", async ({ page }) => {
   await page.getByRole("link", { name: "compare it across machines" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Across machines" })).toBeVisible();
   await page.goto("");
-  await expect(page.getByRole("link", { name: "Does it hold on your machine?" })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Does it hold on other machines?" })).toHaveAttribute(
     "href",
     "?page=compare",
   );

@@ -20,7 +20,7 @@ test("desktop check help shares a row and uses the column labels", async ({ page
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("?platform=linux");
   const caption = page.locator(".check-help");
-  await expect(caption).toContainText("Select a check");
+  await expect(caption).toContainText("Select a result");
   // At 1440 the grid fits its column, so there is nothing to scroll and no hint.
   await expect(caption.getByText("Scroll to see all check types")).toBeHidden();
   // Narrower, it scrolls: the hint shows on the same row, and the grid's right edge is shaded.

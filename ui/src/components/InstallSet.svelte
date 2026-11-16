@@ -145,7 +145,7 @@ async function copy(text: string, what: string) {
     {@const suites = qualifications.find((c) => c.kind === "suites" && c !== source && c.status !== "success")}
     <ul class="result-line" aria-label="Check results on {platform}">
       {#each qualifications as c (c.id)}
-        <li><a class={statusTone(c.status)} href={c.run} title="Open the check's run">{statusLabel(c.status)}</a> {c.kind === "smoke" ? "Small test calculations · " : ""}{c.label} · Python {c.python}</li>
+        <li><a class={statusTone(c.status)} href={c.run} title="Open the check's run">{statusLabel(c.status)}</a> {c.kind === "smoke" ? "Small test calculations · " : ""}{c.label}</li>
       {/each}
     </ul>
     {#if source.status !== "success"}<p class="saved-warning">The latest run of {source.label} did not pass; this is the set that passed on {dateLabel(saved.date)}.</p>{/if}
@@ -158,7 +158,7 @@ async function copy(text: string, what: string) {
       Passed {dateLabel(saved.date)}{#if manager === "uv"}, for a uv project that needs Python {source.python} or later{/if}{#if source !== selected}, from the {source.label} check{/if}.
       <span role="status">{copied}</span>
     </p>
-    {#if suites}<p class="install-note status-note">{suites.label} did not pass on the latest releases. They run each package's own tests, which cover more than these calculation checks. The command above still stands: it is the last set that passed the {source.label} check.</p>{/if}
+    {#if suites}<p class="install-note status-note">Each package's own tests cover more than these calculations, and they did not pass on the latest releases. The command above still passed the {source.label} check.</p>{/if}
     {#if !qualifications.some((c) => c.kind === "suites")}<p class="install-note">No upstream test-suite result is published for this check.</p>{/if}
     <div class="install-details">
     {#if manager === "uv"}

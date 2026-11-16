@@ -19,7 +19,6 @@ Release tags resolve through asv's mirror of the upstream repository, .asv/SUBJE
 """
 
 import hashlib
-import itertools
 import json
 import math
 import re
@@ -28,6 +27,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
+from merge_results import cells as asv_cells
 from release_report import sha
 
 HEADER = ("environment", "releases", "case", "parameters", "old", "new", "new / old")
@@ -87,19 +87,6 @@ def spread(value: float | None, lower: float | None, upper: float | None) -> flo
     if value is None or lower is None or upper is None or not (math.isfinite(lower) and math.isfinite(upper)):
         return None
     return (upper - lower) / value if 0 <= lower <= value <= upper and value > 0 else None
-
-
-def spreads(row: list, columns: list[str]) -> list[float | None]:
-    """Each parameter set's interquartile range over its value, from one case's row in an asv file."""
-    cell = dict(zip(columns, row, strict=False))
-    values = cell.get("result")
-    values = values if isinstance(values, list) else [values]
-    q25, q75 = cell.get("stats_q_25") or [], cell.get("stats_q_75") or []
-    out: list[float | None] = []
-    for i, v in enumerate(values):
-        a, b = (q25[i], q75[i]) if i < min(len(q25), len(q75)) else (None, None)
-        out.append(spread(v, a, b))
-    return out
 
 
 def current_stack(subject: str) -> str:
@@ -195,11 +182,10 @@ def changes(results: Path, subject: str) -> list[Change]:
 
 def cells(row: list, columns: list[str]) -> dict[tuple, tuple]:
     """(value, spread) by parameter combination, from one case's row in an asv file."""
-    params = row[1] if len(row) > 1 and row[1] else []
-    combos = list(itertools.product(*params)) if params else [()]
-    values = row[0] if isinstance(row[0], list) else [row[0]]
-    pad = [None] * len(combos)  # a file without quartiles has no spreads
-    return dict(zip(combos, zip(values, spreads(row, columns) + pad, strict=False), strict=False))
+    return {
+        combo: (c["result"], spread(c["result"], c.get("stats_q_25"), c.get("stats_q_75")))
+        for combo, c in asv_cells(row, columns).items()
+    }
 
 
 def compare(old: dict, new: dict, units: dict) -> list[tuple]:

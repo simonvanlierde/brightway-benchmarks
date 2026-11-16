@@ -35,13 +35,21 @@ def per_cell(column: str) -> bool:
 
 
 def cells(row: list, columns: list[str]) -> dict[tuple, dict[str, object]]:
-    """Each parameter combination's per-cell values, in asv's order (itertools.product)."""
-    row = row + [None] * (len(columns) - len(row))
-    combos = itertools.product(*row[columns.index("params")])
-    return {
-        combo: {c: (row[j] or [None] * (i + 1))[i] for j, c in enumerate(columns) if per_cell(c)}
-        for i, combo in enumerate(combos)
-    }
+    """Each parameter combination's per-cell values, in asv's order (itertools.product).
+
+    The one decoder of an asv result row; scripts/release_changes.py reads its values and
+    quartiles through it too. A column that is missing, shorter than the combinations or a
+    single value (a case without parameters) gives None where it has no entry.
+    """
+    cell = dict(zip(columns, row, strict=False))
+
+    def entry(column: str, i: int) -> object:
+        values = cell.get(column)
+        values = values if isinstance(values, list) else [values]
+        return values[i] if i < len(values) else None
+
+    combos = itertools.product(*(cell.get("params") or []))
+    return {combo: {c: entry(c, i) for c in columns if per_cell(c)} for i, combo in enumerate(combos)}
 
 
 def merge_row(old: list, new: list, columns: list[str]) -> list:

@@ -1,6 +1,6 @@
 [project]
 name = "brightway-benchmarks"
-version = "0.2.0"
+version = "0.3.0"
 description = "Continuous benchmarks and tested installation sets for the Brightway LCA stack"
 readme = "README.md"
 requires-python = ">=3.13"

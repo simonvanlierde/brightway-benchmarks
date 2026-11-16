@@ -7,6 +7,14 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Upgrading
+
+- Python 3.13 or newer is required (`requires-python = ">=3.13"`). Run `uv sync` on 3.13.
+- The first run rebuilds the box image once under its new tag, and the benchmark environments get
+  new names from each `asv/<package>.stack.txt`'s first line.
+- An energy run (`BWBENCH_ENERGY=1`) needs `BWBENCH_CPUSET` and a quiet gate (`BWBENCH_GATE` or
+  `bwbench-gate` on `PATH`): neither has a default any more ([running](docs/running.md)).
+
 ### For readers of the history pages
 
 - The findings, the solver story and the site's masthead quote the generator v5 histories. A
@@ -125,7 +133,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
-- **Breaking:** Python 3.12 is no longer supported. `requires-python` is now `>=3.13`, the
+- **Breaking:** Python 3.12 is no longer supported. The
   benchmark environments, box image and compat matrix (now 3.13 and 3.14) run on 3.13, and the
   generator v5 rerun is timed on 3.13.
 - `scripts/compat_changes.py`, the report of newly failing compat jobs, which no recipe or workflow

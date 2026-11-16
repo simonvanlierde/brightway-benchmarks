@@ -28,15 +28,22 @@ test("the masthead has three items, and Findings is current on its page and on e
 
 test("the findings page lists every finding, and each link opens what it names", async ({ page, request }) => {
   await page.goto("findings/");
-  const items = page.locator(".finding-list > li");
-  // findings.toml lists them in the write-up's order, which groups them by package.
-  await expect(items.getByRole("heading", { level: 4 })).toHaveText(listed.map((f) => f.title));
-  // A headline opens its story where it has one, its write-up otherwise.
-  const titles = await items.locator("h4 a").evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
-  expect(titles).toEqual(listed.map((f) => (f.story ? `/stories/${f.story}/` : `#${f.doc}`)));
-  for (const href of titles.filter((h) => h.startsWith("/"))) expect((await request.get(href)).ok(), href).toBe(true);
+  const storyItems = page.locator(".story-cards > li");
+  const headlineItems = page.locator(".finding-list > li");
+  const stories = listed.filter((f) => f.story);
+  const headlines = listed.filter((f) => !f.story);
+  await expect(storyItems.getByRole("heading", { level: 3 })).toHaveText(stories.map((f) => f.title));
+  await expect(headlineItems.getByRole("heading", { level: 4 })).toHaveText(headlines.map((f) => f.title));
+  const storyLinks = await storyItems.locator("h3 a").evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
+  expect(storyLinks).toEqual(stories.map((f) => `/stories/${f.story}/`));
+  const headlineLinks = await headlineItems
+    .locator("h4 a")
+    .evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
+  expect(headlineLinks).toEqual(headlines.map((f) => `#${f.doc}`));
+  for (const href of storyLinks) expect((await request.get(href)).ok(), href).toBe(true);
   // Each history link opens the view the viewer's own finding card opens.
-  const views = await items
+  const views = await page
+    .locator(".story-cards > li, .finding-list > li")
     .getByRole("link", { name: /^Open the history/ })
     .evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? ""));
   expect(views).toHaveLength(published.findings.length);

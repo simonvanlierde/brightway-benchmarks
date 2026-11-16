@@ -96,7 +96,7 @@ test("Setup's heading and intro draw before the viewer's script runs, and only o
 });
 
 test("the landing page is as tall as its content, with the footer in view after it", async ({ page }) => {
-  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("?platform=linux");
   await page.locator(".nudges").waitFor();
   const footer = page.locator(".site-footer");

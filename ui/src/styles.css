@@ -230,7 +230,7 @@ code,
   display: flex;
   flex-wrap: wrap;
   max-width: 96rem;
-  padding: 20px 40px;
+  padding: 12px 40px;
   gap: 8px 24px;
   align-items: center;
 }
@@ -586,9 +586,12 @@ a:hover {
   font-variant-numeric: tabular-nums;
 }
 .rail-about {
-  margin: 0 0 4px;
+  margin: 4px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--grid);
   color: var(--muted);
   font-size: 0.8rem;
+  font-style: italic;
   line-height: 1.4;
 }
 .rail-group[open] {
@@ -769,6 +772,10 @@ details.data summary {
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
 }
+.check-grid th,
+.check-grid td {
+  padding: 9px 14px 9px 0;
+}
 tbody tr:hover {
   background: color-mix(in srgb, var(--accent-wash) 30%, transparent);
 }
@@ -841,7 +848,7 @@ tbody tr:hover {
 .fullwidth > .view {
   max-width: 1440px;
   margin: auto;
-  padding: 32px 40px 50px;
+  padding: 24px 40px 28px;
 }
 
 .solver-evidence .solver-bar-column {
@@ -1314,6 +1321,11 @@ button.secondary {
 .check-grid {
   font-size: var(--text-evidence);
 }
+.evidence-column > .all-checks:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
 .check-grid caption {
   caption-side: top;
   text-align: left;
@@ -1608,7 +1620,7 @@ table.check-grid td a[aria-current="true"] {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 12px;
-  margin: 0;
+  margin: 12px 0 0;
 }
 .install-set .install-note {
   margin: 4px 0;
@@ -1816,7 +1828,7 @@ table.check-grid td > span.undeclared {
 .nudges li {
   display: grid;
   gap: 2px;
-  padding: 10px 0;
+  padding: 8px 0;
   border-bottom: 1px solid var(--grid);
   font-size: var(--text-evidence);
 }

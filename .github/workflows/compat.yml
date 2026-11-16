@@ -27,14 +27,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The benchmark harness needs Python 3.13 or later. All native PyPI checks run on
-        # each platform; conda-forge uses the Linux-only container and manifest.
+        # The benchmark harness needs Python 3.13 or later. Every check runs on each platform.
         column: [latest, suites, floors, pre, conda-forge]
         python: ["3.13", "3.14"]
         os: [ubuntu-latest, macos-latest, windows-latest]
-        exclude:
-          - {column: conda-forge, os: macos-latest}
-          - {column: conda-forge, os: windows-latest}
     defaults:
       run:
         shell: bash # Windows too, where compat.sh runs under Git Bash
@@ -56,6 +52,13 @@ jobs:
         with:
           enable-cache: false
           version: "0.13.7"
+
+      - if: matrix.column == 'conda-forge' && runner.os != 'Linux'
+        uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e # v0.11.3
+        with:
+          pixi-version: v0.84.1
+          run-install: false
+          cache: false
 
       # box.sh falls back to a plain `docker run` here, which the runner has.
       - if: runner.os == 'Linux'

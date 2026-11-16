@@ -71,3 +71,24 @@ test("words handed to Benchmarks filter the catalogue without opening the result
   await expect(page.getByRole("searchbox", { name: "Search" })).toHaveValue("multi");
   await expect(page.locator(".search-results")).toBeHidden();
 });
+
+test("the results stay closed until there is something to list", async ({ page }) => {
+  let answer = () => {};
+  const held = new Promise<void>((resolve) => {
+    answer = resolve;
+  });
+  await page.route("**/pagefind/pagefind.js", async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  await page.locator("#main").waitFor();
+  const field = page.getByRole("searchbox", { name: "Search" });
+  // No benchmark matches and Pagefind has not answered: no empty box under the field.
+  await field.fill("solver");
+  await page.waitForTimeout(300);
+  await expect(page.locator(".search-results")).toBeHidden();
+  answer();
+  await expect(page.locator('.search-results a[href*="/stories/"]').first()).toBeVisible();
+});

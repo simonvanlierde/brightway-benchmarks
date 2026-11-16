@@ -103,7 +103,8 @@ function picked(e: MouseEvent, hit: { onclick?: (e: MouseEvent) => void }) {
       <input id="benchmark-search" name="q" type="search" autocomplete="off" aria-describedby="search-count" value={search.value} oninput={(e) => { dismissed = false; search.input(e.currentTarget.value); }} placeholder="Benchmarks and findings" />
       <!-- Always present, so screen readers announce its changes; quiet until Pagefind has answered. -->
       <p class="sr" id="search-count" role="status">{r && !r.pending ? (total ? `${r.more?.count ?? r.benchmarks.length} benchmarks, ${r.pages.length} sections. Arrow down to the results.` : "No results") : ""}</p>
-      {#if r}
+      <!-- Nothing to list yet (no benchmark matches, and Pagefind is still working): no empty box. -->
+      {#if r && (total || !r.pending)}
         <div class="search-results" class:dismissed>
           {#if r.benchmarks.length}
             <h2>Benchmarks</h2>

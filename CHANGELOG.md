@@ -239,6 +239,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The search on Findings, the stories and About lists results as you type, as it does on Setup and
   Benchmarks. Before, it showed nothing until Enter, and Enter then opened Benchmarks with the
   words and the results list at once. Enter now opens the first result.
+- The search results no longer open as an empty box under the field while the page results load.
 - On a phone, the interval graphic on Across machines is labelled "Against 1", not "Interval", which sat directly under the "95% interval" value and read as the same column twice.
 
 ## [0.2.0] - 2026-11-01

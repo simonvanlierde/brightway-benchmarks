@@ -9,7 +9,7 @@ that package's own change ([method](method.md)).
 On generator v5, a direct-solver score takes 1.4 to 1.6 times as long as factorizing the real
 ecoinvent 3.12 matrix, in the same solver order
 ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54),
-[method](method.md#how-the-synthetic-databases-are-built)). The pinned
+[method](method.md#the-synthetic-databases)). The pinned
 [#85](https://github.com/simonvanlierde/brightway-benchmarks/issues/85) lists every upstream issue
 with its current state.
 

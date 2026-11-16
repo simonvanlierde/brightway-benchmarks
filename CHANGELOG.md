@@ -153,6 +153,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `BWBENCH_MEM` now reaches a host's runner too; it used to keep the runner's own memory limit.
 - `bwbench compare` writes a file its own validator accepts when an arm prints coloured errors or
   the CPU model is too long for a machine label (it then uses the OS and architecture).
+- `scripts/dataset.py` stops with exit code 2 and writes nothing when every profile asked for is
+  left out, instead of writing an empty dataset that blocks its output folder.
 
 ### Viewer
 

@@ -100,3 +100,10 @@ def test_a_failing_scan_leaves_no_output(dataset: ModuleType, monkeypatch: pytes
         dataset.build(tmp_path / "ds", ["smoke"])
     assert not (tmp_path / "ds").exists()
     assert not (tmp_path / "ds.partial").exists()
+
+
+def test_no_profile_left_writes_nothing(dataset: ModuleType, tmp_path: Path):
+    with pytest.raises(SystemExit) as e:
+        dataset.main([str(tmp_path / "ds"), "bafu"])
+    assert e.value.code == 2
+    assert list(tmp_path.iterdir()) == []

@@ -164,6 +164,8 @@ $effect(() => {
 /** Show NEXT, and keep it in the URL; a new benchmark is a new history entry, a new setting is not. */
 function go({ q: _handedOver, ...next }: View, focusPage = true) {
   const moved = pageOf(next) !== pageOf(view);
+  // A link inside the explorer (to compare, or to a chart) changes the page's content but not its pageOf.
+  const refocus = moved || next.page !== view.page || next.bench !== view.bench;
   const push = next.bench !== view.bench || moved || next.platform !== view.platform || next.check !== view.check;
   view = next;
   const url = writeView(next) || location.pathname;
@@ -171,7 +173,7 @@ function go({ q: _handedOver, ...next }: View, focusPage = true) {
   else history.replaceState(null, "", url);
   if (push) scrollTo({ top: 0 });
   // The link that led here may be gone, so start keyboard focus at the new page.
-  if (moved && focusPage) tick().then(() => document.getElementById("main")?.focus({ preventScroll: true }));
+  if (refocus && focusPage) tick().then(() => document.getElementById("main")?.focus({ preventScroll: true }));
 }
 
 function follow(e: MouseEvent, next: View) {

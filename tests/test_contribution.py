@@ -158,6 +158,12 @@ def test_tail_keeps_paths_when_home_is_the_root(monkeypatch: pytest.MonkeyPatch)
     assert compare._tail(proc) == "/usr/bin/python: /opt/x failed"  # noqa: SLF001
 
 
+def test_tail_drops_colour_codes_and_control_characters():
+    """A child that colours stderr (FORCE_COLOR passes through) would write what the validator refuses."""
+    proc = subprocess.CompletedProcess([], 1, "", "\x1b[35mx\x1b[0m\tY\u200b\nnext")
+    assert compare._tail(proc) == "x Y / next"  # noqa: SLF001
+
+
 @pytest.mark.parametrize(
     ("text", "user"),
     [

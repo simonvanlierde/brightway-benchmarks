@@ -256,6 +256,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.out.exists():
         parser.error(f"{args.out} exists: a dataset version is written once")
     left_out = refused(args.profiles)
+    if not set(args.profiles) - set(left_out):
+        parser.error(f"no profile left to publish: {left_out}")
     if left_out:
         review = args.out.with_name(args.out.name + "-review")
         shutil.rmtree(review, ignore_errors=True)

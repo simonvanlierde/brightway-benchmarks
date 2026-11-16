@@ -191,8 +191,12 @@ def _redact(text: str) -> str:
 
 
 def _tail(proc: subprocess.CompletedProcess[str], lines: int = 5) -> str:
-    text = _redact((proc.stderr or proc.stdout).strip()).splitlines()
-    return " / ".join(text[-lines:]) or f"exit {proc.returncode}"
+    """The last LINES of PROC's output, without the colour codes and control characters the validator refuses."""
+    text = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", _redact((proc.stderr or proc.stdout).strip()))
+    kept = [
+        "".join(c for c in s.expandtabs(1) if unicodedata.category(c) not in {"Cc", "Cf"}) for s in text.splitlines()
+    ]
+    return " / ".join(kept[-lines:]) or f"exit {proc.returncode}"
 
 
 def latest_release(package: str, work: Path, cutoff: str) -> str:
@@ -426,7 +430,7 @@ def compare(ids: list[str], out: Path, rounds: int, repeats: int, tier: str, mac
     doc = {
         "format": FORMAT,
         "tier": tier,
-        "machine": machine or fp["cpu_model"] or f"{fp['os']} {fp['arch']}",
+        "machine": machine or default_machine(fp),
         "created": created,
         "source": {"commit": head, "run": run},
         "rounds": rounds,
@@ -537,6 +541,12 @@ def parse(argv: list[str] | None) -> argparse.Namespace:
     if args.command == "compare":
         args.ids = args.ids or ["solvers"]
     return args
+
+
+def default_machine(fp: dict) -> str:
+    """The machine label for fingerprint FP: its CPU model when that is a valid label, else its OS and architecture."""
+    cpu = fp["cpu_model"]
+    return cpu if cpu and not label_problem(cpu) else f"{fp['os']} {fp['arch']}"
 
 
 def label_problem(label: str) -> str | None:

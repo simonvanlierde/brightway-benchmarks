@@ -37,16 +37,22 @@ def find(case: str) -> Bench:
     from bwbench.bench import benches  # noqa: PLC0415
 
     module, cls, method = case.split(".")
-    paths = sorted(BENCHMARKS.glob(f"bench_*/{module}.py"))
-    if len(paths) != 1:
-        msg = f"{case}: {len(paths)} modules named {module} under {BENCHMARKS}"
-        raise LookupError(msg)
-    mod = import_module(f"{paths[0].parent.name}.{module}")
-    for b in benches(vars(mod)):
-        if f"time_{b.name}" == method and (b.asv or b.name.title().replace("_", "")) == cls:
-            return b
-    msg = f"{case}: no such benchmark in {paths[0]}"
-    raise LookupError(msg)
+    found, skipped = [], []
+    for path in sorted(BENCHMARKS.glob(f"bench_*/{module}.py")):
+        try:
+            mod = import_module(f"{path.parent.name}.{module}")
+        except ModuleNotFoundError as e:  # another package's cases, not installed in this arm
+            skipped.append(f"{path.parent.name}: {e}")
+            continue
+        found += [
+            b
+            for b in benches(vars(mod))
+            if f"time_{b.name}" == method and (b.asv or b.name.title().replace("_", "")) == cls
+        ]
+    if len(found) != 1:
+        msg = f"{case}: {len(found) or 'no such'} benchmark{'s' if found else ''} under {BENCHMARKS}"
+        raise LookupError("; ".join([msg, *skipped]))
+    return found[0]
 
 
 def solver() -> str | None:

@@ -139,7 +139,7 @@ const check = `python -c "import bw2calc as bc; print('PyPardiso' if bc.PYPARDIS
       <p><a href={home}>Setup</a> has install sets that passed their checks on each platform. <a href={`${repository}/blob/main/docs/faster.md`}>Make your Brightway faster</a> lists other install choices and calls that change the time, each with its measured gain. The <a href={`${repository}/blob/main/docs/method.md`}>method</a> describes the database and how noisy the timings are.</p>
     </StaticPage>
 
-<script is:inline>
+<script is:inline data-inline-ok>
   // Copy buttons stay hidden without this script: the commands are still there to select.
   for (const button of document.querySelectorAll("[data-copy]")) {
     button.hidden = false;

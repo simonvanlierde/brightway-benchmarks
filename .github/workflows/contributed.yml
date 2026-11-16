@@ -6,8 +6,10 @@ name: contributed
 # ratios/contributed/<machine slug>/<YYYY-MM-DD>.json, tier "contributed", no default host
 # name as the machine label, no user folder, at most 256 KiB, a regular file. It checks every
 # file there, not only the new ones, so the folder stays valid as the rules tighten. The
-# validator comes from the base branch, so a pull request cannot loosen the rules it is checked
-# by; when it changes them, its own validator runs too.
+# validator comes from the base branch and runs with -P, so a top-level bwbench/ in the pull
+# request does not shadow it; when the pull request changes the rules, its own validator runs too.
+# A pull request can also edit this workflow, so that the rules hold needs a reviewer to read
+# the workflow and top-level files in the diff. The check is advisory and holds no secrets.
 
 on:
   pull_request:
@@ -62,5 +64,5 @@ jobs:
           for src in $srcs; do
             find ratios/contributed ! -type d -print0 |
               xargs -0 --no-run-if-empty env PYTHONPATH="$src" uv run --no-sync \
-                --project base python -m bwbench.compare validate --contribution
+                --project base python -P -m bwbench.compare validate --contribution
           done

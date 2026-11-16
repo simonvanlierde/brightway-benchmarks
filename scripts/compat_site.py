@@ -77,11 +77,15 @@ class GreenArtifacts:
         return self.runs[run_id]
 
 
+def pins(requirements: str) -> dict[str, str]:
+    """Every name==version in a requirements.txt."""
+    return {k: v.split()[0] for k, v in (line.split("==", 1) for line in requirements.splitlines() if "==" in line)}
+
+
 def versions(requirements: str) -> dict[str, str]:
     """The SHOWN packages' versions in a requirements.txt."""
-    pairs = (line.split("==", 1) for line in requirements.splitlines() if "==" in line)
-    pins = {norm(name): pin for name, pin in pairs}
-    return {name: pins[norm(name)].split()[0] for name in SHOWN if norm(name) in pins}
+    p = {norm(k): v for k, v in pins(requirements).items()}
+    return {name: p[norm(name)] for name in SHOWN if norm(name) in p}
 
 
 def own(site: Path, path: Path) -> Path:

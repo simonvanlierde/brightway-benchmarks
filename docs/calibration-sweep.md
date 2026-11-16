@@ -26,18 +26,17 @@ overlap are measurements here, not pass thresholds. The fill target is
 
 ## Running a sweep
 
-Run full-size measurements only in the benchmark queue on a pinned machine, using the
-repository's pinned container. Stage an immutable copy of the reviewed source first; do not
-point a queued job at an editable worktree. Keep the executable job in the external
-`brightway-benchmarks-box-queue/queue/backlog/` directory, outside container-writable mounts.
-Use an initial 120-minute budget and preserve the runner's CPU-slot and one-thread settings.
+Run full-size measurements in the repository's container (`scripts/box.sh`) on a quiet machine
+with pinned CPUs and one thread per process. Mount a copy of the reviewed source read-only, not
+an editable worktree, and keep the script that starts the run outside any folder the container
+can write. A full sweep needs about 120 minutes.
 
 Inside the container, with the source mounted read-only at `/src` and a writable output
 folder at `/out`, run:
 
 ```sh
 PYTHONPATH=src uv run --no-project --python 3.13 \
-  --with numpy==2.5.3 --with scipy==1.18.1 --with pymetis==2025.2.2 \
+  --with numpy==2.5.4 --with scipy==1.18.1 --with pymetis==2025.2.2 \
   python scripts/calibration_sweep.py --output /out/calibration-sweep.json
 ```
 
@@ -59,7 +58,7 @@ A rejected configuration can therefore produce `complete: true`, `passed: false`
 exits 1 in that case. Worker failures and missing seeds also exit 1, with the partial report
 preserved. A killed parent leaves its last report explicitly incomplete.
 
-Preserve the Python/container exit status in the queue job. Redirect the log directly, or
+Keep the Python or container exit status in whatever starts the run. Redirect the log directly, or
 use a shell with `set -o pipefail` when piping through `tee`. A log file or a complete result
 table is not itself evidence that the calibration passed. Keep this sweep's artifacts
 separate from the published benchmark histories.

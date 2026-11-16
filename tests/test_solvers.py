@@ -109,6 +109,15 @@ def test_accelerate_off_macos_is_not_applicable(monkeypatch: pytest.MonkeyPatch)
         solvers.accelerate(A)
 
 
+@pytest.mark.skipif(sys.platform != "darwin", reason="Apple Accelerate is macOS only")
+def test_accelerate_solves_as_scipy_does():
+    """The real compile and factorization, which CI runs only in the nightly macOS ratios run."""
+    solvers.accelerate_library.cache_clear()
+    a = sparse.csc_matrix([[0.0, 2.0, 0.0], [1.0, 0.0, 3.0], [4.0, 0.0, 5.0]])  # a zero diagonal: needs pivoting
+    b = np.array([1.0, 2.0, 3.0])
+    np.testing.assert_allclose(solvers.accelerate(a)(b), sparse.linalg.spsolve(a, b), rtol=1e-12)
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="shell-script stand-in")
 def test_accelerate_names_the_compile_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     """An SDK without SparseFactorizationLU: the reason is cc's error line, not its last line."""

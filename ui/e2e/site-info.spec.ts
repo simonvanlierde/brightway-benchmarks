@@ -118,3 +118,14 @@ test("an unknown address gets the site's 404 page, with the way back to the main
   expect(await page.locator('meta[name="robots"]').getAttribute("content")).toBe("noindex");
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
+
+test.describe("without JavaScript", () => {
+  test.use({ javaScriptEnabled: false, viewport: { width: 320, height: 640 } });
+  test("the first screen says the page needs JavaScript", async ({ page }) => {
+    await page.goto("?page=explorer");
+    const note = page.locator("noscript p", { hasText: "Enable JavaScript" });
+    await expect(note).toBeVisible();
+    const box = await note.boundingBox();
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThan(640);
+  });
+});

@@ -7,6 +7,16 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-16
+
+### Upgrading
+
+- Python 3.13 or newer is required (`requires-python = ">=3.13"`). Run `uv sync` on 3.13.
+- The first run rebuilds the box image once under its new tag, and the benchmark environments get
+  new names from each `asv/<package>.stack.txt`'s first line.
+- An energy run (`BWBENCH_ENERGY=1`) needs `BWBENCH_CPUSET` and a quiet gate (`BWBENCH_GATE` or
+  `bwbench-gate` on `PATH`): neither has a default any more ([running](docs/running.md)).
+
 ### For readers of the history pages
 
 - The findings, the solver story and the site's masthead quote the generator v5 histories. A
@@ -125,7 +135,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
-- **Breaking:** Python 3.12 is no longer supported. `requires-python` is now `>=3.13`, the
+- **Breaking:** Python 3.12 is no longer supported. The
   benchmark environments, box image and compat matrix (now 3.13 and 3.14) run on 3.13, and the
   generator v5 rerun is timed on 3.13.
 - `scripts/compat_changes.py`, the report of newly failing compat jobs, which no recipe or workflow
@@ -136,6 +146,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `just codspeed` stops with "no instruction counts" when no callgrind file gives one, instead of
+  reporting success with an empty `instructions.tsv`. The compat suites' tag download retries and
+  times out, so one transient GitHub error no longer reads as "no tag". `results-commit.sh`
+  refuses results that name a user folder of the person running it.
 - `bwbench validate --contribution` refuses a result file that used to crash or hang it, instead of
   failing with a traceback: JSON nested thousands deep, a time or interval of 1e400, a `rounds` or
   `resamples` written as `4.0`, and `resamples` above 100,000 (the schema now caps it).
@@ -147,6 +161,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `bwbench validate --contribution` takes a machine label such as `intel.xe`: only a real
   country-code domain counts as a host name, not every label ending in two letters.
 - `BWBENCH_MEM` now reaches a host's runner too; it used to keep the runner's own memory limit.
+- `bwbench compare` writes a file its own validator accepts when an arm prints coloured errors or
+  the CPU model is too long for a machine label (it then uses the OS and architecture).
+- `scripts/dataset.py` stops with exit code 2 and writes nothing when every profile asked for is
+  left out, instead of writing an empty dataset that blocks its output folder.
 
 ### Viewer
 
@@ -235,6 +253,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Setup's line on Python versions no longer says "The reasons are below the table" when a
   version fails in part: Setup has no table there, only the link to it on Benchmarks.
+- Following "compare it across machines", or a link to a chart, inside Benchmarks moves keyboard focus
+  to the new content instead of leaving it on the page.
+- With JavaScript off, the note that the page needs it shows on the first screen instead of below a
+  blank one.
+- Setup keeps its install guidance when the site build cannot reach the compatibility data, and
+  shows the night's checks the same morning: the compat run now starts the site build itself.
 - Moving between Setup and Benchmarks no longer shifts the page: the masthead links keep their width
   when one turns bold, and the scrollbar's gutter is always reserved. The viewer draws its masthead
   before its script runs, so arriving from a static page does not flash an empty page.
@@ -468,6 +492,7 @@ For readers of the history pages, which were published before this release:
   before the run records existed show the commit as `unknown`, where the crate used to name
   whatever commit last wrote it.
 
-[Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/simonvanlierde/brightway-benchmarks/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/simonvanlierde/brightway-benchmarks/releases/tag/v0.1.0

@@ -31,5 +31,9 @@ PATH=$shim:$venv/bin:$PATH PYTHONPATH=benchmarks codspeed run --mode simulation 
 # Instructions per benchmark, from the callgrind files. pytest-codspeed 5.0.3 reports
 # "0 benchmarked" for pedantic benchmarks, which it does measure.
 awk '/^desc: Trigger: Client Request: benchmarks/ { sub(/^desc: Trigger: Client Request: /, ""); name = $0 }
-     /^totals:/ { if (name != "") printf "%d\t%s\n", $2, name; name = "" }' "$out"/[0-9]*.out |
-    tee "$out/instructions.tsv"
+     /^totals:/ { if (name != "") printf "%d\t%s\n", $2, name; name = "" }' "$out"/[0-9]*.out >"$out/instructions.tsv"
+[ -s "$out/instructions.tsv" ] || {
+    echo "codspeed: no instruction counts" >&2
+    exit 1
+}
+cat "$out/instructions.tsv"

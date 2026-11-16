@@ -55,7 +55,7 @@ const image = `https://simonvanlierde.com/brightway-benchmarks/ui/${card}?v=${ve
 <meta name="twitter:description" content={description} />
 <script type="application/ld+json" is:inline set:html={softwareJsonLd()} />
 {/* The theme script is inline, so every byte of it ships on each page. The viewer's button arrives after hydration; About's is ordinary HTML. */}
-<script is:inline>
+<script is:inline data-inline-ok>
   (() => {
     const root = document.documentElement;
     const media = matchMedia("(prefers-color-scheme: dark)");

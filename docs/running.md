@@ -90,7 +90,8 @@ arm from conda-forge is missing. The `ratios` workflow runs `all` weekly on GitH
 machine drifted, not Brightway. Each night writes `results/canary/<machine>/<time>.json` with the
 samples, their medians and the fingerprint. `just results-commit` puts it on the `results` branch,
 apart from the histories. `just canary-check` compares the newest night with up to 14 before it
-and exits 1 when a median moved by more than 3% or three times the earlier nights' spread. It
+and exits 1 when a median moved by more than the larger of 3% and three times the earlier nights'
+spread. It exits 2 when there is no canary file yet. It
 also prints each fingerprint field that changed since the night before, such as a new kernel.
 The benchmark node runs all three nightly.
 
@@ -361,3 +362,7 @@ fields, then publish.
 | `BWBENCH_SOLVER` | unset | Experimental solver; its environment sets it |
 | `BWBENCH_STACK` | set by `scripts/asv.sh` | Stack hash; don't set it |
 | `BWBENCH_COMMIT` | checked-out commit | Commit recorded with results |
+| `BWBENCH_HIDE` | unset | Modules (comma-separated) `bwbench compare` hides from a case, such as `pypardiso` for its SuperLU arm; it sets it |
+| `BWBENCH_PROFILE_WITH` | set by `just profile` | Packages installed on top, for the profile's name; don't set it |
+| `BWBENCH_RAPL` | `/sys/class/powercap/intel-rapl:0` | RAPL counter folder for energy runs; the tests point it at a fake |
+| `BWBENCH_GATE_CPUS` | set by `scripts/box.sh` | CPUs it hands the quiet gate; read by the gate, don't set it |

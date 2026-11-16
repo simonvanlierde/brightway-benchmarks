@@ -19,7 +19,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-from compat_site import GREEN, REPO, GreenArtifacts, gh, versions
+from compat_site import GREEN, REPO, GreenArtifacts, gh, pins, versions
 
 
 def fetch_green(name: str, dest: Path) -> None:
@@ -31,11 +31,6 @@ def fetch_green(name: str, dest: Path) -> None:
             with zipfile.ZipFile(io.BytesIO(gh(f"repos/{REPO}/actions/artifacts/{a['id']}/zip"))) as z:
                 dest.write_bytes(z.read("requirements.txt"))
             return
-
-
-def pins(requirements: str) -> dict[str, str]:
-    """Every name==version in a requirements.txt."""
-    return {k: v.split()[0] for k, v in (line.split("==", 1) for line in requirements.splitlines() if "==" in line)}
 
 
 def draft(out: Path, prev: Path, run_url: str) -> str:

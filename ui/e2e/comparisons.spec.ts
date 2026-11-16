@@ -187,3 +187,12 @@ for (const width of [320, 360, 390, 768]) {
     }
   });
 }
+
+test("following the comparisons link inside Benchmarks moves focus to the page", async ({ page }) => {
+  await page.goto("?page=explorer");
+  const link = page.getByRole("link", { name: "compare it across machines" });
+  await link.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { level: 1, name: "Across machines" })).toBeVisible();
+  await expect(page.locator("#main")).toBeFocused();
+});

@@ -63,7 +63,7 @@ const intro = setupIntro();
       )}
       {/* The same rule as pageOf in lib/history.ts: any other page drops it before it is drawn. */}
       {intro && (
-        <script is:inline>
+        <script is:inline data-inline-ok>
           (() => {
             const q = new URLSearchParams(location.search);
             const page = q.get("page");

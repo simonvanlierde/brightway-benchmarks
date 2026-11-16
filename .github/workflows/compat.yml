@@ -149,3 +149,19 @@ jobs:
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit --quiet -m "compat: $(date -u +%F) from ${GITHUB_SHA::7}"
           git push --quiet "https://x-access-token:${GH_TOKEN}@github.com/$GITHUB_REPOSITORY" HEAD:compat
+
+  # A push by the workflow token starts no workflow, and the matrix can finish after site.yml's
+  # daily start, so ask for the site build here: it reads the `compat` branch.
+  site:
+    name: rebuild the site
+    needs: archive
+    if: ${{ !cancelled() && needs.archive.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write # starts site.yml
+    steps:
+      - name: Start the site workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run site.yml --repo "$GITHUB_REPOSITORY" --ref main

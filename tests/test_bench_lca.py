@@ -206,3 +206,21 @@ def test_qmc_rejects_unsupported_distribution_shapes(
     monkeypatch.setattr(bench_lca, "packages", lambda *_args, **_kwargs: (inventory, [], [], np.ones(1)))
     with pytest.raises(NotApplicable, match=r"normal input|dimension limit"):
         bench_lca.sampled_lca("smoke", "LCA", "sobol")
+
+
+def test_superlu_heating_sweep_is_not_applicable_after_the_size_check(monkeypatch: pytest.MonkeyPatch):
+    """At a smoke size the reason is the size; at BAFU a SuperLU rebuild of 16 scenarios says NotApplicable."""
+    stub = types.ModuleType("bw2calc")
+    vars(stub).update(LCA=LCA, PYPARDISO=False)
+    monkeypatch.setitem(sys.modules, "bw2calc", stub)
+    spec = importlib.util.spec_from_file_location("bench_heating", SCRIPT.with_name("bench_heating.py"))
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    monkeypatch.setitem(sys.modules, "bench_heating", module)
+    spec.loader.exec_module(module)
+    with pytest.raises(NotApplicable, match="BWBENCH_SIZES=bafu"):
+        module.heating_sweep.prepare(size="smoke", scenarios=16, variant="rebuild")
+    monkeypatch.setattr(module, "background", lambda _size: (None, {}))
+    with pytest.raises(NotApplicable, match="superlu rebuild"):
+        module.heating_sweep.prepare(size="bafu", scenarios=16, variant="rebuild")

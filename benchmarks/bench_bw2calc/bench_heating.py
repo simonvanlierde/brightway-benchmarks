@@ -93,7 +93,7 @@ def heating_scores(size: str) -> BenchSetup:
 
 def _check_sweep_solver(variant: str, scenarios: int) -> None:
     if variant == "rebuild" and scenarios > 4 and not bc.PYPARDISO and not getattr(bc, "UMFPACK", False):
-        raise NotImplementedError("superlu rebuild with >4 scenarios is too slow on bafu")
+        raise NotApplicable("superlu rebuild with >4 scenarios is too slow on bafu")
 
 
 @bench(
@@ -111,8 +111,8 @@ def heating_sweep(size: str, scenarios: int, variant: str) -> BenchSetup:
     options. ``redo_lci``: one LCA of the part no scenario changes, factorized once; each
     scenario's electricity comes in through the demand (``heating.scenario_demand``).
     """
-    _check_sweep_solver(variant, scenarios)
     s, at = background(size)
+    _check_sweep_solver(variant, scenarios)
     skip_unless_factorizable(
         size, pardiso=bc.PYPARDISO, timeout=1800, factorizations=scenarios if variant == "rebuild" else 1
     )

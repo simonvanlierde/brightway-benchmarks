@@ -13,7 +13,7 @@ set -euo pipefail
 repo=$(cd "$(dirname "$0")/.." && pwd)
 # BWBENCH_TARGET picks the Dockerfile stage: box (the default), codspeed or conda. Its tag is the
 # checksum of that stage's instructions and those of the stages it builds on, comments left out,
-# so an edit to the codspeed or conda stage leaves the box image, and the queue jobs pinned to it, alone.
+# so an edit to the codspeed or conda stage leaves the box image, and any job pinned to its tag, alone.
 target=${BWBENCH_TARGET:-box}
 stage() {
     local base

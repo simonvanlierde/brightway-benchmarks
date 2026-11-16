@@ -52,6 +52,17 @@ if [ -n "$names" ]; then
     fi
 fi
 
+# The login name in a user folder (the ratio files' rule, ratios.USER_FOLDER, for this user).
+me=$(id -un)
+if [ ${#me} -ge 3 ]; then
+    leaked=$(grep -rlaE "${kept[@]}" "(/home/|/Users/|[A-Za-z]:[\\/]+Users[\\/]+)$me" results || true)
+    if [ -n "$leaked" ]; then
+        echo "results-commit: these name a user folder of $me; replace it with ~:" >&2
+        echo "$leaked" | sort -u >&2
+        exit 1
+    fi
+fi
+
 # A fresh folder outside the repo: code in the box can write to .asv/, and could plant a
 # symlink there.
 tree=$(mktemp -d)/results-branch

@@ -29,7 +29,6 @@ from output_path import output_path
 from bwbench.ratios import problems
 
 DESCRIPTIONS = Path(__file__).resolve().parents[1] / "benchmarks" / "descriptions.toml"
-TIERS = ("reference", "hosted", "contributed")
 OS_NAMES = {"Darwin": "macOS"}
 TITLES = {
     "solvers": "Solver",

@@ -1,5 +1,6 @@
 """scripts/results-commit.sh in throwaway git repos, with a fixed host name."""
 
+import getpass
 import hashlib
 import json
 import os
@@ -159,6 +160,15 @@ def test_refuses_results_that_name_this_host(repo: Path, env: dict[str, str], na
     run = commit_results(repo, env | extra)
     assert run.returncode == 1
     assert "name this host" in run.stderr
+    assert "results" not in git(repo, env, "branch")
+
+
+@pytest.mark.parametrize("folder", ["/home/{u}/x", "/Users/{u}/x", "C:\\Users\\{u}\\x"])
+def test_refuses_results_that_name_a_user_folder(repo: Path, env: dict[str, str], folder: str):
+    write(repo, "bw2calc/m/note.txt", folder.format(u=getpass.getuser()))
+    run = commit_results(repo, env)
+    assert run.returncode == 1
+    assert "user folder" in run.stderr
     assert "results" not in git(repo, env, "branch")
 
 

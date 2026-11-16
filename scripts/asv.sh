@@ -79,9 +79,13 @@ if [ "$cmd" = run ]; then
         # is left out: asv built it from the commit its result names, which need not be a release.
         # asv names environment folders by a hex hash, which PEP 751's "pylock.<name>.toml" allows.
         lock=$out/pylock.${env##*/}.toml
-        "$env/bin/python" -m pip freeze | grep -iv "^${subject}[ =@]" |
+        # Frozen to a file first: a failed pip freeze would otherwise compile an empty, valid lock.
+        frozen=$(mktemp)
+        "$env/bin/python" -m pip freeze >"$frozen" || status=1
+        grep -iv "^${subject}[ =@]" "$frozen" |
             uv pip compile --quiet --no-deps --python "$env/bin/python" --no-header -o "$lock" - ||
             status=1
+        rm -f "$frozen"
     done
     # Every result file this run wrote carries its environment's fingerprint (src/bwbench/fingerprint.py),
     # which results-commit requires. After the lock files: the fingerprint holds the lock's checksum.

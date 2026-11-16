@@ -36,7 +36,7 @@ for pkg in $packages; do
     dir=$out/suites/$name
     mkdir -p "$dir"
     url=https://github.com/brightway-lca/$repo/archive/refs/tags
-    if ! curl -fsSL -o "$dir.tar.gz" "$url/$version.tar.gz" && ! curl -fsSL -o "$dir.tar.gz" "$url/v$version.tar.gz"; then
+    if ! curl --retry 3 --max-time 120 -fsSL -o "$dir.tar.gz" "$url/$version.tar.gz" && ! curl --retry 3 --max-time 120 -fsSL -o "$dir.tar.gz" "$url/v$version.tar.gz"; then
         echo "$name $version no tag" >>"$out/suites.txt"
         failed=1
         continue

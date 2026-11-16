@@ -136,6 +136,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- `just codspeed` stops with "no instruction counts" when no callgrind file gives one, instead of
+  reporting success with an empty `instructions.tsv`. The compat suites' tag download retries and
+  times out, so one transient GitHub error no longer reads as "no tag". `results-commit.sh`
+  refuses results that name a user folder of the person running it.
 - `bwbench validate --contribution` refuses a result file that used to crash or hang it, instead of
   failing with a traceback: JSON nested thousands deep, a time or interval of 1e400, a `rounds` or
   `resamples` written as `4.0`, and `resamples` above 100,000 (the schema now caps it).

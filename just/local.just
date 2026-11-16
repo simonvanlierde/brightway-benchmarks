@@ -117,11 +117,14 @@ site:
     set -euo pipefail
     mkdir -p site
     [ ! -d profiles ] || { mkdir -p site/profiles && cp -r profiles/. site/profiles/; }
-    if git fetch --quiet origin compat 2>/dev/null; then git archive FETCH_HEAD compat | tar -x -C site
-    else echo "no compat branch yet, so the site has no setup guidance" >&2
+    # ls-remote exits 2 when a branch is missing, which is fine; any other failure stops the build,
+    # so a network error cannot publish a site without its setup guidance or comparisons.
+    status=0 && git ls-remote --quiet --exit-code origin refs/heads/compat >/dev/null || status=$?
+    if [ "$status" = 0 ]; then git fetch --quiet origin compat && git archive FETCH_HEAD compat | tar -x -C site
+    elif [ "$status" = 2 ]; then echo "no compat branch yet, so the site has no setup guidance" >&2
+    else echo "could not reach origin for the compat branch (git ls-remote exit $status)" >&2 && exit 1
     fi
     rm -rf build/ratios && mkdir -p build/ratios
-    # ls-remote exits 2 when the branch is missing, which is fine; any other failure stops the build.
     status=0 && git ls-remote --quiet --exit-code origin refs/heads/ratios >/dev/null || status=$?
     if [ "$status" = 0 ]; then git fetch --quiet origin ratios && git archive FETCH_HEAD | tar -x -C build/ratios
     elif [ "$status" = 2 ]; then echo "no ratios branch yet, so the site has no comparisons across machines" >&2

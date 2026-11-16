@@ -48,19 +48,16 @@ for (const url of PAGES) {
   });
 }
 
-test("the search form on a static page submits under the policy", async ({ page }) => {
+test("the search on a static page lists benchmarks and pages under the policy", async ({ page }) => {
   const problems = await watch(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/about/");
   await page.getByRole("searchbox", { name: "Search" }).fill("multi");
-  await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/\?page=explorer&q=multi$/);
-  // The explorer has loaded its data and drawn, so a block on the new page would have shown by now.
-  await expect(page.locator(".latest-table tbody th a").first()).toBeVisible();
-  // The words arrive with their results open, and Pagefind's WebAssembly runs under the policy.
+  // The benchmarks come from the data's index.json, and Pagefind's WebAssembly runs under the policy.
+  const results = page.locator(".search-results");
+  await expect(results.getByRole("link", { name: /^MultiLCA/ }).first()).toBeVisible();
   await expect(
-    page
-      .locator(".search-results")
+    results
       .getByRole("list")
       .filter({ has: page.locator('a[href*="/findings/"], a[href*="/stories/"], a[href*="/about/"]') })
       .getByRole("link")

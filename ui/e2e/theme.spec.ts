@@ -23,7 +23,8 @@ test("About uses the same saved theme and can change it without hydrating an app
   await page.getByRole("button", { name: "Switch to light theme" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   expect(await page.evaluate(() => localStorage.getItem("bwbench.theme"))).toBe("light");
-  await expect(page.locator("astro-island")).toHaveCount(0);
+  // The masthead is the page's one island, for its search; the theme does not wait for it.
+  await expect(page.locator("astro-island:not(:has(header.top))")).toHaveCount(0);
 });
 
 test("theme switching works when local storage is blocked", async ({ page }) => {

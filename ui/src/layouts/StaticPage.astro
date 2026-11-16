@@ -1,6 +1,7 @@
 ---
-// The shell for static pages (About, stories): the viewer's brand, main navigation and footer links, no JavaScript.
-import Masthead from "../components/Masthead.svelte";
+// The shell for static pages (About, stories): the viewer's brand, main navigation and footer links.
+// The masthead's search is the page's only script.
+import StaticMasthead from "../components/StaticMasthead.svelte";
 import "../styles.css";
 import { STATIC_PAGES, type StaticPageId, staticHref, VIEWER_PAGES, viewerHref } from "../lib/pages";
 import Head from "../pages/_Head.astro";
@@ -30,7 +31,8 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
   </head>
   <body>
     <a class="skip" href="#main">Skip to the content</a>
-    <Masthead
+    <StaticMasthead
+      client:load
       name="Brightway Benchmarks"
       {home}
       links={[

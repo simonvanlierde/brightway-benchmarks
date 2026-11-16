@@ -102,7 +102,11 @@ function span(some: string[], all: string[]): string {
  * One line from the table: which Pythons work on every system, which work where they were checked,
  * and why each other one fails. Counts only the cells that hold a result; empty when none passed or failed.
  */
-export function supportLead(table: SupportTable, label: (platform: string) => string = (p) => p): string {
+export function supportLead(
+  table: SupportTable,
+  label: (platform: string) => string = (p) => p,
+  reasonsNote = "The reasons are below the table.",
+): string {
   const cells = (python: string) => table.rows.map((r) => r.cells.get(python));
   const checked = (python: string) => cells(python).filter((c) => c !== undefined);
   const working = table.pythons.filter((p) => cells(p).every((c) => c?.status === "pass"));
@@ -133,7 +137,7 @@ export function supportLead(table: SupportTable, label: (platform: string) => st
         : `${python} fails for ${failed.length} of ${all.length} packages and systems.`,
     );
   }
-  if (reasons) out.push("The reasons are below the table.");
+  if (reasons && reasonsNote) out.push(reasonsNote);
   return out.join(" ");
 }
 

@@ -174,6 +174,15 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 #### Changed
 
+- Setup and the other viewer pages end where their content ends, with the footer right after it,
+  instead of filling at least one screen height. On a large screen the whole of Setup shows,
+  footer included. The footer appears once the page's data has loaded, and Setup's heading, check
+  grid and "From the benchmarks" list no longer move as the data arrives.
+- Setup's copy is shorter and plainer. The check results under the selects no longer repeat the
+  Python version, a failed test-suite result takes one sentence instead of three, the check grid
+  says "Select a result to show its install command", and the comparison link reads "Does it hold
+  on other machines?", since it shows the published machines, not yours. Without tested setups,
+  Setup says so ("No tested setups to show") and points to Benchmarks once.
 - The Benchmarks view draws its first content about 24% sooner: 2.70 s to 2.06 s for both the
   first heading and LCP (median of 9 runs), with first contentful paint and layout shift unchanged. The page now preloads the
   viewer's three script chunks from its HTML, so the browser no longer finds the Svelte runtime a
@@ -224,6 +233,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 #### Fixed
 
+- Setup's line on Python versions no longer says "The reasons are below the table" when a
+  version fails in part: Setup has no table there, only the link to it on Benchmarks.
 - Moving between Setup and Benchmarks no longer shifts the page: the masthead links keep their width
   when one turns bold, and the scrollbar's gutter is always reserved. The viewer draws its masthead
   before its script runs, so arriving from a static page does not flash an empty page.

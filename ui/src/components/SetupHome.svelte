@@ -15,9 +15,10 @@ let {
   view,
   go,
   follow,
-  name,
+  fallback,
   findings,
   ratios,
+  ratiosReady,
 }: {
   guidance: Guidance | undefined;
   ready: boolean;
@@ -25,12 +26,13 @@ let {
   view: View;
   go: (view: View) => void;
   follow: (event: MouseEvent, view: View) => void;
-  /** The site's display name, as the masthead shows it. */
-  name: string;
+  /** Setup's heading and intro without guidance: while it loads, as the page drew them before its script ran, so they do not move; then the site's own. */
+  fallback: { title: string; intro: string };
   /** The findings page, for the nudge beside the install set. */
   findings?: string;
   /** The comparisons across machines, when published. */
   ratios: Ratios | undefined;
+  ratiosReady: boolean;
 } = $props();
 const compareView: View = { page: "compare", params: [] };
 const ratioOses = $derived([...new Set(ratios?.machines.map((m) => m.os))]);
@@ -93,7 +95,8 @@ const fastest = $derived(comparison?.rows.find((r) => r.label.startsWith("UMFPAC
 const pythonSupport = $derived(guidance?.pythonSupport && supportTable(guidance.pythonSupport, false));
 const pythonNote = $derived(
   pythonSupport && {
-    text: supportLead(pythonSupport, (id) => guidance?.platforms.find((p) => p.id === id)?.label ?? id),
+    // No table here to point to: the link after the line opens it.
+    text: supportLead(pythonSupport, (id) => guidance?.platforms.find((p) => p.id === id)?.label ?? id, ""),
     href: `${writeView({ page: "explorer", params: [] })}#python-support`,
   },
 );
@@ -106,7 +109,7 @@ $effect(() => {
 
 <div class="home-columns">
   <div class="setup-column">
-    <SetupIntro title={guidance?.title ?? name} intro={guidance?.intro ?? index.project.description ?? ""} />
+    <SetupIntro title={guidance?.title ?? fallback.title} intro={guidance?.intro ?? fallback.intro} />
     {#if guidance && platform}
       {#snippet platformChoice()}
         <label class="control-label" for="setup-platform">Operating system</label>
@@ -122,17 +125,17 @@ $effect(() => {
       {/if}
 
     {:else if !ready}<p class="empty" aria-live="polite">Loading tested setups…</p>
-    {:else}<section><h2>Explore the available evidence</h2><p class="coverage-text">Setup guidance is unavailable. Benchmark histories and release changes remain available.</p><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Open the benchmarks</a></section>{/if}
+    {:else}<section><h2>No tested setups to show</h2><p class="coverage-text">The benchmark histories and release changes are still on Benchmarks.</p><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Open Benchmarks</a></section>{/if}
   </div>
 
-  <div class="evidence-column">
+  <div class="evidence-column" aria-busy={ready && ratiosReady ? undefined : "true"}>
     {#if guidance && platform}
       <section class="all-checks" id="all-checks" aria-labelledby="all-checks-heading">
         <div class="checks-heading">
           <h2 id="all-checks-heading">Checks</h2>
           <small class="checks-date">Checked {dateLabel(guidance.snapshot.date)} · <a href={guidance.snapshot.run}>open the run</a></small>
         </div>
-        <div class="desktop-checks"><p class="check-help" id="check-instructions"><span>Select a check to show its install set.</span><span hidden={!overflowing}>Scroll to see all check types.</span></p></div>
+        <div class="desktop-checks"><p class="check-help" id="check-instructions"><span>Select a result to show its install command.</span><span hidden={!overflowing}>Scroll to see all check types.</span></p></div>
         <div class="phone-checks"><p class="check-showing">Showing {platform.label}. Change the operating system above for the others.</p></div>
         <ul class="platform-checks phone-checks" aria-label="{platform.label} checks">
           {#each mine as c (c.id)}
@@ -170,11 +173,13 @@ $effect(() => {
         </details>
       </section>
     {/if}
+  <!-- Once the setups and comparisons are in: drawn earlier, the list drops below the checks, and the footer below it, as they arrive. -->
+  {#if ready && ratiosReady}
   <aside class="nudges" aria-labelledby="nudges-heading">
     <h2 id="nudges-heading">From the benchmarks</h2>
     <ul>
       {#if slowest && fastest}
-        <li><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Which solver to install</a><span>One score on a synthetic ecoinvent-sized database: {format(slowest.value, slowest.unit)} with SciPy's SuperLU, {format(fastest.value, fastest.unit)} with UMFPACK from conda-forge.</span></li>
+        <li><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Which solver to install</a><span>One LCA score on a synthetic, ecoinvent-sized database: {format(slowest.value, slowest.unit)} with SciPy's SuperLU, {format(fastest.value, fastest.unit)} with UMFPACK from conda-forge.</span></li>
       {/if}
       {#each moves as rows, i (i)}
         {@const row = rows[0]}
@@ -183,9 +188,10 @@ $effect(() => {
           <li><a href={writeView(next)} onclick={(e) => follow(e, next)}>{benchLabel(index, row.bench)}</a><span><strong class={row.way}>{changeRange(rows)}</strong> in {row.group.label ?? row.group.name} {row.to}</span></li>
         {/if}
       {/each}
-      {#if ratios}<li><a href={writeView(compareView)} onclick={(e) => follow(e, compareView)}>Does it hold on your machine?</a><span>{ratios.comparisons.length} choices timed side by side on {ratios.machines.length} {ratios.machines.length === 1 ? "machine" : "machines"}: {ratioOses.join(", ")}.</span></li>{/if}
-      {#if findings}<li><a href={findings}>What the benchmarks found</a><span>Release regressions, fixes and the solver story, each with its write-up.</span></li>{/if}
+      {#if ratios}<li><a href={writeView(compareView)} onclick={(e) => follow(e, compareView)}>Does it hold on other machines?</a><span>{ratios.comparisons.length} choices timed side by side on {ratios.machines.length} {ratios.machines.length === 1 ? "machine" : "machines"}: {ratioOses.join(", ")}.</span></li>{/if}
+      {#if findings}<li><a href={findings}>What the benchmarks found</a><span>Every regression, fix and solver result, with how it was measured.</span></li>{/if}
     </ul>
   </aside>
+  {/if}
   </div>
 </div>

@@ -611,8 +611,8 @@ test("check qualifications precede the install command", async ({ page }) => {
   await page.goto("?platform=linux");
   const results = page.getByRole("list", { name: "Check results on Linux" });
   await expect(results.getByRole("listitem")).toHaveText([
-    "Passed Small test calculations · Latest releases · Python 3.12",
-    "Failed Upstream test suites · Python 3.12",
+    "Passed Small test calculations · Latest releases",
+    "Failed Upstream test suites",
   ]);
   const after = await results.evaluate(
     (el) =>
@@ -627,7 +627,9 @@ test("check qualifications precede the install command", async ({ page }) => {
   await expect(page.locator(".install-meta").first()).toContainText(
     /^Passed [A-Z][a-z]{2} \d{1,2}, 20\d\d, for a uv project that needs Python 3\.12 or later\./,
   );
-  await expect(page.locator(".status-note")).toContainText("Upstream test suites did not pass on the latest releases.");
+  await expect(page.locator(".status-note")).toContainText(
+    "Each package's own tests cover more than these calculations",
+  );
 });
 
 test("the install command copies", async ({ page, context, browserName }) => {
@@ -718,7 +720,7 @@ test("a failed current check keeps its older passing files clearly dated", async
   await page.route("**/data/guidance.json", (route) => route.fulfill({ json: data }));
   await page.goto("?page=home&platform=linux");
   await expect(page.getByRole("list", { name: "Check results on Linux" }).getByRole("listitem").first()).toHaveText(
-    "Failed Small test calculations · Latest releases · Python 3.12",
+    "Failed Small test calculations · Latest releases",
   );
   await expect(page.locator(".saved-warning")).toHaveText(
     "The latest run of Latest releases did not pass; this is the set that passed on Oct 30, 2026.",
@@ -735,10 +737,10 @@ for (const [label, status, json] of [
   test(`${label} guidance leaves benchmark navigation usable`, async ({ page }) => {
     await page.route("**/data/guidance.json", (route) => route.fulfill({ status, json }));
     await page.goto("./");
-    await expect(page.getByRole("heading", { name: "Explore the available evidence", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "No tested setups to show", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "requirements.txt", exact: true })).toHaveCount(0);
     if (status !== 404)
-      await expect(page.locator("main").getByRole("status")).toContainText("Setup guidance could not be loaded");
+      await expect(page.locator("main").getByRole("status")).toContainText("The tested setups could not be loaded");
     await page
       .getByRole("navigation", { name: "Main", exact: true })
       .getByRole("link", { name: "Benchmarks", exact: true })
@@ -760,7 +762,7 @@ test("Setup nudges link the largest regression and improvement, and Benchmarks' 
   const nudges = page.locator(".nudges li");
   await expect(nudges).toHaveCount(5);
   await expect(nudges.nth(0)).toContainText("Which solver to install");
-  await expect(nudges.nth(3)).toContainText("Does it hold on your machine?");
+  await expect(nudges.nth(3)).toContainText("Does it hold on other machines?");
   await expect(nudges.nth(1).locator(".worse")).toBeVisible();
   await expect(nudges.nth(2).locator(".better")).toBeVisible();
   for (const [at, row] of [
@@ -849,7 +851,7 @@ test("each package manager has its own command, and the choice is remembered", a
   await expect(command).toContainText("conda env update -n brightway-tested -f https://");
   await expect(page).toHaveURL(/check=conda-forge-/);
   const status = page.getByRole("list", { name: "Check results on Linux" });
-  await expect(status).toContainText("Passed conda-forge · Python 3.12");
+  await expect(status).toContainText("Passed conda-forge");
   await expect(status).not.toContainText("Upstream test suites");
   // That check's caveats come with its command, such as the packages conda-forge lacks.
   const conda = (await guidanceFixture()).checks.find((c) => c.id.startsWith("conda-forge-"));

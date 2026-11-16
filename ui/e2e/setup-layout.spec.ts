@@ -20,7 +20,7 @@ test("desktop check help shares a row and uses the column labels", async ({ page
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("?platform=linux");
   const caption = page.locator(".check-help");
-  await expect(caption).toContainText("Select a check");
+  await expect(caption).toContainText("Select a result");
   // At 1440 the grid fits its column, so there is nothing to scroll and no hint.
   await expect(caption.getByText("Scroll to see all check types")).toBeHidden();
   // Narrower, it scrolls: the hint shows on the same row, and the grid's right edge is shaded.
@@ -93,4 +93,42 @@ test("Setup's heading and intro draw before the viewer's script runs, and only o
   await expect(page.locator(".home-intro p")).toContainText("Which Brightway packages work together");
   await page.goto("?page=explorer");
   await expect(page.locator(".home-intro")).toHaveCount(0);
+});
+
+test("the landing page is as tall as its content, with the footer in view after it", async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto("?platform=linux");
+  await page.locator(".nudges").waitFor();
+  const footer = page.locator(".site-footer");
+  await expect(footer).toBeInViewport({ ratio: 1 });
+  const gap = await page.evaluate(() => {
+    const columns = [...document.querySelectorAll(".home-columns > *")].map((c) => c.getBoundingClientRect().bottom);
+    return (document.querySelector(".site-footer")?.getBoundingClientRect().top ?? 0) - Math.max(...columns);
+  });
+  // The view's own bottom padding, not a viewport-tall minimum height.
+  expect(gap).toBeLessThan(80);
+});
+
+test("Setup does not shift as its script and data arrive", async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { shifts: number };
+    w.shifts = 0;
+    new PerformanceObserver((list) => {
+      for (const e of list.getEntries()) w.shifts += (e as PerformanceEntry & { value: number }).value;
+    }).observe({ type: "layout-shift", buffered: true });
+  });
+  // Each data file late, so the page paints its loading states first.
+  await page.route("**/data/*.json", async (route) => {
+    await new Promise((done) => setTimeout(done, 300));
+    await route.continue();
+  });
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("?platform=linux");
+    await page.locator(".nudges").waitFor();
+    await expect(page.locator(".site-footer")).toBeAttached();
+    expect(await page.evaluate(() => (window as unknown as { shifts: number }).shifts), `${width}px`).toBeLessThan(
+      0.001,
+    );
+  }
 });

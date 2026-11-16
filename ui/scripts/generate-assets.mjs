@@ -196,7 +196,7 @@ const CARDS = {
   }),
   // The solver story's factorization times on real ecoinvent.
   "story-solver-choice.png": card({
-    title: "Your solver choice can change a Brightway score's time by about 5 times",
+    title: "Your solver choice changes a single-threaded Brightway score by up to 5 times",
     titleSize: 46,
     caption: "Factorizing real ecoinvent 3.12, one thread",
     bars: [

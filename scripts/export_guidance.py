@@ -279,7 +279,7 @@ def export(
     out = {
         "format_version": 2,
         "title": "A tested Brightway setup",
-        "intro": "Pick your operating system for an install set that passed its checks.",
+        "intro": "Matched to your operating system; change it for another.",
         "snapshot": {"date": status["date"], "run": web_url(status["run"])},
         "platforms": [],
         "checks": [],

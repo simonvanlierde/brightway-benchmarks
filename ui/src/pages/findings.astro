@@ -29,6 +29,7 @@ const view = (f: Finding) =>
 const profile = (value: string) =>
   value.startsWith("https://") ? value : `${home}profiles/${value.replace(/^profiles\//, "")}`;
 const story = (f: Finding) => `${home}stories/${f.story}/`;
+const stories = findings.filter((f) => f.story);
 const attr = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll('"', "&quot;");
 
 // docs/findings.md is the write-up, rendered here in full. Its title gives way to the page's own;
@@ -112,6 +113,7 @@ const headlines = packages
 >
   <div class="findings-layout">
   <nav class="findings-rail" aria-label="Findings">
+    {stories.length > 0 && <a href="#stories-heading">Stories</a>}
     <a href="#headlines-heading">Headlines</a>
     {outline.map((p) => (
       <div class="rail-package">
@@ -126,9 +128,22 @@ const headlines = packages
   </nav>
   <div class="findings-content">
   <h1>What the benchmarks found</h1>
-  <p class="lede">The headlines come first, grouped by package. Each opens its story where it has one, or its write-up, which says how it was measured and how to rerun it.</p>
+  <p class="lede">Measured on one thread (i9-14900KF efficiency core) with synthetic ecoinvent v5 unless noted. Stories come first, then headlines by package, then the full write-ups.</p>
 
   <div class="findings-main">
+  {stories.length > 0 && (
+    <section class="stories-list" aria-labelledby="stories-heading">
+      <h2 id="stories-heading">Stories</h2>
+      <ul class="story-cards">
+        {stories.map((f) => (
+          <li>
+            <a href={story(f)}>{f.title}</a>
+            <span>{f.text}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
   <section class="headlines" aria-labelledby="headlines-heading">
     <h2 id="headlines-heading">Headlines</h2>
     {headlines.map((p) => (
@@ -162,6 +177,33 @@ const headlines = packages
 </StaticPage>
 
 <style>
+  .stories-list {
+    margin-top: 28px;
+  }
+  .stories-list > h2 {
+    font-size: 1.35rem;
+    margin: 0 0 10px;
+  }
+  .story-cards {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+  .story-cards li {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--grid);
+    display: grid;
+    gap: 4px;
+  }
+  .story-cards a {
+    font-weight: 650;
+  }
+  .story-cards span {
+    font-size: var(--text-evidence);
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
   .headlines {
     margin-top: 32px;
   }
@@ -244,25 +286,37 @@ const headlines = packages
   .findings-rail {
     display: none;
   }
-  @media (min-width: 70rem) {
+  @media (min-width: 60rem) {
     :global(.static-page.findings-page) {
-      max-width: 70rem;
+      max-width: 96rem;
+      margin: 0 auto;
+      padding: 0;
     }
     .findings-layout {
       display: grid;
-      grid-template-columns: 15rem minmax(0, 46rem);
-      gap: 48px;
+      grid-template-columns: 16.5rem minmax(0, 1fr);
+      gap: 0;
+      align-items: start;
     }
     .findings-rail {
       display: block;
       position: sticky;
       top: 0;
       align-self: start;
+      height: 100vh;
       max-height: 100vh;
       overflow-y: auto;
-      padding: 8px 0 24px;
+      border-right: 1px solid var(--line);
+      padding: 28px 24px;
       font-size: 0.875rem;
       line-height: 1.4;
+    }
+    .findings-content {
+      min-width: 0;
+      padding: 42px 40px 36px;
+    }
+    .findings-content > :where(*) {
+      max-width: var(--measure);
     }
     .findings-rail a {
       display: block;
@@ -291,6 +345,12 @@ const headlines = packages
     }
     .writeup-nav {
       display: none;
+    }
+  }
+  @media (min-width: 90rem) {
+    .findings-content {
+      padding-left: 56px;
+      padding-right: 56px;
     }
   }
   @media (max-width: 39rem) {

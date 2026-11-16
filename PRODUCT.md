@@ -6,7 +6,18 @@ web
 
 ## Users
 
-The homepage helps users choose a tested starting point for their platform. Maintainers investigate release changes and measurement noise on the Benchmarks page. Readers of the study can inspect the same underlying measurements.
+The homepage helps LCA practitioners choose a tested starting point for their platform. Maintainers investigate release changes and measurement noise on Benchmarks. Contributors and scientific Python readers inspect machine comparisons, solver behaviour, and raw measurements.
+
+## Audience
+
+Each page serves a primary reader. What they come for must sit in the first screen:
+
+- **Setup (`/`)** — *LCA practitioner or student choosing an install.* Comes for a working install command for their OS, Python version, and package manager. First screen: OS-matched install command, check status, and the one-line solver takeaway.
+- **Benchmarks (`/?page=explorer`)** — *Brightway maintainer or contributor.* Comes to spot regressions, inspect release histories, and check Python support. First screen: solver comparison, latest release changes (improvements open when few), and Python support; on a benchmark view, the exact call, environment/thread settings, and noise floor.
+- **Across machines (`/?page=compare`)** — *Contributor running `bwbench compare` or user checking another OS.* Comes to see whether a solver or option holds across hardware. First screen: ratio key, machine rows, and 95% intervals.
+- **Findings (`/findings/`)** — *Practitioner, developer, or SciPy reader.* Comes for concrete results without digging through charts. First screen: visible **Stories** list, package-grouped **Headlines** with version, thread, and matrix caveats, then **Write-ups**.
+- **Stories (`/stories/*`)** — *Practitioner or SciPy reader arriving from a link.* Comes for a self-contained answer. First screen: plain-language takeaway, exact scope (threads, matrix, package versions), and copyable commands or model checks.
+- **About (`/about/`)** — *Anyone checking methodology or privacy.* First screen: what the benchmarks cover, what a passing setup means, citation, and browser storage policy.
 
 ## Product Purpose
 

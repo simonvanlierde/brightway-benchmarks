@@ -8,30 +8,30 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23727602.svg)](https://doi.org/10.5281/zenodo.23727602)
 
 How fast is [Brightway](https://docs.brightway.dev), and does it still give the right answer?
-This repository times everyday LCA calculations across Brightway's releases: an LCI and LCIA,
-many functional units at once, Monte Carlo. Correctness checks run alongside the timings; the [method](docs/method.md) explains the reference
-calculations and their coverage limits. A release that slows a calculation or changes a checked
-score shows up in the history.
+This repository times everyday LCA calculations across Brightway's releases: a single score,
+many functional units at once, and Monte Carlo. Reference checks run alongside the timings;
+[the method](docs/method.md) explains the checks and their limits. A release that slows a
+calculation or changes a checked score shows up in the history.
 
-The benchmarks run on synthetic databases that copy ecoinvent's degrees, loops and locality, so
-anyone can rerun them and the results can be published. A direct-solver score on them takes 1.4 to 1.6
-times as long as factorizing the real ecoinvent matrix
+Most benchmarks run on synthetic databases sized and structured like ecoinvent, so anyone can
+rerun them and publish the results. A direct-solver score on the synthetic database takes 1.4
+to 1.6 times as long as factorizing the real ecoinvent matrix
 ([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)). Two real databases sit
 beside them: USEEIO 1.1 (US EPA, public domain) and BAFU 2025 (Swiss Federal Office for the
-Environment), downloaded from [files.brightway.dev](https://files.brightway.dev/) by a pinned SHA-256
-when `BWBENCH_SIZES=useeio` or `bafu` asks for them. BAFU 2025 is never copied into this repository
-or its results.
+Environment), downloaded from [files.brightway.dev](https://files.brightway.dev/) by pinned
+SHA-256 when `BWBENCH_SIZES=useeio` or `bafu` is set. BAFU 2025 is never copied into this
+repository or its results.
 
 Every case's history is in the
 [benchmark explorer](https://simonvanlierde.com/brightway-benchmarks/).
 
 ## Results so far
 
-[Make your Brightway faster](docs/faster.md) says what to install or call. Four findings for
-most users:
+[Make your Brightway faster](docs/faster.md) lists what to install or call. Four findings
+(all single-threaded on a pinned benchmark machine, `bw2calc 3.1.0` unless noted):
 
-- [The solver sets the time for one score.](docs/findings.md#the-solver-sets-the-time-for-one-score) On an ecoinvent-sized database,
-  UMFPACK on OpenBLAS takes 1.03 s, PyPardiso 2.22 s and SciPy's SuperLU 4.98 s.
+- [The solver sets the time for one score.](docs/findings.md#the-solver-sets-the-time-for-one-score) On an ecoinvent-sized synthetic database (1 thread),
+  UMFPACK on OpenBLAS takes 1.03 s, PyPardiso 2.22 s and SciPy's SuperLU 4.98 s. (PyPardiso also scales across threads.)
 - [bw2calc 3.0.0 made `IterativeLCA` about 12 times slower with UMFPACK](docs/findings.md#bw2calc-300-slowed-iterativelca-without-pypardiso-and-310-fixed-it), and
   about 25 times with SuperLU. 3.1.0 fixed it.
 - [bw2data 4.7 lost a faster database write](docs/findings.md#bw2data-47-lost-the-faster-database-write): an earlier commit had

@@ -16,7 +16,6 @@ let {
   go,
   follow,
   fallback,
-  findings,
   ratios,
   ratiosReady,
 }: {
@@ -28,8 +27,6 @@ let {
   follow: (event: MouseEvent, view: View) => void;
   /** Setup's heading and intro without guidance: while it loads, as the page drew them before its script ran, so they do not move; then the site's own. */
   fallback: { title: string; intro: string };
-  /** The findings page, for the nudge beside the install set. */
-  findings?: string;
   /** The comparisons across machines, when published. */
   ratios: Ratios | undefined;
   ratiosReady: boolean;
@@ -179,7 +176,7 @@ $effect(() => {
     <h2 id="nudges-heading">From the benchmarks</h2>
     <ul>
       {#if slowest && fastest}
-        <li><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Which solver to install</a><span>One LCA score on a synthetic, ecoinvent-sized database: {format(slowest.value, slowest.unit)} with SciPy's SuperLU, {format(fastest.value, fastest.unit)} with UMFPACK from conda-forge.</span></li>
+        <li><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Which solver to install</a><span>One <code>LCA().lci()/lcia()</code> score (bw2calc 3.1.0, 1 thread, synthetic ecoinvent): {format(slowest.value, slowest.unit)} with SciPy's SuperLU, {format(fastest.value, fastest.unit)} with UMFPACK from conda-forge.</span></li>
       {/if}
       {#each moves as rows, i (i)}
         {@const row = rows[0]}
@@ -189,7 +186,6 @@ $effect(() => {
         {/if}
       {/each}
       {#if ratios}<li><a href={writeView(compareView)} onclick={(e) => follow(e, compareView)}>Does it hold on other machines?</a><span>{ratios.comparisons.length} choices timed side by side on {ratios.machines.length} {ratios.machines.length === 1 ? "machine" : "machines"}: {ratioOses.join(", ")}.</span></li>{/if}
-      {#if findings}<li><a href={findings}>What the benchmarks found</a><span>Every regression, fix and solver result, with how it was measured.</span></li>{/if}
     </ul>
   </aside>
   {/if}

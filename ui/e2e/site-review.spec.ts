@@ -121,8 +121,8 @@ test("the solver story's commands copy", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("stories/solver-choice/");
   const box = page.locator(".install");
-  await expect(box.getByRole("button", { name: "Copy" })).toHaveCount(4);
-  await box.getByRole("button", { name: "Copy" }).nth(1).click();
+  await expect(box.getByRole("button", { name: "Copy" })).toHaveCount(5);
+  await box.getByRole("button", { name: "Copy" }).nth(2).click();
   await expect(box.getByRole("status")).toHaveText("Copied the command");
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("conda install -c conda-forge scikit-umfpack");
 });
@@ -190,7 +190,7 @@ test("on a phone the build id is the footer's own last row", async ({ page }) =>
 test("the solver story's per-score saving sits with the install choice and names real ecoinvent", async ({ page }) => {
   await page.goto("stories/solver-choice/");
   const saving = page.locator(".install .saving");
-  await expect(saving).toContainText("On real ecoinvent");
+  await expect(saving).toContainText("on real ecoinvent");
   await expect(saving).toContainText("saves about 3 s");
   // 3.66 s (SuperLU) less 0.66 s (conda-forge UMFPACK), in the chart below the box.
   await expect(page.locator(".bars").first()).toContainText("3.66 s");

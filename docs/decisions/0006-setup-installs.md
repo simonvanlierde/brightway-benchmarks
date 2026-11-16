@@ -16,8 +16,8 @@ measured.
 ## Decision
 
 Setup is about installing: the install set, the check grid and a one-line Python summary. A
-short "From the benchmarks" list links the evidence: the solver times, the largest release
-change each way and the Findings page. The solver comparison, the release changes and the Python
+short "From the benchmarks" list links the solver times, the largest release change each way,
+and machine comparisons (the masthead already carries Findings). The solver comparison, the release changes and the Python
 versions table live on Benchmarks, which drops its finding cards for a link to Findings.
 
 `/findings/` renders `docs/findings.md` in full below the headlines, which it groups by the

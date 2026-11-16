@@ -6,5 +6,5 @@ let { title, intro }: { title: string; intro: string } = $props();
 
 <header class="home-intro">
   <h1>{title}</h1>
-  <p>Which Brightway packages work together, and which combination runs your LCA fastest? Every night we check that the latest <a href="https://docs.brightway.dev/en/latest/">Brightway</a> releases install and work together on Linux, macOS and Windows. {intro}</p>
+  <p>Every night we test which <a href="https://docs.brightway.dev/en/latest/">Brightway</a> releases install and work together on Linux, macOS and Windows. {intro}</p>
 </header>

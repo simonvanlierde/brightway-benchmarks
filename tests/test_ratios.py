@@ -511,3 +511,20 @@ def test_a_long_cpu_model_falls_back_to_os_and_arch(monkeypatch: pytest.MonkeyPa
     doc["machine"] = compare.default_machine(fp)
     assert doc["machine"] == f"{fp['os']} {fp['arch']}"
     assert problems(doc) == []
+
+
+def test_timecase_finds_a_case_whose_module_name_is_in_several_folders(
+    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+):
+    """bench_heating.py is in three folders; the others need packages this environment may not have."""
+    import types  # noqa: PLC0415
+
+    from bwbench import timecase  # noqa: PLC0415
+
+    monkeypatch.setitem(sys.modules, "bw2calc", types.SimpleNamespace(LCA=object))
+    monkeypatch.syspath_prepend(str(timecase.BENCHMARKS))
+    before = set(sys.modules)
+    request.addfinalizer(lambda: [sys.modules.pop(m) for m in set(sys.modules) - before])  # built on the stub
+    assert timecase.find("bench_heating.HeatingMulti.time_heating_scores").name == "heating_scores"
+    with pytest.raises(LookupError, match="no such benchmark"):
+        timecase.find("bench_heating.HeatingMulti.time_nothing")

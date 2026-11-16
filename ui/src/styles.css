@@ -241,7 +241,6 @@ code,
   max-width: 96rem;
   padding: 0;
   gap: 0;
-  min-height: calc(100vh - 80px);
   /* Rows keep their content's height: stretched rows shrink, and shift the page, as data loads. */
   align-content: start;
 }
@@ -531,6 +530,10 @@ code,
   align-items: baseline;
   justify-content: space-between;
   gap: 12px 25px;
+}
+/* The page is as tall as its content. The footer waits for the data, so it does not jump down as the content fills in. */
+.frame:has([aria-busy="true"]) + .site-footer {
+  display: none;
 }
 a:hover {
   text-decoration-thickness: 2px;

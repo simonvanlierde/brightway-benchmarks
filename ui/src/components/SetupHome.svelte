@@ -15,9 +15,10 @@ let {
   view,
   go,
   follow,
-  name,
+  fallback,
   findings,
   ratios,
+  ratiosReady,
 }: {
   guidance: Guidance | undefined;
   ready: boolean;
@@ -25,12 +26,13 @@ let {
   view: View;
   go: (view: View) => void;
   follow: (event: MouseEvent, view: View) => void;
-  /** The site's display name, as the masthead shows it. */
-  name: string;
+  /** Setup's heading and intro without guidance: while it loads, as the page drew them before its script ran, so they do not move; then the site's own. */
+  fallback: { title: string; intro: string };
   /** The findings page, for the nudge beside the install set. */
   findings?: string;
   /** The comparisons across machines, when published. */
   ratios: Ratios | undefined;
+  ratiosReady: boolean;
 } = $props();
 const compareView: View = { page: "compare", params: [] };
 const ratioOses = $derived([...new Set(ratios?.machines.map((m) => m.os))]);
@@ -106,7 +108,7 @@ $effect(() => {
 
 <div class="home-columns">
   <div class="setup-column">
-    <SetupIntro title={guidance?.title ?? name} intro={guidance?.intro ?? index.project.description ?? ""} />
+    <SetupIntro title={guidance?.title ?? fallback.title} intro={guidance?.intro ?? fallback.intro} />
     {#if guidance && platform}
       {#snippet platformChoice()}
         <label class="control-label" for="setup-platform">Operating system</label>
@@ -125,7 +127,7 @@ $effect(() => {
     {:else}<section><h2>Explore the available evidence</h2><p class="coverage-text">Setup guidance is unavailable. Benchmark histories and release changes remain available.</p><a href={writeView({ page: "explorer", params: [] })} onclick={(e) => follow(e, { page: "explorer", params: [] })}>Open the benchmarks</a></section>{/if}
   </div>
 
-  <div class="evidence-column">
+  <div class="evidence-column" aria-busy={ready && ratiosReady ? undefined : "true"}>
     {#if guidance && platform}
       <section class="all-checks" id="all-checks" aria-labelledby="all-checks-heading">
         <div class="checks-heading">
@@ -170,6 +172,8 @@ $effect(() => {
         </details>
       </section>
     {/if}
+  <!-- Once the setups and comparisons are in: drawn earlier, the list drops below the checks, and the footer below it, as they arrive. -->
+  {#if ready && ratiosReady}
   <aside class="nudges" aria-labelledby="nudges-heading">
     <h2 id="nudges-heading">From the benchmarks</h2>
     <ul>
@@ -187,5 +191,6 @@ $effect(() => {
       {#if findings}<li><a href={findings}>What the benchmarks found</a><span>Release regressions, fixes and the solver story, each with its write-up.</span></li>{/if}
     </ul>
   </aside>
+  {/if}
   </div>
 </div>

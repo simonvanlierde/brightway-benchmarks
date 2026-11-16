@@ -174,6 +174,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 #### Changed
 
+- Setup and the other viewer pages end where their content ends, with the footer right after it,
+  instead of filling at least one screen height. On a large screen the whole of Setup shows,
+  footer included. The footer appears once the page's data has loaded, and Setup's heading, check
+  grid and "From the benchmarks" list no longer move as the data arrives.
 - The Benchmarks view draws its first content about 24% sooner: 2.70 s to 2.06 s for both the
   first heading and LCP (median of 9 runs), with first contentful paint and layout shift unchanged. The page now preloads the
   viewer's three script chunks from its HTML, so the browser no longer finds the Svelte runtime a

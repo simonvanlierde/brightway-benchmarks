@@ -530,7 +530,7 @@ $effect(() => {
     <main class="view" id="main" tabindex="-1">
       {#if guidanceError && page === "home"}<div class="empty" role="status"><p>Setup guidance could not be loaded. Benchmark histories remain available.</p>{@render technical(guidanceError)}</div>{/if}
       {#if page === "home"}
-        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} name={siteName} findings={findingsPage} {ratios} />
+        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} fallback={(!guidanceReady && intro) || { title: siteName, intro: index.project.description ?? "" }} findings={findingsPage} {ratios} {ratiosReady} />
       {:else if !bench && view.page === "compare"}
         <Comparisons {ratios} ready={ratiosReady} error={ratiosError} method={methodHash} />
       {:else if !bench}

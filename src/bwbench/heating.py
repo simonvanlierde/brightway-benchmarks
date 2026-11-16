@@ -24,6 +24,7 @@ import pickle
 import sqlite3
 import tarfile
 import tempfile
+from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
@@ -438,7 +439,7 @@ def corrected_system(system: System) -> System:
     with tempfile.TemporaryDirectory() as tmp, tarfile.open(archive) as tar:
         member = next(m for m in tar.getmembers() if m.name.endswith("/lci/databases.db"))
         tar.extract(member, tmp, filter="data")
-        with sqlite3.connect(Path(tmp) / member.name) as con:
+        with closing(sqlite3.connect(Path(tmp) / member.name)) as con:
             metadata = {}
             for i, blob in con.execute("select id, data from activitydataset"):
                 if i in needed:

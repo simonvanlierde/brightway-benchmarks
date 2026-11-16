@@ -10,8 +10,11 @@ Report it privately, through
 or by email to <code@duinlab.nl>. Don't open a public issue or pull request for anything
 exploitable: anyone can read those before there is a fix.
 
-Please include what the problem is and where (a file, a workflow or a dependency), the steps
-to reproduce it, and the impact you expect.
+Please include:
+
+- What the problem is and where it is: a file, a function or a dependency.
+- Steps to reproduce it, or a proof of concept.
+- The impact you expect, and the release or commit you saw it in.
 
 I acknowledge a report within 14 days, then tell you whether I can reproduce it and when I
 expect a fix.

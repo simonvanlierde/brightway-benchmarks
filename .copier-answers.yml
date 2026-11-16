@@ -1,21 +1,18 @@
 # Managed by copier. Do not edit by hand. Run: copier update
-_commit: v0.13.0
+_commit: v0.15.0
 _src_path: https://github.com/simonvanlierde/project-templates
 author_email: code@duinlab.nl
 author_name: Simon van Lierde
 author_orcid: 0009-0006-6953-909X
-codecov: false
-codspeed: false
-cold_install: false
 copyright_year: '2026'
 customise: false
+decision_records: false
 dependency_bot: renovate
+extras: []
 github_user: simonvanlierde
-kind: library
+level: standard
 license: BSD-3-Clause
 module_name: bwbench
-openssf_badge: passing
-profiling: false
 project_description: Continuous benchmarks for the Brightway LCA stack on seeded synthetic
     matrices
 project_name: brightway-benchmarks
@@ -23,10 +20,10 @@ public: true
 publish_to_pypi: false
 python_api: true
 python_dir: .
+python_kind: library
 python_layout: src
 python_min: '3.13'
 python_version: '3.13'
 site: none
 stacks:
 - python
-test_extras: []

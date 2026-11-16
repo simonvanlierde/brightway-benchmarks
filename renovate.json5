@@ -27,7 +27,10 @@
 {
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   // Conventional Commits titles, `chore(deps): update ...`, which the pr-title workflow checks.
-  extends: ['config:recommended', ':semanticCommits'],
+  extends: ['config:best-practices', ':semanticCommits'],
+  // Two of its presets work against this config. :pinDevDependencies opens pin PRs the
+  // lockfile makes redundant, and the npm preset's 3-day wait would beat the 7 days below.
+  ignorePresets: [':pinDevDependencies', 'security:minimumReleaseAgeNpm'],
   timezone: 'Europe/Amsterdam',
   schedule: ['before 9am on monday'],
   minimumReleaseAge: '7 days',

@@ -9,6 +9,15 @@ Open an [issue](https://github.com/simonvanlierde/brightway-benchmarks/issues). 
 say what you ran, what you expected and what happened. For a result that looks wrong, name
 the package, release, case and database size, and the `just` command.
 
+## Scope and response
+
+One person maintains brightway-benchmarks, in their own time. Expect a reply to an issue or
+pull request within about two weeks.
+
+Before a large pull request, such as a new feature or a change to how something works,
+open an issue and agree on the change there first. A small fix needs no issue. A pull
+request outside what the project sets out to do is closed with a link to this section.
+
 ## Report a finding
 
 Each `###` entry in [docs/findings.md](../docs/findings.md) says how to rerun it. It links
@@ -25,6 +34,10 @@ You need [uv](https://docs.astral.sh/uv/), [just](https://just.systems), Node 24
 hooks with [prek](https://github.com/j178/prek). `just --list` shows every task, and the
 [docs/running.md](../docs/running.md) explains the benchmark recipes.
 
+uv locks only releases at least a week old. If `just check` fails on a security fix newer than
+that, add the package to `exclude-newer-package` under `[tool.uv]` in `pyproject.toml`, and
+remove it a week later ([how](https://github.com/simonvanlierde/project-templates/blob/main/docs/tooling.md#dependencies)).
+
 ## Checks
 
 Run `just check` before you open a pull request. It runs what the `python` and `ui` workflows
@@ -40,8 +53,8 @@ from the `checks` workflow, `lint, types, tests` from `python`, `ui: lint, types
 from `ui`, `pull request title` from `pr-title` and `DCO sign-off` from `dco`
 ([ruleset](rulesets/main-checks.json)). The other workflows:
 
-- `fuzz` runs the Atheris harness of `scripts/release_report.py` for 60 seconds on a pull
-  request that touches it.
+- `fuzz` runs the Atheris harness of `bwbench validate --contribution` for 60 seconds on a pull
+  request that touches the validator.
 - `contributed` runs `bwbench validate --contribution` on a pull request that adds a result file
   under `ratios/contributed/`.
 - `cold-install` follows the README's install steps in a fresh container weekly, and on a pull
@@ -109,7 +122,10 @@ request. [docs/running.md](../docs/running.md#contribute-a-run) has the steps, a
 The pull request title becomes the squash commit, so it follows the same rule. Both are
 checked against [`committed.toml`](../committed.toml): a commit-msg hook (installed by
 `prek install`) refuses a commit message that breaks the rule, and the `pull request title`
-check fails a pull request whose title does. Add an entry to [CHANGELOG.md](../CHANGELOG.md)
+check fails a pull request whose title does. A revert is titled `revert: <original subject>`:
+rename the `Revert "..."` title that GitHub's Revert button writes. The pull request body
+follows [the pull request template](pull_request_template.md): what it fixes and why, a few
+bullets, a `Tested:` line with the proof and a `Not checked:` line with what did not run. Add an entry to [CHANGELOG.md](../CHANGELOG.md)
 under `[Unreleased]` for a change users see.
 
 ## Releasing

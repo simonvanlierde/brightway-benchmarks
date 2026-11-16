@@ -1,6 +1,7 @@
 import pickle
 import sqlite3
 import tarfile
+from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
 
@@ -141,7 +142,7 @@ def test_scenarios_span_the_grid():
 def test_locate_maps_product_names_to_matrix_indices(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     db = tmp_path / "p" / "lci" / "databases.db"
     db.parent.mkdir(parents=True)
-    with sqlite3.connect(db) as con:
+    with closing(sqlite3.connect(db)) as con, con:
         con.execute("create table activitydataset (id integer, product text)")
         con.executemany("insert into activitydataset values (?, ?)", [(90, "a {CH}"), (7, "b {NL}"), (8, "b {NL}")])
     archive = tmp_path / "a.tar.gz"
@@ -285,7 +286,7 @@ def test_corrected_system_preserves_raw_data_and_uses_a_separate_cache(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, parent_emitted: bool, repeated_entries: bool
 ):
     database = tmp_path / "databases.db"
-    with sqlite3.connect(database) as con:
+    with closing(sqlite3.connect(database)) as con, con:
         con.execute("create table activitydataset (id integer, data blob)")
         for i, categories in [(100, ("air",)), (200, ("air", "urban"))]:
             blob = pickle.dumps({"name": "carbon", "unit": "kg", "categories": categories})

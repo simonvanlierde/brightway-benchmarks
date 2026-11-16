@@ -23,7 +23,7 @@ def git(*args: str, cwd: Path) -> None:
 
 def fetch_ratios(tmp_path: Path, origin: str) -> subprocess.CompletedProcess[str]:
     """The `site` recipe's ratios lines, run in a checkout whose origin is ORIGIN."""
-    recipe = (REPOSITORY / "justfile").read_text(encoding="utf-8")
+    recipe = (REPOSITORY / "just" / "local.just").read_text(encoding="utf-8")
     start = recipe.index("    rm -rf build/ratios")
     end = recipe.index("    fi\n", recipe.index("no ratios branch yet", start)) + len("    fi\n")
     checkout = tmp_path / "checkout"

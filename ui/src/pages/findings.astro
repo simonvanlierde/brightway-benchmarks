@@ -29,6 +29,7 @@ const view = (f: Finding) =>
 const profile = (value: string) =>
   value.startsWith("https://") ? value : `${home}profiles/${value.replace(/^profiles\//, "")}`;
 const story = (f: Finding) => `${home}stories/${f.story}/`;
+const stories = findings.filter((f) => f.story);
 const attr = (s: string) => s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll('"', "&quot;");
 
 // docs/findings.md is the write-up, rendered here in full. Its title gives way to the page's own;
@@ -112,6 +113,7 @@ const headlines = packages
 >
   <div class="findings-layout">
   <nav class="findings-rail" aria-label="Findings">
+    {stories.length > 0 && <a href="#stories-heading">Stories</a>}
     <a href="#headlines-heading">Headlines</a>
     {outline.map((p) => (
       <div class="rail-package">
@@ -126,9 +128,22 @@ const headlines = packages
   </nav>
   <div class="findings-content">
   <h1>What the benchmarks found</h1>
-  <p class="lede">The headlines come first, grouped by package. Each opens its story where it has one, or its write-up, which says how it was measured and how to rerun it.</p>
+  <p class="lede">Measured on one thread (i9-14900KF efficiency core) with synthetic ecoinvent v5 unless noted. Stories come first, then headlines by package, then the full write-ups.</p>
 
   <div class="findings-main">
+  {stories.length > 0 && (
+    <section class="stories-list" aria-labelledby="stories-heading">
+      <h2 id="stories-heading">Stories</h2>
+      <ul class="story-cards">
+        {stories.map((f) => (
+          <li>
+            <a href={story(f)}>{f.title}</a>
+            <span>{f.text}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
   <section class="headlines" aria-labelledby="headlines-heading">
     <h2 id="headlines-heading">Headlines</h2>
     {headlines.map((p) => (
@@ -162,6 +177,33 @@ const headlines = packages
 </StaticPage>
 
 <style>
+  .stories-list {
+    margin-top: 28px;
+  }
+  .stories-list > h2 {
+    font-size: 1.35rem;
+    margin: 0 0 10px;
+  }
+  .story-cards {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+  .story-cards li {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--grid);
+    display: grid;
+    gap: 4px;
+  }
+  .story-cards a {
+    font-weight: 650;
+  }
+  .story-cards span {
+    font-size: var(--text-evidence);
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
   .headlines {
     margin-top: 32px;
   }

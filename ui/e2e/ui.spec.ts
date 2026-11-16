@@ -298,10 +298,7 @@ test("Setup is install-only: its right column has the checks and nudges, not the
   await expect(page.locator(".findings, .release-changes, .solver-evidence, .python-support")).toHaveCount(0);
   const column = page.locator(".evidence-column");
   await expect(column.getByRole("heading", { level: 2 })).toHaveText(["Checks", "From the benchmarks"]);
-  await expect(page.locator(".nudges").getByRole("link", { name: "What the benchmarks found" })).toHaveAttribute(
-    "href",
-    /\/findings\/$/,
-  );
+  await expect(page.locator(".nudges").getByRole("link", { name: "Which solver to install" })).toHaveCount(1);
   // The hero no longer quotes solver times: the nudge does.
   await expect(page.locator(".home-intro")).not.toContainText(/\d\s?(ms|s)\b/);
   await expect(page.getByRole("combobox", { name: "Operating system" })).toHaveValue("linux");
@@ -760,7 +757,7 @@ test("Setup nudges link the largest regression and improvement, and Benchmarks' 
   if (!worst || !best) throw new Error("fixture lacks a regression or an improvement");
   await page.goto("?page=home&platform=linux");
   const nudges = page.locator(".nudges li");
-  await expect(nudges).toHaveCount(5);
+  await expect(nudges).toHaveCount(4);
   await expect(nudges.nth(0)).toContainText("Which solver to install");
   await expect(nudges.nth(3)).toContainText("Does it hold on other machines?");
   await expect(nudges.nth(1).locator(".worse")).toBeVisible();

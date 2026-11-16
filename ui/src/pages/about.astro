@@ -16,13 +16,13 @@ const repository = "https://github.com/simonvanlierde/brightway-benchmarks";
       <p class="lede">Performance histories and tested installation sets for the Brightway life cycle assessment stack.</p>
 
       <h2>What the evidence covers</h2>
-      <p>The benchmark cases cover calculations, database writes, graph traversal and time-explicit LCA. Each calculation checks its result against an independent reference. The histories keep releases, environments and machines separate so the comparison stays inspectable.</p>
-      <p>Most cases use seeded synthetic databases shaped like ecoinvent. Two real databases run beside them: USEEIO 1.1, a public-domain US EPA database, and BAFU 2025, the Swiss Federal Office for the Environment's inventory database, which is downloaded for each run and never redistributed. The <a href={`${repository}/blob/main/docs/method.md`}>method</a> describes the inputs, reference checks and measurement noise; the <a href={`${home}findings/`}>findings</a> explain the measured changes and their limits.</p>
+      <p>The benchmarks time calculations, database writes, graph traversal and time-explicit LCA. Every calculation checks its result against an independent reference. Releases, environments and machines stay separate so comparisons remain inspectable.</p>
+      <p>Most cases use seeded synthetic databases shaped like ecoinvent. Two real databases run beside them: USEEIO 1.1 (public-domain US EPA) and BAFU 2025 (Swiss Federal Office for the Environment, downloaded for each run and never redistributed). The <a href={`${repository}/blob/main/docs/method.md`}>method</a> covers inputs, reference checks and noise; the <a href={`${home}findings/`}>findings</a> explain measured changes and their limits.</p>
 
-      <p>The solver story reads the numbers in plain terms: <a href={`${home}stories/solver-choice/`}>your solver choice can change a Brightway score's time by about 5 times</a>. The <a href={`${home}stories/home-heating/`}>home-heating case</a> shows why checking a linear solve does not validate the inventory or impact factors.</p>
+      <p>Two guides explain key results in plain terms: <a href={`${home}stories/solver-choice/`}>single-threaded solver choice</a> and <a href={`${home}stories/home-heating/`}>the home-heating validation model</a>.</p>
 
       <h2>What a passing setup means</h2>
-      <p>Smoke checks install a package set and run small-database calculations. Upstream-suite checks run the packages' own tests. Dependency floors, pre-releases and conda-forge are separate diagnostic checks. A pass in one check does not establish that every workflow, solver or platform works.</p>
+      <p>Smoke checks install a package set and run small-database calculations to verify imports and basic scoring. Upstream-suite checks run the packages' own test suites. Dependency floors (oldest declared package bounds), pre-releases and conda-forge run as separate diagnostic checks. Passing one check does not guarantee every workflow, solver or platform works.</p>
       <p>Setup shows each check's current result and keeps its last passing installation files. Dated files stay fixed; “Copy latest” follows the newest passing set. <a href={`${repository}/blob/main/docs/running.md#install-a-set-that-works`}>Install-set documentation</a> explains the commands and coverage.</p>
 
       <h2>Source and citation</h2>

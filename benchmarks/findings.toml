@@ -11,7 +11,7 @@
 
 [[findings]]
 title = "The solver sets the time for one score"
-text = "On an ecoinvent-sized database, UMFPACK on OpenBLAS takes 1.03 s, PyPardiso 2.22 s and SciPy's SuperLU 4.98 s."
+text = "On an ecoinvent-sized synthetic database (1 thread, bw2calc 3.1.0), UMFPACK on OpenBLAS takes 1.03 s, PyPardiso 2.22 s and SciPy's SuperLU 4.98 s."
 group = "bw2calc-conda"
 benchmark = "bench_lca.SingleScore.time_first_score"
 params = { size = "ecoinvent", cls = "LCA" }
@@ -52,7 +52,7 @@ params = { size = "exiobase", max_calc = "2" }
 doc = "bw_graph_tools-09-made-traversal-up-to-6-times-faster"
 
 [[findings]]
-title = "A correct solve can still score the wrong inventory"
-text = "A benchmark that only checks the linear solve can pass while the inventory or the impact factors are wrong. The heating model checks both beside its timings."
-doc = "a-correct-solve-can-still-score-the-wrong-inventory"
+title = "A correct solve does not check the inventory or impact factors"
+text = "A solve-only reference check passes even when characterization factors miss a subcompartment. The heating model checks both beside its timings."
+doc = "a-correct-solve-does-not-check-the-inventory-or-impact-factors"
 story = "home-heating"

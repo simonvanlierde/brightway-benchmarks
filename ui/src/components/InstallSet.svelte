@@ -140,7 +140,7 @@ async function copy(text: string, what: string) {
       </select>
     </div>
   </div>
-  {#if pythonNote?.text}<p class="install-note python-note">{pythonNote.text} <a href={pythonNote.href}>All Python versions</a></p>{/if}
+  {#if pythonNote?.text}<p class="install-note python-note">Across all packages: {pythonNote.text} <a href={pythonNote.href}>All Python versions</a></p>{/if}
   {#if source && saved && install}
     {@const suites = qualifications.find((c) => c.kind === "suites" && c !== source && c.status !== "success")}
     <ul class="result-line" aria-label="Check results on {platform}">

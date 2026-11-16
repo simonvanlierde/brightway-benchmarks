@@ -2,27 +2,23 @@
 
 Unless a finding says otherwise, the numbers come from the
 [benchmark history](https://simonvanlierde.com/brightway-benchmarks/), measured in November 2026
-on the ecoinvent-sized synthetic database, one thread, on an efficiency core of an Intel
-i9-14900KF. Every release runs on the same fixed dependencies, so a step in a history is that
-package's own change ([method](method.md)).
+on the ecoinvent-sized synthetic database (generator v5), one thread, on an efficiency core of an
+Intel i9-14900KF. Every release runs on the same fixed dependencies, so a step in a history is
+that package's own change ([method](method.md)).
 
-These synthetic histories use generator v5, which runs close to real ecoinvent. A SuperLU score
-takes 4.98 s against a 3.66 s factorization of the real matrix, and UMFPACK on reference BLAS
-2.54 s against 1.78 s. Each solver's score takes 1.4 to 1.6 times as long as its real
-factorization. Building and solving take far less than that gap, so the synthetic matrix still
-takes longer to factorize than the real one. On generator v4 it was 4 to
-7.6 times, as its factors filled about three times as much
-([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54)).
-
-The pinned [#85](https://github.com/simonvanlierde/brightway-benchmarks/issues/85) lists every
-upstream issue with its current state.
+On generator v5, a direct-solver score takes 1.4 to 1.6 times as long as factorizing the real
+ecoinvent 3.12 matrix, in the same solver order
+([#54](https://github.com/simonvanlierde/brightway-benchmarks/issues/54),
+[method](method.md#how-the-synthetic-databases-are-built)). The pinned
+[#85](https://github.com/simonvanlierde/brightway-benchmarks/issues/85) lists every upstream issue
+with its current state.
 
 ## bw2calc
 
 ### The solver sets the time for one score
 
-**PyPardiso and UMFPACK on reference BLAS give a score about 2 times faster than SciPy's
-SuperLU, and UMFPACK on OpenBLAS about 5 times.**
+**On one thread, PyPardiso and UMFPACK on reference BLAS give a score about 2 times faster than
+SciPy's SuperLU, and UMFPACK on OpenBLAS about 5 times.** (PyPardiso also scales across threads.)
 
 [What to do](faster.md).
 
@@ -87,9 +83,10 @@ Rerun: [`bench_lca.NewDemand`](../benchmarks/bench_bw2calc/bench_lca.py).
 
 ### UMFPACK's speed depends on its BLAS and its refinement step
 
-**UMFPACK factorizes about 3 times faster on OpenBLAS or MKL than on reference BLAS. On
-reference BLAS and OpenBLAS, about two thirds of each repeated solve is iterative refinement,
-which doesn't change the score.**
+**UMFPACK factorizes about 3 times faster on OpenBLAS (a tuned linear-algebra library) or MKL than
+on reference BLAS (the unoptimized default). On reference BLAS and OpenBLAS, about two thirds of
+each repeated solve is iterative refinement (an extra pass to reduce rounding error), which does
+not change the score.**
 
 bw2calc can't turn refinement off yet
 ([brightway2-calc#186](https://github.com/brightway-lca/brightway2-calc/pull/186) does). [What to do](faster.md).
@@ -110,9 +107,9 @@ On the real ecoinvent 3.12 matrix:
 | OpenBLAS (conda-forge) | 0.66 s | 24 ms | 12.7 ms | 4.8 ms |
 | MKL (conda-forge) | 0.63 s | 24 ms | 6.3 ms | 4.8 ms |
 
-The two pairs of columns time different solves, so don't compare across them. The first pair
+The two pairs of columns time different calls, so don't compare across them. The first pair
 comes from [`scripts/solver_factorize.py`](../scripts/solver_factorize.py) through bw2calc's
-`lu_solver`. The second times UMFPACK's direct solve of Aᵀx = b. MKL takes no refinement step.
+`lu_solver` (which wraps SciPy's solve path). The second times UMFPACK's direct solve of Aᵀx = b. MKL takes no refinement step.
 With refinement off, conda-forge's UMFPACK is about 30% slower per solve than the PyPI build.
 
 Every direct solver on the same matrix, through the same script, with bw2calc 3.1.0, SciPy
@@ -241,9 +238,10 @@ made ([brightway2-calc#157](https://github.com/brightway-lca/brightway2-calc/iss
 
 ### A score error reads against the matrix's condition number
 
-**Every size logs a condition estimate next to its times, so a solver that misses the reference
-can be read against how hard the matrix is.** A direct solver's relative error is about the
-condition number times 1e-16, and the checks allow 1e-9, or 1e-6 on BAFU 2025.
+**Every size logs a condition estimate (how sensitive the solve is to rounding) next to its times,
+so a solver that misses the reference can be read against how hard the matrix is.** A direct
+solver's relative error is about the condition number times 1e-16, and the checks allow 1e-9, or
+1e-6 on BAFU 2025.
 
 | Matrix | Condition estimate (1-norm) | Largest score error over 30 products |
 | --- | --- | --- |
@@ -336,8 +334,9 @@ instead of a quarter of a second.**
 
 At `max_calc=2` on bw2calc 2.5.0, a traversal takes 39.4 s with SuperLU on bw_graph_tools 0.8,
 and 2.1 minutes from 0.9 on, against 0.21 to 0.23 s with PyPardiso. Version 0.8 solved with
-`spsolve`, which factorizes Aᵀ for bw2calc's CSR matrix. From 0.9 it calls `decompose_technosphere`,
-which on bw2calc 2.5.0 factorizes A: 92 s against 3.7 s for Aᵀ on real ecoinvent 3.12, one thread. On an earlier generator, a
+`spsolve`, which factorizes Aᵀ (matching bw2calc's CSR matrix layout). From 0.9 it calls
+`decompose_technosphere`, which on bw2calc 2.5.0 factorizes A: 92 s against 3.7 s for Aᵀ on real
+ecoinvent 3.12, one thread. On an earlier generator, a
 profile put 234 of 235 s at factorizing A, and bw2calc 3.1.0, which factorizes Aᵀ, took 27.8 s. [bw_graph_tools#58](https://github.com/brightway-lca/bw_graph_tools/issues/58) proposes
 reusing the LCA's factorization.
 
@@ -372,11 +371,11 @@ Rerun: [`bench_datapackage.Groups`](../benchmarks/bench_bw_processing/bench_data
 
 ## Across packages
 
-### A correct solve can still score the wrong inventory
+### A correct solve does not check the inventory or impact factors
 
 The reference checks behind every timing compare the solve with an independent one, such as a
 Neumann series on the same matrices. A wrong inventory or a missing impact factor passes that
-check, as both sides solve the same wrong system.
+check, as both sides solve the same system.
 
 The heating model ([`src/bwbench/heating.py`](../src/bwbench/heating.py)) shows why. BAFU's
 climate factors sit on the parent air compartment. Matching flow identifiers alone leaves the gas

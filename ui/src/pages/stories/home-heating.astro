@@ -50,7 +50,7 @@ const charts = [
   image="story-home-heating.png"
   imageAlt="Two bars for the twenty-year climate change score of an illustrative Dutch home: heat pump 23.2 tonnes CO₂ equivalent, gas boiler 49.4 tonnes.">
   <h1>Checking a home-heating calculation</h1>
-  <p class="lede">A benchmark that only checks the linear solve can pass while the inventory or the impact factors are wrong. This heating model shows the check we run beside it. In this illustrative Dutch scenario (not a measured home), a heat pump emits {totals.pump.toFixed(1)} t of CO₂ equivalent over twenty years against {totals.gas.toFixed(1)} t for a gas boiler. The same model times scenario sweeps, supply-chain traversal and time-explicit calculations.</p>
+  <p class="lede">Every timing in this project checks its linear solve against a reference solver, but a solve-only check still passes when an inventory or impact factor is wrong. This benchmark validation model tests both on an illustrative Dutch heating scenario (not a measured home): a heat pump emits {totals.pump.toFixed(1)} t CO₂ equivalent over twenty years against {totals.gas.toFixed(1)} t for a gas boiler. The same model times scenario sweeps, supply-chain traversal and time-explicit calculations.</p>
 
   <StoryBars
     caption="Twenty-year climate change score, tonnes CO₂ equivalent"

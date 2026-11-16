@@ -451,7 +451,7 @@ $effect(() => {
     <main class="view" id="main" tabindex="-1">
       {#if guidanceError && page === "home"}<div class="empty" role="status"><p>The tested setups could not be loaded.</p>{@render technical(guidanceError)}</div>{/if}
       {#if page === "home"}
-        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} fallback={(!guidanceReady && intro) || { title: siteName, intro: index.project.description ?? "" }} findings={findingsPage} {ratios} {ratiosReady} />
+        <SetupHome {guidance} ready={guidanceReady} {index} {view} {go} {follow} fallback={(!guidanceReady && intro) || { title: siteName, intro: index.project.description ?? "" }} {ratios} {ratiosReady} />
       {:else if !bench && view.page === "compare"}
         <Comparisons {ratios} ready={ratiosReady} error={ratiosError} method={methodHash} />
       {:else if !bench}
@@ -558,8 +558,8 @@ $effect(() => {
                 {measure?.name ?? "Value"} per release on {machine?.name}, one line per environment and one even step per commit,
                 not by date{measure?.noise
                   ? `; the band is the noise allowance: ${measure.bounds ? `±${measure.noise.spreads} × the width of ${measure.bounds}, ` : ""}at least ±${+(measure.noise.floor * 100).toFixed(1)}%`
-                  : measure?.bounds ? `; the band is ${measure.bounds}` : ""}. A ring marks a release that moved further than its band and the one before it allow (red worse,
-                teal better); a dashed line marks a level shift across the whole series.
+                  : measure?.bounds ? `; the band is ${measure.bounds}` : ""}. A ring marks a release that moved beyond the noise allowance of both releases (red worse,
+                teal better); a dashed line marks a statistically significant step change (Otava).
               </p>
               {#if notes.length}
                 <dl class="env-notes">

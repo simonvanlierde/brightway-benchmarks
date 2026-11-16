@@ -90,7 +90,7 @@ test("Setup's heading and intro draw before the viewer's script runs, and only o
   await page.route("**/_astro/App.*.js", (route) => route.abort());
   await page.goto("./");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("A tested Brightway setup");
-  await expect(page.locator(".home-intro p")).toContainText("Which Brightway packages work together");
+  await expect(page.locator(".home-intro p")).toContainText("Every night we test which Brightway releases install");
   await page.goto("?page=explorer");
   await expect(page.locator(".home-intro")).toHaveCount(0);
 });

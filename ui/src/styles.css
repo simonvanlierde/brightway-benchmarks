@@ -1202,7 +1202,7 @@ so a chosen control needs a line of its own. */
 .evidence-column {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 28px;
+  gap: 14px;
   padding-left: 28px;
   border-left: 1px solid var(--line);
 }

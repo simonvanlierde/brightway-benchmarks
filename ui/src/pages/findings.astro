@@ -98,13 +98,17 @@ const outline = packages.map((p, i) => ({
   sections: sections.filter((s) => s.at > p.at && s.at < (packages[i + 1]?.at ?? Number.POSITIVE_INFINITY)),
 }));
 const headlines = packages
-  .map((p) => ({ ...p, findings: findings.filter((f) => packageOf(f) === p).sort((a, b) => at(a) - at(b)) }))
+  .map((p) => ({
+    ...p,
+    findings: findings.filter((f) => !f.story && packageOf(f) === p).sort((a, b) => at(a) - at(b)),
+  }))
   .filter((p) => p.findings.length);
 ---
 
 <StaticPage
   mainClass="findings-page"
   current="findings"
+  back={false}
   title="What the benchmarks found · Brightway Benchmarks"
   description="Every finding from the Brightway benchmarks, each with the history that shows it, its write-up and, where one exists, the story that tells it in full."
   canonical="https://simonvanlierde.com/brightway-benchmarks/findings/"
@@ -113,22 +117,25 @@ const headlines = packages
 >
   <div class="findings-layout">
   <nav class="findings-rail" aria-label="Findings">
-    {stories.length > 0 && <a href="#stories-heading">Stories</a>}
-    <a href="#headlines-heading">Headlines</a>
-    {outline.map((p) => (
-      <div class="rail-package">
-        <a class="rail-package-name" href={`#${p.id}`}>{p.name}</a>
-        {p.sections.length > 0 && (
-          <ul aria-label={p.name}>
-            {p.sections.map((x) => <li><a href={`#${x.id}`}>{x.name}</a></li>)}
-          </ul>
-        )}
-      </div>
-    ))}
+    <details class="rail-all" open>
+      <summary>Findings</summary>
+      {stories.length > 0 && <a class="home" href="#stories-heading">Stories</a>}
+      <a class="home" href="#headlines-heading">Headlines</a>
+      {outline.map((p, i) => (
+        <details class="rail-group" open={i === 0}>
+          <summary>{p.name}{" "}<span class="rail-count">({p.sections.length})</span></summary>
+          {p.sections.length > 0 && (
+            <ul aria-label={p.name}>
+              {p.sections.map((x) => <li><a href={`#${x.id}`}>{x.name}</a></li>)}
+            </ul>
+          )}
+        </details>
+      ))}
+    </details>
   </nav>
   <div class="findings-content">
   <h1>What the benchmarks found</h1>
-  <p class="lede">Measured on one thread (i9-14900KF efficiency core) with synthetic ecoinvent v5 unless noted. Stories come first, then headlines by package, then the full write-ups.</p>
+  <p class="lede">Measured on one thread (i9-14900KF efficiency core) with synthetic ecoinvent v5 unless noted. Stories come first, then remaining headlines by package, then the full write-ups.</p>
 
   <div class="findings-main">
   {stories.length > 0 && (
@@ -137,8 +144,13 @@ const headlines = packages
       <ul class="story-cards">
         {stories.map((f) => (
           <li>
-            <a href={story(f)}>{f.title}</a>
-            <span>{f.text}</span>
+            <h3><a href={story(f)}>{f.title}</a></h3>
+            <p>{f.text}</p>
+            <p class="finding-links" data-pagefind-ignore>
+              <a href={`#${f.doc}`}>Write-up<span class="sr"> on {f.title}</span></a>
+              {view(f) && <a href={view(f)}>Open the history<span class="sr"> for {f.title}</span></a>}
+              {f.profile && <a href={profile(f.profile)}>Profile<span class="sr"> for {f.title}</span></a>}
+            </p>
           </li>
         ))}
       </ul>
@@ -191,18 +203,22 @@ const headlines = packages
     border-top: 1px solid var(--line);
   }
   .story-cards li {
-    padding: 12px 0;
+    padding: 16px 0 8px;
     border-bottom: 1px solid var(--grid);
-    display: grid;
-    gap: 4px;
   }
-  .story-cards a {
-    font-weight: 650;
+  .story-cards h3 {
+    font-size: 1.1rem;
+    line-height: 1.3;
+    text-wrap: balance;
+    margin: 0 0 6px;
   }
-  .story-cards span {
+  .story-cards p {
+    margin: 0 0 10px;
     font-size: var(--text-evidence);
-    color: var(--ink-2);
-    line-height: 1.5;
+    line-height: 1.6;
+  }
+  .story-cards .finding-links {
+    margin: -6px 0 0;
   }
   .headlines {
     margin-top: 32px;
@@ -320,7 +336,7 @@ const headlines = packages
     }
     .findings-rail a {
       display: block;
-      padding: 5px 0;
+      padding: 4px 0;
       color: var(--ink-2);
       text-decoration: none;
     }
@@ -328,19 +344,32 @@ const headlines = packages
       color: var(--accent);
       text-decoration: underline;
     }
-    .findings-rail > a,
-    .rail-package-name {
+    .findings-rail .rail-all > summary {
+      display: none;
+    }
+    .findings-rail .rail-all .home {
       font-weight: 700;
       color: var(--ink);
+      padding: 6px 0;
     }
-    .rail-package {
+    .findings-rail .rail-group {
       margin-top: 8px;
       padding-top: 8px;
       border-top: 1px solid var(--line);
     }
+    .findings-rail .rail-group summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--ink);
+      padding: 4px 0;
+    }
+    .findings-rail .rail-count {
+      font-weight: 400;
+      color: var(--muted);
+    }
     .findings-rail ul {
       list-style: none;
-      margin: 0;
+      margin: 4px 0 0;
       padding: 0 0 0 12px;
     }
     .writeup-nav {

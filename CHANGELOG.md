@@ -151,6 +151,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `bwbench validate --contribution` takes a machine label such as `intel.xe`: only a real
   country-code domain counts as a host name, not every label ending in two letters.
 - `BWBENCH_MEM` now reaches a host's runner too; it used to keep the runner's own memory limit.
+- `bwbench compare` writes a file its own validator accepts when an arm prints coloured errors or
+  the CPU model is too long for a machine label (it then uses the OS and architecture).
 
 ### Viewer
 

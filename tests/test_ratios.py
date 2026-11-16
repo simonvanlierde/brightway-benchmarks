@@ -503,3 +503,11 @@ def test_compare_refuses_a_machine_label_the_file_could_not_hold(
     with pytest.raises(SystemExit) as e:
         compare.main(["compare", "-o", str(tmp_path / "r.json"), "--machine", label])
     assert e.value.code == 2
+
+
+def test_a_long_cpu_model_falls_back_to_os_and_arch(monkeypatch: pytest.MonkeyPatch):
+    fp = fingerprint() | {"cpu_model": "x" * 101}
+    doc, _ = result(monkeypatch)
+    doc["machine"] = compare.default_machine(fp)
+    assert doc["machine"] == f"{fp['os']} {fp['arch']}"
+    assert problems(doc) == []

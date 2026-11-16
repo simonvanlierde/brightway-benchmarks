@@ -35,7 +35,6 @@ __pycache__/
 htmlcov/
 .coverage
 coverage.xml
-<<<<<<< before updating
 
 # Node
 node_modules/
@@ -56,5 +55,3 @@ asv/*/
 
 # The Accelerate solver library, which bwbench.solvers compiles beside its source.
 *.dylib
-=======
->>>>>>> after updating

@@ -16,6 +16,8 @@ repos:
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: check-yaml
+        # pnpm writes its own version into the lockfile as a second YAML document.
+        exclude: (^|/)pnpm-lock\.yaml$
       - id: end-of-file-fixer
         exclude: ^(data|profiles|tests/fixtures)/
       - id: mixed-line-ending
@@ -62,11 +64,8 @@ repos:
     rev: 21ca5323a9c87ee37a434e0ca908efc0a89daa07 # frozen: v0.21.0
     hooks:
       - id: yamlfmt
-<<<<<<< before updating
         # Its own exclude in .yamlfmt does not apply to the file names prek passes in.
         exclude: (^|/)pnpm-lock\.yaml$
-=======
->>>>>>> after updating
 
   - repo: https://github.com/adrienverge/yamllint
     rev: cba56bcde1fdd01c1deb3f945e69764c291a6530 # frozen: v1.38.0

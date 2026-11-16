@@ -62,7 +62,7 @@ token.
 
 This project's own runs use the box. [`scripts/box.sh`](../scripts/box.sh) starts it, and
 [`scripts/asv.sh`](../scripts/asv.sh) runs asv inside it. It sees this repository and nothing
-else. [`justfile`](../justfile) names the recipes, and [`docs/running.md`](running.md) lists every
+else. [`just/local.just`](../just/local.just) holds the benchmark recipes, and [`docs/running.md`](running.md) lists every
 recipe and variable. A contributor who runs `bwbench compare` installs Brightway's releases
 on their own machine, as any Brightway user does.
 

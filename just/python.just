@@ -2,21 +2,12 @@
 py-sync:
     uv sync
 
-<<<<<<< before updating
-# What CI runs: lint, format check, types, tests with the coverage gate, dependency audit.
-py-check:
-    uv run ruff check
-    uv run ruff format --check
-    uv run ty check
-    uv run pytest --cov
-=======
-# What CI runs: lint, format check, types, tests, dependency audit and licenses.
+# What CI runs: lint, format check, types, tests with the coverage gate, dependency audit and licenses.
 py-check:
     uv run --locked ruff check
     uv run --locked ruff format --check
     uv run --locked ty check
-    uv run --locked pytest
->>>>>>> after updating
+    uv run --locked pytest --cov
     uv audit --locked --preview-features audit-command
     d=$(mktemp -d) && trap 'rm -rf "$d"' EXIT && uv export --locked --no-default-groups --no-hashes --no-annotate --no-header --no-emit-project -q -o "$d/requirements.txt" && { test ! -s "$d/requirements.txt" || uv run --locked --with licensecheck==2026.0.8 licensecheck -r "$d/requirements.txt" --zero; }
 

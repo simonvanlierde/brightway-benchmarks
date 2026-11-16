@@ -100,19 +100,14 @@ max-args = 10
 [tool.ty.terminal]
 error-on-warning = false
 
-<<<<<<< before updating
-[tool.pytest.ini_options]
-addopts = ["-ra", "--strict-config", "--strict-markers", "--import-mode=importlib"]
-# pytest-codspeed registers it in the benchmark runs; the unit tests only check it is set.
-markers = ["benchmark: a benchmark for pytest-codspeed"]
-=======
 # pytest 9's native table. strict turns unknown config keys, unknown markers and
 # an xfail test that passes into errors, and filterwarnings turns warnings into
 # failures, so a deprecation shows up in CI, not after the upgrade that removes it.
 [tool.pytest]
 minversion = "9.0"
 addopts = ["-ra", "--import-mode=importlib"]
->>>>>>> after updating
+# pytest-codspeed registers it in the benchmark runs; the unit tests only check it is set.
+markers = ["benchmark: a benchmark for pytest-codspeed"]
 testpaths = ["tests"]
 strict = true
 filterwarnings = ["error"]
@@ -138,7 +133,6 @@ show_missing = true
 fail_under = 80
 exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
 
-<<<<<<< before updating
 # Brightway packages are not in this project's environment: asv (in the box) and `bwbench
 # compare` install them per environment. So the type check covers our own code.
 [tool.ty.src]
@@ -146,7 +140,7 @@ include = ["src", "tests"]
 
 [tool.ty.analysis]
 allowed-unresolved-imports = ["bw_processing", "bw2calc", "pypardiso.**", "scikits.**", "PyKLU", "otava.**"]
-=======
+
 # Checks from Scientific Python's repo-review (the sp-repo-review git hook) that this
 # project skips on purpose. `prek run sp-repo-review --all-files` runs the rest.
 [tool.repo-review.ignore]
@@ -159,4 +153,3 @@ PC901 = "the hooks run in CI's checks workflow, not on pre-commit.ci"
 PC902 = "the hooks run in CI's checks workflow, not on pre-commit.ci"
 PC903 = "the hooks run in CI's checks workflow, not on pre-commit.ci"
 GH200 = "Renovate updates the actions and hook revs (renovate.json5)"
->>>>>>> after updating

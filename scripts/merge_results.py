@@ -13,6 +13,9 @@ with ``null`` for cells from before fingerprints. HEAD's list and the new file's
 without duplicates and without the new fingerprint, and the list is left out when empty. It
 says which environments the kept cells came from, not which cell came from which. A file whose
 merged cells equal HEAD's stays as HEAD has it: the run timed nothing new.
+
+A commit whose result files change but gain no finite cell is refused (exit 1): every case was
+skipped or failed, as when a run asks for a size its cases do not support.
 """
 
 import hashlib
@@ -106,6 +109,20 @@ def merge(old: str, new: str) -> str:
     return json.dumps(b | {"results": results, "durations": a.get("durations", {}) | b.get("durations", {})} | extra)
 
 
+def finite_cells(text: str) -> set[tuple]:
+    """Every (benchmark, parameters, value) of an asv result file whose result is a finite number."""
+    data = json.loads(text) if text else {}
+    columns = data.get("result_columns") if isinstance(data, dict) else None
+    if not columns or "params" not in columns:
+        return set()
+    return {
+        (name, combo, cell["result"])
+        for name, row in data["results"].items()
+        for combo, cell in cells(row, columns).items()
+        if isinstance(cell.get("result"), int | float) and math.isfinite(cell["result"])
+    }
+
+
 def git(tree: str, *args: str) -> str:
     """Git's output in the results worktree."""
     return subprocess.run(  # noqa: S603 - fixed git commands
@@ -129,10 +146,18 @@ def main(tree: str) -> None:
     folder that copies the run of the file it replaced. A file no record lists gets none.
     """
     changed = git(tree, "diff", "--cached", "--name-only", "--diff-filter=M", "-z", "--", "*.json").split("\0")
+    added = git(tree, "diff", "--cached", "--name-only", "--diff-filter=A", "-z", "--", "*.json").split("\0")
     records: dict[tuple[Path, str], list[str]] = {}  # (folder, run lines): checksum lines
+    results, measured = 0, False
+    for path in filter(None, added):
+        new = git(tree, "show", f":{path}")
+        results += "result_columns" in json.loads(new)
+        measured = measured or bool(finite_cells(new))
     for path in filter(None, changed):
         new, old = git(tree, "show", f":{path}"), git(tree, "show", f"HEAD:{path}")
         merged = merge(old, new)
+        results += merged != old and "result_columns" in json.loads(new)
+        measured = measured or bool(finite_cells(merged) - finite_cells(old))
         if merged != new:
             Path(tree, path).write_text(merged)
             if merged != old:
@@ -141,6 +166,8 @@ def main(tree: str) -> None:
             if head and merged != old:  # an unchanged file keeps the record that listed it
                 sha = hashlib.sha256(merged.encode()).hexdigest()
                 records.setdefault((Path(tree, path).parent, head), []).append(f"{sha}  {path}\n")
+    if results and not measured:
+        sys.exit("results-commit: the run timed nothing: every new cell is n/a or failed; check the sizes it ran at")
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     for (folder, head), lines in records.items():
         commit = head.partition("commit ")[2].split("\n", 1)[0][:12]

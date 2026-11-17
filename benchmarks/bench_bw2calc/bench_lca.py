@@ -457,6 +457,7 @@ def convergence(size: str, draws: int, cls: str, sampler: str) -> BenchSetup:
 
     Normal inverse transforms happen inside the timed call for both samplers. Powers of two
     preserve Sobol balance. The reference is an empirical comparison, not a correctness oracle.
+    Smoke size only, so CodSpeed and `just smoke` run it and the published histories hold no cells.
     """
     if size != "smoke":
         raise NotApplicable("the QMC convergence comparison runs at smoke size only")

@@ -50,7 +50,7 @@ def last_line(text: str) -> str:
 def score() -> float:
     """The score of a on the two-process system, in a throwaway Brightway directory."""
     import bw2calc as bc  # noqa: PLC0415 - imported after BRIGHTWAY2_DIR is set
-    import bw2data as bd  # noqa: PLC0415  # ty: ignore[unresolved-import] - installed in the probed venv only
+    import bw2data as bd  # noqa: PLC0415  # ty: ignore[import-not-found] - installed in the probed venv only
 
     bd.projects.set_current("probe")
     bd.Database("bio").write({("bio", "co2"): {"name": "CO2", "type": "emission", "unit": "kg"}})

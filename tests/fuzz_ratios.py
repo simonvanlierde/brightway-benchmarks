@@ -16,7 +16,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-import atheris  # ty: ignore[unresolved-import]  # installed by the run command, not a project dependency
+import atheris  # ty: ignore[import-not-found]  # installed by the run command, not a project dependency
 
 spec = importlib.util.spec_from_file_location("ratios_corpus", Path(__file__).with_name("ratios_corpus.py"))
 assert spec is not None

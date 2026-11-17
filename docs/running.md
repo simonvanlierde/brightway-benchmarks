@@ -167,7 +167,7 @@ fresh environment and runs every case once at the `smoke` size, untimed.
   `scripts/compat.sh`.
 - `pre`: like `latest`, with pre-releases.
 - `conda-forge`: the same set from conda-forge with pixi, without the bw_graph_tools and
-  bw_timex cases. Linux only.
+  bw_timex cases, on Linux, macOS and Windows.
 - `suites`: like `latest`, but runs the test suites of bw2data, bw2calc, bw2io, bw_processing,
   matrix_utils, bw_graph_tools and bw_timex, from each package's GitHub tag.
 

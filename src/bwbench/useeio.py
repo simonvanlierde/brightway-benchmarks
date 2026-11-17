@@ -136,7 +136,7 @@ def read(archive: Path, methods: tuple[str, ...]) -> tuple[tuple, tuple, list[tu
     ``methods`` names each method by its resources' prefix, before ``_matrix_data``.
     """
     import bw_processing as bwp  # noqa: PLC0415 - only the container has it
-    import fsspec  # noqa: PLC0415  # ty: ignore[unresolved-import] - a bw_processing dependency
+    import fsspec  # noqa: PLC0415  # ty: ignore[import-not-found] - a bw_processing dependency
 
     def column(dp: object, suffix: str) -> NDArray:
         name = next(r["name"] for r in dp.resources if r["name"].endswith(suffix))  # ty: ignore[unresolved-attribute]

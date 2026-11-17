@@ -390,7 +390,9 @@ class NormalDraws:
 
     def reset(self) -> None:
         self.engine = (
-            qmc.Sobol(self.loc.size, scramble=True, rng=self.seed)
+            # seed= with a Generator draws as rng=int does, and SciPy before 1.15 (Brightway's floor) has no rng=.
+            # shortcut: switch to rng= once the floor reaches SciPy 1.15 or SciPy deprecates seed=.
+            qmc.Sobol(self.loc.size, scramble=True, seed=np.random.default_rng(self.seed))
             if self.sampler == "sobol"
             else np.random.default_rng(self.seed)
         )

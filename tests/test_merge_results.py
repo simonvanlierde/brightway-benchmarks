@@ -5,6 +5,8 @@ import json
 import math
 from pathlib import Path
 
+import pytest
+
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "merge_results.py"
 spec = importlib.util.spec_from_file_location("merge_results", SCRIPT)
 assert spec is not None
@@ -152,3 +154,34 @@ def test_cells_read_short_columns_and_a_case_without_parameters():
     }
     # A case without parameters, its value written as a single number.
     assert module.cells([3.0, []], ["result", "params"]) == {(): {"result": 3.0}}
+
+
+def staged_tree(tmp_path: Path, old: list, new: list) -> Path:
+    """A git worktree with a result file committed as OLD and staged as NEW."""
+    import subprocess  # noqa: PLC0415 - only these tests need git
+
+    def git(*args: str) -> None:
+        subprocess.run(["git", "-C", str(tmp_path), *args], check=True, capture_output=True)  # noqa: S607
+
+    git("init", "-q")
+    git("-c", "user.name=t", "-c", "user.email=t@example.org", "commit", "-q", "--allow-empty", "-m", "base")
+    path = tmp_path / "m" / "r.json"
+    path.parent.mkdir()
+    path.write_text(result(old))
+    git("add", ".")
+    git("-c", "user.name=t", "-c", "user.email=t@example.org", "commit", "-q", "-m", "old")
+    path.write_text(result(new))
+    git("add", ".")
+    return tmp_path
+
+
+def test_a_run_that_timed_nothing_is_refused(tmp_path: Path):
+    tree = staged_tree(tmp_path, [[1.0], [["'s'"]], "v"], [[math.nan], [["'e'"]], "v"])
+    with pytest.raises(SystemExit, match="timed nothing"):
+        module.main(str(tree))
+
+
+def test_a_run_with_one_new_time_is_committed(tmp_path: Path):
+    tree = staged_tree(tmp_path, [[1.0], [["'s'"]], "v"], [[math.nan, 2.0], [["'e'", "'u'"]], "v"])
+    module.main(str(tree))
+    assert module.finite_cells((tree / "m" / "r.json").read_text()) == {("b", ("'s'",), 1.0), ("b", ("'u'",), 2.0)}

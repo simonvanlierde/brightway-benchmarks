@@ -11,7 +11,8 @@
 # bwbench-run records are copied, and no symlinks. The RO-Crate is
 # written again over the merged branch.
 # It refuses a result file that is new, or changed after the merge, without an environment
-# fingerprint (scripts/fingerprints.py), and results that name this host, because they
+# fingerprint (scripts/fingerprints.py), a run that timed no case (scripts/merge_results.py), and
+# results that name this host, because they
 # become public once pushed: asv.sh's
 # default (box-<slot>) never does, but a BWBENCH_MACHINE set by hand or results from before
 # that default can. Other names to refuse (an ssh alias, say) go in BWBENCH_PRIVATE_NAMES,

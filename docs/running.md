@@ -52,7 +52,8 @@ that has no entry there, so add one with each new benchmark.
 `BWBENCH_PRIVATE_NAMES`. It also refuses a new or changed result without an environment
 fingerprint, which `asv.sh` adds to each result file it writes
 ([method](method.md#how-the-results-stay-reproducible)). Results committed before the fingerprint
-keep their place until a run rewrites them. Result files do not record `BWBENCH_THREADS`, `BWBENCH_ROUNDS`,
+keep their place until a run rewrites them. A run whose cases were all skipped or failed, such as one
+at a size its cases do not support, is refused too. Result files do not record `BWBENCH_THREADS`, `BWBENCH_ROUNDS`,
 `BWBENCH_CPUS` or `BWBENCH_MEM`, so don't commit runs made with values other than the defaults.
 
 ### Experimental solvers

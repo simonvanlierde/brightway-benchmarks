@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-FLAGS = ["--ignore", "unresolved-import", "--output-format", "concise", "--exit-zero"]
+FLAGS = ["--ignore", "import-not-found", "--output-format", "concise", "--exit-zero"]
 
 
 TY = shutil.which("ty")

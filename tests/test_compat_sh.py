@@ -98,7 +98,7 @@ def test_resolves_the_newest_releases_and_runs_every_suite(repo: Path):
     log = (repo / "log").read_text().splitlines()
     # No config: pyproject.toml's week-long exclude-newer must not hold releases back either.
     assert all("cutoff=unset config=1" in line for line in log if not line.startswith("python"))
-    assert log[-1].startswith("python -m pytest")
+    assert log[-1].startswith("python -m pytest -p no:cacheprovider -p no:anyio ")
     assert "benchmarks/codspeed" in log[-1]
     assert log[-1].endswith("PYTHONPATH=benchmarks strict=1 solver=unset")
 

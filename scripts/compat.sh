@@ -115,7 +115,7 @@ print("\n".join(sorted({re.sub("[-_.]+", "-", d.name).lower() + "==" + d.version
     echo "compat.sh: $suite is not on conda-forge, its cases are left out" >&2
     set -- "$@" "--ignore=benchmarks/codspeed/test_$suite.py"
   done
-  exec env BWBENCH_STRICT="${BWBENCH_STRICT-1}" PYTHONPATH=benchmarks "$py" -m pytest -p no:cacheprovider \
+  exec env BWBENCH_STRICT="${BWBENCH_STRICT-1}" PYTHONPATH=benchmarks "$py" -m pytest -p no:cacheprovider -p no:anyio \
     --rootdir benchmarks/codspeed benchmarks/codspeed "$@" -v
 fi
 uv venv --quiet --python "$python" "$venv"
@@ -167,4 +167,6 @@ esac
 compile --no-annotate --python-version "$python" -o "$out/pylock.toml" <"$out/requirements.txt"
 uv pip install --quiet --python "$py" -r "$out/requirements.txt"
 [ "$column" != suites ] || exec sh scripts/compat-suites.sh "$py" "$out"
-BWBENCH_STRICT=${BWBENCH_STRICT-1} PYTHONPATH=benchmarks "$py" -m pytest -p no:cacheprovider --rootdir benchmarks/codspeed benchmarks/codspeed -v
+# -p no:anyio: anyio before 4.16 (which floors can pick) imports CallSpec2 at plugin load, and
+# pytest 9.2 deprecates it, an error under the repo's filterwarnings. The cases use no anyio.
+BWBENCH_STRICT=${BWBENCH_STRICT-1} PYTHONPATH=benchmarks "$py" -m pytest -p no:cacheprovider -p no:anyio --rootdir benchmarks/codspeed benchmarks/codspeed -v

@@ -262,7 +262,6 @@ seed, so a given SciPy build gives the same value for a size. Near 1e22 the numb
 rounding in the LU factors. Read BAFU's as an order of magnitude: another BLAS or compiler can
 move it.
 
-Graph: [bw2calc, condition estimate](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.Conditioning.track_condition_estimate).
 Rerun: [`bench_lca.Conditioning`](../benchmarks/bench_bw2calc/bench_lca.py).
 
 ## bw2data

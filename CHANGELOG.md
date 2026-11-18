@@ -7,6 +7,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- The round log (`BWBENCH_ROUNDLOG`) records voluntary context switches and minor and major page
+  faults per timed sample, so a wait that is not preemption shows.
+
 ### Fixed
 
 - `just results-commit` refuses a run that timed no case: every new cell skipped or failed. The

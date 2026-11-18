@@ -9,7 +9,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- `just results-commit` refuses a run that timed no case: every new cell skipped or failed.
+- `just results-commit` refuses a run that timed no case: every new cell skipped or failed. The
+  message names the result files, as a file left in `results/` by an earlier, dropped run trips it too.
 
 ## [0.3.0] - 2026-11-16
 

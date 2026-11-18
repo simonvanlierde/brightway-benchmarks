@@ -148,15 +148,17 @@ def main(tree: str) -> None:
     changed = git(tree, "diff", "--cached", "--name-only", "--diff-filter=M", "-z", "--", "*.json").split("\0")
     added = git(tree, "diff", "--cached", "--name-only", "--diff-filter=A", "-z", "--", "*.json").split("\0")
     records: dict[tuple[Path, str], list[str]] = {}  # (folder, run lines): checksum lines
-    results, measured = 0, False
+    results, measured = [], False  # result files the commit changes; any finite cell gained
     for path in filter(None, added):
         new = git(tree, "show", f":{path}")
-        results += "result_columns" in json.loads(new)
+        if "result_columns" in json.loads(new):
+            results.append(path)
         measured = measured or bool(finite_cells(new))
     for path in filter(None, changed):
         new, old = git(tree, "show", f":{path}"), git(tree, "show", f"HEAD:{path}")
         merged = merge(old, new)
-        results += merged != old and "result_columns" in json.loads(new)
+        if merged != old and "result_columns" in json.loads(new):
+            results.append(path)
         measured = measured or bool(finite_cells(merged) - finite_cells(old))
         if merged != new:
             Path(tree, path).write_text(merged)
@@ -167,7 +169,10 @@ def main(tree: str) -> None:
                 sha = hashlib.sha256(merged.encode()).hexdigest()
                 records.setdefault((Path(tree, path).parent, head), []).append(f"{sha}  {path}\n")
     if results and not measured:
-        sys.exit("results-commit: the run timed nothing: every new cell is n/a or failed; check the sizes it ran at")
+        sys.exit(
+            "results-commit: the run timed nothing: every new cell is n/a or failed; check the sizes it ran at,"
+            " or remove an earlier run's files left in results/:\n" + "\n".join(results)
+        )
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     for (folder, head), lines in records.items():
         commit = head.partition("commit ")[2].split("\n", 1)[0][:12]

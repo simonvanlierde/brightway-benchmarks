@@ -16,7 +16,7 @@
       "@type": "Dataset",
       "name": "brightway-benchmarks results",
       "description": "asv timings of the Brightway stack on seeded synthetic LCA systems, with lock files.",
-      "datePublished": "2026-11-15",
+      "datePublished": "2026-11-18",
       "license": {
         "@id": "https://spdx.org/licenses/BSD-3-Clause"
       },
@@ -1096,6 +1096,12 @@
           "@id": "canary/pinned-x86-1/20261116T180557Z.json"
         },
         {
+          "@id": "canary/pinned-x86-1/20261117T180537Z.json"
+        },
+        {
+          "@id": "canary/pinned-x86-1/20261118T180518Z.json"
+        },
+        {
           "@id": "matrix_utils/benchmarks.json"
         },
         {
@@ -1812,6 +1818,12 @@
         },
         {
           "@id": "canary/pinned-x86-1/20261116T180557Z.json"
+        },
+        {
+          "@id": "canary/pinned-x86-1/20261117T180537Z.json"
+        },
+        {
+          "@id": "canary/pinned-x86-1/20261118T180518Z.json"
         },
         {
           "@id": "matrix_utils/pinned-x86-1/versions-0e4121f85ed4d6bafea72abeb49c3f40.txt"
@@ -5000,6 +5012,16 @@
     },
     {
       "@id": "canary/pinned-x86-1/20261116T180557Z.json",
+      "@type": "File",
+      "description": "one night of the machine's canary (scripts/canary.py)"
+    },
+    {
+      "@id": "canary/pinned-x86-1/20261117T180537Z.json",
+      "@type": "File",
+      "description": "one night of the machine's canary (scripts/canary.py)"
+    },
+    {
+      "@id": "canary/pinned-x86-1/20261118T180518Z.json",
       "@type": "File",
       "description": "one night of the machine's canary (scripts/canary.py)"
     },

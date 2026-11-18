@@ -123,7 +123,7 @@ class _State:
     def reset(self) -> None:
         self.prepared: dict[str, Prepared] = {}
         self.results: dict[str, Any] = {}
-        self.usage: tuple[float, float, int] | None = None
+        self.usage: tuple[float, float, int, int, int, int] | None = None
         self.energy: _Meter | None = None
 
 
@@ -151,12 +151,17 @@ def _track_setup(
     return setup
 
 
-def _usage() -> tuple[float, float, int]:
-    """(wall seconds, CPU seconds of this process's threads, involuntary context switches so far)."""
+def _usage() -> tuple[float, float, int, int, int, int]:
+    """Wall seconds, CPU seconds, context switches and page faults of this process so far.
+
+    In order: wall, CPU of all threads, involuntary and voluntary switches, minor and major faults.
+
+    Voluntary switches and page faults show waits that are not preemption: a lock, I/O, a page read in.
+    """
     import resource  # noqa: PLC0415 - Unix only, and only the round log needs it
 
     ru = resource.getrusage(resource.RUSAGE_SELF)
-    return time.perf_counter(), ru.ru_utime + ru.ru_stime, ru.ru_nivcsw
+    return time.perf_counter(), ru.ru_utime + ru.ru_stime, ru.ru_nivcsw, ru.ru_nvcsw, ru.ru_minflt, ru.ru_majflt
 
 
 _energy_warned = False
@@ -230,7 +235,7 @@ def _energy() -> _Meter | None:
 
 
 def _log_usage(state: _State, cls: type, args: tuple) -> None:
-    """Append one JSON line per timed sample: its wall and CPU time and involuntary context switches.
+    """Append one JSON line per timed sample: wall and CPU time, context switches and page faults.
 
     Only when ``BWBENCH_ROUNDLOG`` names the log file. Only time_ calls fill ``results``, so only
     time_ samples are logged. The span runs from the end of setup to teardown, so it includes
@@ -246,7 +251,7 @@ def _log_usage(state: _State, cls: type, args: tuple) -> None:
         return
     log = Path(log)
     usage = _usage()
-    wall, cpu, nivcsw = (b - a for a, b in zip(state.usage, usage, strict=True))
+    wall, cpu, nivcsw, nvcsw, minflt, majflt = (b - a for a, b in zip(state.usage, usage, strict=True))
     energy = {} if joules is None else {"energy_j": joules}
     log.parent.mkdir(parents=True, exist_ok=True)
     env = os.environ.get("ASV_ENV_NAME") or Path(sys.prefix).name
@@ -259,6 +264,9 @@ def _log_usage(state: _State, cls: type, args: tuple) -> None:
                 "wall": wall,
                 "cpu": cpu,
                 "nivcsw": nivcsw,
+                "nvcsw": nvcsw,
+                "minflt": minflt,
+                "majflt": majflt,
             } | energy
             f.write(json.dumps(entry) + "\n")
 

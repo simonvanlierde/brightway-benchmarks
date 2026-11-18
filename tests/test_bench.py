@@ -385,7 +385,8 @@ def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pyt
     log = tmp_path / "noise" / "rounds.jsonl"
     monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
     monkeypatch.setenv("ASV_ENV_NAME", "env-x")
-    usage = itertools.chain([(10.0, 1.0, 5), (12.0, 2.5, 8)], itertools.repeat((0.0, 0.0, 0)))
+    samples = [(10.0, 1.0, 5, 7, 100, 0), (12.0, 2.5, 8, 9, 140, 2)]
+    usage = itertools.chain(samples, itertools.repeat((0.0, 0.0, 0, 0, 0, 0)))
     monkeypatch.setattr(asv, "_usage", lambda: next(usage))
     (cls,) = asv.classes(module(double=double).__name__)
     obj = cls()
@@ -401,6 +402,7 @@ def test_asv_logs_cpu_and_wall_per_timed_sample(tmp_path: Path, monkeypatch: pyt
     assert entry["params"] == "'smoke', 2"
     assert entry["env"] == "env-x"
     assert (entry["wall"], entry["cpu"], entry["nivcsw"]) == (2.0, 1.5, 3)
+    assert (entry["nvcsw"], entry["minflt"], entry["majflt"]) == (2, 40, 2)
     assert "energy_j" not in entry  # BWBENCH_ENERGY is off
 
 

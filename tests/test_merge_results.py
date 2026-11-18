@@ -177,7 +177,7 @@ def staged_tree(tmp_path: Path, old: list, new: list) -> Path:
 
 def test_a_run_that_timed_nothing_is_refused(tmp_path: Path):
     tree = staged_tree(tmp_path, [[1.0], [["'s'"]], "v"], [[math.nan], [["'e'"]], "v"])
-    with pytest.raises(SystemExit, match="timed nothing"):
+    with pytest.raises(SystemExit, match=r"(?s)timed nothing.*m/r\.json"):
         module.main(str(tree))
 
 

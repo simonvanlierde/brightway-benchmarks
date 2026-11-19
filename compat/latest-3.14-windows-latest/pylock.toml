@@ -117,9 +117,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/15/16/3ceaa904610155a
 
 [[packages]]
 name = "cachebox"
-version = "5.2.3"
-sdist = { url = "https://files.pythonhosted.org/packages/36/f6/85f176d2518cf1d1be5f981fc2dadf6b131e33fefd721f36b330e3434d6c/cachebox-5.2.3.tar.gz", upload-time = 2026-04-10T12:21:35Z, size = 63686, hashes = { sha256 = "b1f68246685aa739bbbd2734befb1465363a1e1042407c154feadb065f17a099" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/c4/f8/b88a82ce9ec7a2fa0f09ed1cdd031692c8664c41f9ab71831e177c7ce2df/cachebox-5.2.3-cp314-cp314-win_amd64.whl", upload-time = 2026-04-10T12:21:44Z, size = 291928, hashes = { sha256 = "4afc8b8575e3228a42ad8d819de5fbbecc6bd0b521295966b00244be37ae3b9b" } }]
+version = "6.2.11"
+sdist = { url = "https://files.pythonhosted.org/packages/ea/c5/cb9adef009fd3465d88cde9d42cd6c380f907c276a648693936273f6e386/cachebox-6.2.11.tar.gz", upload-time = 2026-11-19T08:38:53Z, size = 287918, hashes = { sha256 = "1117259f379e173d5cb21817630427d78190e8a5f2363bfe11859ab7a30c6eb6" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/33/fb/0bd5073f9f33f6a95fce2377775e9fcd95af81b564b96e31b2426e05e035/cachebox-6.2.11-cp314-cp314-win_amd64.whl", upload-time = 2026-11-19T08:37:24Z, size = 392889, hashes = { sha256 = "2ea07fd1a979ed835cd0bbd1e9c21bf779a8f643950306170737cbba1191483b" } }]
 
 [[packages]]
 name = "certifi"
@@ -163,9 +163,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/e7/05/c19819d5e3d9529
 
 [[packages]]
 name = "deepdiff"
-version = "9.1.0"
-sdist = { url = "https://files.pythonhosted.org/packages/f9/6b/6a4a5aaf38535eb332c2856aa08e73ed7c549d0851b1215401af0a2db1a7/deepdiff-9.1.0.tar.gz", upload-time = 2026-05-15T20:18:05Z, size = 382149, hashes = { sha256 = "07e9e366fab4297755153c4eab795ad4ef3cbd0d51660e847f5751c6bd727687" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/c7/26/4a2bad8eb430d8d805a4642c4bff25103a37548d74ab346f8b1e024abcc5/deepdiff-9.1.0-py3-none-any.whl", upload-time = 2026-05-15T20:18:03Z, size = 184662, hashes = { sha256 = "80c0460e1993b04f6f0ca79abf25548b129fd218478c4ebb08f80560f5d10610" } }]
+version = "9.2.1"
+sdist = { url = "https://files.pythonhosted.org/packages/f9/da/6ac44e4e37c46643adc3230674517079f7c130c04597df2bb714f3dc5c57/deepdiff-9.2.1.tar.gz", upload-time = 2026-11-18T20:37:27Z, size = 410282, hashes = { sha256 = "6ca37d0c19b6cc75808239992172c9c26942192445073a01a7e58138f5f3594c" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/d6/44/baa39e4928d5e16c925d1c4c33f0e9c86462c24869afa27000b8b6d49176/deepdiff-9.2.1-py3-none-any.whl", upload-time = 2026-11-18T20:37:25Z, size = 201457, hashes = { sha256 = "d96257cc07065bd6355153ec5643a3258802717ae8476ec711fb81cd069d8e5c" } }]
 
 [[packages]]
 name = "deprecated"
@@ -433,9 +433,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/b7/d5/01ea71591a29e88
 
 [[packages]]
 name = "platformdirs"
-version = "4.14.5"
-sdist = { url = "https://files.pythonhosted.org/packages/d7/9a/8475be631fb33ca1466915e70fd594c42a4e84b512db650eaa14f90fe75d/platformdirs-4.14.5.tar.gz", upload-time = 2026-11-04T16:54:50Z, size = 71464, hashes = { sha256 = "32e9921db7385aa8169bee4fe9501923e5715ba9fb7ea3b9c69b0d8e0639f7a1" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/7c/ae/ecbbbfd0e4343a6a521d49b3c8656fb4643dee2a4f6eaf941cf3280391a8/platformdirs-4.14.5-py3-none-any.whl", upload-time = 2026-11-04T16:54:48Z, size = 35402, hashes = { sha256 = "8e778c6fa421516f4d3369449f8df3b0e1b72c0e0005fe88e3ec772d0a14e750" } }]
+version = "4.14.7"
+sdist = { url = "https://files.pythonhosted.org/packages/a6/2c/ec57eede0db493e61443c76ac7b4d24e94a24050afb3d598bf3678487f75/platformdirs-4.14.7.tar.gz", upload-time = 2026-11-17T20:03:32Z, size = 75132, hashes = { sha256 = "5472257c1cf97a14658af52997011c7e59e4aebf3a24950b973c11b579e1b074" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/f8/46/3737af9f971f3934794103256d7f1ed6200a62be0c7b7ff09ac4cf6b3422/platformdirs-4.14.7-py3-none-any.whl", upload-time = 2026-11-17T20:03:31Z, size = 89658, hashes = { sha256 = "391513b74707c42335fff3ea17eaac657a7ee9ffcadd809634d34ea594d0122c" } }]
 
 [[packages]]
 name = "pluggy"

@@ -7,6 +7,9 @@ name: refine-macos
 # goes to a hosted runner.
 
 on:
+  # The probe's own PR runs it, since a dispatch needs the file on main. Drop this trigger once it is there.
+  pull_request:
+    paths: [.github/workflows/refine-macos.yml, scripts/refine_probe.py]
   workflow_dispatch:
     inputs:
       size:
@@ -55,8 +58,8 @@ jobs:
       - shell: bash
         env:
           VARIANT: ${{ matrix.variant }}
-          SIZE: ${{ inputs.size }}
-          RUNS: ${{ inputs.runs }}
+          SIZE: ${{ inputs.size || 'ecoinvent' }}
+          RUNS: ${{ inputs.runs || '30' }}
         run: |-
           mkdir -p out
           {

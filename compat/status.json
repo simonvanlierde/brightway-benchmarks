@@ -1,12 +1,12 @@
 {
- "date": "2026-11-19",
- "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
+ "date": "2026-11-20",
+ "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44733240030",
  "cells": [
   {
    "column": "latest",
    "python": "3.13",
    "os": "macos-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -31,7 +31,7 @@
    "column": "latest",
    "python": "3.13",
    "os": "ubuntu-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -56,7 +56,7 @@
    "column": "latest",
    "python": "3.13",
    "os": "windows-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -81,7 +81,7 @@
    "column": "latest",
    "python": "3.14",
    "os": "macos-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -106,7 +106,7 @@
    "column": "latest",
    "python": "3.14",
    "os": "ubuntu-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -131,7 +131,7 @@
    "column": "latest",
    "python": "3.14",
    "os": "windows-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -156,7 +156,7 @@
    "column": "floors",
    "python": "3.13",
    "os": "macos-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -181,7 +181,7 @@
    "column": "floors",
    "python": "3.13",
    "os": "ubuntu-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -206,7 +206,7 @@
    "column": "floors",
    "python": "3.13",
    "os": "windows-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -231,7 +231,7 @@
    "column": "floors",
    "python": "3.14",
    "os": "macos-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -256,7 +256,7 @@
    "column": "floors",
    "python": "3.14",
    "os": "ubuntu-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -281,7 +281,7 @@
    "column": "floors",
    "python": "3.14",
    "os": "windows-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -306,7 +306,7 @@
    "column": "pre",
    "python": "3.13",
    "os": "macos-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -331,7 +331,7 @@
    "column": "pre",
    "python": "3.13",
    "os": "ubuntu-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -356,7 +356,7 @@
    "column": "pre",
    "python": "3.13",
    "os": "windows-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -381,7 +381,7 @@
    "column": "pre",
    "python": "3.14",
    "os": "macos-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -406,7 +406,7 @@
    "column": "pre",
    "python": "3.14",
    "os": "ubuntu-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",
@@ -431,7 +431,7 @@
    "column": "pre",
    "python": "3.14",
    "os": "windows-latest",
-   "today": "success",
+   "today": "failure",
    "green": {
     "date": "2026-11-19",
     "run": "https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/44520713839",

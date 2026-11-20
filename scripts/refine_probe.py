@@ -45,7 +45,10 @@ def stats(times: list[float]) -> dict:
 
 
 def sh(*cmd: str) -> str:
-    return subprocess.run(cmd, capture_output=True, text=True, check=False).stdout.strip()  # noqa: S603
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, check=False).stdout.strip()  # noqa: S603
+    except OSError:  # otool and sysctl are macOS tools; the probe also runs on Linux
+        return ""
 
 
 inventory, methods, refs, _ = packages(SIZE)

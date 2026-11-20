@@ -1,0 +1,91 @@
+name: refine-macos
+
+# `scripts/refine_probe.py` on an Apple Silicon runner: UMFPACK per-solve time with iterative
+# refinement on and off, through scikit-umfpack built from PyPI against Homebrew's SuiteSparse
+# and from conda-forge, plus SuperLU. Run it by hand. Hosted runners share their machines, so
+# read the on/off ratio, not the absolute times. Synthetic profile only: licensed data never
+# goes to a hosted runner.
+
+on:
+  workflow_dispatch:
+    inputs:
+      size:
+        description: profile
+        type: choice
+        options: [ecoinvent, smoke]
+        default: ecoinvent
+      runs:
+        description: solves per mode
+        default: "30"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: ${{ matrix.variant }} on macos-15
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [pip-umfpack, conda-umfpack, superlu]
+    env:
+      BWBENCH_THREADS: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          enable-cache: false
+          version: "0.13.6"
+
+      - if: matrix.variant == 'pip-umfpack'
+        run: brew install suite-sparse swig
+
+      - if: matrix.variant == 'conda-umfpack'
+        run: brew install micromamba
+
+      - shell: bash
+        env:
+          VARIANT: ${{ matrix.variant }}
+          SIZE: ${{ inputs.size || 'ecoinvent' }}
+          RUNS: ${{ inputs.runs || '30' }}
+        run: |-
+          mkdir -p out
+          {
+            sysctl -n machdep.cpu.brand_string
+            sw_vers
+            case "$VARIANT" in
+              pip-umfpack) brew list --versions suite-sparse ;;
+              conda-umfpack)
+                micromamba create -y -q -p "$RUNNER_TEMP/env" -c conda-forge --override-channels \
+                  python=3.12 scikit-umfpack scipy numpy threadpoolctl pip
+                micromamba run -p "$RUNNER_TEMP/env" pip install -q bw2calc==3.1.0
+                micromamba list -p "$RUNNER_TEMP/env" | grep -iE 'blas|accelerate|suitesparse|umfpack|openblas|numpy|scipy'
+                ;;
+            esac
+          } 2>&1 | tee out/env.txt
+          if [[ $VARIANT == conda-umfpack ]]; then
+            PYTHONPATH=src micromamba run -p "$RUNNER_TEMP/env" python scripts/refine_probe.py umfpack "$SIZE" "$RUNS" >out/result.json
+          else
+            solver=superlu; extra=(); [[ $VARIANT == pip-umfpack ]] && solver=umfpack
+            [[ $VARIANT == pip-umfpack ]] && extra=(--with scikit-umfpack==0.4.2)
+            PYTHONPATH=src uv run -q --no-project --python 3.12 \
+              --exclude-newer-package bw2calc=2026-10-19 --with bw2calc==3.1.0 --with threadpoolctl==3.7.0 \
+              --with numpy==2.5.3 --with scipy==1.18.1 "${extra[@]}" \
+              python scripts/refine_probe.py "$solver" "$SIZE" "$RUNS" >out/result.json
+          fi
+          cat out/result.json | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: refine-${{ matrix.variant }}
+          path: out

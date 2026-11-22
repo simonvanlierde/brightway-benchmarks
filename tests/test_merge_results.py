@@ -114,6 +114,16 @@ def test_samples_merge_per_cell():
     assert custom_row(columns, old, new) == [[2, 1], [["'u'", "'s'"]], "v", [[2.0], [1.0, 1.1]]]
 
 
+@pytest.mark.parametrize("new_labels", [["a", "b"], ["a", "c"]])
+def test_a_skipped_cell_keeps_the_old_measurement(new_labels: list[str]):
+    columns = ["result", "params", "version", "samples", "stats_q_25"]
+    old = [[1, 2], [["a", "b"]], "v", [[1.0, 1.1], [2.0]], [0.1, 0.2]]
+    new = [[math.nan, 3], [new_labels], "v", [None, [3.0]], [None, 0.3]]
+    row = custom_row(columns, old, new)
+    assert [row[i][0] for i in (0, 3, 4)] == [1, [1.0, 1.1], 0.1]
+    assert [row[i][1] for i in (0, 3, 4)] == [3, [3.0], 0.3]
+
+
 def test_cells_neither_run_timed_are_skipped_not_failed():
     old = [[1], [["'s'"], ["'A'"]], "v", 10, 5, [0.1]]
     new = [[2], [["'u'"], ["'B'"]], "v", 20, 1, [0.2]]

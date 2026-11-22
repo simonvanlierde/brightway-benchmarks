@@ -1,7 +1,7 @@
 """bw_processing: group lookup and the MatrixEntry path.
 
-``groups`` calls ``filter_by_attribute`` once per label, so it is quadratic in the
-number of resource groups (PR #113 makes it one pass: 36.4 s to 0.021 s at 16k groups).
+Through bw_processing 1.6, group lookup scanned the resources once per group.
+Version 2.0 collects the groups in one pass.
 Issue #111 measures ``MatrixEntry.as_dict`` at 1.87 us per entry against 0.22 us for
 ``dict(vars(entry))``; the two ``EntriesPath`` cases time ``add_entries`` against that
 cheaper conversion through the same public iterator method.

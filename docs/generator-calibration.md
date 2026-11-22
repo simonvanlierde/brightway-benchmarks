@@ -47,6 +47,17 @@ and METIS is 42 to 81. When the chance is 1, the largest loop shrinks from 0.62 
 0.12 and 0.27 of the products, and a larger `back` does not bring it back. Every supplier
 edge that does not follow the family template adds fill, so v5 stays the default.
 
+## Holdout seeds 4 to 11
+
+Five of these eight full-size v5 runs passed every structural guard. Seeds 4 and 11 had a
+consumer-count q90 of 11, below the lower bound of 11.2. Seed 5 had an input-count q90 of
+31, above the upper bound of 30.8. Consumer-count q90 ranged from 11 to 12 across the
+holdout seeds, compared with the target of 16.
+
+Mean METIS fill was 38.36, below the mean cap of 38.65. COLAMD fill on Aᵀ ranged from
+28.92 to 35.12, within the upper bound used for seed 0. The holdout sweep records
+these fill measurements separately from its structural pass count.
+
 ## Keeping fill explicit
 
 [Small recursive separators help control sparse-factorization fill](https://simons.berkeley.edu/sites/default/files/docs/787/gilbertslides.pdf).

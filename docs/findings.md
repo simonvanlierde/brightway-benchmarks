@@ -348,13 +348,16 @@ Rerun: [`bench_traversal.Traversal`](../benchmarks/bench_bw_graph_tools/bench_tr
 **Through bw_processing 1.6, lookup time grows with the square of the number of resource
 groups. Version 2.0 collects them in one pass.**
 
-Through 1.6, looking up 100 groups took 2.17 to 2.27 ms, and 1,000 took 249 ms. In the earlier
-comparison, [bw_processing#113](https://github.com/brightway-lca/bw_processing/pull/113) cut the
-1,000-group matrix build time by 40%.
-matrix_utils 0.9 builds a matrix from 1,000 groups in 655 ms on bw_processing 1.6, and 393 ms
-on #113. [matrix_utils#48](https://github.com/brightway-lca/matrix_utils/pull/48), shipped in
-matrix_utils 1.0, took those to 619 and 355 ms. In that comparison, matrix_utils 0.9 built
-1,000-group matrices 12 to 13% slower than 0.6.
+On one E-core with Python 3.13 and a fixed dependency stack, upgrading bw_processing
+from 1.6 to 2.0 cut lookup for 10,000 groups from 31.5 s to 20.8 ms. For 100,000
+entries, `add_entries` fell from 534 to 201 ms, while the generic dictionary iterator
+rose from 230 to 286 ms. The iterator now sorts records that hold wider floats. The
+release comparison measures the combined effect of the changes in 2.0.
+
+Holding bw_processing at 2.0, upgrading matrix_utils from 0.9 to 1.0 cut a
+10,000-group matrix build from 7.85 to 1.77 s. The resource-group changes shipped
+in [bw_processing#113](https://github.com/brightway-lca/bw_processing/pull/113) and
+[matrix_utils#48](https://github.com/brightway-lca/matrix_utils/pull/48).
 
 Graph: [bw_processing, resource groups](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw_processing&bench=bench_datapackage.Groups.time_groups).
 Rerun: [`bench_datapackage.Groups`](../benchmarks/bench_bw_processing/bench_datapackage.py) and

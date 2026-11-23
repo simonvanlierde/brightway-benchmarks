@@ -78,8 +78,19 @@ jobs:
           TAG: ${{ github.ref_name }}
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
         run: |-
+          set -euo pipefail
+          # Only "release not found" means there is none: another error (a rate limit, a 5xx) stops the job.
+          if ! state=$(gh release view "$TAG" --json isDraft --jq .isDraft 2>&1); then
+            case $state in *"release not found"*) state= ;; *) echo "$state" >&2; exit 1 ;; esac
+          fi
+          if [ "$state" = false ]; then
+            echo "release $TAG already exists; leaving it"
+            exit 0
+          fi
+          if [ "$state" = true ]; then gh release delete "$TAG" --yes; fi
           cp "$BUNDLE" "release/brightway-benchmarks-${TAG#v}.intoto.jsonl"
-          gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md release/*
+          gh release create "$TAG" --draft --verify-tag --title "$TAG" --notes-file notes.md release/*
+          gh release edit "$TAG" --draft=false
 
   # A release made with GITHUB_TOKEN starts no other workflow, so the site's build label would
   # keep the previous tag until its daily run.

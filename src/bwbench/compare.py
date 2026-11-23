@@ -561,7 +561,7 @@ def label_problem(label: str) -> str | None:
 def main(argv: list[str] | None = None) -> int:
     """Run ``bwbench`` with ARGV; the exit code."""
     for stream in (sys.stdout, sys.stderr):
-        stream.reconfigure(encoding="utf-8", newline="\n")  # ty: ignore[unresolved-attribute]
+        stream.reconfigure(encoding="utf-8", newline="\n")  # ty: ignore[missing-union-attribute]
     args = parse(argv)
     if args.command == "validate":
         return validate(args.files, contribution=args.contribution)

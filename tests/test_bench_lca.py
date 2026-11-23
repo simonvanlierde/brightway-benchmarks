@@ -50,7 +50,7 @@ class JacobiGMRESLCA(StubLCA):
 def bench_lca(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
     stub = types.ModuleType("bw2calc")
     vars(stub).update(LCA=LCA, IterativeLCA=IterativeLCA, JacobiGMRESLCA=JacobiGMRESLCA, PYPARDISO=False)
-    stub.__version__ = "0"  # ty: ignore[unresolved-attribute]
+    stub.__version__ = "0"  # ty: ignore[missing-attribute]
     monkeypatch.setitem(sys.modules, "bw2calc", stub)
     spec = importlib.util.spec_from_file_location("bench_lca", SCRIPT)
     assert spec is not None

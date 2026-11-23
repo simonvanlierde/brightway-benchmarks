@@ -48,7 +48,7 @@ def _test(b: Bench) -> Any:
     test.__name__ = f"test_{b.name}"
     # pytest reads fixture and parameter names from the signature, not from **params.
     kind = inspect.Parameter.KEYWORD_ONLY
-    test.__signature__ = inspect.Signature(  # ty: ignore[unresolved-attribute]
+    test.__signature__ = inspect.Signature(  # ty: ignore[missing-attribute]
         [inspect.Parameter(n, kind) for n in ["benchmark", *b.params]]
     )
     for name, values in reversed(b.params.items()):

@@ -82,7 +82,7 @@ jobs:
               --with numpy==2.5.3 --with scipy==1.18.1 "${extra[@]}" \
               python scripts/refine_probe.py "$solver" "$SIZE" "$RUNS" >out/result.json
           fi
-          cat out/result.json | tee -a "$GITHUB_STEP_SUMMARY"
+          tee -a "$GITHUB_STEP_SUMMARY" <out/result.json
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: ${{ !cancelled() }}

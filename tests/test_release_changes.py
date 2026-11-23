@@ -76,6 +76,28 @@ def test_lists_cases_that_moved_between_the_newest_two_releases(module: ModuleTy
     assert (rows[1].old, rows[1].new, rows[1].ratio) == ("45 s", "9.05 s", pytest.approx(9.05 / 45.0))
 
 
+def test_a_point_invalid_toml_lists_is_not_a_change(
+    module: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    env = "uv-py3.12" + STACK
+    (tmp_path / "results" / "s" / "benchmarks.json").write_text(
+        json.dumps({"version": 2} | {k: {"unit": u, "param_names": ["size", "cls"]} for k, u in UNITS.items()})
+    )
+    invalid = tmp_path / "invalid.toml"
+    invalid.write_text(
+        '[[invalid]]\nbenchmark = "bench_lca.SingleScore.time_first_score"\n'
+        f'params = {{ cls = "IterativeLCA" }}\ncommits = ["{"2.000000" + "0" * 32}"]\n'
+        'reason = "r"\nlink = "l"\n'
+    )
+    monkeypatch.setattr(module, "INVALID", invalid)
+    write(tmp_path, result("2.000000", env, [9.04, 45.0], [5e8, 5.9e8], [0.0, 0.0]))
+    write(tmp_path, result("3.000000", env, [9.05, 9.05], [5e8, 5e8], [0.0, 0.0]))
+    # The time at the listed commit and value is not compared; the same point's peak memory still is.
+    assert [(c.case, c.params) for c in module.changes(tmp_path / "results", "s")] == [
+        ("SingleScore.peakmem_first_score", "'ecoinvent', 'IterativeLCA'"),
+    ]
+
+
 def test_a_failed_case_that_runs_again_is_listed(module: ModuleType, tmp_path: Path):
     env = "uv-py3.12" + STACK
     write(tmp_path, result("2.000000", env, [27.6, None], [5e8, 5e8], [0.0, 0.0]))

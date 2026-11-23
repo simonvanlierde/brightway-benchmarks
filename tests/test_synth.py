@@ -8,6 +8,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from scipy import sparse
+from scipy.sparse import linalg as sla
 
 from bwbench import shapes, synth
 from bwbench.matrices import System, as_bw2data, neumann, neumann_score
@@ -221,6 +222,30 @@ def test_neumann_score_matches_the_reference():
         characterization_matrix=sparse.diags(cf),
     )
     assert neumann_score(lca, s.scale) == pytest.approx(s.reference[0][0], rel=1e-12)
+
+
+def test_neumann_score_solves_the_sampled_matrix_not_a_stale_copy():
+    """bw2calc 2.5.0's JacobiGMRESLCA kept a copy in ``technosphere_matrix`` that draws never reached."""
+    s = system("smoke")
+    stale = s.technosphere().tocsr()
+    sampled = stale.copy()
+    off_diagonal = sampled.tocoo().row != sampled.tocoo().col
+    sampled.data[off_diagonal] *= 1.2
+    demand = np.zeros(s.profile.products)
+    demand[0] = 1.0
+    cf = np.zeros(s.profile.flows)
+    cf[s.cf_flows[0] - s.flow_offset] = s.cf_data[0]
+    biosphere, characterization = s.biosphere(), sparse.diags(cf)
+    lca = types.SimpleNamespace(
+        technosphere_matrix=stale,
+        technosphere_mm=types.SimpleNamespace(matrix=sampled),
+        demand_array=demand,
+        biosphere_matrix=biosphere,
+        characterization_matrix=characterization,
+    )
+    expected = float((characterization @ biosphere @ sla.spsolve(sampled.tocsc(), demand)).sum())
+    assert expected != pytest.approx(s.reference[0][0], rel=1e-3)
+    assert neumann_score(lca, s.scale) == pytest.approx(expected, rel=1e-9)
 
 
 def test_skip_unless_factorizable():

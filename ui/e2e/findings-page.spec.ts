@@ -61,7 +61,7 @@ test("the findings page carries each write-up, and a headline's link lands on it
   for (const f of listed) await expect(page.locator(`.writeups h3#${f.doc}`), f.doc).toHaveCount(1);
   // The write-up's links to repository files open on GitHub, not as paths on this site.
   const relative = await page
-    .locator(".writeups a")
+    .locator(".writeups a[href]")
     .evaluateAll((as) => as.map((a) => a.getAttribute("href") ?? "").filter((h) => !/^(https?:|#|\/)/.test(h)));
   expect(relative).toEqual([]);
   const first = listed.find((f) => f.story) as (typeof listed)[number];

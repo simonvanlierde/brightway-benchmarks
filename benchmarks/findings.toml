@@ -28,12 +28,12 @@ doc = "bw2calc-300-slowed-iterativelca-without-pypardiso-and-310-fixed-it"
 profile = "bw2calc-300-iterativelca-umfpack.html"
 
 [[findings]]
-title = "bw2calc 3.0.0 doubled JacobiGMRESLCA's Monte Carlo time"
-text = "Ten draws take 0.65 s instead of 0.338 s with every solver, and 3.1.0 has not fixed it."
+title = "bw2calc 2.4.0 and 2.5.0 skipped JacobiGMRESLCA's Monte Carlo solve"
+text = "Draws ignored technosphere uncertainty, which made them look twice as fast. 3.0.0 fixed it: ten draws take about 0.65 s."
 group = "bw2calc"
 benchmark = "bench_lca.MonteCarlo.time_iterations"
 params = { size = "ecoinvent", iterations = "10", cls = "JacobiGMRESLCA" }
-doc = "bw2calc-300-doubled-jacobigmreslcas-monte-carlo-time"
+doc = "bw2calc-240-and-250-skipped-jacobigmreslcas-monte-carlo-solve"
 
 [[findings]]
 title = "bw_timex 1.3.0 made the time-explicit LCI about 19 times slower"

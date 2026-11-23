@@ -42,25 +42,28 @@ Rerun: [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py).
 
 ### Energy per first score
 
-**On generator v4, PyPardiso and UMFPACK used about 180 J above idle per score, against 483 J
-for SuperLU.**
+**On generator v5, PyPardiso used 47 J above idle per first score, against 54 J
+for UMFPACK and 100 J for SuperLU.**
 
-A quiet run on 7 November 2026 measured CPU package energy with Intel RAPL. It used bw2calc
-3.1.0, Python 3.12, one thread on the same efficiency-core slot, and generator v4's
-ecoinvent-sized profile. Those scores took 3.6 to 5.6 times as long as the v5 scores above, so
-a v5 score uses less energy; it has not been measured yet. A five-minute baseline measured
-9.19 W. Each sample subtracts that power times its own elapsed time.
+The 20 November 2026 run measured CPU-package energy with Intel RAPL. It used
+bw2calc 3.1.0, Python 3.13, one thread on an E-core, and the synthetic ecoinvent-sized
+profile. The five-minute idle baseline was 4.79 W. Each sample subtracts that power
+times its own elapsed time.
 
-| Solver | Median package J / score | Median J above idle | Above-idle range, 3 samples |
+| Solver | Median package J per score | Median J above idle | Above-idle range, 3 samples |
 | --- | --- | --- | --- |
-| SuperLU (SciPy) | 738 | 483 | 480–490 |
-| PyPardiso | 273 | 180 | 177–184 |
-| UMFPACK, reference BLAS | 263 | 179 | 167–210 |
+| SuperLU (SciPy) | 123.4 | 99.7 | 99.3–100.4 |
+| PyPardiso | 58.0 | 47.0 | 46.8–48.3 |
+| UMFPACK, PyPI build | 65.8 | 53.6 | 53.2–53.9 |
 
-The UMFPACK and PyPardiso ranges overlap, and three samples do not show which uses less
-energy. Each reading covers one first score, with setup and verification outside the measured
-span. RAPL covers the CPU package, including other processes, not whole-machine power.
+Each reading covers one first score, with setup and verification outside the measured
+span. RAPL measures CPU-package energy, including other processes.
 [Measurement and idle subtraction](running.md#energy-per-operation).
+
+In a separate seven-pair [MultiScores run](../benchmarks/bench_bw2calc/bench_lca.py)
+at the same size, setting the MKL library path explicitly cut median time from
+2.489 to 2.401 s for 10 demands. Median paired energy savings above idle were
+0.06 J, with a range of −4.22 to +3.84 J.
 
 Rerun: [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py), with the
 [`idle sampler`](../scripts/idle_energy.py) and

@@ -156,27 +156,27 @@ A in 2.5.0 and 3.0.0, as did 3.0.0's `IterativeLCA`. 3.1.0 factorizes Aᵀ
 Rerun: [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py), and
 `just solver-lci umfpack ecoinvent 3.0.0` for `lci(factorize=True)`.
 
-### bw2calc 3.0.0 doubled JacobiGMRESLCA's Monte Carlo time
+### bw2calc 2.4.0 and 2.5.0 skipped JacobiGMRESLCA's Monte Carlo solve
 
-**bw2calc 3.0.0 made `JacobiGMRESLCA` about 1.9 times slower in Monte Carlo, with every solver.
-3.1.0 has not fixed it.**
+<a id="bw2calc-300-doubled-jacobigmreslcas-monte-carlo-time"></a>
 
-What it means for you: for Monte Carlo with `JacobiGMRESLCA`, 2.5.0 is about twice as fast.
-Nothing else changes.
+**In bw2calc 2.4.0 and 2.5.0, `JacobiGMRESLCA` solved a stale copy of the technosphere matrix in
+Monte Carlo, so its draws ignored technosphere uncertainty. 3.0.0 fixed it.** This section used
+to report the fix as a 3.0.0 slowdown: 2.5.0 was only faster because it skipped the solve.
 
-The case is ten draws after the first score, on the ecoinvent-sized synthetic database. The
-class never factorizes, so the solver makes no difference.
+What it means for you: don't use `JacobiGMRESLCA` for Monte Carlo on 2.4.0 or 2.5.0. From 3.0.0
+on, ten draws take about 0.65 s on the ecoinvent-sized synthetic database, with every solver.
 
-| bw2calc | Solvers | `JacobiGMRESLCA`, 10 draws |
-| --- | --- | --- |
-| 2.5.0 | UMFPACK, SuperLU | 0.338 s |
-| 3.0.0 | the same, and PyPardiso | 0.648 s (0.646 to 0.650 s) |
-| 2.4.0, conda-forge builds | UMFPACK, UMFPACK on MKL, SuperLU | 0.341 s (0.340 to 0.342 s) |
-| 3.1.0, conda-forge builds | the same, and PyPardiso | 0.655 s (0.654 to 0.659 s) |
+In 2.4.0 and 2.5.0, the first solve replaced `technosphere_matrix` with a CSC copy. Each draw
+wrote its values into `technosphere_mm.matrix`, but GMRES kept solving the copy, starting from
+its exact solution. On one draw at smoke size, the score was 12% off a direct solve of the
+sampled matrix; with 3.1.0 the difference is 3e-10. The fix is
+[brightway2-calc#155](https://github.com/brightway-lca/brightway2-calc/pull/155), first released
+in 3.0.0. Reported as [brightway2-calc#187](https://github.com/brightway-lca/brightway2-calc/issues/187).
 
-The slowdown starts with the commit that made `JacobiGMRESLCA` a subclass of `IterativeLCA`
-([brightway2-calc#161](https://github.com/brightway-lca/brightway2-calc/pull/161)). A single
-score with `JacobiGMRESLCA` did not change.
+The benchmark's own check missed it, because it solved `technosphere_matrix` too, the same stale
+copy. It now solves the sampled matrices, and the viewer leaves out the 2.4.0 and 2.5.0 points
+([`benchmarks/invalid.toml`](../benchmarks/invalid.toml)).
 
 Graph: [bw2calc, Monte Carlo](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.MonteCarlo.time_iterations).
 Rerun: [`bench_lca.MonteCarlo`](../benchmarks/bench_bw2calc/bench_lca.py).

@@ -7,8 +7,9 @@ in the shapes ui/schema/ gives. An environment's name drops its stack hash, so a
 id across releases, and a commit gets one value per environment, on the stack ``pick`` chooses.
 ``time`` cases become latency in ns, with the samples' quartiles as bounds where they hold the value;
 ``peakmemory`` cases become peak memory in bytes. Other types, failed and skipped cases are left
-out, and so is a benchmark whose parameters don't match benchmarks.json, with one warning, and a
-result whose benchmark version differs from benchmarks.json's (an older generator version).
+out, and so is a benchmark whose parameters don't match benchmarks.json, with one warning, a
+result whose benchmark version differs from benchmarks.json's (an older generator version), and
+a point benchmarks/invalid.toml lists.
 
 The index also lists ``changes``, found here so the UI computes none. Along each series (one case
 on one machine in one measure, oldest commit first) two methods run:
@@ -83,6 +84,7 @@ REPORT_FORMAT = "bmf/v0"
 CHANGE_POINTS = Path(__file__).with_name("change_points.py")
 DESCRIPTIONS = Path(__file__).resolve().parents[1] / "benchmarks" / "descriptions.toml"
 FINDINGS = DESCRIPTIONS.with_name("findings.toml")
+INVALID = DESCRIPTIONS.with_name("invalid.toml")
 PROFILES = DESCRIPTIONS.parents[1] / "profiles"  # `just site` publishes this folder at PUBLIC_BASE/profiles/
 STORIES = DESCRIPTIONS.parents[1] / "ui" / "src" / "pages" / "stories"  # a story's slug is its file name
 
@@ -167,6 +169,14 @@ class Catalog:
     benchmarks: dict[tuple[str, str], dict] = field(default_factory=dict)
     cases: dict[str, dict] = field(default_factory=dict)
     warned: set[tuple[str, str]] = field(default_factory=set)
+    invalid: list[dict] = field(default_factory=lambda: tomllib.loads(INVALID.read_text())["invalid"])
+
+    def is_invalid(self, name: str, commit: str, shown: dict[str, str]) -> bool:
+        """Whether INVALID lists this point: its benchmark, its commit and every value the entry names."""
+        return any(
+            e["benchmark"] == name and commit in e["commits"] and e["params"].items() <= shown.items()
+            for e in self.invalid
+        )
 
     def report(self, subject: str, files: list[dict], info: dict[str, dict]) -> dict[str, dict]:
         """One BMF report from the result files of one commit on one machine, one stack each."""
@@ -185,6 +195,8 @@ class Catalog:
                             f" names {len(names)}; skipped",
                             file=sys.stderr,
                         )
+                    continue
+                if self.is_invalid(name, data["commit_hash"], dict(zip(names, map(label, point), strict=True))):
                     continue
                 axes = [{"name": n, "values": []} for n in names]
                 bench = self.benchmarks.setdefault(

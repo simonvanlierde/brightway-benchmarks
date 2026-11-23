@@ -14,7 +14,7 @@ flowchart LR
     box["box: throwaway container<br/>scripts/box.sh, scripts/asv.sh"] --> results[("results branch<br/>asv JSON")]
     compat["compat workflow<br/>scripts/compat.sh"] --> compatb[("compat branch<br/>tested sets")]
     results --> export["scripts/export_ui.py"]
-    descr["benchmarks/descriptions.toml<br/>benchmarks/findings.toml"] --> export
+    descr["benchmarks/descriptions.toml<br/>findings.toml, invalid.toml"] --> export
     export --> json["index.json + reports<br/>ui/schema/"]
     json --> ui["ui/<br/>Astro + Svelte viewer"]
     compatb --> guide["scripts/export_guidance.py<br/>guidance.json"]
@@ -88,6 +88,10 @@ carries a `format_version`. [`ui/src/lib/contract.ts`](../ui/src/lib/contract.ts
 file against the schema and refuses a version it does not know.
 [`benchmarks/descriptions.toml`](../benchmarks/descriptions.toml) and
 [`benchmarks/findings.toml`](../benchmarks/findings.toml) supply the text beside the numbers.
+[`benchmarks/invalid.toml`](../benchmarks/invalid.toml) lists results that measured a wrong
+calculation, by benchmark, commit and parameter values, each with its reason and a link. The
+export leaves those points out of the reports, so the viewer neither plots nor compares them;
+the `results` branch keeps the raw files.
 
 ## The viewer and the site
 

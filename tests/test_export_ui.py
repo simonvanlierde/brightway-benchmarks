@@ -162,6 +162,27 @@ def test_one_report_per_machine_and_commit_oldest_first(
     ]
 
 
+def test_a_point_invalid_toml_lists_is_left_out(export_ui: ModuleType):
+    bad, good = "11" * 20, "22" * 20
+    entry = {"benchmark": TIME, "params": {"cls": "IterativeLCA"}, "commits": [bad], "reason": "r", "link": "l"}
+    catalog = export_ui.Catalog(invalid=[entry])
+
+    def points(commit: str) -> set[tuple[str, ...]]:
+        report = catalog.report("s", [result(commit, "e", 0, [1.0, 2.0], ([1.0, 2.0], [1.0, 2.0]))], INFO)
+        cases = {c["id"]: tuple(c["params"]) for c in catalog.cases.values()}
+        return {cases[case] for case, metric in report.items() if "latency" in metric}
+
+    # The listed value at the listed commit goes; another value, or the same value at another commit, stays.
+    assert points(bad) == {("'ecoinvent'", "'LCA'")}
+    assert points(good) == {("'ecoinvent'", "'LCA'"), ("'ecoinvent'", "'IterativeLCA'")}
+
+
+def test_invalid_toml_entries_are_complete_with_full_commits(export_ui: ModuleType):
+    for entry in export_ui.Catalog().invalid:
+        assert all(re.fullmatch(r"[0-9a-f]{40}", c) for c in entry["commits"])
+        assert entry.keys() >= {"benchmark", "params", "commits", "reason", "link"}
+
+
 def test_one_stack_per_commit_and_environment(export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     commit = "44" * 20
     current = hashlib.sha256(b"numpy==2.5.3\n").hexdigest()[:8]

@@ -9,6 +9,7 @@ default_install_hook_types: [pre-commit, commit-msg]
 # data/, profiles/ and tests/fixtures/ hold inputs, generated pages and test cases: the
 # whitespace, end-of-file and notebook hooks must not rewrite them. Excluded per hook, so
 # the secret scan and the large-file check still cover them.
+# Licence texts are verbatim; keep other checks, including the secret scan, enabled.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
@@ -19,13 +20,29 @@ repos:
         # pnpm writes its own version into the lockfile as a second YAML document.
         exclude: (^|/)pnpm-lock\.yaml$
       - id: end-of-file-fixer
-        exclude: ^(data|profiles|tests/fixtures)/
+        exclude: ^(LICENSES|data|profiles|tests/fixtures)/
       - id: mixed-line-ending
-        exclude: ^(data|profiles|tests/fixtures)/
+        exclude: ^(LICENSES|data|profiles|tests/fixtures)/
       - id: trailing-whitespace
-        exclude: ^(data|profiles|tests/fixtures)/
+        exclude: ^(LICENSES|data|profiles|tests/fixtures)/
       # Not gated to python: .rumdl.toml ships to every stack.
       - id: check-toml
+
+  # A copier update that cannot merge a file leaves conflict markers or a .rej file: neither may reach main.
+  - repo: local
+    hooks:
+      - id: copier-update-conflict
+        name: a copier update left conflict markers
+        # \r? for a CRLF file, where Copier writes CRLF markers. A .rej file is the other hook's.
+        entry: '^(<<<<<<< before updating|>>>>>>> after updating)\r?$'
+        language: pygrep
+        types: [text]
+        exclude: '\.rej$'
+      - id: copier-update-rej
+        name: a copier update left a .rej file (resolve its hunks in the file next to it, then delete it)
+        entry: delete this file once its hunks are resolved
+        language: fail
+        files: '\.rej$'
 
   # Commit messages follow committed.toml: Conventional Commits, imperative, no period.
   - repo: https://github.com/crate-ci/committed
@@ -149,7 +166,7 @@ repos:
         # translation catalogs: gettext .po files and anything in a locales/ directory.
         # List other files with text in other languages under [files] extend-exclude in
         # _typos.toml.
-        exclude: ^\.copier-answers\.yml$|\.po$|(^|/)locales/
+        exclude: ^LICENSES/|^\.copier-answers\.yml$|\.po$|(^|/)locales/
 
   # Dead relative links in Markdown and HTML. Offline, so a commit never waits on the
   # network: the weekly links.yml checks the web links. lychee's own hook installs its

@@ -16,6 +16,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `just results-commit` refuses a run that timed no case: every new cell skipped or failed. The
   message names the result files, as a file left in `results/` by an earlier, dropped run trips it too.
+- The Monte Carlo correctness check solves the matrices bw2calc sampled (`technosphere_mm.matrix`),
+  not `technosphere_matrix`. bw2calc 2.5.0's `JacobiGMRESLCA` kept a copy there that draws never
+  reached, so it solved the first draw's matrix every time and the old check agreed with it
+  ([brightway2-calc#187](https://github.com/brightway-lca/brightway2-calc/issues/187)).
 
 ## [0.3.0] - 2026-11-16
 

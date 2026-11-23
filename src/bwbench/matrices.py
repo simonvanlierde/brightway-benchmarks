@@ -178,11 +178,19 @@ def neumann(
 def neumann_score(lca: Any, scale: NDArray[np.float64] | None = None) -> float:  # noqa: ANN401 - a bw2calc LCA
     """The score of the matrices ``lca`` has loaded, solved by ``neumann`` instead of its solver.
 
-    ``scale`` is the system's unit per product in ``lca``'s matrix order.
+    ``scale`` is the system's unit per product in ``lca``'s matrix order. Each matrix is read
+    from bw2calc's mapped matrix (``technosphere_mm.matrix``) when ``lca`` has one: a Monte
+    Carlo draw writes there, while ``technosphere_matrix`` can be a copy the solver kept, as in
+    ``JacobiGMRESLCA`` before bw2calc 3.0.0.
     """
-    a = lca.technosphere_matrix
+
+    def loaded(name: str) -> Any:  # noqa: ANN401 - a SciPy sparse matrix
+        mapped = getattr(lca, f"{name}_mm", None)
+        return getattr(lca, f"{name}_matrix") if mapped is None else mapped.matrix
+
+    a = loaded("technosphere")
     supply = neumann(sparse.identity(a.shape[0], format="csr") - a, lca.demand_array, scale=scale)
-    return float((lca.characterization_matrix @ lca.biosphere_matrix @ supply).sum())
+    return float((loaded("characterization") @ loaded("biosphere") @ supply).sum())
 
 
 def method_name(i: int) -> tuple[str, str]:

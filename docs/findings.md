@@ -364,11 +364,11 @@ Rerun: [`bench_datapackage.Groups`](../benchmarks/bench_bw_processing/bench_data
 
 - **bw_processing 1.6 iterates over 100,000 entries 24% faster**, from 268 to 203 ms.
   Rerun: [`bench_datapackage.EntriesPath`](../benchmarks/bench_bw_processing/bench_datapackage.py).
-- **bw_processing stores processed exchange amounts as float32, which moves scores by about
-  1e-7**
-  ([bw_processing#112](https://github.com/brightway-lca/bw_processing/issues/112)). bw2data's score
-  check uses a reference with the same float32 amounts. See
-  [`System.float32_reference`](../src/bwbench/matrices.py).
+- **bw_processing 1.6 stored processed exchange amounts as float32**, which shifted scores by about
+  1e-7 in this benchmark ([bw_processing#112](https://github.com/brightway-lca/bw_processing/issues/112)).
+  Version 2.0 [stores amounts as float64](https://github.com/brightway-lca/bw_processing/pull/119).
+  The [database-write check](../benchmarks/bench_bw2data/bench_write.py) uses the precision of the
+  written amounts to select its reference score.
 
 ## Across packages
 

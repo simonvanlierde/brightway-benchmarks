@@ -71,9 +71,16 @@ def merge_row(old: list, new: list, columns: list[str]) -> list:
     if len(old) <= p or len(new) <= p or len(old[p]) != len(new[p]) or old[v : v + 1] != new[v : v + 1]:
         return new
     axes = [n + [x for x in o if x not in n] for o, n in zip(old[p], new[p], strict=True)]
-    if axes == new[p]:
-        return new
     before, after = cells(old, columns), cells(new, columns)
+    # A NaN means ASV skipped the cell. None records an attempted run that failed.
+    kept = {
+        combo: cell
+        for combo, cell in before.items()
+        if isinstance(value := after.get(combo, {}).get("result"), float) and math.isnan(value)
+    }
+    if axes == new[p] and not kept:
+        return new
+    after.update(kept)
     # A cell neither run timed is skipped, as asv writes it: NaN in result, None elsewhere.
     skipped = {"result": math.nan}
     merged = [after.get(combo) or before.get(combo) or skipped for combo in itertools.product(*axes)]

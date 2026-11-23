@@ -46,6 +46,9 @@ from release_changes import (
     STACK,
     current_rows,
     current_stack,
+    invalid_entries,
+    is_invalid,
+    label,
     noise_threshold,
     pick,
     releases,
@@ -84,7 +87,6 @@ REPORT_FORMAT = "bmf/v0"
 CHANGE_POINTS = Path(__file__).with_name("change_points.py")
 DESCRIPTIONS = Path(__file__).resolve().parents[1] / "benchmarks" / "descriptions.toml"
 FINDINGS = DESCRIPTIONS.with_name("findings.toml")
-INVALID = DESCRIPTIONS.with_name("invalid.toml")
 PROFILES = DESCRIPTIONS.parents[1] / "profiles"  # `just site` publishes this folder at PUBLIC_BASE/profiles/
 STORIES = DESCRIPTIONS.parents[1] / "ui" / "src" / "pages" / "stories"  # a story's slug is its file name
 
@@ -169,14 +171,7 @@ class Catalog:
     benchmarks: dict[tuple[str, str], dict] = field(default_factory=dict)
     cases: dict[str, dict] = field(default_factory=dict)
     warned: set[tuple[str, str]] = field(default_factory=set)
-    invalid: list[dict] = field(default_factory=lambda: tomllib.loads(INVALID.read_text())["invalid"])
-
-    def is_invalid(self, name: str, commit: str, shown: dict[str, str]) -> bool:
-        """Whether INVALID lists this point: its benchmark, its commit and every value the entry names."""
-        return any(
-            e["benchmark"] == name and commit in e["commits"] and e["params"].items() <= shown.items()
-            for e in self.invalid
-        )
+    invalid: list[dict] = field(default_factory=invalid_entries)
 
     def report(self, subject: str, files: list[dict], info: dict[str, dict]) -> dict[str, dict]:
         """One BMF report from the result files of one commit on one machine, one stack each."""
@@ -196,7 +191,7 @@ class Catalog:
                             file=sys.stderr,
                         )
                     continue
-                if self.is_invalid(name, data["commit_hash"], dict(zip(names, map(label, point), strict=True))):
+                if is_invalid(self.invalid, name, data["commit_hash"], names, point):
                     continue
                 axes = [{"name": n, "values": []} for n in names]
                 bench = self.benchmarks.setdefault(
@@ -260,14 +255,6 @@ def solver_labels(names: list[str]) -> list[str] | None:
         # PyPardiso only runs on MKL, so its label stays one colour on pip and conda-forge charts.
         labels.append(f"{solver}, {blas}" if blas and solver != "PyPardiso" else solver)
     return labels
-
-
-def label(value: str) -> str:
-    """A parameter value as asv writes it (Python's repr), shown plainly: 'LCA' as LCA."""
-    try:
-        return str(ast.literal_eval(value))
-    except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError):
-        return value
 
 
 def describe(benchmarks: list[dict], about: dict) -> None:

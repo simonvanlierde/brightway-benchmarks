@@ -78,6 +78,7 @@ jobs:
           TAG: ${{ github.ref_name }}
           BUNDLE: ${{ steps.attest.outputs.bundle-path }}
         run: |-
+<<<<<<< before updating
           cp "$BUNDLE" "release/brightway-benchmarks-${TAG#v}.intoto.jsonl"
           gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md release/*
 
@@ -95,3 +96,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: gh workflow run site.yml --repo "$REPO" --ref main
+=======
+          set -euo pipefail
+          .github/scripts/release-notes.sh "$TAG" >"$RUNNER_TEMP/notes.md"
+          # Only "release not found" means there is none: another error (a rate limit, a 5xx) stops the job.
+          if ! state=$(gh release view "$TAG" --json isDraft --jq .isDraft 2>&1); then
+            case $state in *"release not found"*) state= ;; *) echo "$state" >&2; exit 1 ;; esac
+          fi
+          if [ "$state" = false ]; then
+            echo "release $TAG already exists; leaving it"
+            exit 0
+          fi
+          if [ "$state" = true ]; then gh release delete "$TAG" --yes; fi
+          gh release create "$TAG" --draft --verify-tag --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
+          gh release edit "$TAG" --draft=false
+>>>>>>> after updating

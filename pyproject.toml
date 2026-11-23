@@ -50,7 +50,8 @@ packages = ["src/bwbench"]
 "benchmarks" = "bwbench/cases"
 
 # Resolve only releases at least a week old: a compromised release is usually
-# caught and yanked within that window. The dependency bot waits the same week.
+# caught and yanked within that window. The dependency bot waits the same week, bar
+# the author's own packages.
 # Set here, not user-wide, so every machine writes the same uv.lock.
 [tool.uv]
 exclude-newer = "1 week"

@@ -161,6 +161,8 @@ Rerun: [`bench_lca.SingleScore`](../benchmarks/bench_bw2calc/bench_lca.py), and
 
 ### bw2calc 2.4.0 and 2.5.0 skipped JacobiGMRESLCA's Monte Carlo solve
 
+<!-- The anchor keeps the section's old link working. -->
+<!-- rumdl-disable-next-line MD033 -->
 <a id="bw2calc-300-doubled-jacobigmreslcas-monte-carlo-time"></a>
 
 **In bw2calc 2.4.0 and 2.5.0, `JacobiGMRESLCA` solved a stale copy of the technosphere matrix in

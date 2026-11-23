@@ -23,5 +23,5 @@ def test_benchmarks_use_only_attributes_system_has():
         check=False,
     )
     assert run.returncode == 0, run.stdout + run.stderr
-    bad = [line for line in run.stdout.splitlines() if "unresolved-attribute" in line and "type `System`" in line]
+    bad = [line for line in run.stdout.splitlines() if "missing-attribute" in line and "type `System`" in line]
     assert not bad, "\n".join(bad)

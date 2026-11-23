@@ -139,8 +139,8 @@ def read(archive: Path, methods: tuple[str, ...]) -> tuple[tuple, tuple, list[tu
     import fsspec  # noqa: PLC0415  # ty: ignore[import-not-found] - a bw_processing dependency
 
     def column(dp: object, suffix: str) -> NDArray:
-        name = next(r["name"] for r in dp.resources if r["name"].endswith(suffix))  # ty: ignore[unresolved-attribute]
-        return dp.get_resource(name)[0]  # ty: ignore[unresolved-attribute]
+        name = next(r["name"] for r in dp.resources if r["name"].endswith(suffix))  # ty: ignore[missing-attribute]
+        return dp.get_resource(name)[0]  # ty: ignore[missing-attribute]
 
     with tempfile.TemporaryDirectory() as tmp, tarfile.open(archive) as tar:
         members = [m for m in tar.getmembers() if m.isfile() and "/processed/" in m.name and m.name.endswith(".zip")]

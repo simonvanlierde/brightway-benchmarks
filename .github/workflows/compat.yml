@@ -51,12 +51,12 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           enable-cache: false
-          version: "0.13.7"
+          version: "0.13.8"
 
       - if: matrix.column == 'conda-forge' && runner.os != 'Linux'
         uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e # v0.11.3
         with:
-          pixi-version: v0.84.1
+          pixi-version: v0.84.2
           run-install: false
           cache: false
 

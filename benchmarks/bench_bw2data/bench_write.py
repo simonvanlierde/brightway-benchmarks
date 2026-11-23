@@ -55,7 +55,22 @@ def score_error(synthetic: System, size: str = "") -> float:
     scale = np.empty(len(order))
     scale[order] = synthetic.scale
     rtol = BAFU_RTOL if size == "bafu" else BW2DATA_RTOL
-    return check(neumann_score(lca, scale), synthetic.float32_reference(), rtol, f"bw2data {bd.__version__} score")
+    # The solver can promote arrays, so read the precision from the written datapackages.
+    matrices = {"technosphere_matrix", "biosphere_matrix", "characterization_matrix"}
+    dtypes = {
+        dp.get_resource(i)[0].dtype
+        for dp in data_objs
+        for i, resource in enumerate(dp.resources)
+        if resource.get("matrix") in matrices and resource.get("kind") == "data"
+    }
+    if dtypes == {np.dtype(np.float32)}:
+        reference = synthetic.float32_reference()
+    elif dtypes == {np.dtype(np.float64)}:
+        reference = synthetic.reference_scores(1)[0][0]
+    else:
+        msg = f"Expected a common storage dtype of float32 or float64, got {dtypes}"
+        raise AssertionError(msg)
+    return check(neumann_score(lca, scale), reference, rtol, f"bw2data {bd.__version__} score")
 
 
 @bench(

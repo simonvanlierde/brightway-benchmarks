@@ -6,16 +6,10 @@
 # `prek install` sets up each of these: the commit message is checked as you commit.
 default_install_hook_types: [pre-commit, commit-msg]
 
-<<<<<<< before updating
 # data/, profiles/ and tests/fixtures/ hold inputs, generated pages and test cases: the
 # whitespace, end-of-file and notebook hooks must not rewrite them. Excluded per hook, so
 # the secret scan and the large-file check still cover them.
-=======
-# data/ and tests/fixtures/ hold inputs and test cases: the whitespace, end-of-file
-# and notebook hooks must not rewrite them. Excluded per hook, so the secret scan
-# and the large-file check still cover them.
 # Licence texts are verbatim; keep other checks, including the secret scan, enabled.
->>>>>>> after updating
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # frozen: v6.0.0
@@ -26,19 +20,11 @@ repos:
         # pnpm writes its own version into the lockfile as a second YAML document.
         exclude: (^|/)pnpm-lock\.yaml$
       - id: end-of-file-fixer
-<<<<<<< before updating
-        exclude: ^(data|profiles|tests/fixtures)/
+        exclude: ^(LICENSES|data|profiles|tests/fixtures)/
       - id: mixed-line-ending
-        exclude: ^(data|profiles|tests/fixtures)/
+        exclude: ^(LICENSES|data|profiles|tests/fixtures)/
       - id: trailing-whitespace
-        exclude: ^(data|profiles|tests/fixtures)/
-=======
-        exclude: ^LICENSES/|^(data|tests/fixtures)/
-      - id: mixed-line-ending
-        exclude: ^LICENSES/|^(data|tests/fixtures)/
-      - id: trailing-whitespace
-        exclude: ^LICENSES/|^(data|tests/fixtures)/
->>>>>>> after updating
+        exclude: ^(LICENSES|data|profiles|tests/fixtures)/
       # Not gated to python: .rumdl.toml ships to every stack.
       - id: check-toml
 

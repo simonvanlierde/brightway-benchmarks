@@ -27,6 +27,10 @@ if [ -n "$fetch" ]; then
     "refs/tags/$tag:refs/tags/$tag" "refs/heads/${ref#origin/}:refs/remotes/$ref"
 fi
 
+if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+  echo "$tag does not exist here: fetch it, or pass --fetch" >&2
+  exit 1
+fi
 if [ "$(git cat-file -t "refs/tags/$tag")" != tag ]; then
   echo "$tag is a lightweight tag; make it with .github/scripts/tag-release.sh" >&2
   exit 1
@@ -49,7 +53,10 @@ fi
 
 signers=$(mktemp)
 trap 'rm -f "$signers"' EXIT
-git show "$ref:.github/allowed_signers" >"$signers"
+git show "$ref:.github/allowed_signers" >"$signers" 2>/dev/null || {
+  echo "$ref has no .github/allowed_signers" >&2
+  exit 1
+}
 if ! git -c gpg.ssh.allowedSignersFile="$signers" tag -v "$tag" >/dev/null; then
   cat >&2 <<EOF
 $tag is not signed with a key in .github/allowed_signers on $ref.

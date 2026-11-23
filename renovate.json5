@@ -12,7 +12,8 @@
 //
 // `minimumReleaseAge` holds a version update back until the release has been public for
 // a week, long enough for a compromised release to be caught and yanked, majors
-// included. Security
+// included. The author's own simonvanlierde hooks and packages skip it: whoever can
+// publish those can push to the repos directly. Security
 // updates ignore it and the schedule. They need Dependabot alerts on in the repo settings,
 // and cover only the dependencies a manifest names.
 //
@@ -34,6 +35,9 @@
   timezone: 'Europe/Amsterdam',
   schedule: ['before 9am on monday'],
   minimumReleaseAge: '7 days',
+  // A group PR can carry a release younger than the week above, and would then sit open
+  // with renovate/stability-days pending. Open it only once that and CI have passed.
+  prCreation: 'not-pending',
   // Renovate merges the PR itself. GitHub's own auto-merge may not use the bypass, and
   // would then wait for an approval.
   platformAutomerge: false,
@@ -75,5 +79,6 @@
     // Template releases, from .copier-answers.yml. Their tags carry no release date,
     // so the week's wait above would hold them back for good.
     { matchManagers: ['copier'], minimumReleaseAge: null },
+    { matchPackageNames: ['simonvanlierde/**'], minimumReleaseAge: null },
   ],
 }

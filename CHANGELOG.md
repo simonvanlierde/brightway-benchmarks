@@ -25,6 +25,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The finding that bw2calc 3.0.0 doubled `JacobiGMRESLCA`'s Monte Carlo time is corrected: 2.4.0
   and 2.5.0 were faster only because their draws skipped the solve. The old link still reaches it.
 
+### Removed
+
+- `scripts/registry_vs_sqlite.py` and `just registry-vs-sqlite`, the one-off comparison with
+  sentier-brightway's Parquet registry.
+
 ## [0.3.0] - 2026-11-16
 
 ### Upgrading

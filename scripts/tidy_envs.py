@@ -161,8 +161,10 @@ def main(argv: list[str] | None = None) -> int:
     finally:
         for fd in fds:
             os.close(fd)
-    verb = "would remove" if args.dry_run else "removed"
-    print(f"{verb} {len(stale)} environments unused for {args.days:g} days; hardlinks freed {freed / 2**30:.1f} GiB")
+    verb, link_verb = ("would remove", "would free") if args.dry_run else ("removed", "freed")
+    print(
+        f"{verb} {len(stale)} environments unused for {args.days:g} days; hardlinks {link_verb} {freed / 2**30:.1f} GiB"
+    )
     for e in stale:
         print(f"  {verb} {e.relative_to(args.env_dir).as_posix()}")
     for name in busy:

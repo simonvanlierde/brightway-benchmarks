@@ -179,12 +179,13 @@ sampled matrix; with 3.1.0 the difference is 3e-10. The fix is
 [brightway2-calc#155](https://github.com/brightway-lca/brightway2-calc/pull/155), first released
 in 3.0.0. Reported as [brightway2-calc#187](https://github.com/brightway-lca/brightway2-calc/issues/187).
 
-Only `JacobiGMRESLCA` is affected. Four draws with `LCA` on SuperLU, UMFPACK and PyPardiso match a
-direct solve of the sampled matrix to 3e-16 on 2.0.2, 2.1.1, 2.2.2, 2.3.2, 2.4.0, 2.5.0, 3.0.0 and 3.1.0.
-`JacobiGMRESLCA` on 2.4.0 and 2.5.0 returns one score for all four draws, up to 17% off. The cause is
-`self.technosphere_matrix = self.technosphere_matrix.tocsc(copy=False)` in 2.4.0's
-`jacobi_gmres_lca.py` (line 83), a copy `technosphere_mm` never writes to. `IterativeLCA` never
-reassigns the matrix (`iterative_lca.py`), but PyPI's 2.x releases pass `atol="legacy"` to a SciPy
+Of the classes checked, only `JacobiGMRESLCA` is affected. Four draws with `LCA` on SuperLU,
+UMFPACK and PyPardiso match a direct solve of the sampled matrix to 3e-16 on 2.0.2, 2.1.1, 2.2.2,
+2.3.2, 2.4.0, 2.5.0, 3.0.0 and 3.1.0. `JacobiGMRESLCA` on 2.4.0 and 2.5.0 returns one score for all
+four draws, up to 17% off over those draws. The cause is
+`self.technosphere_matrix = self.technosphere_matrix.tocsc(copy=False)` at line 83 of
+`src/bw2calc/jacobi_gmres_lca.py` in both releases, a copy `technosphere_mm` never writes to.
+`IterativeLCA` never reassigns the matrix, but PyPI's 2.x releases pass `atol="legacy"` to a SciPy
 that rejects it, so this check does not cover it.
 
 The benchmark's own check missed it, because it solved `technosphere_matrix` too, the same stale

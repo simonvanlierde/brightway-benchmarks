@@ -24,6 +24,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   ([brightway2-calc#187](https://github.com/brightway-lca/brightway2-calc/issues/187)).
 - The finding that bw2calc 3.0.0 doubled `JacobiGMRESLCA`'s Monte Carlo time is corrected: 2.4.0
   and 2.5.0 were faster only because their draws skipped the solve. The old link still reaches it.
+- bw2calc's Monte Carlo benchmarks skip a case whose solver holds a copy of the technosphere matrix
+  that draws never reach (`JacobiGMRESLCA` on 2.4.0 and 2.5.0), instead of failing its score check.
 
 ## [0.3.0] - 2026-11-16
 

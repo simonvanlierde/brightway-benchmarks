@@ -190,6 +190,25 @@ def test_qmc_convergence_checks_the_draw_and_tracks_error_without_more_sampling(
     assert error == pytest.approx(abs(np.mean(result[0]) / 2.0 - 1), rel=1e-14, abs=1e-14)
 
 
+def test_convergence_skips_a_solver_detached_from_the_sampled_matrix(
+    bench_lca: types.ModuleType, monkeypatch: pytest.MonkeyPatch
+):
+    draws = bench_lca.NormalDraws(np.array([2.0]), np.array([0.2]), "sobol", seed=1)
+
+    class DetachedLCA:  # JacobiGMRESLCA in bw2calc 2.4.0 and 2.5.0 solves a CSC copy
+        score = 0.0
+        technosphere_matrix = object()
+        technosphere_mm = types.SimpleNamespace(matrix=object())
+
+        def __next__(self):
+            self.score = float(next(draws)[0])
+
+    monkeypatch.setattr(bench_lca, "sampled_lca", lambda *_: (DetachedLCA(), draws, np.ones(1), 1.0))
+    monkeypatch.setattr(bench_lca, "mean_reference", lambda _: 2.0)
+    with pytest.raises(NotImplementedError, match="issues/187"):
+        bench_lca.convergence.prepare(size="smoke", draws=16, cls="JacobiGMRESLCA", sampler="sobol")
+
+
 def test_qmc_skips_other_sizes_before_building_a_reference(
     bench_lca: types.ModuleType, monkeypatch: pytest.MonkeyPatch
 ):

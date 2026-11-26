@@ -83,7 +83,7 @@ export function noiseText(c: { threshold?: number | undefined }): string {
   return `±${((c.threshold ?? 0) * 100).toFixed(1)}%`;
 }
 
-/** The parameter values VIEW picks for BENCH: each axis's first value where the URL names none it has. */
+/** The values of BENCH that WANTED (the shown labels from the URL, one per axis) names; an axis's first where none. */
 export function pickParams(bench: Benchmark, wanted: string[]): string[] {
   return bench.params.map((axis, i) => {
     const labels = axis.labels ?? axis.values;

@@ -167,6 +167,8 @@ def test_qmc_convergence_checks_the_draw_and_tracks_error_without_more_sampling(
 
     class SampleLCA:
         score = 0.0
+        technosphere_matrix = None
+        technosphere_mm = types.SimpleNamespace(matrix=None)
 
         def __next__(self):
             self.score = float(next(draws)[0])

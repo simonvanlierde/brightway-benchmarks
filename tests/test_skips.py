@@ -67,3 +67,13 @@ def test_atol_legacy_skipped_where_scipy_rejects_it(monkeypatch: pytest.MonkeyPa
     # The host's scipy (>= 1.18) rejects atol="legacy".
     with pytest.raises(NotImplementedError, match="pull/161"):
         load(monkeypatch).skip_known_crash("IterativeLCA", calls_next=False)
+
+
+def test_detached_technosphere_matrix_skips_the_case(monkeypatch: pytest.MonkeyPatch):
+    bench = load(monkeypatch)
+    matrix = object()
+    attached = types.SimpleNamespace(technosphere_matrix=matrix, technosphere_mm=types.SimpleNamespace(matrix=matrix))
+    bench.skip_detached_matrix(attached)
+    attached.technosphere_matrix = object()  # a copy, as JacobiGMRESLCA in bw2calc 2.4.0 and 2.5.0 keeps
+    with pytest.raises(NotImplementedError, match="issues/187"):
+        bench.skip_detached_matrix(attached)

@@ -117,6 +117,20 @@ def skip_known_crash(cls: str, *, calls_next: bool) -> None:
         )
 
 
+def skip_detached_matrix(lca: object) -> None:
+    """Skip a Monte Carlo case whose solver no longer holds the matrix the draws write to.
+
+    bw2calc 2.4.0 and 2.5.0 rebind ``technosphere_matrix`` to a CSC copy in ``JacobiGMRESLCA``,
+    so draws never reach the solve and the score check fails by design. Call it after the
+    first ``next()``. Tests identity, not the version, so a release with the fix runs again.
+    """
+    if lca.technosphere_matrix is not lca.technosphere_mm.matrix:
+        raise NotImplementedError(
+            f"bw2calc {bc.__version__} solves a copy of the technosphere matrix that Monte Carlo draws never reach: "
+            "https://github.com/brightway-lca/brightway2-calc/issues/187"
+        )
+
+
 def score_of(scores: object, method: tuple, demand: str) -> float:
     """One score from MultiLCA (a dict) or FastScoresOnlyMultiLCA (an xarray)."""
     if hasattr(scores, "sel"):
@@ -362,6 +376,7 @@ def iterations(size: str, iterations: int, cls: str) -> BenchSetup:
     lca.lci()
     lca.lcia()
     next(lca)
+    skip_detached_matrix(lca)
     if first_time("iterations", size, iterations, cls):  # the same draw (seed_override) every sample
         reached_patch(cls)
         # Product ids are 0 to n - 1, so bw2calc's matrix order is the id order of `scale`.
@@ -467,6 +482,7 @@ def convergence(size: str, draws: int, cls: str, sampler: str) -> BenchSetup:
     reference = mean_reference(size)
     lca, samples, scale, static = sampled_lca(size, cls, sampler)
     next(lca)
+    skip_detached_matrix(lca)
     if first_time("convergence", size, draws, cls, sampler):
         reached_patch(cls)
         check(float(lca.score), neumann_score(lca, scale), rtol_for(cls, size), "sampled Monte Carlo score")

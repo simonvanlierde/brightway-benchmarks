@@ -205,11 +205,11 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34
 
 [[packages]]
 name = "fonttools"
-version = "4.68.0"
-sdist = { url = "https://files.pythonhosted.org/packages/0c/b5/672312ae80ce8b8eb9779c56052a24c8f36652aa7293a1a420553bcf03e5/fonttools-4.68.0.tar.gz", upload-time = 2026-10-27T16:30:26Z, size = 3848583, hashes = { sha256 = "73294e233070f71e2b3653b6bd8564af676d57f26d075761fb06d1ab2e4a7a5d" } }
+version = "4.69.1"
+sdist = { url = "https://files.pythonhosted.org/packages/06/7a/83dd380d74b56a57c3eafce90265035d8727469d05ca4d2942d14367a6c7/fonttools-4.69.1.tar.gz", upload-time = 2026-11-25T17:04:21Z, size = 3958958, hashes = { sha256 = "d09a2ea8ed4c71ac52e789ba9313da3e26cee3f812400d7e8a8b3a38d0f98dfe" } }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1a/70/ee6655887166a111d0c4d7ca61f03c90b141cdc6f70c85138fd0b8bfa2e3/fonttools-4.68.0-cp314-cp314-macosx_10_15_universal2.whl", upload-time = 2026-10-27T16:29:03Z, size = 3145377, hashes = { sha256 = "b2ee7b9c1a5e1d637073c39b0978956febad7e862a1269719f527934c65535a4" } },
-    { url = "https://files.pythonhosted.org/packages/35/74/4ea331ecc65ba05a58b1e4e8ccd604c8a15565f876dfbf93fc2a2ea2e22b/fonttools-4.68.0-py3-none-any.whl", upload-time = 2026-10-27T16:30:24Z, size = 1248357, hashes = { sha256 = "d76f8fdcb6936f5e1045a0c9dd721a4bf11112e60d1e243bfa1d39f06a8b3104" } },
+    { url = "https://files.pythonhosted.org/packages/6f/dd/b08f1c88bd171d113220502036ed36c0ecdbc4a137aa15893fe2d5363403/fonttools-4.69.1-cp314-cp314-macosx_10_15_universal2.whl", upload-time = 2026-11-25T17:03:06Z, size = 3757431, hashes = { sha256 = "10a0effa186298c2ad6f5e743d85387b7ccee3692d57c5c8a33258177f07fb8e" } },
+    { url = "https://files.pythonhosted.org/packages/43/ef/3575cacafe63d7d78b639e815bb3637cd0a66c6365efc5aed636a92cdb12/fonttools-4.69.1-py3-none-any.whl", upload-time = 2026-11-25T17:04:19Z, size = 1301769, hashes = { sha256 = "20e9dfac71694d9eeae48bb53c877bdf43b914794d69a769940728a1929cc835" } },
 ]
 
 [[packages]]

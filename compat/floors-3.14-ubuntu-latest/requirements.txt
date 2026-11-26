@@ -35,14 +35,14 @@ et-xmlfile==2.0.0
 fastjsonschema==2.22.3
 flexcache==0.3
 flexparser==0.4
-fonttools==4.68.0
+fonttools==4.69.1
 fqdn==1.6.0
 fsspec==2024.10.0
 ftfy==5.5.1
 idna==3.20
 iniconfig==2.3.1
-intel-cmplr-lib-ur==2026.2.0
-intel-openmp==2026.2.0
+intel-cmplr-lib-ur==2026.2.1
+intel-openmp==2026.2.1
 ipykernel==5.5.6
 ipython==7.6.0
 ipython-genutils==0.2.0
@@ -67,7 +67,7 @@ matplotlib==3.10.5
 matrix-utils==1.0
 mdurl==0.1.2
 mistune==3.4.0
-mkl==2026.2.1
+mkl==2026.2.2
 mkl-service==2.9.0
 morefs==0.0.1
 mrio-common-metadata==0.2.1

@@ -34,9 +34,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/64/b4/17d4b0b2a2dc85a
 
 [[packages]]
 name = "backports-zstd"
-version = "1.8.0"
-sdist = { url = "https://files.pythonhosted.org/packages/ff/9c/13569626440e88f09d16f43ec1c2aa0d10a523be2811414580d1cfb7c9f3/backports_zstd-1.8.0.tar.gz", upload-time = 2026-10-10T16:36:40Z, size = 1006566, hashes = { sha256 = "9dae4f4c481716e3db473d667457b4f508ff7459c0931b567a5c9677fb3db316" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/1f/5f/996aceebbbc4eebc05d99fe1714b1b0930260eac5171e8ebc3a952390c0d/backports_zstd-1.8.0-cp313-cp313-macosx_11_0_arm64.whl", upload-time = 2026-10-10T16:35:37Z, size = 367710, hashes = { sha256 = "4fa862d24b7fb392279a95bc9acc1f0ede8a25de9efbed03fb305ceac2f6abb0" } }]
+version = "1.8.1"
+sdist = { url = "https://files.pythonhosted.org/packages/ca/2d/a9b1e917540d1eb27b322bb6c8dc986841052ea315ac864cad1852e2bc8f/backports_zstd-1.8.1.tar.gz", upload-time = 2026-11-26T07:34:14Z, size = 1026187, hashes = { sha256 = "c8929bf0ce07c020bc330442fae266c8ef112cae269f85457e8cf857cab57200" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/c7/23/431b49d5387a53d79aff3aaaf62debdce13a03ce97fe2d084e613f8466cb/backports_zstd-1.8.1-cp313-cp313-macosx_11_0_arm64.whl", upload-time = 2026-11-26T07:33:27Z, size = 372974, hashes = { sha256 = "a79cd5c4448df6f19462830610b1caad0bda7f2d8dad1b7d485496200e59cd12" } }]
 
 [[packages]]
 name = "blinker"
@@ -211,11 +211,11 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34
 
 [[packages]]
 name = "fonttools"
-version = "4.68.0"
-sdist = { url = "https://files.pythonhosted.org/packages/0c/b5/672312ae80ce8b8eb9779c56052a24c8f36652aa7293a1a420553bcf03e5/fonttools-4.68.0.tar.gz", upload-time = 2026-10-27T16:30:26Z, size = 3848583, hashes = { sha256 = "73294e233070f71e2b3653b6bd8564af676d57f26d075761fb06d1ab2e4a7a5d" } }
+version = "4.69.1"
+sdist = { url = "https://files.pythonhosted.org/packages/06/7a/83dd380d74b56a57c3eafce90265035d8727469d05ca4d2942d14367a6c7/fonttools-4.69.1.tar.gz", upload-time = 2026-11-25T17:04:21Z, size = 3958958, hashes = { sha256 = "d09a2ea8ed4c71ac52e789ba9313da3e26cee3f812400d7e8a8b3a38d0f98dfe" } }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/05/ae/e2d75b7f582c1cc018ab94b8bbfbad7ab501b340debfa256f48125cae3eb/fonttools-4.68.0-cp313-cp313-macosx_10_13_universal2.whl", upload-time = 2026-10-27T16:28:41Z, size = 3141370, hashes = { sha256 = "f15de48b82a816c72f358e772792801bd3788a156caa76e1806cb0aa8148cd61" } },
-    { url = "https://files.pythonhosted.org/packages/35/74/4ea331ecc65ba05a58b1e4e8ccd604c8a15565f876dfbf93fc2a2ea2e22b/fonttools-4.68.0-py3-none-any.whl", upload-time = 2026-10-27T16:30:24Z, size = 1248357, hashes = { sha256 = "d76f8fdcb6936f5e1045a0c9dd721a4bf11112e60d1e243bfa1d39f06a8b3104" } },
+    { url = "https://files.pythonhosted.org/packages/71/66/1724ed27d9e7a3ef3a59706fe94c64bdf207344329f9191248cb910af138/fonttools-4.69.1-cp313-cp313-macosx_10_13_universal2.whl", upload-time = 2026-11-25T17:02:49Z, size = 3754055, hashes = { sha256 = "c3b749eb66ee30072e35948cdc1b4653eb7dd8bbc155406acfea65e9579a0e1f" } },
+    { url = "https://files.pythonhosted.org/packages/43/ef/3575cacafe63d7d78b639e815bb3637cd0a66c6365efc5aed636a92cdb12/fonttools-4.69.1-py3-none-any.whl", upload-time = 2026-11-25T17:04:19Z, size = 1301769, hashes = { sha256 = "20e9dfac71694d9eeae48bb53c877bdf43b914794d69a769940728a1929cc835" } },
 ]
 
 [[packages]]

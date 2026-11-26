@@ -16,6 +16,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - bw_processing 2.0 and matrix_utils 1.0 join the release histories. The matrix_utils history
   runs every release against bw_processing 2.0 and stats-arrays 5.0.1.
 
+### Changed
+
+- The box image installs its Debian packages from a dated snapshot.debian.org archive, each pinned
+  to the version the current image holds, so a rebuild gets the same SuiteSparse and SWIG.
+
 ### Fixed
 
 - `just results-commit` refuses a run that timed no case: every new cell skipped or failed. The

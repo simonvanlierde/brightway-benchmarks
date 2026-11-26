@@ -84,6 +84,11 @@ canary:
 canary-check:
     python3 scripts/canary.py check "results/canary/${BWBENCH_MACHINE:?set BWBENCH_MACHINE to the results machine name}"
 
+# Runs on the host: it only compares files. The night queue runs it after the last job.
+# Drop asv environments unused for DAYS days, then hardlink identical files across the rest.
+tidy-envs days="30":
+    python3 scripts/tidy_envs.py .asv/env --days {{ days }}
+
 # After a new upstream release, follow docs/running.md ("Add a release").
 # Resolve SUBJECT's fixed stack (its latest release's dependencies at the cutoff) into asv/.
 stack subject:

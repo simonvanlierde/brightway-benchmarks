@@ -142,6 +142,11 @@ bw2data's and bw_timex's projects and extracted archives. A bw2data write at the
 needs more than the 2 GB default. The venvs of `just codspeed`, `just profile` and `just compat`
 live under `.asv/venvs/` on disk.
 
+asv's own environments, in `.asv/env/`, only grow: one per subject and matrix entry, about 300 MB
+each, kept after the entry leaves the config. `just tidy-envs` removes those with no file written
+in 30 days (asv writes into one each time it installs a commit) and hardlinks identical files
+across the rest; the night queue runs it after its last job.
+
 ## Add a release
 
 1. Add it to `asv/<package>.hashes`.

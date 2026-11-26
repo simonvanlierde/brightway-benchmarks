@@ -40,8 +40,8 @@ def per_cell(column: str) -> bool:
 def cells(row: list, columns: list[str]) -> dict[tuple, dict[str, object]]:
     """Each parameter combination's per-cell values, in asv's order (itertools.product).
 
-    The one decoder of an asv result row; scripts/release_changes.py reads its values and
-    quartiles through it too. A column that is missing, shorter than the combinations or a
+    The one decoder of an asv result row; scripts/release_changes.py and scripts/export_ui.py
+    read values and quartiles through it too. A column that is missing, shorter than the combinations or a
     single value (a case without parameters) gives None where it has no entry.
     """
     cell = dict(zip(columns, row, strict=False))

@@ -325,7 +325,7 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Synthetic ecoSpold2 import benchmarks that require no ecoinvent licence, plus optional benchmarks
   of a licensed release. The import checks that every exchange links ([method](docs/method.md)).
 - Experimental controls for shared input lists and locality, with seed-by-seed calibration reports.
-  These controls remain off in registered profiles ([calibration](docs/calibration-sweep.md)).
+  These controls remain off in registered profiles ([calibration](docs/generator-calibration.md#checking-the-profile-with-the-sweep)).
 - GPU factorization and fixed-sparsity update probes for cuDSS, PARDISO analysis reuse timings, and
   a benchmark of UMFPACK iterative refinement ([method](docs/method.md)).
 - A versioned JSON export for the viewer, including benchmark explanations, release changes beyond

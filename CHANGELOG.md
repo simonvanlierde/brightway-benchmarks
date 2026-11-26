@@ -15,6 +15,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   faults per timed sample, so a wait that is not preemption shows.
 - bw_processing 2.0 and matrix_utils 1.0 join the release histories. The matrix_utils history
   runs every release against bw_processing 2.0 and stats-arrays 5.0.1.
+- `just tidy-envs` (`scripts/tidy_envs.py`) removes asv environments asv has not used in 30
+  days and hardlinks identical files across the rest. asv never removes an environment whose
+  matrix entry is gone, and installs the matrix packages with pip, which copies about 300 MB of
+  numpy, scipy and pandas into each one: on the benchmark node, 62 stale environments held 37 GB.
 
 ### Changed
 

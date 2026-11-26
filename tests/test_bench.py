@@ -4,7 +4,6 @@ import json
 import os
 import subprocess
 import sys
-import time
 import types
 from collections.abc import Iterator
 from pathlib import Path
@@ -540,11 +539,20 @@ def test_asv_logs_package_energy_across_a_whole_counter_cycle(tmp_path: Path, mo
     monkeypatch.setenv("BWBENCH_ROUNDLOG", str(log))
     monkeypatch.setenv("BWBENCH_ENERGY", "1")
     monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000_000)))
-    monkeypatch.setattr(asv, "_ENERGY_INTERVAL", 0.01, raising=False)
+    # The meter's thread never wakes on its own; the sample reads the counter itself, in between.
+    monkeypatch.setattr(asv, "_ENERGY_INTERVAL", 3600.0)
+    meters = []
+    start = asv._energy  # noqa: SLF001
+
+    def energy() -> object:
+        meters.append(start())
+        return meters[-1]
+
+    monkeypatch.setattr(asv, "_energy", energy)
 
     def run(n: int) -> int:
         rapl(tmp_path / "rapl", 201_000_000_000)  # 200 kJ in, no wrap yet
-        time.sleep(0.2)  # the meter reads the counter here
+        meters[-1]._read()  # noqa: SLF001
         rapl(tmp_path / "rapl", 38_856_671_150)  # 100 kJ more, across the wrap
         return 2 * n
 

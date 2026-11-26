@@ -17,6 +17,7 @@ Reading the archive and writing datapackages need bw_processing, inside the benc
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import io
 import json
@@ -33,6 +34,7 @@ import numpy as np
 from scipy import sparse
 
 from bwbench.matrices import neumann
+from bwbench.useeio import sweep_parts
 
 if TYPE_CHECKING:
     from collections.abc import Mapping
@@ -141,6 +143,7 @@ def _derived(archive: Path, what: str, *key: object) -> Path:
 
 def _keep(path: Path, data: bytes) -> None:
     """Write ``data`` to ``path`` through a rename, so no reader sees half a file. A read-only folder keeps nothing."""
+    sweep_parts(path)
     part = None
     try:
         with tempfile.NamedTemporaryFile(dir=path.parent, prefix=path.name, suffix=".part", delete=False) as f:
@@ -390,6 +393,16 @@ def stage_scores(system: System, fg: Foreground, at: dict[str, int]) -> dict[str
         )
         for name, keep in stages.items()
     }
+
+
+@functools.cache
+def background() -> tuple[System, dict[str, int]]:
+    """BAFU with the heating factors (``corrected_system``), and the matrix index of each of ``NAMES``."""
+    from bwbench import bafu  # noqa: PLC0415 - as in corrected_system
+    from bwbench.synth import system  # noqa: PLC0415 - as in corrected_system
+
+    s = corrected_system(system("bafu"))
+    return s, locate(bafu.archive(), NAMES, s.ids)  # ty: ignore[invalid-argument-type] - an archive system has ids
 
 
 FlowMetadata = tuple[str, str, tuple[str, ...]]

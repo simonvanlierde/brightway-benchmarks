@@ -117,15 +117,44 @@ def first_time(*key: object) -> bool:
 
 
 def temporary_brightway_dir() -> str:
-    """Point bw2data at a fresh directory, removed at exit. Call before importing bw2data."""
+    """Point bw2data at a fresh directory, removed at exit. Call before importing bw2data.
+
+    A process killed at asv's timeout never runs atexit, so its projects would fill the box's
+    /tmp tmpfs (counted against its memory cap) for the rest of the run. The name holds the pid,
+    and each call removes the directories of pids no longer running.
+    """
     import atexit  # noqa: PLC0415
+    import re  # noqa: PLC0415
     import shutil  # noqa: PLC0415
     import tempfile  # noqa: PLC0415
+    from pathlib import Path  # noqa: PLC0415
 
-    path = tempfile.mkdtemp(prefix="bwbench-")
+    for old in Path(tempfile.gettempdir()).glob("bwbench-*-*"):
+        if (m := re.fullmatch(r"bwbench-(\d+)-.+", old.name)) and old.is_dir():
+            try:
+                os.kill(int(m[1]), 0)
+            except ProcessLookupError:
+                shutil.rmtree(old, ignore_errors=True)
+            except OSError:  # alive, owned by another user
+                pass
+    path = tempfile.mkdtemp(prefix=f"bwbench-{os.getpid()}-")
     atexit.register(shutil.rmtree, path, ignore_errors=True)
     os.environ["BRIGHTWAY2_DIR"] = path
     return path
+
+
+def stamps(*databases: str) -> dict[str, str]:
+    """bw2data's ``modified`` stamp of each of ``databases``; bw_timex keys its in-session caches on them."""
+    import bw2data as bd  # noqa: PLC0415 - only the bw_timex suites have it
+
+    return {db: bd.databases[db]["modified"] for db in databases}
+
+
+def assert_stamps_unchanged(before: dict[str, str]) -> None:
+    """Raise ``AssertionError`` when a database in ``before`` (``stamps``) was written since."""
+    if stamps(*before) != before:
+        msg = "a timed call rewrote the stored background"
+        raise AssertionError(msg)
 
 
 def point_pypardiso_at_mkl() -> None:

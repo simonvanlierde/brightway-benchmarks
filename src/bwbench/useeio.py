@@ -12,9 +12,11 @@ for flows, as the synthetic systems are, so every case that asks for ``{0: 1}`` 
 
 from __future__ import annotations
 
+import glob
 import hashlib
 import tarfile
 import tempfile
+import time
 import urllib.request
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -44,6 +46,20 @@ def sha256_of(path: Path) -> str:
     return h.hexdigest()
 
 
+def sweep_parts(dest: Path) -> None:
+    """Remove the ``.part`` files a killed write to ``dest`` left, once an hour old.
+
+    A live write keeps its file's mtime fresh, so another process's download is left alone.
+    """
+    cutoff = time.time() - 3600
+    for part in dest.parent.glob(f"{glob.escape(dest.name)}*.part"):
+        try:
+            if part.stat().st_mtime < cutoff:
+                part.unlink()
+        except OSError:
+            pass  # gone already, or a read-only cache: nothing to keep tidy
+
+
 def fetch(dest: Path, url: str = URL, sha256: str = SHA256) -> Path:
     """The archive at ``dest``, downloaded on first use. Raises if its SHA-256 is not ``sha256``.
 
@@ -53,6 +69,7 @@ def fetch(dest: Path, url: str = URL, sha256: str = SHA256) -> Path:
     if dest.exists() and sha256_of(dest) == sha256:
         return dest
     dest.parent.mkdir(parents=True, exist_ok=True)
+    sweep_parts(dest)
     with tempfile.NamedTemporaryFile(dir=dest.parent, prefix=dest.name, suffix=".part", delete=False) as tmp:
         part = Path(tmp.name)
     try:

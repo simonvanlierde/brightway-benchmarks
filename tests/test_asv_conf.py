@@ -111,3 +111,17 @@ def test_stack_in_takes_a_git_pin_whole():
 def test_conf_refuses_an_x86_only_solver_on_another_arch(solver: str):
     with pytest.raises(SystemExit, match=f"{solver} has wheels for x86_64 only"):
         load().conf("s", "m", f"superlu,{solver}", "aarch64")
+
+
+@pytest.mark.usefixtures("repo")
+def test_conf_replaces_the_local_config_whole(monkeypatch: pytest.MonkeyPatch):
+    """A rename swaps the file under an asv still reading the old one; a rewrite would truncate it."""
+    monkeypatch.setenv("BWBENCH_SOLVERS", "superlu")
+    local = Path(".asv/.s.local.json")
+    local.parent.mkdir()
+    local.write_text("{}")
+    with local.open() as reader:
+        load().main(["conf", "s", "smoke"])
+        assert reader.read() == "{}"  # the old file, untouched
+    assert json.loads(local.read_text())["repo"] == CONF["repo"]
+    assert [p.name for p in local.parent.iterdir()] == [local.name]  # no temporary file left

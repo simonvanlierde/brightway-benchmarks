@@ -139,7 +139,7 @@ exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError"]
 include = ["src", "tests"]
 
 [tool.ty.analysis]
-allowed-unresolved-imports = ["bw_processing", "bw2calc", "pypardiso.**", "scikits.**", "PyKLU", "otava.**"]
+allowed-unresolved-imports = ["bw_processing", "bw2calc", "bw2data", "pypardiso.**", "scikits.**", "PyKLU", "otava.**"]
 
 # Checks from Scientific Python's repo-review (the sp-repo-review git hook) that this
 # project skips on purpose. `prek run sp-repo-review --all-files` runs the rest.

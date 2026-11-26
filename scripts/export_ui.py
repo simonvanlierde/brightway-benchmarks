@@ -38,6 +38,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from export_guidance import PUBLIC_BASE
+from merge_results import cells as asv_cells
 from output_path import output_path
 from release_changes import (
     NOISE_FLOOR,
@@ -127,18 +128,14 @@ def metrics(data: dict, kinds: dict[str, str]) -> list[tuple[str, tuple[str, ...
         if kinds.get(name) not in MEASURES:
             continue
         measure, scale = MEASURES[kinds[name]]
-        cell = dict(zip(columns, row, strict=False))
-        params = cell.get("params") or []
-        sets = list(itertools.product(*params)) if params else [()]
-        values = cell["result"] if isinstance(cell["result"], list) else [cell["result"]]
-        # The quartiles, not asv's 99% interval: from a handful of samples that interval runs
-        # to below zero and says nothing.
-        q25, q75 = cell.get("stats_q_25"), cell.get("stats_q_75")
-        for i, (point, value) in enumerate(zip(sets, values, strict=False)):
+        for point, cell in asv_cells(row, columns).items():
+            value = cell["result"]
             if value is None or math.isnan(value):
                 continue
             metric = {"value": value * scale}
-            a, b = (q25[i], q75[i]) if q25 and q75 and i < min(len(q25), len(q75)) else (None, None)
+            # The quartiles, not asv's 99% interval: from a handful of samples that interval runs
+            # to below zero and says nothing.
+            a, b = cell.get("stats_q_25"), cell.get("stats_q_75")
             if a is not None and b is not None and math.isfinite(a) and math.isfinite(b) and 0 <= a <= value <= b:
                 metric |= {"lower_value": a * scale, "upper_value": b * scale}
             out.append((name, point, measure, metric))

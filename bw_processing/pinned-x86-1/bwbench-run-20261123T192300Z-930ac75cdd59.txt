@@ -1,0 +1,14 @@
+commit 930ac75cdd59bd40c64f92bcfc52e9dff84fe13e
+generator 5
+007419f640095359031ef62361aef932c5ce4da8ccbff864e2d3511772ca6b5f  .asv/../results/bw_processing/benchmarks.json
+605726050263c0ed707ae533e7c177536a79de415150a6e865288b98797d50e5  .asv/../results/bw_processing/pinned-x86-1/20976a11-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACK6d0fbdc8.json
+c3e27d696e6185614de2ee61f1b789446b6509dafcd979d7532d754675cd72c6  .asv/../results/bw_processing/pinned-x86-1/b3106c5f-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACK6d0fbdc8.json
+5cfc62ea56a8801c0f7fd86bb9f87173367d9f9a17d049fbd9d4278a9b41afa2  .asv/../results/bw_processing/pinned-x86-1/machine.json
+1457ed38e762b1475fadf122c15b3a71d37995daeceb2dddfdeab12dcd8267f4  .asv/../results/bw_processing/pinned-x86-1/cfeb97a8-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACK6d0fbdc8.json
+f72ba810d3a4e4fb16acbef5bddfababb83ee0d399df0291cc0329a333a7d506  .asv/../results/bw_processing/pinned-x86-1/ccd49b69-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACK6d0fbdc8.json
+fb90b72f6899af885dc84f8ae50c51167f6850fa31e05695a9379c70bdfc27e7  .asv/../results/bw_processing/pinned-x86-1/b55176db-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACK6d0fbdc8.json
+6bb44c50846d39522ac2402d3dad142b44c863276cf90ff4d7898ea236fb7c16  .asv/../results/bw_processing/pinned-x86-1/16883ace-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACK6d0fbdc8.json
+e67709bbc8792b913db304f439de2507ef159f41fdbc84b47039f99e299bbaf0  .asv/../results/bw_processing/pinned-x86-1/75fe8161-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACK6d0fbdc8.json
+1ef0c024dfc6322b5ad842d6ff32fb6b4c542a29cc6b3554147a513e19f13f7c  .asv/../results/bw_processing/pinned-x86-1/pylock.823e21d508188c23846632c8e6d3fcf9.toml
+8e8a652c5b2b8112c9d077e7c46972076515bbf276bb98b469d7b86f17571fbc  .asv/../results/bw_processing/pinned-x86-1/d0a742d6-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACK6d0fbdc8.json
+3c26156c47f9a06c4517a29d7d5679a05555cbd66bb789f8591c261d7f91b6d3  .asv/../results/bw_processing/pinned-x86-1/e895747b-uv-py3.13-numpy2.5.3-scipy1.18.1-BWBENCH_STACK6d0fbdc8.json

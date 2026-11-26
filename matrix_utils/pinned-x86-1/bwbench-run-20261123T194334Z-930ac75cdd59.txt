@@ -1,0 +1,15 @@
+commit 930ac75cdd59bd40c64f92bcfc52e9dff84fe13e
+generator 5
+ac1ac43479e0f29cf8455422ccad1ee4b286ec1e4b112ccfe2ab19dd7b6fdcd5  .asv/../results/matrix_utils/benchmarks.json
+7c2b3027c9beed6388b10a567c787f2a950ce1671da3dc9dee95c5c2f643407d  .asv/../results/matrix_utils/pinned-x86-1/5239f15a-uv-py3.13-bw_processing2.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACK020a0696.json
+5cfc62ea56a8801c0f7fd86bb9f87173367d9f9a17d049fbd9d4278a9b41afa2  .asv/../results/matrix_utils/pinned-x86-1/machine.json
+d0f4947b9e294e8a747ce04c9adad4adf159adf0a2015d7e5e8db15265e44e48  .asv/../results/matrix_utils/pinned-x86-1/a34841f2-uv-py3.13-bw_processing2.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACK020a0696.json
+afbb6ae362b195c0a77cbb1a5b7765539b76328bfbfd30c10c0acaaa69ca0269  .asv/../results/matrix_utils/pinned-x86-1/bbb820b4-uv-py3.13-bw_processing2.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACK020a0696.json
+7dcf7e192d3622bf1604a52b7c6883aa8ebc1448207ddcc1738a78cfa4e31283  .asv/../results/matrix_utils/pinned-x86-1/087757b6-uv-py3.13-bw_processing2.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACK020a0696.json
+7c03a68194afb72c4551e6c35f587190c0056de83336997e008ecaf51e7a1b64  .asv/../results/matrix_utils/pinned-x86-1/5ff146cf-uv-py3.13-bw_processing2.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACK020a0696.json
+4c0dc76f39c4411debf241d775cfce99d73902b9db02c1494da6a78e8850b518  .asv/../results/matrix_utils/pinned-x86-1/96fde231-uv-py3.13-bw_processing2.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACK020a0696.json
+e2cccfdbbe7e0ae8dc51b0863acb717e4f0b228c8bbc5bd5dbc642a9f1dc2c52  .asv/../results/matrix_utils/pinned-x86-1/13a9acd9-uv-py3.13-bw_processing2.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACK020a0696.json
+cbdbe2c9a5282c26f9cebfe8621e7053bc6d1dd045f68f7c1e05086aad0ec24c  .asv/../results/matrix_utils/pinned-x86-1/7335e8a7-uv-py3.13-bw_processing2.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACK020a0696.json
+5a8f59fd87d423224e2c01c02db17dd33b4548a33687d2d06c804d86cd09823a  .asv/../results/matrix_utils/pinned-x86-1/0849b068-uv-py3.13-bw_processing2.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACK020a0696.json
+cb272c5524c53ead2264b4fea08996cab0759bdd8483b54236d274af3c6fbe4a  .asv/../results/matrix_utils/pinned-x86-1/55ef6296-uv-py3.13-bw_processing2.0-numpy2.5.3-scipy1.18.1-BWBENCH_STACK020a0696.json
+7d51eea932f67fcba455127c2c6ba92fcfecdf5b66d6d9e420cf9fc4976106e8  .asv/../results/matrix_utils/pinned-x86-1/pylock.1b5f68d2bb5f4f8b5296ab135e4af2f9.toml

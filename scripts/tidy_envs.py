@@ -7,11 +7,16 @@ file. So the folder only grows, about 300 MB per environment, most of it the sam
 and pandas files.
 
 ``tidy_envs.py ENV_DIR [--days N]`` removes each environment (``ENV_DIR/<subject>/<hash>/``)
-with no file written in the last N days (default 30; asv writes into an environment each time
-it installs a commit there, so a quiet one is unused), then replaces identical files across the
-rest with hardlinks to one copy. Files are only compared, never imported or run, so it runs on
-the host. A hardlink is safe here: pip and Python replace files (unlink, or write and rename)
-and never write into an installed one. It prints what it freed.
+that asv has not used in N days (default 30), then replaces identical files across the rest
+with hardlinks to one copy. Use is the access or modification time of the environment's
+``asv-install-status.json``, which asv reads on every run and rewrites on every install; with
+the file system's relatime, reads move the access time at least once a day. (File mtimes are no
+use: asv installs nothing when the commit is already there, and a hardlink shares one mtime.)
+Files are only compared, never imported or run, so it runs on the host. A hardlink is safe here:
+pip and Python replace files (unlink, or write and rename) and never write into an installed
+one. A subject whose asv lock (``.asv/<subject>.lock``, held by scripts/asv.sh during a run) is
+taken is left alone, and a run asv.sh starts meanwhile fails at once instead of waiting.
+``--dry-run`` reports without changing anything. It prints what it freed.
 
 Exit codes: 0 done, 2 usage error or no such folder.
 """
@@ -29,6 +34,7 @@ from pathlib import Path
 # NOTE: smaller files save little and cost a hash each
 MIN_SIZE = 64 * 1024
 TMP = ".tidy-link"
+GONE = ".tidy-rm"
 
 
 def lock_subjects(env_dir: Path) -> tuple[list[Path], list[str], list[int]]:
@@ -47,29 +53,32 @@ def lock_subjects(env_dir: Path) -> tuple[list[Path], list[str], list[int]]:
     return free, busy, fds
 
 
-def newest_write(env: Path) -> float:
-    """The newest mtime of any file in env, or of env itself when it is empty."""
-    newest = env.stat().st_mtime
-    for root, _, files in os.walk(env):
-        for f in files:
-            try:
-                newest = max(newest, (Path(root) / f).lstat().st_mtime)
-            except OSError:  # a file removed while walking
-                continue
-    return newest
+def last_used(env: Path) -> float:
+    """When asv last read or wrote env's install status, or env's own mtime when it has none."""
+    try:
+        st = (env / "asv-install-status.json").stat()
+    except FileNotFoundError:
+        return env.stat().st_mtime
+    return max(st.st_atime, st.st_mtime)
 
 
 def prune(subjects: list[Path], days: float, now: float, *, dry_run: bool = False) -> list[Path]:
-    """Remove the environments with no write in `days` days; returns them."""
+    """Remove the environments asv has not used in `days` days; returns them."""
+    for s in subjects:  # left by a run that was stopped mid-delete; asv no longer sees them
+        for gone in s.glob(f"*{GONE}"):
+            if not dry_run:
+                shutil.rmtree(gone, ignore_errors=True)
     stale = [
         e
         for s in subjects
         for e in sorted(s.iterdir())
-        if e.is_dir() and not e.is_symlink() and now - newest_write(e) > days * 86400
+        if e.is_dir() and not e.is_symlink() and not e.name.endswith(GONE) and now - last_used(e) > days * 86400
     ]
     if not dry_run:
         for e in stale:
-            shutil.rmtree(e, ignore_errors=True)
+            # the rename is atomic, so asv never meets a half-deleted environment under its name
+            gone = e.rename(e.with_name(e.name + GONE))
+            shutil.rmtree(gone, ignore_errors=True)
     return stale
 
 
@@ -141,6 +150,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--days", type=float, default=30, help="remove environments unused this long (default 30)")
     parser.add_argument("--dry-run", action="store_true", help="report what would go, change nothing")
     args = parser.parse_args(argv)
+    if args.days <= 0:
+        parser.error(f"--days must be above 0, got {args.days:g}: 0 would remove every environment")
     if not args.env_dir.is_dir():
         parser.error(f"no folder {args.env_dir.as_posix()!r}")
     subjects, busy, fds = lock_subjects(args.env_dir)

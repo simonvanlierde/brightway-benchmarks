@@ -1,6 +1,8 @@
+import os
 import pickle
 import sqlite3
 import tarfile
+import time
 from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
@@ -323,3 +325,13 @@ def test_corrected_system_preserves_raw_data_and_uses_a_separate_cache(
     for a, b in zip(again.cf_flows + again.cf_data, corrected.cf_flows + corrected.cf_data, strict=True):
         np.testing.assert_array_equal(a, b)
     assert again.name == corrected.name
+
+
+def test_keep_removes_the_part_files_a_killed_write_left(tmp_path: Path):
+    path = tmp_path / "a.tar.gz.factors-0123.npz"
+    stale = path.with_name(f"{path.name}k1ll3d.part")
+    stale.write_bytes(b"half")
+    os.utime(stale, (time.time() - 7200, time.time() - 7200))
+    heating._keep(path, b"whole")  # noqa: SLF001
+    assert path.read_bytes() == b"whole"
+    assert not list(tmp_path.glob("*.part"))

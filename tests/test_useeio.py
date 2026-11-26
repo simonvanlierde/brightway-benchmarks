@@ -1,6 +1,8 @@
 import hashlib
 import json
+import os
 import sys
+import time
 import zipfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -164,3 +166,18 @@ def test_archive_becomes_a_system_with_the_same_scores(loader: str, monkeypatch:
     np.testing.assert_allclose(result.reference, expected, rtol=1e-12)
     for array in (result.tech_data, result.bio_data, *result.cf_data):
         assert memoryview(array).readonly
+
+
+def test_fetch_removes_the_part_files_a_killed_download_left(tmp_path: Path):
+    """A download killed mid-way keeps its .part; the next fetch removes one an hour old, not a live one."""
+    src = tmp_path / "src.bin"
+    src.write_bytes(b"archive")
+    dest = tmp_path / "cache" / "a.tar.gz"
+    dest.parent.mkdir()
+    stale, live = dest.with_name("a.tar.gzk1ll3d.part"), dest.with_name("a.tar.gzr1nn1ng.part")
+    for part in (stale, live):
+        part.write_bytes(b"half")
+    os.utime(stale, (time.time() - 7200, time.time() - 7200))
+    useeio.fetch(dest, src.as_uri(), hashlib.sha256(b"archive").hexdigest())
+    assert not stale.exists()
+    assert live.exists()

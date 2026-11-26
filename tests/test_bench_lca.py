@@ -116,6 +116,35 @@ def test_fast_scores_on_another_solver_is_not_applicable(bench_lca: types.Module
         bench_lca.fast_scores("adjoint")
 
 
+def test_fast_scores_passes_a_direction_only_to_a_release_that_takes_one(
+    bench_lca: types.ModuleType, monkeypatch: pytest.MonkeyPatch
+):
+    """Before bw2calc PR #165 there is no ``direction``: forward runs without it, adjoint is skipped."""
+
+    class Directed(StubLCA):
+        def __init__(self, demands: dict, data_objs: list, direction: str = "forward") -> None:  # noqa: ARG002
+            super().__init__(demands, data_objs)
+
+    class Undirected(StubLCA):
+        pass
+
+    monkeypatch.setattr(bench_lca, "skip_known_crash", lambda *_, **__: None)
+    monkeypatch.setattr(bench_lca.bc, "UMFPACK", True, raising=False)
+    monkeypatch.setenv("BWBENCH_SOLVER", "umfpack")
+    with pytest.raises(NotImplementedError, match="no FastScoresOnlyMultiLCA"):
+        bench_lca.fast_scores("forward")
+    monkeypatch.setattr(bench_lca.bc, "FastScoresOnlyMultiLCA", Undirected, raising=False)
+    assert bench_lca.fast_scores("forward") == (Undirected, {})
+    with pytest.raises(NotImplementedError, match="no adjoint direction"):
+        bench_lca.fast_scores("adjoint")
+    monkeypatch.setattr(bench_lca.bc, "FastScoresOnlyMultiLCA", Directed)
+    for direction in ("forward", "adjoint"):
+        assert bench_lca.fast_scores(direction) == (Directed, {"direction": direction})
+    monkeypatch.setattr(bench_lca.bc, "UMFPACK", False)
+    monkeypatch.setattr(bench_lca.bc, "PYPARDISO", True)
+    assert bench_lca.fast_scores("adjoint") == (Directed, {"direction": "adjoint"})
+
+
 def test_condition_estimate_runs_in_the_superlu_environment_only(
     bench_lca: types.ModuleType, monkeypatch: pytest.MonkeyPatch
 ):

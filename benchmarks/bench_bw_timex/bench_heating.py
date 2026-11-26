@@ -5,12 +5,20 @@ The complete per-heat inventory, including allocated equipment, is spread evenly
 This is an explicit benchmark assumption, not a separate installation-and-operation schedule.
 """
 
-import functools
 import re
 from datetime import datetime
 from importlib import metadata
 
-from bwbench import DIRECT_RTOL, bafu, check, first_time, heating, knob, temporary_brightway_dir
+from bwbench import (
+    DIRECT_RTOL,
+    assert_stamps_unchanged,
+    check,
+    first_time,
+    heating,
+    knob,
+    stamps,
+    temporary_brightway_dir,
+)
 
 temporary_brightway_dir()
 
@@ -22,15 +30,8 @@ from scipy import sparse  # noqa: E402
 
 from bwbench.asv import classes  # noqa: E402
 from bwbench.bench import BenchSetup, NotApplicable, bench  # noqa: E402
-from bwbench.matrices import System, method_name, neumann_score  # noqa: E402
-from bwbench.synth import profile_version, system  # noqa: E402
-
-
-@functools.cache
-def background() -> tuple[System, dict[str, int]]:
-    """BAFU with the heating factors, and the matrix index of each process the foreground names."""
-    s = heating.corrected_system(system("bafu"))
-    return s, heating.locate(bafu.archive(), heating.NAMES, s.ids)
+from bwbench.matrices import method_name, neumann_score  # noqa: E402
+from bwbench.synth import profile_version  # noqa: E402
 
 
 @bench(
@@ -49,14 +50,14 @@ def heating_lci(size: str, option: str) -> BenchSetup:
     if tuple(int(n) for n in re.findall(r"\d+", metadata.version("bw_timex"))[:3]) < (1, 2, 1):  # 1.3.0rc1 too
         raise NotApplicable("bw_timex before 1.2.1 builds a mismatched biosphere flip_array (bw_timex #212)")
     bd.projects.set_current("heating-timex")
-    s, at = background()
+    s, at = heating.background()
     if first_time("heating background"):  # once per process; each sample writes only the foreground
         bio, records, methods = s.bw2data(db="background")
         bd.Database("bio").write(bio)
         bd.Database("background").write(records)
         bd.Method(method_name(0)).write(methods[0])
     clear_background_lci_cache()  # as in bench_timex: every sample is a first TimexLCA of its session
-    modified = {db: bd.databases[db]["modified"] for db in ("bio", "background")}
+    modified = stamps("bio", "background")
     records = heating.bw2data(s, heating.foreground(s, at, **heating.DEFAULTS))
     node = heating.OPTIONS[option]
     td = TemporalDistribution(
@@ -71,8 +72,7 @@ def heating_lci(size: str, option: str) -> BenchSetup:
     tlca.build_timeline(starting_datetime="2025-01-01", cutoff=1e-12)
 
     def static_score_error(_: None) -> float:
-        if {db: bd.databases[db]["modified"] for db in modified} != modified:
-            raise AssertionError("a timed call rewrote the stored background")
+        assert_stamps_unchanged(modified)
         # bw2data changes precision when processing exchanges; check the actual stored matrices.
         base = tlca.base_lca
         scale = np.ones(base.technosphere_matrix.shape[0])

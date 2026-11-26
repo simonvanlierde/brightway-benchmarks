@@ -11,23 +11,21 @@ import functools
 
 import bw2calc as bc
 
-from bwbench import BAFU_RTOL, bafu, check_table, first_time, heating, knob
+from bwbench import BAFU_RTOL, check_table, first_time, heating, knob
 from bwbench.asv import classes
 from bwbench.bench import BenchSetup, NotApplicable, bench
 from bwbench.matrices import System, load, method_name
 from bwbench.solvers import assert_reached
-from bwbench.synth import datapackages, profile_version, skip_unless_factorizable, system
+from bwbench.synth import datapackages, profile_version, skip_unless_factorizable
 
 SIZES = knob("sizes", "smoke")
 
 
-@functools.cache
 def background(size: str) -> tuple[System, dict[str, int]]:
-    """BAFU as arrays, and the matrix index of each process the foreground names."""
+    """``heating.background()``, at ``size`` bafu only."""
     if size != "bafu":
         raise NotApplicable("the heating foreground names BAFU 2025 processes: it runs at BWBENCH_SIZES=bafu")
-    s = heating.corrected_system(system(size))
-    return s, heating.locate(bafu.archive(), heating.NAMES, s.ids)
+    return heating.background()
 
 
 def score(lca: bc.LCA) -> float:

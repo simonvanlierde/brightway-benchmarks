@@ -109,7 +109,11 @@ def main(argv: list[str]) -> None:
     match argv:
         case ["conf", subject, machine]:
             data, stack = conf(subject, machine, os.environ["BWBENCH_SOLVERS"], platform.machine())
-            Path(f".asv/.{subject}.local.json").write_text(json.dumps(data, indent=2))
+            # Through a rename: an asv still reading the old file never sees it truncated.
+            local = Path(f".asv/.{subject}.local.json")
+            part = local.with_name(f"{local.name}.{os.getpid()}.part")
+            part.write_text(json.dumps(data, indent=2))
+            part.replace(local)
             print(stack, f".asv/{data['results_dir']}")
         case ["stack-in", subject]:
             print("\n".join(stack_in(subject)))

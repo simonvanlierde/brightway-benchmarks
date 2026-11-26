@@ -12,7 +12,7 @@ starts from empty bw_timex caches, so every sample is a first ``TimexLCA`` of it
 
 from datetime import datetime
 
-from bwbench import DIRECT_RTOL, check, first_time, knob, temporary_brightway_dir
+from bwbench import DIRECT_RTOL, assert_stamps_unchanged, check, first_time, knob, stamps, temporary_brightway_dir
 
 temporary_brightway_dir()
 
@@ -48,7 +48,7 @@ def build_background(size: str) -> dict[str, str]:
         for db in ("bg_2020", "bg_2030"):
             bd.Database(db).write(synthetic.bw2data(db=db)[1])
     clear_background_lci_cache()
-    return {db: bd.databases[db]["modified"] for db in BACKGROUND}
+    return stamps(*BACKGROUND)
 
 
 def foreground(steps: int) -> dict:
@@ -91,8 +91,7 @@ def lci(size: str, steps: int) -> BenchSetup:
     tlca.build_timeline(starting_datetime="2024-01-01")
 
     def static_score_error(_: None) -> float:
-        if {db: bd.databases[db]["modified"] for db in modified} != modified:
-            raise AssertionError("a timed call rewrote the stored background")
+        assert_stamps_unchanged(modified)
         tlca.static_lcia()
         lca = bc.LCA({fu: 1}, method=method_name(0))
         lca.lci()

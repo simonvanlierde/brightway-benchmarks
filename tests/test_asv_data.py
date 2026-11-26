@@ -60,6 +60,23 @@ def test_conda_pins_match_the_stack_pip_installs(subject: str):
                 assert pins[name] == version, name
 
 
+def stack_pins(subject: str) -> dict[str, str]:
+    lines = (ASV / f"{subject}.stack.txt").read_text().splitlines()
+    return dict(line.split(" ;")[0].split("==") for line in lines if line and not line.startswith("#"))
+
+
+@pytest.mark.parametrize("subject", [s for s in SUBJECTS if (ASV / f"{s}.stack.txt").exists()])
+def test_matrix_pins_match_the_stack(subject: str):
+    # The stack reinstalls each package at its own pin, so a matrix pin that differs only
+    # mislabels the environment: its name would claim a version it does not time.
+    pins = {name.replace("_", "-").lower(): v for name, v in stack_pins(subject).items()}
+    req = json.loads((ASV / f"{subject}.json").read_text()).get("matrix", {}).get("req", {})
+    for name, versions in req.items():
+        stacked = pins.get(name.removeprefix("pip+").replace("_", "-").lower())
+        if stacked is not None and len(versions) == 1 and versions[0]:
+            assert versions[0] == stacked, name
+
+
 def test_patched_solver_environments_name_a_known_solver_and_install_it():
     installs = {"klu": "pyklu", "umfpack-T": "scikit-umfpack"}
     include = json.loads((ASV / "bw2calc.json").read_text())["include"]

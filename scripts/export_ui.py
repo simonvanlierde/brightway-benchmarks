@@ -131,6 +131,8 @@ def fill(files: list[dict]) -> list[dict]:
 
     A rerun of some cases on a new stack leaves the others on the older stacks only, so those come
     from there. A cell an earlier file has, even skipped or failed, is a NaN in the later ones.
+    That includes the NaN `merge_results.merge_row` writes for a combination neither merged run
+    timed, which a file cannot tell from a real skip: a later stack's value for it stays hidden.
     """
     held: set[tuple[str, tuple]] = set()
     out = []

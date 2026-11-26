@@ -122,7 +122,6 @@ log_level = "INFO"
 source = ["src", "scripts"]
 omit = [
   "*/scripts/bw2io_import.py",
-  "*/scripts/registry_vs_sqlite.py",
   "*/scripts/solver_factorize.py",
   "*/scripts/solver_lci.py",
 ]

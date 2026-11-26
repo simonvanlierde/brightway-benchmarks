@@ -27,6 +27,11 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - bw2calc's Monte Carlo benchmarks skip a case whose solver holds a copy of the technosphere matrix
   that draws never reach (`JacobiGMRESLCA` on 2.4.0 and 2.5.0), instead of failing its score check.
 
+### Removed
+
+- `scripts/registry_vs_sqlite.py` and `just registry-vs-sqlite`, the one-off comparison with
+  sentier-brightway's Parquet registry.
+
 ## [0.3.0] - 2026-11-16
 
 ### Upgrading

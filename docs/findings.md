@@ -179,8 +179,18 @@ sampled matrix; with 3.1.0 the difference is 3e-10. The fix is
 [brightway2-calc#155](https://github.com/brightway-lca/brightway2-calc/pull/155), first released
 in 3.0.0. Reported as [brightway2-calc#187](https://github.com/brightway-lca/brightway2-calc/issues/187).
 
+Of the classes checked, only `JacobiGMRESLCA` is affected. Four draws with `LCA` on SuperLU,
+UMFPACK and PyPardiso match a direct solve of the sampled matrix to 3e-16 on 2.0.2, 2.1.1, 2.2.2,
+2.3.2, 2.4.0, 2.5.0, 3.0.0 and 3.1.0. `JacobiGMRESLCA` on 2.4.0 and 2.5.0 returns one score for all
+four draws, up to 17% off over those draws. The cause is
+`self.technosphere_matrix = self.technosphere_matrix.tocsc(copy=False)` at line 83 of
+`src/bw2calc/jacobi_gmres_lca.py` in both releases, a copy `technosphere_mm` never writes to.
+`IterativeLCA` never reassigns the matrix, but PyPI's 2.x releases pass `atol="legacy"` to a SciPy
+that rejects it, so this check does not cover it.
+
 The benchmark's own check missed it, because it solved `technosphere_matrix` too, the same stale
-copy. It now solves the sampled matrices, and the viewer leaves out the 2.4.0 and 2.5.0 points
+copy. It now solves the sampled matrices. A run on 2.4.0 or 2.5.0 skips the case with a link to the
+report, and the viewer leaves out the points measured before
 ([`benchmarks/invalid.toml`](../benchmarks/invalid.toml)).
 
 Graph: [bw2calc, Monte Carlo](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.MonteCarlo.time_iterations).

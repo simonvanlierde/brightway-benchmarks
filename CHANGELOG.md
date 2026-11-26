@@ -13,6 +13,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   their points out. It lists `JacobiGMRESLCA`'s Monte Carlo points on bw2calc 2.4.0 and 2.5.0.
 - The round log (`BWBENCH_ROUNDLOG`) records voluntary context switches and minor and major page
   faults per timed sample, so a wait that is not preemption shows.
+- bw_processing 2.0 and matrix_utils 1.0 join the release histories. The matrix_utils history
+  runs every release against bw_processing 2.0 and stats-arrays 5.0.1.
 
 ### Fixed
 

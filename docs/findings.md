@@ -372,14 +372,20 @@ Rerun: [`bench_traversal.Traversal`](../benchmarks/bench_bw_graph_tools/bench_tr
 
 ### Adding resource groups grows with the square of their number
 
-**The time to add resource groups to a datapackage grows with the square of their number.
-[bw_processing#113](https://github.com/brightway-lca/bw_processing/pull/113) removes that, and
-cuts building a matrix from 1,000 groups by 40%.** Nothing to do until a release has it.
+**Through bw_processing 1.6, lookup time grows with the square of the number of resource
+groups. Version 2.0 collects them in one pass.**
 
-In every bw_processing release, adding 100 groups takes 2.17 to 2.27 ms, and 1,000 take 249 ms.
-matrix_utils 0.9 builds a matrix from 1,000 groups in 655 ms on bw_processing 1.6, and 393 ms
-on #113. [matrix_utils#48](https://github.com/brightway-lca/matrix_utils/pull/48) takes those
-to 619 and 355 ms. Since 0.6, matrix_utils itself builds 12 to 13% slower at 1,000 groups.
+On one E-core with Python 3.13 and a fixed dependency stack, upgrading bw_processing
+from 1.6 to 2.0 cut lookup for 10,000 groups from 32.6 s to 20.4 ms. For 100,000
+entries, `add_entries` fell from 536 to 196 ms, while the generic dictionary iterator
+rose from 231 to 284 ms. The iterator now sorts records that hold wider floats, which
+probably contributes. The release comparison measures the combined effect of the
+changes in 2.0.
+
+Holding bw_processing at 2.0, upgrading matrix_utils from 0.9 to 1.0 cut a
+10,000-group matrix build from 7.87 to 1.75 s. The resource-group changes shipped
+in [bw_processing#113](https://github.com/brightway-lca/bw_processing/pull/113) and
+[matrix_utils#48](https://github.com/brightway-lca/matrix_utils/pull/48).
 
 Graph: [bw_processing, resource groups](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw_processing&bench=bench_datapackage.Groups.time_groups).
 Rerun: [`bench_datapackage.Groups`](../benchmarks/bench_bw_processing/bench_datapackage.py) and
@@ -387,7 +393,7 @@ Rerun: [`bench_datapackage.Groups`](../benchmarks/bench_bw_processing/bench_data
 
 ### Smaller bw_processing findings
 
-- **bw_processing 1.6 iterates over 100,000 entries 24% faster**, from 268 to 203 ms.
+- **bw_processing 1.6 iterates over 100,000 entries 25% faster** than 1.5, from 307 to 231 ms.
   Rerun: [`bench_datapackage.EntriesPath`](../benchmarks/bench_bw_processing/bench_datapackage.py).
 - **bw_processing 1.6 stored processed exchange amounts as float32**, which shifted scores by about
   1e-7 in this benchmark ([bw_processing#112](https://github.com/brightway-lca/bw_processing/issues/112)).

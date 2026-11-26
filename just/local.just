@@ -204,11 +204,6 @@ bw2io-import release sizes:
       -v "$PWD":/src:ro -v "$PWD/.asv":/src/.asv -v "$(realpath {{ quote(release) }})":/ecoinvent:ro -w /src \
       "$image" scripts/in-box.sh sh -c "$run /ecoinvent {{ quote(sizes) }}"
 
-# A SQLite project against sentier-brightway's Parquet registry (the format of bw2data #290, which
-# stays outside bw2data). size: smoke | ecoinvent; solver: superlu | pypardiso.
-registry-vs-sqlite size="smoke" solver="superlu":
-    scripts/box.sh sh -c 'PYTHONPATH=src uv run -q --no-project --python 3.13 --with "sentier-brightway @ git+https://github.com/sentier-dev/sentier-brightway@adacaf9" --with bw2data==4.8 --with bw2calc==3.1.0 --with threadpoolctl==3.7.0 {{ if solver == "pypardiso" { "--with pypardiso==0.4.7" } else if solver == "superlu" { "" } else { error("solver: superlu or pypardiso") } }} --with duckdb==1.5.6 python scripts/registry_vs_sqlite.py {{ size }}'
-
 # Docker's default seccomp profile (moby/profiles at TAG; v0.2.4 is Docker 29.9's) plus one rule
 # allowing personality(ADDR_NO_RANDOMIZE), so `setarch -R` can turn address randomization off.
 # Rewrite docker/seccomp-noaslr.json, the profile box.sh gives the codspeed box.

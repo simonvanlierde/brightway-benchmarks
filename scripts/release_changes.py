@@ -13,17 +13,19 @@ comparison prefers two results on the same stack, the current one (asv/SUBJECT.s
 first; when there are none, it compares across stacks and flags the row, because then the
 dependencies moved too, not only the package.
 A case whose recorded version differs from benchmarks.json's is left out (``current_rows``), so a
-file of an older generator version takes no part.
+file of an older generator version takes no part, and so is a point benchmarks/invalid.toml lists.
 Release tags resolve through asv's mirror of the upstream repository, .asv/SUBJECT, which
 ``asv run`` and ``just site`` create.
 """
 
+import ast
 import hashlib
 import json
 import math
 import re
 import sys
-from collections.abc import Iterable
+import tomllib
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -38,6 +40,28 @@ NOISE_TIMES = 3
 GB = 1e9
 STACK = re.compile(r"-BWBENCH_STACK([0-9a-f]+)")
 SHA = re.compile(r"[0-9a-f]{40}")
+INVALID = Path(__file__).resolve().parents[1] / "benchmarks" / "invalid.toml"
+
+
+def label(value: str) -> str:
+    """A parameter value as asv writes it (Python's repr), shown plainly: 'LCA' as LCA."""
+    try:
+        return str(ast.literal_eval(value))
+    except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError):
+        return value
+
+
+def invalid_entries() -> list[dict]:
+    """INVALID's entries: results that measured a wrong calculation."""
+    return tomllib.loads(INVALID.read_text())["invalid"]
+
+
+def is_invalid(entries: list[dict], name: str, commit: str, names: list[str], point: Iterable[str]) -> bool:
+    """Whether ENTRIES list this point: its benchmark, its commit and every value an entry names."""
+    shown = dict(zip(names, map(label, point), strict=True))
+    return any(
+        e["benchmark"] == name and commit in e["commits"] and e["params"].items() <= shown.items() for e in entries
+    )
 
 
 @dataclass(frozen=True)
@@ -154,6 +178,14 @@ def changes(results: Path, subject: str) -> list[Change]:
     meta = folder / "benchmarks.json"
     cases = json.loads(meta.read_text()) if meta.exists() else {}
     units = {k: v.get("unit", "") for k, v in cases.items() if isinstance(v, dict)}  # skips "version"
+    names = {k: v.get("param_names", []) for k, v in cases.items() if isinstance(v, dict)}
+    entries = invalid_entries()
+
+    def dropped(data: dict, name: str, combo: tuple) -> bool:
+        return len(combo) == len(names.get(name, [])) and is_invalid(
+            entries, name, data.get("commit_hash", ""), names[name], combo
+        )
+
     # (machine, environment) -> tag -> stack -> results
     runs: dict[tuple[str, str], dict[str, dict[str, dict]]] = {}
     for path in folder.glob("*/*-*.json"):
@@ -175,7 +207,7 @@ def changes(results: Path, subject: str) -> list[Change]:
         old, new = by_tag[old_tag], by_tag[new_tag]
         shared = old.keys() & new.keys()
         old_stack, new_stack = (pick(shared, current),) * 2 if shared else (pick(old, current), pick(new, current))
-        rows = compare(old[old_stack], new[new_stack], units)
+        rows = compare(old[old_stack], new[new_stack], units, dropped)
         out.extend(Change(f"{machine}/{env}", old_tag, new_tag, not shared, *row) for row in rows)
     return out
 
@@ -188,8 +220,11 @@ def cells(row: list, columns: list[str]) -> dict[tuple, tuple]:
     }
 
 
-def compare(old: dict, new: dict, units: dict) -> list[tuple]:
-    """(case, params, old, new, ratio) for each parameter set of each case that moved beyond its noise."""
+def compare(old: dict, new: dict, units: dict, dropped: Callable[[dict, str, tuple], bool]) -> list[tuple]:
+    """(case, params, old, new, ratio) for each parameter set of each case that moved beyond its noise.
+
+    A parameter set DROPPED marks invalid in either file is left out, as if it had not run.
+    """
     rows = []
     for name in sorted(old["results"].keys() & new["results"].keys()):
         if name.rsplit(".", 1)[-1].startswith("track_"):
@@ -197,6 +232,8 @@ def compare(old: dict, new: dict, units: dict) -> list[tuple]:
         before = cells(old["results"][name], old.get("result_columns", ["result", "params"]))
         after = cells(new["results"][name], new.get("result_columns", ["result", "params"]))
         for combo in [c for c in before if c in after]:  # by value: merge_results may order an axis differently
+            if dropped(old, name, combo) or dropped(new, name, combo):
+                continue
             (x, ka), (y, kb) = before[combo], after[combo]
             label = ", ".join(combo)
             ran_x, ran_y = x is not None and not math.isnan(x), y is not None and not math.isnan(y)

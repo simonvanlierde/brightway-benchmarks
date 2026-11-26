@@ -1,0 +1,15 @@
+# Results that measured a wrong calculation. scripts/export_ui.py leaves out each point whose
+# benchmark, commit and parameters match an entry, so the viewer neither plots nor compares it;
+# the results branch keeps the raw files. `params` names values as the viewer shows them, and
+# may leave axes out to match all their values. `commits` are full hashes of the measured
+# project, with the release in a comment.
+
+[[invalid]]
+benchmark = "bench_lca.MonteCarlo.time_iterations"
+params = { cls = "JacobiGMRESLCA" }
+commits = [
+  "fb9d6561089c1635aedc4bf1121d18c054d31eca",  # bw2calc 2.4.0
+  "1e93fdbd8f349bc1d2c24a782509275ef39d9d41",  # bw2calc 2.5.0
+]
+reason = "JacobiGMRESLCA solved a stale copy of the first draw's technosphere matrix, so later draws skipped the solve and ignored technosphere uncertainty. Fixed in bw2calc 3.0.0."
+link = "https://github.com/brightway-lca/brightway2-calc/issues/187"

@@ -16,7 +16,7 @@ from hypothesis import strategies as st
 from scipy import sparse
 
 from bwbench import synth
-from bwbench.shapes import PROFILES_DIR
+from bwbench.profiles import PROFILES_DIR
 from bwbench.stats import OVERLAP_BANDS, Stats
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"

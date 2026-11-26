@@ -67,7 +67,7 @@ specified degrees and block constraints, but these do not prescribe shared suppl
 or elimination fill. No measured improvement justified replacing the family construction
 with another block model or an ERGM.
 
-`tests/test_measure.py` is the acceptance check. It checks structural statistics over seeds
+`tests/test_stats.py` is the acceptance check. It checks structural statistics over seeds
 0 to 3, mean loop and negative-input shares, mean METIS fill, and COLAMD fill on Aᵀ.
 The sweep below records per-seed statistics; a passing sweep alone does not establish the fill or
 across-seed mean checks. Input magnitudes remain
@@ -93,7 +93,7 @@ process, serially. At most one LU factorization is retained at a time. It record
 - COLAMD fill and factorization wall time for the column-normalized matrix and its transpose.
 
 The calibration guards are the per-seed ones of
-`tests/test_measure.py::test_ecoinvent_profile_matches_its_target`, and the same guards apply
+`tests/test_stats.py::test_ecoinvent_profile_matches_its_target`, and the same guards apply
 to every seed. The giant loop's share and the negative share vary by seed (SD 0.04 and 0.012),
 so each seed gets 3 SD: 0.12 and 0.035. The test also holds the mean of seeds 0 to 3 to 3 SD
 over the square root of four (0.06 and 0.02); the sweep reports per seed only. LU fill and

@@ -10,7 +10,7 @@ from scipy import sparse
 from scipy.sparse import linalg as sla
 
 from bwbench import stats
-from bwbench.shapes import PROFILES_DIR
+from bwbench.profiles import PROFILES_DIR
 from bwbench.stats import Stats, cholesky_counts, fill_bounds, measure, tree_height
 from bwbench.synth import system
 

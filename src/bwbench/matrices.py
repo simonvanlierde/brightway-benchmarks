@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
     from numpy.typing import NDArray
 
-    from bwbench.shapes import Profile
+    from bwbench.profiles import Profile
 
 NEUMANN_TOL = 1e-17  # the series stops when the rest of it is below this, relative to the demand
 NEUMANN_MAX_TERMS = 5_000  # without a bound on the rest; radius 0.99 needs about 4,000

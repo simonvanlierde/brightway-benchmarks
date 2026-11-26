@@ -15,13 +15,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from bwbench import useeio
-from bwbench.shapes import data_root
+from bwbench.cache import data_root
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from bwbench.matrices import System
-    from bwbench.shapes import Profile
+    from bwbench.profiles import Profile
 
 # shortcut: pinned by hand, like useeio.URL. Move to sourceledger with it.
 URL = "https://files.brightway.dev/bafu-2025-v2.tar.gz"

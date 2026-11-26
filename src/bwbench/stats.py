@@ -1,6 +1,6 @@
 """Structural statistics of a technosphere matrix: aggregates only, safe to publish for licensed data.
 
-``measure`` is the calibration oracle (``tests/test_measure.py``) and what
+``measure`` is the calibration oracle (``tests/test_stats.py``) and what
 ``scripts/measure_stats.py`` and ``scripts/calibration_sweep.py`` record. ``fill_bounds`` needs
 pymetis, a development dependency.
 """

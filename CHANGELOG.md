@@ -27,8 +27,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Removed
 
-- `scripts/registry_vs_sqlite.py` and `just registry-vs-sqlite`: the comparison with
-  sentier-brightway's Parquet registry is no longer planned.
+- `scripts/registry_vs_sqlite.py` and `just registry-vs-sqlite`, the one-off comparison with
+  sentier-brightway's Parquet registry.
 
 ## [0.3.0] - 2026-11-16
 

@@ -16,6 +16,8 @@ here. Ideas and bugs go in [GitHub issues](https://github.com/simonvanlierde/bri
 - **Continuous runs on contributed machines:** when someone offers a machine for regular runs,
   a [Bencher](https://bencher.dev) self-hosted runner on it, beside the result files
   contributors add by hand now ([running](docs/running.md#contribute-a-run)).
+- **bw2data's write path:** the SQLite database against the Parquet tables proposed for a
+  registry, with time and peak memory at ecoinvent size.
 - **bw_timex at a larger timeline,** so the timeline builder, not the graph traversal, sets the
   time.
 - **Benchmarks upstream:** propose a `benchmarks/` folder with a smoke mode and a pull request job

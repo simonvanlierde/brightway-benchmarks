@@ -199,6 +199,24 @@ def test_one_stack_per_commit_and_environment(export_ui: ModuleType, tmp_path: P
     assert value(index, reports["m", commit], ["'ecoinvent'", "'LCA'"], "a")["value"] == pytest.approx(10.4e9)
 
 
+def test_the_winning_stack_takes_the_cases_it_lacks_from_the_losing_stacks(
+    export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    commit = "45" * 20
+    current = hashlib.sha256(b"numpy==2.5.3\n").hexdigest()[:8]
+    old = result(commit, "a-BWBENCH_STACK00000000", 0, [10.4, 3.0], ([10.4, 3.0], [10.4, 3.0]))
+    # A rerun on the current stack of one case at one parameter set, which it skipped.
+    new = old | {"env_name": f"a-BWBENCH_STACK{current}", "results": {TIME: [[math.nan], [["'ecoinvent'"], ["'LCA'"]]]}}
+    files = {f"m/{commit[:8]}-old": old, f"m/{commit[:8]}-new": new}
+    index, reports = run(export_ui, layout(tmp_path, files, "numpy==2.5.3\n"), monkeypatch)
+    report = reports["m", commit]
+    # The cell the current stack skipped stays skipped; the cells and case it did not run come from the older stack.
+    with pytest.raises(ValueError, match="not enough values"):  # no such case in the index
+        value(index, report, ["'ecoinvent'", "'LCA'"], "a")
+    assert value(index, report, ["'ecoinvent'", "'IterativeLCA'"], "a")["value"] == pytest.approx(3.0e9)
+    assert sorted(m["peak-memory"]["value"] for m in report.values() if "peak-memory" in m) == [5e8, 6e8]
+
+
 def test_a_result_of_an_older_benchmark_version_is_left_out(
     export_ui: ModuleType, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):

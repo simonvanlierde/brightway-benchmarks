@@ -26,7 +26,7 @@ SOLVER_OF = {"pypardiso": "pypardiso", "scikit-umfpack": "umfpack"}
 # bw2calc's suite never imports bw2data, and bw2calc 2.0 to 2.2 fail to import beside bw2data 4.5
 # or later (they compare its string version with a tuple).
 UNUSED = {"bw2calc": {"bw2data"}}
-OUT_OF_RESULTS = ("smoke", "noise", "stack", "scaling")  # machines whose results stay under .asv/, off the site
+OUT_OF_RESULTS = ("smoke", "noise", "stack")  # machines whose results stay under .asv/, off the site
 
 
 def load(subject: str) -> dict:

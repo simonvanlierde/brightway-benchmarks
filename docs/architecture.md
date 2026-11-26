@@ -38,9 +38,10 @@ flowchart LR
   ([`src/bwbench/asv.py`](../src/bwbench/asv.py)) and under CodSpeed
   ([`src/bwbench/pytest.py`](../src/bwbench/pytest.py), suites in [`benchmarks/codspeed/`](../benchmarks/codspeed/)).
 - [`src/bwbench/`](../src/bwbench/) builds the systems the cases run on. Seeded synthetic
-  systems come from [`src/bwbench/synth.py`](../src/bwbench/synth.py) and the shapes in
-  [`src/bwbench/shapes.py`](../src/bwbench/shapes.py); the profile definitions are in
-  [`src/bwbench/profiles/`](../src/bwbench/profiles/). USEEIO and BAFU are read from their
+  systems come from [`src/bwbench/synth.py`](../src/bwbench/synth.py) and the profile
+  shapes in [`src/bwbench/profiles.py`](../src/bwbench/profiles.py); the calibration data they
+  were fitted to is in [`src/bwbench/profiles/`](../src/bwbench/profiles/). Cache folders and
+  their hash keys are in [`src/bwbench/cache.py`](../src/bwbench/cache.py). USEEIO and BAFU are read from their
   archives ([`src/bwbench/useeio.py`](../src/bwbench/useeio.py), [`src/bwbench/bafu.py`](../src/bwbench/bafu.py)).
   [`src/bwbench/matrices.py`](../src/bwbench/matrices.py) holds a system and its reference scores.
   [`docs/method.md`](method.md) says what is measured and why the systems look as they do.

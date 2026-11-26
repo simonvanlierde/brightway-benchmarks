@@ -32,7 +32,7 @@ from pathlib import Path
 
 from bwbench import ecospold, synth
 from bwbench.matrices import write_datapackages
-from bwbench.shapes import PROFILES, Profile
+from bwbench.profiles import PROFILES, Profile
 from bwbench.useeio import sha256_of
 
 LICENSE = "CC-BY-4.0"

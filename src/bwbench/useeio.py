@@ -21,13 +21,13 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from bwbench.cache import data_root
 from bwbench.matrices import System
-from bwbench.shapes import data_root
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-    from bwbench.shapes import Profile
+    from bwbench.profiles import Profile
 
 # shortcut: pinned by hand. Move to sourceledger `format = "file"` once sourceledger 0.4.0 exists.
 URL = "https://files.brightway.dev/USEEIO-1.1.tar.gz"

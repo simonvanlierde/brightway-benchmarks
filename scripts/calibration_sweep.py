@@ -21,7 +21,7 @@ from scipy import sparse
 from scipy.sparse import linalg as sla
 
 from bwbench import synth
-from bwbench.shapes import PROFILES_DIR
+from bwbench.profiles import PROFILES_DIR
 from bwbench.stats import OVERLAP_BANDS, Stats, measure
 
 if TYPE_CHECKING:

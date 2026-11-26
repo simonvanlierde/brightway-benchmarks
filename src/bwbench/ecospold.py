@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from bwbench.shapes import PROFILES_DIR
+from bwbench.profiles import PROFILES_DIR
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

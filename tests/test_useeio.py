@@ -10,7 +10,7 @@ import pytest
 from scipy import sparse
 
 from bwbench import bafu, synth, useeio
-from bwbench.shapes import PROFILES, profile
+from bwbench.profiles import PROFILES, profile
 
 IDX = [("row", "<i4"), ("col", "<i4")]
 

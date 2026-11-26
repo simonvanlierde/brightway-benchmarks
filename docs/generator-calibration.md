@@ -67,7 +67,7 @@ specified degrees and block constraints, but these do not prescribe shared suppl
 or elimination fill. No measured improvement justified replacing the family construction
 with another block model or an ERGM.
 
-`tests/test_measure.py` is the acceptance check. It checks structural statistics over seeds
+`tests/test_stats.py` is the acceptance check. It checks structural statistics over seeds
 0 to 3, mean loop and negative-input shares, mean METIS fill, and COLAMD fill on Aᵀ.
 `scripts/calibration_sweep.py` records per-seed statistics and factorization results; a passing
 sweep alone does not establish the fill or across-seed mean checks. Input magnitudes remain

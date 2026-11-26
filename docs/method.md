@@ -28,7 +28,7 @@ Its shape comes from a profile:
 - `ecoinvent`: 26,533 products, like ecoinvent 3.12 cut-off, with its measured inputs per
   process and consumers per product, one loop holding about two thirds of the products (64% in
   ecoinvent), negative waste inputs, its shares of inputs from the consumer's own location and
-  sector, and a spectral radius of 0.78. `tests/test_measure.py` checks these on seeds 0 to 3,
+  sector, and a spectral radius of 0.78. `tests/test_stats.py` checks these on seeds 0 to 3,
   each within three standard deviations of its spread over seeds.
 - `smoke`: the same structure at 200 products.
 - `mc100k` and `regional`: 100,000 and 250,000 products.

@@ -18,7 +18,7 @@ every column of ``X0`` sums to less than 1. So ``I + X + X^2 + ...`` converges, 
 test. The same arguments give the same arrays on every machine.
 
 Building the arrays needs only numpy and scipy. Writing them (``datapackages``) also needs
-bw_processing, so it runs in the benchmark container. ``bwbench.shapes`` holds the profiles,
+bw_processing, so it runs in the benchmark container. ``bwbench.profiles`` holds the profiles,
 ``bwbench.matrices`` the arrays' container and the reference, ``bwbench.stats`` the statistics
 the profiles are calibrated on.
 """
@@ -36,8 +36,9 @@ import numpy as np
 from scipy import sparse, special
 
 from bwbench import bafu, useeio
+from bwbench.cache import data_root, short_hash
 from bwbench.matrices import REFERENCE_PRODUCTS, Packages, System, load, write_datapackages
-from bwbench.shapes import PROFILES, Profile, data_root, profile, short_hash
+from bwbench.profiles import PROFILES, Profile, profile
 from bwbench.stats import spectral_radius
 
 if TYPE_CHECKING:

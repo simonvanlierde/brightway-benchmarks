@@ -17,7 +17,7 @@ process, serially. At most one LU factorization is retained at a time. It record
 - COLAMD fill and factorization wall time for the column-normalized matrix and its transpose.
 
 The calibration guards are the per-seed ones of
-`tests/test_measure.py::test_ecoinvent_profile_matches_its_target`, and the same guards apply
+`tests/test_stats.py::test_ecoinvent_profile_matches_its_target`, and the same guards apply
 to every seed. The giant loop's share and the negative share vary by seed (SD 0.04 and 0.012),
 so each seed gets 3 SD: 0.12 and 0.035. The test also holds the mean of seeds 0 to 3 to 3 SD
 over the square root of four (0.06 and 0.02); the sweep reports per seed only. LU fill and

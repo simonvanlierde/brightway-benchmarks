@@ -1,4 +1,4 @@
-"""The registered profiles: the shape of each benchmark system, and where their files are cached.
+"""The registered profiles: the shape of each benchmark system.
 
 Standard library only, so a script that lists the profiles (``scripts/run_crate.py``) needs
 neither numpy nor scipy. ``bwbench.synth`` builds the systems.
@@ -6,11 +6,10 @@ neither numpy nor scipy. ``bwbench.synth`` builds the systems.
 
 from __future__ import annotations
 
-import hashlib
-import json
-import os
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
+
+from bwbench.cache import short_hash
 
 PROFILES_DIR = Path(__file__).parent / "profiles"
 
@@ -62,12 +61,7 @@ class Profile:
         return short_hash(asdict(self))
 
 
-def short_hash(key: object, length: int = 12) -> str:
-    """Hex digest of ``key`` as sorted JSON, cut to ``length``: the form of every cache and version key."""
-    return hashlib.sha256(json.dumps(key, sort_keys=True).encode()).hexdigest()[:length]
-
-
-# tests/test_measure.py checks degrees, loops, signs, radius, locality and fill over seeds 0 to 3.
+# tests/test_stats.py checks degrees, loops, signs, radius, locality and fill over seeds 0 to 3.
 # Input magnitudes still have a narrower upper tail than the calibration data.
 ECOINVENT = Profile(products=26_533, flows=4_000, target="ecoinvent-3.12-cutoff.json")
 
@@ -95,11 +89,3 @@ PROFILES: dict[str, Profile] = {
 def profile(name: str, **overrides: object) -> Profile:
     """A registered profile, with ``overrides`` (such as ``products=8_000``) applied."""
     return replace(PROFILES[name], **overrides)
-
-
-def data_root() -> Path:
-    """Where generated datapackages are cached: ``$XDG_CACHE_HOME/bwbench``, by default ``~/.cache/bwbench``.
-
-    The box sets XDG_CACHE_HOME under ``.asv/``, so the cache outlives its per-run home.
-    """
-    return Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache") / "bwbench"

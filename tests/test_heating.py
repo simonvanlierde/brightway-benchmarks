@@ -12,7 +12,7 @@ from hypothesis import strategies as st
 
 from bwbench import bafu, heating, useeio
 from bwbench.matrices import System
-from bwbench.shapes import Profile
+from bwbench.profiles import Profile
 
 # A toy background with every product the foreground names, by index.
 PRODUCTS = (

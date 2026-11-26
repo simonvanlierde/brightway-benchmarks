@@ -70,9 +70,8 @@ jobs:
       - run: uv run pytest --cov # fails under 80% (`fail_under` in pyproject.toml)
 
   # The read-count guard needs Brightway, which the job above does not install. This runner is
-  # thrown away after the job, so the packages may run on it. The pins are the heads of
-  # bw_processing #113 and matrix_utils #48: the guard fails on upstream main by design. Move
-  # them to the releases that ship the fixes.
+  # thrown away after the job, so the packages may run on it. The guard needs bw_processing 2.0
+  # (#113) and matrix_utils 1.0 (#48), the first releases without the quadratic scans.
   scaling:
     name: group-count scaling guard
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
@@ -93,9 +92,9 @@ jobs:
       # must fail this job, not pass it with every test skipped.
       - run: >-
           uv run --no-project
-          --exclude-newer 2026-10-02T15:06:52Z
+          --exclude-newer 2026-11-21T00:00:00Z
           --with .
           --with pytest
-          --with git+https://github.com/simonvanlierde/bw_processing@1a6f8982adc6ad9197a3b154a82bb747d6c0a374
-          --with git+https://github.com/simonvanlierde/matrix_utils@7335e8a76ae6bd769175bbc650e221e038899afb
+          --with 'bw_processing>=2.0'
+          --with 'matrix_utils>=1.0'
           sh -c 'python -c "import bw_processing, matrix_utils.utils" && pytest tests/test_group_scaling.py'

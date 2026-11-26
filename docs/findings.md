@@ -186,7 +186,7 @@ copy. It now solves the sampled matrices, and the viewer leaves out the 2.4.0 an
 Graph: [bw2calc, Monte Carlo](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.MonteCarlo.time_iterations).
 Rerun: [`bench_lca.MonteCarlo`](../benchmarks/bench_bw2calc/bench_lca.py).
 
-### `JacobiGMRESLCA` draws Monte Carlo 1.75 times faster than `IterativeLCA` at 100,000 products
+### `JacobiGMRESLCA` draws Monte Carlo about 1.75 times faster than `IterativeLCA` at 100,000 products
 
 **With bw2calc 3.1.0, a Monte Carlo draw with `JacobiGMRESLCA` takes the same time under SuperLU,
 UMFPACK and PyPardiso, and `IterativeLCA` is slower under PyPardiso.** At 100,000 products,

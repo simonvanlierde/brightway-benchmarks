@@ -186,6 +186,22 @@ copy. It now solves the sampled matrices, and the viewer leaves out the 2.4.0 an
 Graph: [bw2calc, Monte Carlo](https://simonvanlierde.com/brightway-benchmarks/?page=explorer&group=bw2calc&bench=bench_lca.MonteCarlo.time_iterations).
 Rerun: [`bench_lca.MonteCarlo`](../benchmarks/bench_bw2calc/bench_lca.py).
 
+### `JacobiGMRESLCA` draws Monte Carlo about 1.75 times faster than `IterativeLCA` at 100,000 products
+
+**With bw2calc 3.1.0, a Monte Carlo draw with `JacobiGMRESLCA` takes the same time under SuperLU,
+UMFPACK and PyPardiso, and `IterativeLCA` is slower under PyPardiso.** At 100,000 products,
+10 draws take 3.09 s with `JacobiGMRESLCA` and 5.41 s with `IterativeLCA`; 30 draws take 9.17 s
+and 16.2 s. On the ecoinvent-sized database, 10 draws take 0.66 s with `JacobiGMRESLCA`, and 0.65
+(SuperLU), 0.69 (UMFPACK) or 0.79 s (PyPardiso) with `IterativeLCA`.
+
+`IterativeLCA` at 100,000 products runs only under PyPardiso: SuperLU and UMFPACK skip it,
+because one factorization would take about 344 minutes. The times are medians of five paired
+rounds on an efficiency core of the i9-14900KF, with a spread under 3%. `JacobiGMRESLCA` warns that its Jacobi
+preconditioner falls back to the diagonal, because the synthetic datapackages carry no
+`reference` arrays.
+
+Rerun: [`bench_lca.MonteCarlo`](../benchmarks/bench_bw2calc/bench_lca.py).
+
 ### cuDSS refactorizes real ecoinvent in 37 ms, but that isn't a Monte Carlo draw yet
 
 **On real ecoinvent 3.12 cut-off, NVIDIA's cuDSS factorizes on the GPU in about 0.25 s and
@@ -230,6 +246,12 @@ install for the MKL library.** 3.1.0 still does.
 [What to do](faster.md).
 [haasad/PyPardiso#91](https://github.com/haasad/PyPardiso/pull/91) would find the library once
 ([#56](https://github.com/simonvanlierde/brightway-benchmarks/issues/56)).
+
+On real USEEIO, with bw2calc 3.1.0, `PYPARDISO_MKL_RT` set to the environment's `libmkl_rt.so.3`
+cut the first score from 127 to 39 ms (-69%). Thirty demands took 189 to 100 ms with `MultiLCA`
+(-47%), 137 to 49 ms with the forward direction (-64%) and 131 to 44 ms with the adjoint
+(-66%). Five paired runs each, medians, with a spread under 3% inside each arm except the
+direct first score (6%).
 
 Rerun: `just codspeed bw2calc bw2calc==3.0.0 pypardiso`.
 

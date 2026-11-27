@@ -263,6 +263,13 @@ cut the first score from 127 to 39 ms (-69%). Thirty demands took 189 to 100 ms 
 (-66%). Five paired runs each, medians, with a spread under 3% inside each arm except the
 direct first score (6%).
 
+On a Windows hosted runner at smoke size, supplying the path made the first score **19 times as
+fast** (20 paired rounds, 95% bootstrap interval 18.4–19.2). For a new demand with the
+factorization already available, the ratio was 1.03 (0.99–1.05). Both arms used the same MKL DLL
+and checked the score against the synthetic reference. This measures the fresh-object overhead
+on one runner with bw2calc 3.1.0 and PyPardiso 0.4.7.
+
+[Windows run and samples](https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/46082192535).
 Rerun: `just codspeed bw2calc bw2calc==3.0.0 pypardiso`.
 
 ### Two upstream crashes skip cases

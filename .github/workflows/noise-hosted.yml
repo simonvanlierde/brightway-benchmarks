@@ -8,12 +8,12 @@ on:
   workflow_dispatch:
     inputs:
       subject:
-        description: subject (asv/<subject>.json)
+        description: ASV subject or Windows MKL lookup
         type: choice
-        options: [bw2calc, bw2data, bw_graph_tools, bw_processing, bw_timex, matrix_utils]
+        options: [bw2calc, bw2data, bw_graph_tools, bw_processing, bw_timex, matrix_utils, bw2calc-windows-mkl]
         default: bw2calc
       runs:
-        description: separate runs on the one runner
+        description: separate runs for a Linux ASV subject
         type: choice
         options: ["5", "10", "20"]
         default: "10"
@@ -27,6 +27,7 @@ concurrency:
 
 jobs:
   noise:
+    if: inputs.subject != 'bw2calc-windows-mkl'
     name: noise on ubuntu-latest
     runs-on: ubuntu-latest
     # Builds the subject's asv environments once (scikit-umfpack from source), then RUNS quick runs.
@@ -68,4 +69,34 @@ jobs:
             .asv/noise/${{ env.SUBJECT }}
             noise.txt
           include-hidden-files: true # the results sit under .asv
+          if-no-files-found: error
+
+  windows-mkl:
+    if: inputs.subject == 'bw2calc-windows-mkl'
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      BWBENCH_THREADS: "1"
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          enable-cache: false
+          version: "0.13.8"
+      - name: Compare MKL lookup modes
+        shell: bash
+        run: |
+          unset PYPARDISO_MKL_RT
+          uv venv --python 3.13 .asv/windows-mkl
+          uv pip install --python .asv/windows-mkl/Scripts/python.exe --exclude-newer 2026-11-22 \
+            bw2calc==3.1.0 pypardiso==0.4.7 mkl==2026.2.1 scipy==1.18.1 numpy==2.5.4
+          PYTHONPATH=src .asv/windows-mkl/Scripts/python.exe -m scripts.mkl_path_probe > mkl-path.json
+          cat mkl-path.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-mkl-path
+          path: mkl-path.json
           if-no-files-found: error

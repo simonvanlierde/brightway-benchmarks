@@ -128,15 +128,16 @@ program that runs `GATE CMD...` once no other work runs on the CPUs in `BWBENCH_
 and `BWBENCH_CPUSET`, `box.sh` refuses the run.
 
 A bench run logs energy too when it names a log, as in
-`BWBENCH_ENERGY=1 BWBENCH_MACHINE=noise BWBENCH_ROUNDLOG=/src/.asv/energy.jsonl just bench bw2calc "3.1.0^!"`.
-`BWBENCH_MACHINE=noise` keeps its timings out of `results/`. The round logs stay local; they never
-go to `results/` or the site's benchmark history.
+`BWBENCH_ENERGY=1 BWBENCH_ROUNDLOG=/src/.asv/energy.jsonl just bench bw2calc "3.1.0^!"`.
+Energy-enabled ASV runs write their results under `.asv/energy/`. Scratch runs such as
+`just noise` use their usual folders under `.asv/`. Keep round logs there too.
 
 Under `BWBENCH_ENERGY=1` every case also gets an asv benchmark `track_energy_NAME`, beside
-`time_NAME`: the package joules over one more call of the case, gross, not above idle. asv stores
-it in its result files with the unit `J`, one value per round, so `asv compare` and `asv show` read
-it as they read a time. The site does not show it. The counter is read as for the round log: a
-case whose counter cannot be read is skipped with the reason, and one whose reading was voided fails.
+`time_NAME`. It measures gross package joules over one more call and checks the result after
+the measurement. ASV keeps the last round's value in `J` for each case. Use the round log
+for repeated measurements. Set `BWBENCH_ENERGY=1` when using `asv compare` or `asv show`
+through `scripts/asv.sh` to use the local energy history.
+The case skips if ASV cannot open the counter and fails if a reading is voided during the call.
 
 ## Memory
 

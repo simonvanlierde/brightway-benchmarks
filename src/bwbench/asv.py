@@ -378,19 +378,23 @@ def _time(state: _State, bench_name: str) -> Callable[..., None]:
 
 
 def _joules(state: _State, bench_name: str) -> Callable[..., float]:
-    """A ``track_energy_`` method: the CPU package's joules over one call, with the call to itself.
-
-    It runs the case once more rather than reading the time_ samples' energy: track_ records
-    exist only in the box (``_record_file``), and this window holds no timer.
-    """
+    """Measure CPU package joules over one call and check its result after the meter stops."""
 
     def joules(self: Any, *args: Any) -> float:
-        meter, state.energy = state.energy, None  # teardown must not stop it again
-        state.prepared[bench_name]()
-        value = None if meter is None else meter.stop()
+        meter = state.energy
+        if meter is None:
+            msg = "bwbench: the energy meter was not started"
+            raise RuntimeError(msg)
+        prepared = state.prepared[bench_name]
+        try:
+            result = prepared()
+        finally:
+            state.energy = None  # teardown must not stop it again
+            value = meter.stop()
         if value is None:
             msg = "bwbench: the energy counter failed a read or went unread over 60 s"
             raise RuntimeError(msg)
+        prepared.verify(result)
         return value
 
     return joules

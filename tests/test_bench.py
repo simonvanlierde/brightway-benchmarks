@@ -733,3 +733,48 @@ def test_asv_fails_energy_the_meter_voided(tmp_path: Path, monkeypatch: pytest.M
     with pytest.raises(RuntimeError, match="energy counter failed a read"):
         obj.track_energy_double("smoke", 2)
     obj.teardown("smoke", 2)
+
+
+def test_asv_energy_checks_the_result(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
+
+    @bench(rtol=1e-9)
+    def wrong():
+        return lambda: 2, 1
+
+    (cls,) = asv.classes(module(wrong=wrong).__name__)
+    obj = cls()
+    setup(obj, "track_energy_wrong")
+    try:
+        with pytest.raises(AssertionError, match="relative error"):
+            obj.track_energy_wrong()
+    finally:
+        obj.teardown()
+
+
+def test_asv_stops_the_meter_when_an_energy_call_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
+
+    @bench()
+    def broken():
+        def fail():
+            msg = "calculation failed"
+            raise ValueError(msg)
+
+        return fail, UNCHECKED
+
+    (cls,) = asv.classes(module(broken=broken).__name__)
+    obj = cls()
+    setup(obj, "track_energy_broken")
+    meter = obj.state.energy
+    assert meter is not None
+    try:
+        with pytest.raises(ValueError, match="calculation failed"):
+            obj.track_energy_broken()
+        obj.teardown()
+        assert not meter.thread.is_alive()
+    finally:
+        if meter.thread.is_alive():
+            meter.stop()

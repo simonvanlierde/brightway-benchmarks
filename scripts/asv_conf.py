@@ -67,6 +67,8 @@ def conf(subject: str, machine: str, solvers: str, arch: str) -> tuple[dict, str
             data["exclude"] = [{"python": ".*"}]  # asv excludes from the matrix only, never an include
     if machine in OUT_OF_RESULTS:
         data["results_dir"] = f"../.asv/{machine}/{subject}"
+    elif os.environ.get("BWBENCH_ENERGY") == "1":
+        data["results_dir"] = f"../.asv/energy/{subject}"
     return data, stack
 
 

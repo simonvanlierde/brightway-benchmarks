@@ -4,7 +4,9 @@ Benchmarks with the same ``asv`` name become methods of one class, so give them 
 ``params``. asv runs every setup it finds for a method (module, class, then the method's own),
 so the class has none: each method carries its own setup, which prepares just its bench. A
 ``track_`` method's setup prepares its case only when the timed run left no value to read, and
-raises a skipped case's NotImplementedError there, where asv reads it as a skip.
+raises a skipped case's NotImplementedError there, where asv reads it as a skip. With
+``BWBENCH_ENERGY=1`` each bench also gets a ``track_energy_`` method in joules, which runs its
+case once more under the energy meter.
 asv-runner 0.2.5 ``benchmarks/_base.py`` (``Benchmark.__init__``, ``do_setup``) looks the
 method's ``setup`` up on the bound method, which reaches the function's attribute and calls it
 with the params only. It has no ``self``, so the state lives in one object shared by the class.
@@ -104,6 +106,10 @@ def _methods(state: _State, prepare: Callable[[str, tuple], None], b: Bench) -> 
         timed[f"peakmem_{b.name}"] = _peak(state, b.name)
     for method in timed.values():
         method.setup = _setup(state, prepare, b.name)
+    if os.environ.get("BWBENCH_ENERGY") == "1":
+        energy: Any = _joules(state, b.name)
+        energy.setup, energy.unit = _joules_setup(state, prepare, b.name), "J"
+        timed[f"track_energy_{b.name}"] = energy
     tracked: dict[str, Any] = {f"track_{t}": _track(state, b.name, fn, f"track_{t}") for t, fn in b.track.items()}
     if b.error:
         tracked[f"track_{b.error}"] = _error(state, b.name, f"track_{b.error}")
@@ -132,6 +138,19 @@ def _setup(state: _State, prepare: Callable[[str, tuple], None], bench_name: str
         state.results = {}
         prepare(bench_name, args)
         state.usage, state.energy = _usage(), _energy()  # last, so the setup's own work is not counted
+
+    return setup
+
+
+def _joules_setup(state: _State, prepare: Callable[[str, tuple], None], bench_name: str) -> Callable[..., None]:
+    """A timed setup that skips the case when the energy counter cannot be read."""
+    timed = _setup(state, prepare, bench_name)
+
+    def setup(*args: Any) -> None:
+        timed(*args)
+        if state.energy is None:
+            msg = f"bwbench: BWBENCH_ENERGY=1 but {_rapl()}/energy_uj cannot be read"
+            raise NotImplementedError(msg)
 
     return setup
 
@@ -356,6 +375,25 @@ def _time(state: _State, bench_name: str) -> Callable[..., None]:
         state.results[bench_name] = state.prepared[bench_name]()
 
     return time
+
+
+def _joules(state: _State, bench_name: str) -> Callable[..., float]:
+    """A ``track_energy_`` method: the CPU package's joules over one call, with the call to itself.
+
+    It runs the case once more rather than reading the time_ samples' energy: track_ records
+    exist only in the box (``_record_file``), and this window holds no timer.
+    """
+
+    def joules(self: Any, *args: Any) -> float:
+        meter, state.energy = state.energy, None  # teardown must not stop it again
+        state.prepared[bench_name]()
+        value = None if meter is None else meter.stop()
+        if value is None:
+            msg = "bwbench: the energy counter failed a read or went unread over 60 s"
+            raise RuntimeError(msg)
+        return value
+
+    return joules
 
 
 def _peak(state: _State, bench_name: str) -> Callable[..., None]:

@@ -132,6 +132,12 @@ A bench run logs energy too when it names a log, as in
 `BWBENCH_MACHINE=noise` keeps its timings out of `results/`. The round logs stay local; they never
 go to `results/` or the site's benchmark history.
 
+Under `BWBENCH_ENERGY=1` every case also gets an asv benchmark `track_energy_NAME`, beside
+`time_NAME`: the package joules over one more call of the case, gross, not above idle. asv stores
+it in its result files with the unit `J`, one value per round, so `asv compare` and `asv show` read
+it as they read a time. The site does not show it. The counter is read as for the round log: a
+case whose counter cannot be read is skipped with the reason, and one whose reading was voided fails.
+
 ## Memory
 
 The box has 2 GB and no swap by default. A job over the limit is killed: under asv as a failed

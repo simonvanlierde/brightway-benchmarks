@@ -11,6 +11,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - `benchmarks/invalid.toml` lists results that measured a wrong calculation, and the viewer leaves
   their points out. It lists `JacobiGMRESLCA`'s Monte Carlo points on bw2calc 2.4.0 and 2.5.0.
+- With `BWBENCH_ENERGY=1`, each case gets an asv benchmark `track_energy_NAME` in joules, so a
+  run's CPU package energy per call lands in asv's results beside its time.
 - The round log (`BWBENCH_ROUNDLOG`) records voluntary context switches and minor and major page
   faults per timed sample, so a wait that is not preemption shows.
 - bw_processing 2.0 and matrix_utils 1.0 join the release histories. The matrix_utils history

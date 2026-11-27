@@ -680,3 +680,56 @@ def test_free_pardiso_skips_a_hidden_pypardiso(monkeypatch: pytest.MonkeyPatch):
     # bwbench.timecase hides a solver with a None entry, which `in sys.modules` still finds.
     monkeypatch.setitem(sys.modules, "pypardiso", None)
     free_pardiso()
+
+
+def test_asv_tracks_package_energy_per_call_in_joules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """With BWBENCH_ENERGY=1 each bench gets a track_energy_ method: the joules over one call."""
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
+
+    def call() -> int:
+        rapl(tmp_path / "rapl", 3_500_000)  # 2.5 J during the call
+        return 1
+
+    @bench({"x": [1]}, rtol=1e-9)
+    def burn(x: int):
+        return call, x
+
+    (cls,) = asv.classes(module(burn=burn).__name__)
+    assert vars(cls)["track_energy_burn"].unit == "J"
+    obj = cls()
+    setup(obj, "track_energy_burn", 1)
+    assert obj.track_energy_burn(1) == pytest.approx(2.5)
+    obj.teardown(1)
+
+    monkeypatch.delenv("BWBENCH_ENERGY")
+    (plain,) = asv.classes(module(burn=burn).__name__)
+    assert not any(name.startswith("track_energy_") for name in vars(plain))
+
+
+def test_asv_skips_energy_when_the_counter_is_unreadable(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """No readable counter skips the track_energy_ case, with the reason, and the time_ case still runs."""
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(tmp_path / "missing"))
+    monkeypatch.setattr(asv, "_energy_warned", False)
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    with pytest.raises(NotImplementedError, match="missing/energy_uj cannot be read"):
+        setup(obj, "track_energy_double", "smoke", 2)
+    obj.teardown("smoke", 2)
+    setup(obj, "time_double", "smoke", 2)
+    obj.time_double("smoke", 2)
+    obj.teardown("smoke", 2)
+
+
+def test_asv_fails_energy_the_meter_voided(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """A failed counter read mid-call fails the energy case rather than report too few joules."""
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    setup(obj, "track_energy_double", "smoke", 2)
+    (tmp_path / "rapl" / "energy_uj").write_text("garbled\n")
+    with pytest.raises(RuntimeError, match="energy counter failed a read"):
+        obj.track_energy_double("smoke", 2)
+    obj.teardown("smoke", 2)

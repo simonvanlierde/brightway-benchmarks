@@ -27,6 +27,7 @@ SOLVER_OF = {"pypardiso": "pypardiso", "scikit-umfpack": "umfpack"}
 # or later (they compare its string version with a tuple).
 UNUSED = {"bw2calc": {"bw2data"}}
 OUT_OF_RESULTS = ("smoke", "noise", "stack")  # machines whose results stay under .asv/, off the site
+# Energy runs (BWBENCH_ENERGY=1) stay off it too, under .asv/energy/.
 
 
 def load(subject: str) -> dict:

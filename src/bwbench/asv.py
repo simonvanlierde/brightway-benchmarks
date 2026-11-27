@@ -149,7 +149,7 @@ def _joules_setup(state: _State, prepare: Callable[[str, tuple], None], bench_na
     def setup(*args: Any) -> None:
         timed(*args)
         if state.energy is None:
-            msg = f"bwbench: BWBENCH_ENERGY=1 but {_rapl()}/energy_uj cannot be read"
+            msg = f"bwbench: BWBENCH_ENERGY=1 but the energy counter cannot be read: {_energy_error}"
             raise NotImplementedError(msg)
 
     return setup
@@ -184,6 +184,7 @@ def _usage() -> tuple[float, float, int, int, int, int]:
 
 
 _energy_warned = False
+_energy_error = ""  # why the last meter failed to start, for the track_energy_ skip
 
 
 def _rapl() -> Path:
@@ -241,12 +242,13 @@ class _Meter:
 
 def _energy() -> _Meter | None:
     """A running energy meter when ``BWBENCH_ENERGY=1`` and the counter can be read."""
-    global _energy_warned  # noqa: PLW0603 - warn once per process, not once per sample
+    global _energy_warned, _energy_error  # noqa: PLW0603 - warn once per process, not once per sample
     if os.environ.get("BWBENCH_ENERGY") != "1":
         return None
     try:
         return _Meter(_rapl())
     except (OSError, ValueError) as e:
+        _energy_error = str(e)
         if not _energy_warned:
             sys.stderr.write(f"bwbench: BWBENCH_ENERGY=1 but no energy is logged: {e}\n")
             _energy_warned = True
@@ -378,7 +380,11 @@ def _time(state: _State, bench_name: str) -> Callable[..., None]:
 
 
 def _joules(state: _State, bench_name: str) -> Callable[..., float]:
-    """Measure CPU package joules over one call and check its result after the meter stops."""
+    """Measure CPU package joules over one call and check its result after the meter stops.
+
+    A call of a few milliseconds reads one counter tick or none, so compare these values only for
+    cases that run about a second or longer, and only within one gated session.
+    """
 
     def joules(self: Any, *args: Any) -> float:
         meter = state.energy

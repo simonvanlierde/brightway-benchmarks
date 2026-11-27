@@ -714,12 +714,41 @@ def test_asv_skips_energy_when_the_counter_is_unreadable(tmp_path: Path, monkeyp
     monkeypatch.setattr(asv, "_energy_warned", False)
     (cls,) = asv.classes(module(double=double).__name__)
     obj = cls()
-    with pytest.raises(NotImplementedError, match="missing/energy_uj cannot be read"):
+    with pytest.raises(NotImplementedError, match=r"counter cannot be read: .*No such file.*missing"):
         setup(obj, "track_energy_double", "smoke", 2)
     obj.teardown("smoke", 2)
     setup(obj, "time_double", "smoke", 2)
     obj.time_double("smoke", 2)
     obj.teardown("smoke", 2)
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root reads a mode-000 file")
+def test_asv_energy_skip_names_why_the_counter_cannot_be_read(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """A root-only energy_uj, as on most hosts, says so in the skip reason."""
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
+    monkeypatch.setattr(asv, "_energy_warned", False)
+    (tmp_path / "rapl" / "energy_uj").chmod(0)
+    (cls,) = asv.classes(module(double=double).__name__)
+    obj = cls()
+    with pytest.raises(NotImplementedError, match="Permission denied"):
+        setup(obj, "track_energy_double", "smoke", 2)
+    obj.teardown("smoke", 2)
+
+
+def test_energy_method_is_a_joule_track_with_its_own_setup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Only track_energy_ is in J, and its setup, not the timed one, skips an unreadable counter."""
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    monkeypatch.setenv("BWBENCH_RAPL", str(tmp_path / "missing"))
+    monkeypatch.setattr(asv, "_energy_warned", False)
+    state = asv._State()  # noqa: SLF001
+    methods = asv._methods(state, lambda _name, _args: None, double)  # noqa: SLF001
+    assert methods["track_energy_double"].unit == "J"
+    assert not any(getattr(m, "unit", None) == "J" for k, m in methods.items() if not k.startswith("track_energy_"))
+    methods["time_double"].setup("smoke", 2)  # the timed setup runs on without a counter
+    assert state.energy is None
+    with pytest.raises(NotImplementedError):
+        methods["track_energy_double"].setup("smoke", 2)
 
 
 def test_asv_fails_energy_the_meter_voided(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

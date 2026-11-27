@@ -82,9 +82,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/ba/a0/add5aea2ea81c82
 
 [[packages]]
 name = "bw-temporalis"
-version = "1.3.1"
-sdist = { url = "https://files.pythonhosted.org/packages/e7/a5/873c56f26b42a235e8bbb75a13ac7a2b8f7008ef1da39cbc13475f05943e/bw_temporalis-1.3.1.tar.gz", upload-time = 2026-10-19T18:46:56Z, size = 34134, hashes = { sha256 = "2af772046d05bbb03c2a5d20778f12129be3b6bd850f34af3bbde449efe8efa1" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/07/de/f06913ee050bade18cebe94945e2abe6dc4c668c04250e317ddd069e025e/bw_temporalis-1.3.1-py3-none-any.whl", upload-time = 2026-10-19T18:46:54Z, size = 20825, hashes = { sha256 = "3fee9cb37b38af62965af26d30cd0c875ea052a5ce019d0ae2f82ce1d6f61ba2" } }]
+version = "1.4.0"
+sdist = { url = "https://files.pythonhosted.org/packages/3b/ed/552b650de64a4c7673368f3196f4ec936d4e5ea4b58981cb28045be78d77/bw_temporalis-1.4.0.tar.gz", upload-time = 2026-11-27T07:32:50Z, size = 37554, hashes = { sha256 = "ba1f00dce70cb4a52ec83c58e1dac38b34a17ab9a9779d086b1a79ea15d5d5f0" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/59/6f/0241338adb329290502b297e777dd757a8894c0d92b9946282faafef505b/bw_temporalis-1.4.0-py3-none-any.whl", upload-time = 2026-11-27T07:32:48Z, size = 23151, hashes = { sha256 = "332c4db09a5798e3676444a5c2fad4aa14017b55a73ee161599d7d3cd853c8a2" } }]
 
 [[packages]]
 name = "bw-timex"
@@ -99,9 +99,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/32/6b/61fafac04ca2c19
 
 [[packages]]
 name = "bw2calc"
-version = "3.1.0"
-sdist = { url = "https://files.pythonhosted.org/packages/de/f6/579cf1a5496c7ce7a4ec8fb7c7d519b951721a96c1cdebf16691ea572881/bw2calc-3.1.0.tar.gz", upload-time = 2026-10-18T19:19:19Z, size = 105133, hashes = { sha256 = "496ef84ff3a4aceeb759e5120d39aac468251d8f77c89de702a397ae49895bd2" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/4d/6d/3c838c941243bc636ef52854d92b1cb417b42dbefc28ac5873dd55013315/bw2calc-3.1.0-py3-none-any.whl", upload-time = 2026-10-18T19:19:18Z, size = 63792, hashes = { sha256 = "44a77f6cc80de9a71c59b82a849d8f390d26a9d570478810d4c6513457ab1b7e" } }]
+version = "4.0.0"
+sdist = { url = "https://files.pythonhosted.org/packages/1e/9f/a513a0064de15a58d2e23668fd4af7e1d35e689a15853c159a85c674ab11/bw2calc-4.0.0.tar.gz", upload-time = 2026-11-27T07:33:01Z, size = 119392, hashes = { sha256 = "5dbfaaeaa6214d344fe1159a7d2ace406b1dfb68177965b636c593f9c206edf3" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/25/72/434e0457b114e37fe266d5dd04df0562737d2c83bd3003c01d7af9dd1796/bw2calc-4.0.0-py3-none-any.whl", upload-time = 2026-11-27T07:33:00Z, size = 69648, hashes = { sha256 = "11cae38421fb9f54c661f587cf96697ee7e12004668fd34eafe990a4651f95e4" } }]
 
 [[packages]]
 name = "bw2data"

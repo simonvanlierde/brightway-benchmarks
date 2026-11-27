@@ -11,12 +11,30 @@ import { defineConfig } from "astro/config";
 //   Add the hash of each inline script that runs (a JSON-LD block is data and does not). Only a script
 //   marked `data-inline-ok` is hashed: any other inline script that Astro did not hash fails the build, so markup that reaches
 //   the static HTML (findings.astro renders markdown) cannot run under the policy.
-/** The inline <script> elements of HTML as [opening tag, code]; one with src or type is not code that runs here. */
+const executableType =
+  /^(?:|module|(?:application|text)\/(?:x-)?(?:java|ecma)script|text\/(?:javascript1\.[0-5]|jscript|livescript))$/i;
+
+function scriptAttributes(tag) {
+  const attrs = new Map();
+  for (const [, name, double, single, bare] of tag
+    .slice("<script".length, -1)
+    .matchAll(/([^\s=/"'<>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>\x60]+)))?/g)) {
+    const key = name.toLowerCase();
+    if (!attrs.has(key)) attrs.set(key, double ?? single ?? bare ?? "");
+  }
+  return attrs;
+}
+
+/** Inline classic and module scripts in the HTML as [opening tag, code]. */
 export function inlineScripts(html) {
-  return [...html.matchAll(/(<script(?![^>]*\b(?:src|type)=)[^>]*>)([\s\S]*?)<\/script>/g)].map(([, tag, code]) => [
-    tag,
-    code,
-  ]);
+  const scripts = [];
+  for (const [, tag, code] of html.matchAll(
+    /(<script(?=[\s/>])(?:"[^"]*"|'[^']*'|[^'">])*>)([\s\S]*?)<\/script\s*>/gi,
+  )) {
+    const attrs = scriptAttributes(tag);
+    if (!attrs.has("src") && executableType.test((attrs.get("type") ?? "").trim())) scripts.push([tag, code]);
+  }
+  return scripts;
 }
 
 export const policy = {
@@ -33,13 +51,12 @@ export const policy = {
         if (!meta || !html.includes(charset)) throw new Error(`${name}: no policy <meta> or charset <meta> to reorder`);
         const hash = (code) => `'sha256-${createHash("sha256").update(code).digest("base64")}'`;
         // Astro's own scripts (its island loader) already have a hash in the policy; any other unmarked one is refused.
-        const inline = inlineScripts(html).filter(
-          ([tag, code]) => tag.includes("data-inline-ok") || !meta.includes(hash(code)),
-        );
-        const unmarked = inline.filter(([tag]) => !tag.includes("data-inline-ok"));
-        if (unmarked.length)
-          throw new Error(`${name}: inline script without data-inline-ok: ${unmarked[0][1].slice(0, 200)}`);
-        const missing = inline.map(([, code]) => hash(code)).filter((h) => !meta.includes(h));
+        const inline = inlineScripts(html)
+          .map(([tag, code]) => ({ allowed: scriptAttributes(tag).has("data-inline-ok"), code, digest: hash(code) }))
+          .filter(({ allowed, digest }) => allowed || !meta.includes(digest));
+        const unmarked = inline.find(({ allowed }) => !allowed);
+        if (unmarked) throw new Error(`${name}: inline script without data-inline-ok: ${unmarked.code.slice(0, 200)}`);
+        const missing = inline.map(({ digest }) => digest).filter((h) => !meta.includes(h));
         const fixed = meta.replace("script-src 'self'", () => `script-src 'self' ${missing.join(" ")}`);
         writeFileSync(
           file,

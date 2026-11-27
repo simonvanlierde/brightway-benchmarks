@@ -249,7 +249,7 @@ Benchmarks includes the end-of-life versions.
 
 ### Install a set that works
 
-On the [Setup page](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility),
+On the [Setup page](https://simonvanlierde.com/brightway-benchmarks/),
 select your operating system, Python and installer. Check the date and scope of the last
 passing set, then copy the command for your tool. The smoke checks run small calculations.
 The `suites` checks run the packages' full test suites.
@@ -280,8 +280,9 @@ You can add your machine's ratios: how much faster UMFPACK and PyPardiso solve a
 SuperLU there (on a Mac also Apple Accelerate's sparse LU), and with `install-path` how bw2calc from conda-forge compares with PyPI. A
 contribution is one result file from `bwbench compare`
 ([method.md](method.md#hosted-ratios)). It holds ratios between set-ups timed in turn on one
-machine, so your machine's speed and noise largely cancel out. The comparison page shows
-contributed rows marked unverified and leaves them out of each summary.
+machine, so your machine's speed and noise largely cancel out. The comparison page marks
+contributed rows as unverified. It uses them in a summary only when there are no reference or
+hosted measurements for that option.
 
 The run installs bw2calc and its solvers from PyPI into new virtual environments in a
 temporary folder, and runs them on your machine, outside any container. You need

@@ -33,7 +33,7 @@ const check = `python -c "import bw2calc as bc; print('PyPardiso' if bc.PYPARDIS
   imageAlt="Three bars for factorizing the real ecoinvent 3.12 matrix on one thread: UMFPACK from conda-forge 0.66 seconds, PyPardiso 1.48 seconds, SuperLU 3.66 seconds."
 >
       <h1>Your solver choice changes a single-threaded Brightway score by up to 5 times</h1>
-      <p class="lede">On one thread with bw2calc 3.1.0, <code>scikit-umfpack</code> from conda-forge factors the ecoinvent 3.12 matrix about 5 times as fast as SciPy's default SuperLU. PyPardiso is about 2 times as fast and also scales across multiple threads. Check which solver you have, then install the one for your workflow.</p>
+      <p class="lede">On one thread with bw2calc 3.1.0, <code>scikit-umfpack</code> from conda-forge factors the ecoinvent 3.12 matrix about 5 times as fast as SciPy's default SuperLU. PyPardiso is about 2 times as fast and also scales across multiple threads. <a href="#install">Check which solver you have</a>, then install the one for your workflow.</p>
       <p>One Brightway score builds a sparse matrix <em>A</em>, solves <em>Ax = b</em>, and takes a weighted dot product <em>c<sup>T</sup>x</em>. Most coefficients in <em>A</em> are zero. The solver package factors <em>A</em> into two triangular matrices that solve quickly, and bw2calc picks the solver from what you have installed.</p>
       <p>For ecoinvent 3.12 cut-off, the matrix has 26,533 rows and 338,195 nonzeros. On one thread (efficiency core, bw2calc 3.1.0), factorizing it takes 0.66 to 3.66 s depending on the solver, and solving on the factors takes 5 to 24 ms. PyPardiso can use several threads and is not measured multithreaded in the main comparison.</p>
 
@@ -41,7 +41,7 @@ const check = `python -c "import bw2calc as bc; print('PyPardiso' if bc.PYPARDIS
         <h2 id="install">What to install</h2>
         <p>First check which solver you have:</p>
         <Command command={check} />
-        <p>If it prints UMFPACK or PyPardiso, you already have a fast solver. Keep PyPardiso if you use <code>MultiLCA</code> or <code>bw_timex</code>. For single-demand <code>LCA</code> or Monte Carlo on conda, remove PyPardiso so bw2calc uses UMFPACK instead.</p>
+        <p>If it prints UMFPACK or PyPardiso, you already have a fast solver. Keep PyPardiso if you use <code>MultiLCA</code> or <code>bw_timex</code>. If you want to try UMFPACK on conda for single-demand <code>LCA</code> or Monte Carlo, remove PyPardiso so bw2calc uses UMFPACK.</p>
         <p class="saving">If it prints SuperLU, switching saves about 3 s of factorizing per score on real ecoinvent (about 50 minutes over 1,000 Monte Carlo draws). Find your computer and installer:</p>
         <div class="scroll" role="region" tabindex="0" aria-label="Which solver to install">
           <table>
@@ -72,7 +72,7 @@ const check = `python -c "import bw2calc as bc; print('PyPardiso' if bc.PYPARDIS
       </section>
 
       <h2>How long each solver takes</h2>
-      <p>Factorizing is 96 to over 99% of the solver's time for one score. These are the factorization times on the ecoinvent 3.12 cut-off matrix, on one thread. SuperLU takes 5.5 times as long as scikit-umfpack from conda-forge.</p>
+      <p>Factorizing is 96 to over 99% of the solver's time for one score. On the ecoinvent 3.12 cut-off matrix, SuperLU takes 5.5 times as long as scikit-umfpack from conda-forge to factorize on one thread. <a href="#how-measured">See the measurement settings</a>.</p>
       <StoryBars
         caption="Factorizing real ecoinvent 3.12, one thread"
         href={realFindings}
@@ -125,7 +125,7 @@ const check = `python -c "import bw2calc as bc; print('PyPardiso' if bc.PYPARDIS
       <p>That is on the synthetic matrix. bw2calc's own docs report a 20% error on one real ecoinvent process, so check the result before you rely on it. <code>IterativeLCA</code> factorizes once, then iterates; UMFPACK does the one factorization, and ten draws take 0.76 s, on the synthetic database too.</p>
 
       <p class="quiet">Baseline: bw2calc 3.1.0, SciPy 1.18.1, Python 3.13, one thread on an efficiency core of a pinned benchmark machine.</p>
-      <details class="setup">
+      <details class="setup" id="how-measured">
         <summary>How this was measured</summary>
         <ul>
           <li>A pinned benchmark machine, Linux x86_64, in a container, on one efficiency core. BLAS and OpenMP run on one thread: <code>OPENBLAS_NUM_THREADS=1</code>, <code>MKL_NUM_THREADS=1</code>, <code>OMP_NUM_THREADS=1</code>.</li>
@@ -133,7 +133,7 @@ const check = `python -c "import bw2calc as bc; print('PyPardiso' if bc.PYPARDIS
           <li>A synthetic database with 26,533 products, like ecoinvent 3.12 cut-off.</li>
           <li>Real ecoinvent: the ecoinvent 3.12 cut-off technosphere matrix, 26,533 rows and 338,195 nonzeros, on one efficiency core of the pinned machine, one thread. <a href={`${repository}/blob/main/scripts/solver_factorize.py`}><code>scripts/solver_factorize.py</code></a> times one factorization of each solver (median of 3) through bw2calc 3.1.0's <code>spsolve</code> and <code>lu_solver</code>, with SciPy 1.18.1, PyPardiso 0.4.7 and scikit-umfpack 0.4.2 from PyPI and from conda-forge. A performance core gives 1.7 to 2 times shorter times in the same order.</li>
           <li>One score: <code>LCA(demand=&#123;0: 1&#125;, data_objs=[inventory, method])</code>, then <code>lci()</code> and <code>lcia()</code>. Thirty products: <code>MultiLCA(demands=..., method_config=..., data_objs=...)</code>, then <code>lci()</code> and <code>lcia()</code>, or <code>FastScoresOnlyMultiLCA(..., direction="forward")</code> and <code>next(lca)</code>. Monte Carlo: <code>LCA(..., use_distributions=True, seed_override=1)</code>, then ten <code>next(lca)</code> calls.</li>
-          <li>Each timed call has a fresh setup that has already solved once, so imports stay out of the time. Each time is asv's median of 4 to 10 calls. Every score is checked against a reference outside the timed call.</li>
+          <li>Each timed call has a fresh setup. For each parameter set in a process, the first setup warms the case and the checks run outside the timer. Each time is asv's median of 4 to 10 calls.</li>
           <li>Source: <a href={`${repository}/blob/main/benchmarks/bench_bw2calc/bench_lca.py`}>the benchmarks</a>, <a href={scipySource}>SciPy's <code>spsolve</code></a> and the <code>JacobiGMRESLCA</code> docstring in bw2calc 3.1.0 for the 20% error (a demand for “market for waste polystyrene”).</li>
         </ul>
       </details>

@@ -16,9 +16,9 @@ Results are in [findings.md](findings.md), how to run the benchmarks in
   in its session: bw_timex's in-session caches are cleared before it, and only the foreground is
   written again, the background once per process.
 
-Each score is checked against a reference that uses no Brightway code, so a fast but wrong
-release fails. Monte Carlo draws are checked only for finite values, and bw_timex against
-bw2calc's score.
+Static score checks use an independent reference. For Monte Carlo, the first setup for each
+parameter set in a process checks one draw against an independent solve of its sampled
+matrices. The timed result must also be finite. The bw_timex checks use bw2calc's score.
 
 ## The synthetic databases
 

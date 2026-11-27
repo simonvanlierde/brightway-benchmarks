@@ -1,6 +1,6 @@
 """scripts/merge_results.py's merge of two asv result files."""
 
-import importlib.util
+import importlib
 import json
 import math
 from pathlib import Path
@@ -8,11 +8,9 @@ from pathlib import Path
 import pytest
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "merge_results.py"
-spec = importlib.util.spec_from_file_location("merge_results", SCRIPT)
-assert spec is not None
-assert spec.loader is not None
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
+with pytest.MonkeyPatch.context() as monkeypatch:
+    monkeypatch.syspath_prepend(str(SCRIPT.parent))
+    module = importlib.import_module("merge_results")
 merge = module.merge
 
 COLUMNS = ["result", "params", "version", "started_at", "duration", "stats_q_25"]

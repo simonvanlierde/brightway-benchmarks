@@ -12,24 +12,23 @@ An environment's name ends in the hash of its fixed dependency stack (scripts/as
 comparison prefers two results on the same stack, the current one (asv/SUBJECT.stack.txt)
 first; when there are none, it compares across stacks and flags the row, because then the
 dependencies moved too, not only the package.
-A case whose recorded version differs from benchmarks.json's is left out (``current_rows``), so a
-file of an older generator version takes no part, and so is a point benchmarks/invalid.toml lists.
+A case whose recorded version differs from benchmarks.json's is left out, as is a point
+benchmarks/invalid.toml lists.
 Release tags resolve through asv's mirror of the upstream repository, .asv/SUBJECT, which
 ``asv run`` and ``just site`` create.
 """
 
 import ast
-import hashlib
 import json
 import math
-import re
 import sys
 import tomllib
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from merge_results import cells as asv_cells
+from asv_results import SHA, STACK, current_stack, pick, result_files
+from asv_results import cells as asv_cells
 from release_report import sha
 
 HEADER = ("environment", "releases", "case", "parameters", "old", "new", "new / old")
@@ -38,8 +37,6 @@ HEADER = ("environment", "releases", "case", "parameters", "old", "new", "new / 
 NOISE_FLOOR = 0.02
 NOISE_TIMES = 3
 GB = 1e9
-STACK = re.compile(r"-BWBENCH_STACK([0-9a-f]+)")
-SHA = re.compile(r"[0-9a-f]{40}")
 INVALID = Path(__file__).resolve().parents[1] / "benchmarks" / "invalid.toml"
 
 
@@ -113,38 +110,6 @@ def spread(value: float | None, lower: float | None, upper: float | None) -> flo
     return (upper - lower) / value if 0 <= lower <= value <= upper and value > 0 else None
 
 
-def current_stack(subject: str) -> str:
-    """The hash of asv/SUBJECT.stack.txt, as scripts/asv.sh puts it in environment names, or ""."""
-    path = Path(f"asv/{subject}.stack.txt")
-    return hashlib.sha256(path.read_bytes()).hexdigest()[:8] if path.exists() else ""
-
-
-def pick(stacks: Iterable[str], current: str) -> str:
-    """The current stack if it is among STACKS, else the lowest hash."""
-    return min(stacks, key=lambda s: (s != current, s))
-
-
-def current_rows(data: dict, benchmarks: dict) -> dict:
-    """DATA without the cases whose recorded version differs from BENCHMARKS' (benchmarks.json).
-
-    A new asv version means the benchmark changed (``GENERATOR_VERSION``), so its older times are
-    a different measurement: asv's own publish drops them too. A row or benchmark with no version
-    is kept.
-    """
-    columns = data.get("result_columns", [])
-    at = columns.index("version") if "version" in columns else None
-    if at is None:
-        return data
-    keep = {
-        name: row
-        for name, row in data["results"].items()
-        if len(row) <= at
-        or not isinstance(benchmarks.get(name), dict)
-        or benchmarks[name].get("version") in (None, row[at])
-    }
-    return data | {"results": keep}
-
-
 def releases(subject: str, tool: str) -> dict[str, str]:
     """Each release's commit (8 characters) -> its tag in asv/SUBJECT.hashes, in that order.
 
@@ -182,14 +147,12 @@ def changes(results: Path, subject: str) -> list[Change]:
     entries = invalid_entries()
 
     def dropped(data: dict, name: str, combo: tuple) -> bool:
-        return len(combo) == len(names.get(name, [])) and is_invalid(
-            entries, name, data.get("commit_hash", ""), names[name], combo
-        )
+        params = names.get(name, [])
+        return len(combo) == len(params) and is_invalid(entries, name, data.get("commit_hash", ""), params, combo)
 
     # (machine, environment) -> tag -> stack -> results
     runs: dict[tuple[str, str], dict[str, dict[str, dict]]] = {}
-    for path in folder.glob("*/*-*.json"):
-        data = current_rows(json.loads(path.read_text()), cases)
+    for path, data in result_files(folder, cases):
         if not data["results"]:  # every case is of an older version
             continue
         tag = order.get(data.get("commit_hash", "")[:8])

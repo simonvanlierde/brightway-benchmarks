@@ -28,31 +28,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-# Columns with one entry per parameter combination; the others hold one value per benchmark.
-PER_CELL = {"result", "samples"}
-
-
-def per_cell(column: str) -> bool:
-    """Whether a result column holds one entry per parameter combination."""
-    return column in PER_CELL or column.startswith("stats_")
-
-
-def cells(row: list, columns: list[str]) -> dict[tuple, dict[str, object]]:
-    """Each parameter combination's per-cell values, in asv's order (itertools.product).
-
-    The one decoder of an asv result row; scripts/release_changes.py and scripts/export_ui.py
-    read values and quartiles through it too. A column that is missing, shorter than the combinations or a
-    single value (a case without parameters) gives None where it has no entry.
-    """
-    cell = dict(zip(columns, row, strict=False))
-
-    def entry(column: str, i: int) -> object:
-        values = cell.get(column)
-        values = values if isinstance(values, list) else [values]
-        return values[i] if i < len(values) else None
-
-    combos = itertools.product(*(cell.get("params") or []))
-    return {combo: {c: entry(c, i) for c in columns if per_cell(c)} for i, combo in enumerate(combos)}
+from asv_results import cells, per_cell
 
 
 def merge_row(old: list, new: list, columns: list[str]) -> list:

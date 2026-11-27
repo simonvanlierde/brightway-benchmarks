@@ -4,7 +4,7 @@
 Reads RESULTS_DIR (a checkout of the ``results`` branch), and asv/ and asv's mirrors in .asv/ from
 the working directory. Writes OUT_DIR/index.json and one report per commit, subject and machine,
 in the shapes ui/schema/ gives. An environment's name drops its stack hash, so a case keeps its
-id across releases, and a commit gets one value per environment, on the stack ``pick`` chooses
+id across releases, and a commit gets one value per environment, on the stack ``preferred_runs`` chooses
 where that stack has the case, else on the next one.
 ``time`` cases become latency in ns, with the samples' quartiles as bounds where they hold the value;
 ``peakmemory`` cases become peak memory in bytes. Other types, failed and skipped cases are left
@@ -38,21 +38,17 @@ from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import quote
 
+from asv_results import STACK, preferred_runs
+from asv_results import cells as asv_cells
 from export_guidance import PUBLIC_BASE
-from merge_results import cells as asv_cells
 from output_path import output_path
 from release_changes import (
     NOISE_FLOOR,
     NOISE_TIMES,
-    SHA,
-    STACK,
-    current_rows,
-    current_stack,
     invalid_entries,
     is_invalid,
     label,
     noise_threshold,
-    pick,
     releases,
 )
 from release_changes import spread as release_spread
@@ -97,63 +93,6 @@ def slug(name: str) -> str:
     """A stable id unique to NAME, at most 64 characters: its words, then a hash of all of it."""
     words = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:51].rstrip("-")
     return f"{words or 'x'}-{hashlib.sha256(name.encode()).hexdigest()[:12]}"
-
-
-def runs(folder: Path, info: dict) -> dict[tuple[str, str], list[dict]]:
-    """(machine, commit) -> the result files of each environment, the winning stack's first (``fill``).
-
-    Only current cases count (``current_rows``), so a file with none is no candidate: a stack whose
-    results are all of an older version never beats one that has current results.
-    """
-    current = current_stack(folder.name)
-    found: dict[tuple[str, str], dict[str, dict[str, dict]]] = {}
-    for path in folder.glob("*/*-*.json"):
-        data = current_rows(json.loads(path.read_text()), info)
-        if not SHA.fullmatch(data["commit_hash"]):  # it becomes part of a report's path
-            sys.exit(f"export_ui: {path}: commit_hash is not a full hash")
-        if not data["results"]:
-            continue
-        stack = STACK.search(data["env_name"])
-        env = found.setdefault((path.parent.name, data["commit_hash"]), {}).setdefault(
-            STACK.sub("", data["env_name"]), {}
-        )
-        env[stack.group(1) if stack else ""] = data
-
-    def ranked(stacks: dict[str, dict]) -> list[dict]:
-        win = pick(stacks, current)
-        return [stacks[s] for s in [win, *sorted(stacks.keys() - {win})]]
-
-    return {key: [d for _, stacks in sorted(envs.items()) for d in fill(ranked(stacks))] for key, envs in found.items()}
-
-
-def fill(files: list[dict]) -> list[dict]:
-    """FILES of one environment and commit, winning stack first, each without the cells an earlier one has.
-
-    A rerun of some cases on a new stack leaves the others on the older stacks only, so those come
-    from there. A cell an earlier file has, even skipped or failed, is a NaN in the later ones.
-    That includes the NaN `merge_results.merge_row` writes for a combination neither merged run
-    timed, which a file cannot tell from a real skip: a later stack's value for it stays hidden.
-    """
-    held: set[tuple[str, tuple]] = set()
-    out = []
-    for data in files:
-        columns = data.get("result_columns", ["result", "params"])
-        at = columns.index("result")
-        results, mine = {}, set()
-        for name, row in data["results"].items():
-            combos = list(asv_cells(row, columns))
-            mine |= {(name, c) for c in combos}
-            taken = [(name, c) in held for c in combos]
-            if combos and all(taken):
-                continue
-            if any(taken):
-                row = list(row)  # noqa: PLW2901 - a copy, the file's own row stays as it is
-                row[at] = [math.nan if t else v for t, v in zip(taken, row[at], strict=False)]
-            results[name] = row
-        held |= mine
-        if results:
-            out.append(data | {"results": results})
-    return out
 
 
 def metrics(data: dict, kinds: dict[str, str]) -> list[tuple[str, tuple[str, ...], str, dict]]:
@@ -207,7 +146,7 @@ class Catalog:
     invalid: list[dict] = field(default_factory=invalid_entries)
 
     def report(self, subject: str, files: list[dict], info: dict[str, dict]) -> dict[str, dict]:
-        """One BMF report from the result files of one commit on one machine, no cell in two of them (``fill``)."""
+        """One BMF report from the deduplicated result files of one commit on one machine."""
         group, kinds = slug(subject), {k: v.get("type", "") for k, v in info.items()}
         report: dict[str, dict] = {}
         for data in files:
@@ -581,7 +520,7 @@ def export(results: Path, out: Path) -> dict:
         info = {k: v for k, v in json.loads(meta.read_text()).items() if isinstance(v, dict)}  # skips "version"
         dates: dict[str, int] = {}
         found: list[tuple[str, str, dict]] = []  # (machine id, commit, report)
-        for (machine, commit), files in sorted(runs(meta.parent, info).items()):
+        for (machine, commit), files in sorted(preferred_runs(meta.parent, info).items()):
             report = catalog.report(subject, files, info)
             if not report:
                 continue

@@ -15,6 +15,7 @@ on:
     branches: [main]
     paths:
       - "ui/**"
+      - "scripts/asv_results.py"
       - "scripts/export_ui.py"
       - "scripts/export_guidance.py"
       - "scripts/export_ratios.py"

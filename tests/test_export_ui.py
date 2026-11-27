@@ -52,7 +52,7 @@ def schema(name: str) -> Validator:
 @pytest.fixture
 def export_ui(monkeypatch: pytest.MonkeyPatch) -> ModuleType:
     monkeypatch.syspath_prepend(str(ROOT / "scripts"))
-    # Imported by name, so that its own `from release_changes import STACK` resolves.
+    # Imported by name, so that the other scripts resolve.
     module = importlib.import_module("export_ui")
     # Otava runs in an environment of its own; test_change_points_through_uv runs it for real.
     monkeypatch.setattr(module, "otava", lambda values: [[] for _ in values])

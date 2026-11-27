@@ -23,9 +23,11 @@ jobs:
       # The action sends the job's token on GitHub links, so GitHub's rate limit is not hit.
       - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
-          # The files.brightway.dev front page and RSC/doi.org answer bots with 403.
+          # The files.brightway.dev front page and the RSC DOI answer bots with 403.
+          # CodSpeed's dashboard returns 429 even for a single request.
           args: >-
             --no-progress
             --exclude '^https://files\.brightway\.dev/$'
             --exclude '^https://doi\.org/10\.1039/C2EE22653G$'
+            --exclude '^https://app\.codspeed\.io/simonvanlierde/brightway-benchmarks(\?utm_source=badge)?$'
             './**/*.md' './**/*.html'

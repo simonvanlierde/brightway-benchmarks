@@ -26,14 +26,14 @@ const check = `python -c "import bw2calc as bc; print('PyPardiso' if bc.PYPARDIS
 <StaticPage
   mainClass="story"
   current="solver-choice"
-  title="Your solver choice changes a single-threaded Brightway score by up to 5 times · Brightway Benchmarks"
-  description="With nothing extra installed, bw2calc solves with SciPy's SuperLU. On one thread on real ecoinvent 3.12, that takes 3.66 s, against 1.48 s with PyPardiso and 0.66 s with scikit-umfpack from conda-forge."
+  title="Solver speed on one thread · Brightway Benchmarks"
+  description="Compare SuperLU, PyPardiso and UMFPACK on one thread with bw2calc 3.1.0 and ecoinvent 3.12. Check which solver you have and what to install."
   canonical="https://simonvanlierde.com/brightway-benchmarks/stories/solver-choice/"
   image="story-solver-choice.png"
   imageAlt="Three bars for factorizing the real ecoinvent 3.12 matrix on one thread: UMFPACK from conda-forge 0.66 seconds, PyPardiso 1.48 seconds, SuperLU 3.66 seconds."
 >
       <h1>Your solver choice changes a single-threaded Brightway score by up to 5 times</h1>
-      <p class="lede">With nothing extra installed, bw2calc uses SciPy's SuperLU, the slowest solver measured here. On one thread, switching to <code>scikit-umfpack</code> from conda-forge runs about 5 times faster, and PyPardiso runs about 2 times faster (PyPardiso also scales across multiple threads). Check which solver you have, then install the one for your workflow.</p>
+      <p class="lede">On one thread with bw2calc 3.1.0, <code>scikit-umfpack</code> from conda-forge factors the ecoinvent 3.12 matrix about 5 times as fast as SciPy's default SuperLU. PyPardiso is about 2 times as fast and also scales across multiple threads. Check which solver you have, then install the one for your workflow.</p>
       <p>One Brightway score builds a sparse matrix <em>A</em>, solves <em>Ax = b</em>, and takes a weighted dot product <em>c<sup>T</sup>x</em>. Most coefficients in <em>A</em> are zero. The solver package factors <em>A</em> into two triangular matrices that solve quickly, and bw2calc picks the solver from what you have installed.</p>
       <p>For ecoinvent 3.12 cut-off, the matrix has 26,533 rows and 338,195 nonzeros. On one thread (efficiency core, bw2calc 3.1.0), factorizing it takes 0.66 to 3.66 s depending on the solver, and solving on the factors takes 5 to 24 ms. PyPardiso can use several threads and is not measured multithreaded in the main comparison.</p>
 
@@ -138,7 +138,7 @@ const check = `python -c "import bw2calc as bc; print('PyPardiso' if bc.PYPARDIS
         </ul>
       </details>
 
-      <p><a href={home}>Setup</a> has install sets that passed their checks on each platform. <a href={`${repository}/blob/main/docs/faster.md`}>Make your Brightway faster</a> lists other install choices and calls that change the time, each with its measured gain. The <a href={`${repository}/blob/main/docs/method.md`}>method</a> describes the database and how noisy the timings are.</p>
+      <p><a href={home}>Setup</a> has tested install sets. The <a href={`${repository}/blob/main/docs/running.md#benchmarks`}>benchmark guide</a> gives the command for reproducing the first-score comparison. <a href={`${repository}/blob/main/docs/faster.md`}>Make your Brightway faster</a> lists other measured changes you can try.</p>
     </StaticPage>
 
 <script is:inline data-inline-ok>

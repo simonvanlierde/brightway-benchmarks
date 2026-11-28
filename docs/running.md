@@ -29,8 +29,7 @@ It lists the measured stack and machine settings. This rerun stays in `.asv/nois
 Use [`scripts/solver_factorize.py`](../scripts/solver_factorize.py) with a licensed copy of
 ecoinvent 3.12 cut-off to reproduce its separate factorization measurements.
 
-`just` lists the recipes. For example, `just release-changes bw2calc` shows changes in the latest
-release and `just solver-lci klu ecoinvent` times `lci()` with KLU.
+`just` lists the recipes.
 
 Cases default to the 200-product `smoke` database. Set `BWBENCH_SIZES=ecoinvent` for a
 full-size run. For bw2calc it takes about 24 minutes, or 6 with `BWBENCH_SOLVERS=pypardiso`.

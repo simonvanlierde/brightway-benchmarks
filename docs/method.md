@@ -16,9 +16,9 @@ Results are in [findings.md](findings.md), how to run the benchmarks in
   in its session: bw_timex's in-session caches are cleared before it, and only the foreground is
   written again, the background once per process.
 
-Each score is checked against a reference that uses no Brightway code, so a fast but wrong
-release fails. Monte Carlo draws are checked only for finite values, and bw_timex against
-bw2calc's score.
+Static score checks use an independent reference. For Monte Carlo, the first setup for each
+parameter set in a process checks one draw against an independent solve of its sampled
+matrices. The timed result must also be finite. The bw_timex checks use bw2calc's score.
 
 ## The synthetic databases
 
@@ -117,7 +117,7 @@ BAFU's, so the bw2calc suite needs no bw2data. Four cases time it:
 
 The defaults are illustrative assumptions. [Staffell et al. (2012)](https://doi.org/10.1039/C2EE22653G)
 review heat pump performance across systems and climates; they do not establish a universal Dutch COP.
-[CBS's January 2026 report](https://www.cbs.nl/nl-nl/longread/aanvullende-statistische-diensten/2026/de-energierekening-januari-2026?onepage=true)
+[CBS's January 2026 report](https://www.cbs.nl/nl-nl/longread/aanvullende-statistische-diensten/2026/de-energierekening-januari-2026/2-energierekening-van-januari-2026-daalt-door-lager-verbruik-en-iets-lagere-prijzen)
 reports gas consumption, not useful space heat, so it does not directly validate the heat-demand default.
 
 The heating cases expand the archive's parent-compartment factors to otherwise uncharacterized
@@ -222,7 +222,7 @@ the reason, and never as zero: PyPardiso on Apple silicon, where MKL has no buil
 Windows, where scikit-umfpack does not build, and Accelerate anywhere but macOS.
 
 The arms run in randomized multiple interleaved trials
-([Abedi and Brecht, 2017](https://doi.org/10.1145/3030207.3030229)). Each of 20 rounds runs every
+([Abedi and Brecht, 2017](https://cs.uwaterloo.ca/~brecht/courses/854-Experimental-Performance-Evaluation-2017/readings/f17/repeatable-cloud-icpe-2017.pdf)). Each of 20 rounds runs every
 arm once, in a new random order. Each run is a fresh process that calls the case once untimed,
 then three times, and the median of the three is the arm's time in that round. A slow moment on
 a shared runner then slows every arm of that round, and the ratio within the round cancels it.

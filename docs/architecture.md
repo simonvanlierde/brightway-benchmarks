@@ -19,7 +19,11 @@ flowchart LR
     json --> ui["ui/<br/>Astro + Svelte viewer"]
     compatb --> guide["scripts/export_guidance.py<br/>guidance.json"]
     guide --> ui
-    compatb --> site["site workflow<br/>just site"]
+    compatb --> site["site workflow<br/>just site + just ui-data"]
+    hosted["ratios workflow"] --> ratios[("ratios branch<br/>attested hosted runs")]
+    ratios --> comparison["scripts/export_ratios.py<br/>ratios.json"]
+    contributed["ratios/contributed/<br/>validated submissions"] --> comparison
+    comparison --> ui
     ui --> site
     site --> pages["GitHub Pages"]
 ```
@@ -73,20 +77,22 @@ so in a fresh container on one.
 
 ## Where results go
 
-asv writes its result files into a checkout of the `results` branch.
-That branch holds data only. `just results-commit`
-([`scripts/results-commit.sh`](../scripts/results-commit.sh)) checks the files and commits
-them there. A separate `compat` branch holds the tested install sets that the
-[compat workflow](../.github/workflows/compat.yml) writes each night
-([`scripts/compat.sh`](../scripts/compat.sh)).
+asv writes timings under `results/` in the working checkout. `just results-commit`
+([`scripts/results-commit.sh`](../scripts/results-commit.sh)) checks and merges new cells into
+the local `results` branch. The [compat workflow](../.github/workflows/compat.yml) writes tested
+install sets to the `compat` branch. The [ratios workflow](../.github/workflows/ratios.yml)
+publishes attested hosted comparisons to `ratios`. Contributed runs live in `ratios/contributed/`
+on `main`.
 
 ## The data contract
 
-[`scripts/export_ui.py`](../scripts/export_ui.py) reads that checkout and writes `index.json` and
-one report per commit and subject. It also finds the changes between releases, so the viewer
-computes none. The JSON Schemas in [`ui/schema/`](../ui/schema/) define the shape, and each file
-carries a `format_version`. [`ui/src/lib/contract.ts`](../ui/src/lib/contract.ts) checks every
-file against the schema and refuses a version it does not know.
+[`scripts/export_ui.py`](../scripts/export_ui.py) reads the `results` checkout and writes `index.json`
+and one report per machine, commit and subject. It also finds the changes between releases.
+[`scripts/export_guidance.py`](../scripts/export_guidance.py) writes the install and Python
+tables to `guidance.json`. [`scripts/export_ratios.py`](../scripts/export_ratios.py) writes the
+comparisons and their summaries to `ratios.json`.
+[`ui/src/lib/contract.ts`](../ui/src/lib/contract.ts) validates those files against
+[`ui/schema/`](../ui/schema/) and checks the version in each index and the report format.
 [`benchmarks/descriptions.toml`](../benchmarks/descriptions.toml) and
 [`benchmarks/findings.toml`](../benchmarks/findings.toml) supply the text beside the numbers.
 [`benchmarks/invalid.toml`](../benchmarks/invalid.toml) lists results that measured a wrong

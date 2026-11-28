@@ -1,60 +1,80 @@
 # Running the benchmarks
 
-You need Docker and [just](https://just.systems); `just noise` and `just results-commit` also need
-[uv](https://docs.astral.sh/uv/), and `just results-commit` needs rsync and git 2.42 or later. The recipes run Brightway's code in a
-throwaway container, the box ([where it runs](architecture.md#where-it-runs)). `just` lists every recipe.
+- [Install a tested Brightway set](#install-a-set-that-works) for your operating system and Python.
+- [Reproduce a release timing](#benchmarks) with the published benchmark case.
+- [Contribute a run](#contribute-a-run) to see how solvers compare on your machine.
 
 ## Benchmarks
 
+Install Docker and [just](https://just.systems), then run these commands from a clone of this
+repository. Benchmarks run in a throwaway container called the box
+([where it runs](architecture.md#where-it-runs)).
+
 ```sh
-just smoke                       # each package's oldest and latest release, small database
-just bench bw2calc               # every bw2calc release listed in asv/bw2calc.hashes
-just bench bw2data "4.7^!" -e    # one release; extra arguments go to asv
-just site                        # the compat archive and the old-link redirects in site/
-just release-changes bw2calc     # what moved in bw2calc's latest release, as a Markdown table
-just ui-data site/data           # results/ as the viewer's data; guidance.json too after `just site`
-just ui-serve                    # build the UI and serve it on 127.0.0.1:4400, to look at a change
-just results-commit              # keep results/ on the local results branch, for publishing
-just solver-lci klu ecoinvent    # bw2calc 3.1.0's own lci() with one solver, KLU here
-just codspeed bw2calc pypardiso  # one suite under CodSpeed's CPU simulation (instruction counts)
-just profile bw2calc first_score release=3.0.0 with=scikit-umfpack size=ecoinvent cls=IterativeLCA  # one case under pyinstrument
+just smoke                    # oldest and latest release of each package, small database
+just bench bw2calc            # all releases in asv/bw2calc.hashes
+just bench bw2data "4.7^!" -e  # one release, with extra arguments passed to asv
 ```
 
-`just profile SUBJECT CASE [release=X] [with=PACKAGE...] [NAME=VALUE...]` times nothing: it
-explains a finding. It installs the release (the latest when left out) with each `with=` package,
-such as the solver the finding is about, sets the case up as asv does and profiles the one timed
-call. CASE is the `@bench` function's name (`first_score` for `SingleScore.time_first_score`),
-and every parameter of its `@bench({...})` in `benchmarks/bench_SUBJECT/` must be given. The
-HTML report and the speedscope JSON go to `.asv/profiles/`, named by subject, case, parameters,
-installed release and `with=` packages.
-To show a profile with a finding, copy the `.html` to `profiles/` and name it in the finding's
-`profile` field in [`benchmarks/findings.toml`](../benchmarks/findings.toml). `just site`
-publishes `profiles/` beside the viewer. Profiles stay out of `results/`, which holds data only.
+To reproduce the first-score comparison in the solver story, use the synthetic ecoinvent-sized
+database and select bw2calc 3.1.0 and the first-score case:
 
-Cases run on the 200-product `smoke` database unless `BWBENCH_SIZES` names others, as in
-`BWBENCH_SIZES=ecoinvent just bench bw2calc`. A full-size bw2calc run takes about 24 minutes,
-or 6 with `BWBENCH_SOLVERS=pypardiso`, and `BWBENCH_ROUNDS=1` halves it. One round makes
-bw2calc's results about four times noisier from run to run (median 2.1% against 0.6% at ecoinvent,
-bafu and useeio size), so keep 2 for bw2calc; bw_processing and bw_timex stay under 0.4% either
-way. `just bench` skips what already succeeded, so a stopped run resumes.
+```sh
+BWBENCH_MACHINE=noise BWBENCH_SIZES=ecoinvent just bench bw2calc-conda "3.1.0^!" --bench SingleScore.time_first_score
+```
 
-After a generator version bump resets the history, `just bench-lines bw2calc` reruns only the
-newest release of each minor line (2.0.x, 2.1.x, ...) and the untagged releases: 9 of bw2calc's 15. The history
-has fewer points but each is valid, and a later `just bench bw2calc` fills in the rest, since it
-skips what already succeeded.
+Compare the `LCA` rows with the published timings in the
+[solver story](https://simonvanlierde.com/brightway-benchmarks/stories/solver-choice/).
+It lists the measured stack and machine settings. This rerun stays in `.asv/noise/`.
+Use [`scripts/solver_factorize.py`](../scripts/solver_factorize.py) with a licensed copy of
+ecoinvent 3.12 cut-off to reproduce its separate factorization measurements.
 
-The `codspeed` workflow runs `benchmarks/codspeed` on each pull request and push to `main`
-([CodSpeed](https://app.codspeed.io/simonvanlierde/brightway-benchmarks)).
-`just ui-data` copies what each benchmark and parameter means from
-[`benchmarks/descriptions.toml`](../benchmarks/descriptions.toml); it warns about a benchmark
-that has no entry there, so add one with each new benchmark.
-`just results-commit` refuses results that name this host or a name in
-`BWBENCH_PRIVATE_NAMES`. It also refuses a new or changed result without an environment
-fingerprint, which `asv.sh` adds to each result file it writes
-([method](method.md#how-the-results-stay-reproducible)). Results committed before the fingerprint
-keep their place until a run rewrites them. A run whose cases were all skipped or failed, such as one
-at a size its cases do not support, is refused too. Result files do not record `BWBENCH_THREADS`, `BWBENCH_ROUNDS`,
-`BWBENCH_CPUS` or `BWBENCH_MEM`, so don't commit runs made with values other than the defaults.
+`just` lists the recipes.
+
+Cases default to the 200-product `smoke` database. Set `BWBENCH_SIZES=ecoinvent` for a
+full-size run. For bw2calc it takes about 24 minutes, or 6 with `BWBENCH_SOLVERS=pypardiso`.
+Keep the default two rounds. In the larger bw2calc cases, one round raised the median
+run-to-run spread from 0.6% to 2.1%. The bw_processing and bw_timex cases stayed under
+0.4% either way.
+
+`just bench` skips successful cells, so interrupted runs resume. After a generator update,
+`just bench-lines bw2calc` can time the newest release in each minor line and the untagged
+releases first. A later `just bench bw2calc` fills the rest.
+
+### Inspect a benchmark
+
+- `just release-changes bw2calc` shows what moved in the latest release.
+- `just solver-lci klu ecoinvent` times `lci()` with KLU.
+- `just codspeed bw2calc pypardiso` measures CPU instructions as the
+  [CodSpeed workflow](https://app.codspeed.io/simonvanlierde/brightway-benchmarks) does.
+- `just profile` profiles one call with pyinstrument. Give the `@bench` function name,
+  release (defaults to latest), extra packages and every case parameter:
+
+  ```sh
+  just profile bw2calc first_score release=3.0.0 with=scikit-umfpack size=ecoinvent cls=IterativeLCA
+  ```
+
+Profiles go to `.asv/profiles/` as HTML and speedscope JSON. To publish a profile with a
+finding, copy the HTML to `profiles/` and set the finding's `profile` in
+[`benchmarks/findings.toml`](../benchmarks/findings.toml).
+
+### Preview and save results
+
+Run `just ui-serve` to preview the UI at `127.0.0.1:4400`. To prepare site data, run `just site`
+for the compat archive and redirects, then `just ui-data site/data` for timing histories,
+guidance and ratios. Add new benchmark descriptions to
+[`benchmarks/descriptions.toml`](../benchmarks/descriptions.toml). The export warns about missing entries.
+
+`just results-commit` saves timings on the local `results` branch. It needs
+[uv](https://docs.astral.sh/uv/), rsync and Git 2.42 or later. It refuses private machine
+names (including `BWBENCH_PRIVATE_NAMES`), new or changed results without
+[fingerprints](method.md#how-the-results-stay-reproducible), and runs with no successful
+new cells. Keep the default threads, rounds, CPUs and memory for anything you commit.
+ASV results omit those settings.
+
+To remove a result, edit or delete it in a `results` branch worktree. Run the main branch's
+`scripts/run_crate.py` against that worktree and commit the change with the rebuilt
+`ro-crate-metadata.json`. An omitted file or cell in a regular run leaves earlier data in place.
 
 ### Experimental solvers
 
@@ -72,9 +92,9 @@ build strings, the BLAS among them, to a `versions-*.txt` file.
 
 ### Measure the noise
 
-`just noise SUBJECT` runs the latest release of SUBJECT 10 times and prints each case's spread
-([method.md](method.md#the-noise-floor)). Each sample's CPU time, wall time and context
-switches go to `rounds.jsonl`; `scripts/noise_summary.py` reads them.
+With uv installed, `just noise SUBJECT` runs the latest release of SUBJECT 10 times and
+prints each case's [spread](method.md#the-noise-floor). Each sample's CPU time, wall time and
+context switches go to `rounds.jsonl` for `scripts/noise_summary.py`.
 
 ### Hosted ratios
 
@@ -189,63 +209,52 @@ lives in a separate pixi `test` environment), `pixi.toml` and `pixi.lock`. `suit
 
 ### The nightly runs
 
-The `compat` workflow runs 30 checks each night, covering all five columns on Linux, macOS and
-Windows with Python 3.13 and 3.14. Only `latest` can fail the workflow. Failures in the other
-columns remain visible in the published results. Linux runs the checks in containers. macOS and
-Windows run them directly on the runner. The macOS PyPI checks skip cases that require PyPardiso
-or UMFPACK because neither installs from PyPI there.
+The `compat` workflow runs 30 nightly checks across the five columns, three operating
+systems and Python 3.13 and 3.14. Only `latest` can fail the workflow. All failures show
+in the published table. Linux runs in containers, macOS and Windows on their runners.
+macOS PyPI checks skip solver cases that require PyPardiso or UMFPACK.
 
-Expanding the matrix does not create results until those jobs run. After merging a coverage
-change, dispatch `compat` on `main` and wait for its archive job, then dispatch `site` to publish
-the new snapshot. A run dispatched on a feature branch validates jobs but does not update the archive.
+After a coverage change merges, dispatch `compat` on `main`, wait for `archive`, then
+dispatch `site`. A run on a feature branch leaves the archive unchanged.
 
 ### The compat archive
 
-The `archive` job of the `compat` workflow runs on `main` after the matrix. It runs
-`scripts/compat_site.py`, which takes each job's newest passing set and writes it to the
-`compat` branch. A set that differs from the job's previous one goes to
-`compat/COLUMN-PYTHON-OS/YYYY-MM-DD/`, with `set.json` for its date and run. The undated
-`compat/COLUMN-PYTHON-OS/` folder follows the newest set; its `set.json` keeps the latest
-passing date and run even when that set has not changed. A dated folder never changes, and it
-stays after GitHub deletes the run's artifacts at 90 days. `compat/status.json` summarizes how
-each job ended. `just site` copies the branch into `site/compat`; the site workflow publishes it.
+On `main`, `scripts/compat_site.py` writes the last passing sets to the `compat` branch.
+When a set changes, it gets a dated folder under `compat/COLUMN-PYTHON-OS/` that stays
+after the run's artifacts expire. The undated folder follows the latest passing set.
+Its `set.json` records the latest passing date and run even when the set is the same.
+`compat/status.json` records every job's outcome. `just site` copies the archive
+to `site/compat` for publishing.
 
 ### Which Pythons work
 
-The compat jobs need Python 3.13 or later, as the harness does. `scripts/py_probe.py PYTHON OUT`
-asks the plainer question for any Python: in a fresh environment, do brightway25, bw_graph_tools
-and bw_timex install (each on its own), do bw2data, bw2calc, bw2io, bw_processing, matrix_utils,
-bw_graph_tools and bw_timex import, and does one score on a two-process system come out right? It
-writes each step to `OUT/probe.json`, the installed set to `OUT/requirements.txt`, and exits 1 if
-a step failed. Like the `latest` column, it installs today's releases and ignores the repository's
-exclude-newer cutoff. It needs only uv:
+The compat jobs need Python 3.13 or later, as the harness does. For other Pythons,
+`scripts/py_probe.py` checks whether packages install and import and a two-process LCA
+gives the right score. It uses today's releases and needs only uv:
 
 ```sh
 uv run --no-project --python 3.13 scripts/py_probe.py 3.12 .asv/probe/3.12
 ```
 
-The `python-probe` workflow runs it each day for Python 3.11 to 3.15 on Linux, macOS and Windows,
-and each Monday also for 3.9 and 3.10 on Linux, which are past end of life but some packages still
-declare. Each job's summary lists its steps, and its artifact holds both files.
+The probe writes `probe.json` with each step and `requirements.txt` with the installed
+set. It exits 1 on failure. If no release declares that Python, the install step says
+`"declared": false` and skips the imports. Read the step's error before reporting a failure.
 
-The site shows the results: `scripts/probe_site.py` takes the newest artifact of each Python and OS
-from main's runs (the site workflow calls it), and `scripts/export_guidance.py --probe` turns them
-into the `pythonSupport` table of `guidance.json`. Setup lists 3.11 to 3.15; Benchmarks lists the
-end-of-life lines (`END_OF_LIFE` in the exporter).
-
-A package none of whose releases declares the Python, such as bw_timex on 3.9, is not a failure:
-its install step says `"declared": false`, and its imports are left out. A red job can still be a
-network failure, as nothing retries, so read the step's error before reporting it upstream.
+The `python-probe` workflow runs daily for Python 3.11 to 3.15 on all three OSes, and
+on Mondays for the end-of-life 3.9 and 3.10 on Linux. The job summary lists each step.
+The site exports the latest main-branch artifacts (`scripts/probe_site.py` and
+`scripts/export_guidance.py --probe`). Setup shows supported Python versions, and
+Benchmarks includes the end-of-life versions.
 
 ### Install a set that works
 
-The site's [Setup page](https://simonvanlierde.com/brightway-benchmarks/?page=compatibility)
-shows the latest result and last passing set for each job. Check the date and coverage before
-choosing a set. Smoke calculations and full package test suites are separate checks.
+On the [Setup page](https://simonvanlierde.com/brightway-benchmarks/),
+select your operating system, Python and installer. Check the date and scope of the last
+passing set, then copy the command for your tool. The smoke checks run small calculations.
+The `suites` checks run the packages' full test suites.
 
-The page gives one command per tool. URL is a dated folder, so the command installs the same
-set each time; the page also copies the command for the undated folder, which follows the newest
-passing set:
+Use the dated URL to install the same versions later. Use the undated URL to install the
+newest passing set.
 
 ```sh
 uv add brightway25 bw_graph_tools bw_timex -c URL/requirements.txt
@@ -270,8 +279,9 @@ You can add your machine's ratios: how much faster UMFPACK and PyPardiso solve a
 SuperLU there (on a Mac also Apple Accelerate's sparse LU), and with `install-path` how bw2calc from conda-forge compares with PyPI. A
 contribution is one result file from `bwbench compare`
 ([method.md](method.md#hosted-ratios)). It holds ratios between set-ups timed in turn on one
-machine, so your machine's speed and noise largely cancel out. The comparison page shows
-contributed rows marked unverified and leaves them out of each summary.
+machine, so your machine's speed and noise largely cancel out. The comparison page marks
+contributed rows as unverified. It uses them in a summary only when there are no reference or
+hosted measurements for that option.
 
 The run installs bw2calc and its solvers from PyPI into new virtual environments in a
 temporary folder, and runs them on your machine, outside any container. You need
@@ -313,11 +323,6 @@ installs only on x86_64; elsewhere its arm is missing too, which is a result, no
 The file records the CPU model, OS, kernel, Python, BLAS and the installed versions, never a
 host name or user name. Read it before you push: a `missing` reason holds the last lines of an
 installer's error, with your home folder and any other user folder written as `~`.
-
-`just results-commit` treats an omitted file or cell as a partial run and restores it. To remove
-a result, edit or delete it directly in a `results` branch worktree. Then run the main branch's
-`scripts/run_crate.py` against that worktree and commit the result with the rebuilt
-`ro-crate-metadata.json`.
 
 ## Publish the synthetic inputs
 

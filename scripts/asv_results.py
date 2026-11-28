@@ -3,9 +3,7 @@
 import hashlib
 import itertools
 import json
-import math
 import re
-import sys
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 
@@ -74,62 +72,3 @@ def result_files(folder: Path, benchmarks: dict) -> Iterator[tuple[Path, dict]]:
     """Result files in FOLDER, with rows from older benchmark versions filtered out."""
     for path in folder.glob("*/*-*.json"):
         yield path, current_rows(json.loads(path.read_text()), benchmarks)
-
-
-def preferred_runs(folder: Path, info: dict) -> dict[tuple[str, str], list[dict]]:
-    """(machine, commit) -> result files with each cell taken from its preferred stack.
-
-    Only current cases count (``current_rows``), so a file with none is no candidate: a stack whose
-    results are all of an older version never beats one that has current results.
-    """
-    current = current_stack(folder.name)
-    found: dict[tuple[str, str], dict[str, dict[str, dict]]] = {}
-    for path, data in result_files(folder, info):
-        if not SHA.fullmatch(data["commit_hash"]):  # it becomes part of a report's path
-            sys.exit(f"export_ui: {path}: commit_hash is not a full hash")
-        if not data["results"]:
-            continue
-        stack = STACK.search(data["env_name"])
-        env = found.setdefault((path.parent.name, data["commit_hash"]), {}).setdefault(
-            STACK.sub("", data["env_name"]), {}
-        )
-        env[stack.group(1) if stack else ""] = data
-
-    def ranked(stacks: dict[str, dict]) -> list[dict]:
-        win = pick(stacks, current)
-        return [stacks[s] for s in [win, *sorted(stacks.keys() - {win})]]
-
-    return {
-        key: [data for _, stacks in sorted(envs.items()) for data in fill_from_other_stacks(ranked(stacks))]
-        for key, envs in found.items()
-    }
-
-
-def fill_from_other_stacks(files: list[dict]) -> list[dict]:
-    """FILES of one environment and commit, winning stack first, each without the cells an earlier one has.
-
-    A rerun of some cases on a new stack leaves the others on the older stacks only, so those come
-    from there. A cell an earlier file has, even skipped or failed, is a NaN in the later ones.
-    That includes the NaN `merge_results.merge_row` writes for a combination neither merged run
-    timed, which a file cannot tell from a real skip: a later stack's value for it stays hidden.
-    """
-    held: set[tuple[str, tuple]] = set()
-    out = []
-    for data in files:
-        columns = data.get("result_columns", ["result", "params"])
-        at = columns.index("result")
-        results, mine = {}, set()
-        for name, row in data["results"].items():
-            combos = list(cells(row, columns))
-            mine |= {(name, c) for c in combos}
-            taken = [(name, c) in held for c in combos]
-            if combos and all(taken):
-                continue
-            if any(taken):
-                row = list(row)  # noqa: PLW2901 - a copy, the file's own row stays as it is
-                row[at] = [math.nan if t else v for t, v in zip(taken, row[at], strict=False)]
-            results[name] = row
-        held |= mine
-        if results:
-            out.append(data | {"results": results})
-    return out

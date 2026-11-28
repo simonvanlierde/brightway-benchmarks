@@ -28,7 +28,8 @@ flock -n 9 || {
 }
 
 # The config asv reads: the solver environments filtered by BWBENCH_SOLVERS, and
-# smoke, noise and stack results kept under .asv/<machine>/, out of results/ and so out of the site.
+# smoke, noise and stack results kept under .asv/<machine>/, out of results/ and so out of the site,
+# and energy runs (BWBENCH_ENERGY=1) under .asv/energy/.
 default=superlu,umfpack
 [ "$(uname -m)" = x86_64 ] && default=superlu,pypardiso,umfpack
 # Written to .asv/ (writable in the box), so asv/ with the tracked configs can stay read-only.

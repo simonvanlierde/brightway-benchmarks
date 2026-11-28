@@ -128,9 +128,20 @@ program that runs `GATE CMD...` once no other work runs on the CPUs in `BWBENCH_
 and `BWBENCH_CPUSET`, `box.sh` refuses the run.
 
 A bench run logs energy too when it names a log, as in
-`BWBENCH_ENERGY=1 BWBENCH_MACHINE=noise BWBENCH_ROUNDLOG=/src/.asv/energy.jsonl just bench bw2calc "3.1.0^!"`.
-`BWBENCH_MACHINE=noise` keeps its timings out of `results/`. The round logs stay local; they never
-go to `results/` or the site's benchmark history.
+`BWBENCH_ENERGY=1 BWBENCH_ROUNDLOG=/src/.asv/energy.jsonl just bench bw2calc "3.1.0^!"`.
+Energy-enabled ASV runs write their results under `.asv/energy/`. Scratch runs such as
+`just noise` use their usual folders under `.asv/`. Write round logs under `.asv/` too, as in the example.
+
+Under `BWBENCH_ENERGY=1` every case also gets an asv benchmark `track_energy_NAME`, beside
+`time_NAME`. It runs the case once more, after a new setup, and measures the whole CPU package's
+joules over that one call, idle draw included, then checks the result after the measurement. ASV
+keeps the last round's value in `J` for each case. A call of a few milliseconds reads one counter
+tick or none, so compare `track_energy_` values only for cases that run about a second or longer,
+and only within one gated session. Use the round log
+for repeated measurements. To inspect the local energy history, run `scripts/asv.sh` directly on the
+host with `uv` (not through `scripts/box.sh`, which requires a readable counter and quiet gate):
+`BWBENCH_ENERGY=1 scripts/asv.sh bw2calc show ...` or `BWBENCH_ENERGY=1 scripts/asv.sh bw2calc compare ...`.
+The case skips if ASV cannot open the counter and fails if a reading is voided during the call.
 
 ## Memory
 
@@ -359,6 +370,7 @@ fields, then publish.
 | `BWBENCH_RUNNER` | `bwbench-runner` on `PATH`, if any | A host's own program for the box, such as a CPU-slot runner; empty for the plain `docker run`. Its contract is at the top of `scripts/box.sh` |
 | `BWBENCH_GATE` | `bwbench-gate` on `PATH`, if any | Quiet gate for energy runs |
 | `BWBENCH_CPUSET` | none | CPUs an energy run is pinned to |
+| `BWBENCH_ENERGY` | unset | `1` logs package joules and adds `track_energy_` cases; results go to `.asv/energy/` |
 | `BWBENCH_THREADS` | `1` | BLAS and OpenMP threads |
 | `BWBENCH_MACHINE` | `box-<slot>` or `box` | asv machine name; resume needs the same one |
 | `BWBENCH_PRIVATE_NAMES` | empty | Names `just results-commit` refuses |

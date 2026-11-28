@@ -93,6 +93,14 @@ def test_conf_keeps_the_results_of_a_scratch_machine_under_asv(machine: str, res
 
 
 @pytest.mark.usefixtures("repo")
+def test_conf_keeps_energy_results_out_of_the_publishable_history(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("BWBENCH_ENERGY", "1")
+    conf = load().conf
+    assert conf("s", "bench", "superlu", "x86_64")[0]["results_dir"] == "../.asv/energy/s"
+    assert conf("s", "noise", "superlu", "x86_64")[0]["results_dir"] == "../.asv/noise/s"
+
+
+@pytest.mark.usefixtures("repo")
 def test_drop_leaves_out_bw2data_for_bw2calc():
     (Path("asv") / "bw2calc.json").write_text(json.dumps(CONF))
     assert "bw2data" in load().drop("bw2calc")

@@ -433,9 +433,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/b7/d5/01ea71591a29e88
 
 [[packages]]
 name = "platformdirs"
-version = "4.14.8"
-sdist = { url = "https://files.pythonhosted.org/packages/71/18/0b0d99f5bf164f04a7a9534c3dbdbe4d5fd2b382667685ad40c192c4d3d1/platformdirs-4.14.8.tar.gz", upload-time = 2026-11-20T08:14:52Z, size = 87203, hashes = { sha256 = "96893d686e84e9e6f358a9ea41a8de544df66dbf2ba6cda250e7dc73acf85b9b" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/5b/be/373cc7341f53bfd3acba3e5db62433fd960a45fcf73ad64a5f4d27e74910/platformdirs-4.14.8-py3-none-any.whl", upload-time = 2026-11-20T08:14:51Z, size = 94267, hashes = { sha256 = "1e34af590de4d978631b751eb2202f2fee4497537a17c1720b12fcf57b331392" } }]
+version = "4.14.9"
+sdist = { url = "https://files.pythonhosted.org/packages/d6/96/549558270586699a271a18b1111482dc3fc39baa0ef61d183e230d2c961d/platformdirs-4.14.9.tar.gz", upload-time = 2026-11-27T20:53:44Z, size = 87729, hashes = { sha256 = "c6b188e03ffd4dfe1bf8c4bcb47cd94711af244a9852dbff60297bd753684d5d" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/3b/e7/fc53dfd2f9469cce9be9c58385bdcdb5087e790c135c9dadd4cc8401bb3d/platformdirs-4.14.9-py3-none-any.whl", upload-time = 2026-11-27T20:53:43Z, size = 94272, hashes = { sha256 = "d0d3a23e7ff282cfa94b77f5a22b81030dcb68ba0430f90c74f4bd8d090782ea" } }]
 
 [[packages]]
 name = "pluggy"
@@ -671,9 +671,9 @@ wheels = [{ url = "https://files.pythonhosted.org/packages/d7/a5/996458475dcc65f
 
 [[packages]]
 name = "texttable"
-version = "1.7.3"
-sdist = { url = "https://files.pythonhosted.org/packages/92/f2/2d43e9505895dc66929a26a46d89c7e96835aff72a28ec5ef54d6e96ee24/texttable-1.7.3.tar.gz", upload-time = 2026-11-12T18:52:51Z, size = 15694, hashes = { sha256 = "ff99aa7562c6cbcd0982cb6fae9145126b19878182496cdc46b8d6816721c5da" } }
-wheels = [{ url = "https://files.pythonhosted.org/packages/9e/16/428cc7df8670f407c7810882cf736dbc04163ec60589f3bd8ebb6a2c263a/texttable-1.7.3-py2.py3-none-any.whl", upload-time = 2026-11-12T18:52:50Z, size = 10876, hashes = { sha256 = "b8eaebd6d32565ce85b79b17e2aa52815889249b37bb6dd0894d3eca67c329f8" } }]
+version = "1.7.4"
+sdist = { url = "https://files.pythonhosted.org/packages/2b/5d/63c69882e131661495d393de1f004cbc84859eeed22b8c4bf4c9461429f5/texttable-1.7.4.tar.gz", upload-time = 2026-11-27T19:39:25Z, size = 15923, hashes = { sha256 = "b5191c88819aa3a6ef1ffdc22cf80cec773692aee9368a8f44f3471902cab9a0" } }
+wheels = [{ url = "https://files.pythonhosted.org/packages/47/71/753e2d02df9ec8f141eaae78b02f3d442cbd50aa41cefafdf44248474613/texttable-1.7.4-py2.py3-none-any.whl", upload-time = 2026-11-27T19:39:24Z, size = 10919, hashes = { sha256 = "3ec756f1e7ecec163cbe17ccae24de1f39f3078c0bef6d331b709f42b543e23a" } }]
 
 [[packages]]
 name = "threadpoolctl"

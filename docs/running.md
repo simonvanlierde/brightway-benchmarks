@@ -138,8 +138,9 @@ joules over that one call, idle draw included, then checks the result after the 
 keeps the last round's value in `J` for each case. A call of a few milliseconds reads one counter
 tick or none, so compare `track_energy_` values only for cases that run about a second or longer,
 and only within one gated session. Use the round log
-for repeated measurements. Set `BWBENCH_ENERGY=1` when using `asv compare` or `asv show`
-through `scripts/asv.sh` to use the local energy history.
+for repeated measurements. To inspect the local energy history, run `scripts/asv.sh` directly on the
+host with `uv` (not through `scripts/box.sh`, which requires a readable counter and quiet gate):
+`BWBENCH_ENERGY=1 scripts/asv.sh bw2calc show ...` or `BWBENCH_ENERGY=1 scripts/asv.sh bw2calc compare ...`.
 The case skips if ASV cannot open the counter and fails if a reading is voided during the call.
 
 ## Memory

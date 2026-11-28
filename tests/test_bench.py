@@ -686,20 +686,29 @@ def test_asv_tracks_package_energy_per_call_in_joules(tmp_path: Path, monkeypatc
     """With BWBENCH_ENERGY=1 each bench gets a track_energy_ method: the joules over one call."""
     monkeypatch.setenv("BWBENCH_ENERGY", "1")
     monkeypatch.setenv("BWBENCH_RAPL", str(rapl(tmp_path / "rapl", 1_000_000)))
+    verified: list[bool] = []
 
     def call() -> int:
         rapl(tmp_path / "rapl", 3_500_000)  # 2.5 J during the call
         return 1
 
-    @bench({"x": [1]}, rtol=1e-9)
+    def verify(result: int) -> None:
+        assert result == 1
+        assert obj.state.energy is None  # meter is already stopped before verification
+        rapl(tmp_path / "rapl", 9_900_000)  # verification work must not enter track_energy_
+        verified.append(True)
+
+    @bench({"x": [1]})
     def burn(x: int):
-        return call, x
+        assert x == 1
+        return call, verify
 
     (cls,) = asv.classes(module(burn=burn).__name__)
     assert vars(cls)["track_energy_burn"].unit == "J"
     obj = cls()
     setup(obj, "track_energy_burn", 1)
     assert obj.track_energy_burn(1) == pytest.approx(2.5)
+    assert verified == [True]
     obj.teardown(1)
 
     monkeypatch.delenv("BWBENCH_ENERGY")

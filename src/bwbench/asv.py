@@ -143,14 +143,23 @@ def _setup(state: _State, prepare: Callable[[str, tuple], None], bench_name: str
 
 
 def _joules_setup(state: _State, prepare: Callable[[str, tuple], None], bench_name: str) -> Callable[..., None]:
-    """A timed setup that skips the case when the energy counter cannot be read."""
-    timed = _setup(state, prepare, bench_name)
+    """Setup for ``track_energy_``: skip before preparing when the energy counter cannot be read."""
 
     def setup(*args: Any) -> None:
-        timed(*args)
-        if state.energy is None:
-            msg = f"bwbench: BWBENCH_ENERGY=1 but the energy counter cannot be read: {_energy_error}"
-            raise NotImplementedError(msg)
+        state.results = {}
+        rapl = _rapl()
+        try:
+            int((rapl / "max_energy_range_uj").read_text())
+            int((rapl / "energy_uj").read_text())
+        except (OSError, ValueError) as e:
+            msg = f"bwbench: BWBENCH_ENERGY=1 but the energy counter cannot be read: {e}"
+            raise NotImplementedError(msg) from e
+        prepare(bench_name, args)
+        try:
+            state.energy = _Meter(rapl)  # last, so the setup's own work is not counted
+        except (OSError, ValueError) as e:
+            msg = f"bwbench: BWBENCH_ENERGY=1 but the energy counter cannot be read: {e}"
+            raise NotImplementedError(msg) from e
 
     return setup
 
@@ -184,7 +193,6 @@ def _usage() -> tuple[float, float, int, int, int, int]:
 
 
 _energy_warned = False
-_energy_error = ""  # why the last meter failed to start, for the track_energy_ skip
 
 
 def _rapl() -> Path:
@@ -242,13 +250,12 @@ class _Meter:
 
 def _energy() -> _Meter | None:
     """A running energy meter when ``BWBENCH_ENERGY=1`` and the counter can be read."""
-    global _energy_warned, _energy_error  # noqa: PLW0603 - warn once per process, not once per sample
+    global _energy_warned  # noqa: PLW0603 - warn once per process, not once per sample
     if os.environ.get("BWBENCH_ENERGY") != "1":
         return None
     try:
         return _Meter(_rapl())
     except (OSError, ValueError) as e:
-        _energy_error = str(e)
         if not _energy_warned:
             sys.stderr.write(f"bwbench: BWBENCH_ENERGY=1 but no energy is logged: {e}\n")
             _energy_warned = True

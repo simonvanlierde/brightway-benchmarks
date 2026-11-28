@@ -18,7 +18,7 @@ function scriptAttributes(tag) {
   const attrs = new Map();
   for (const [, name, double, single, bare] of tag
     .slice("<script".length, -1)
-    .matchAll(/([^\s=/"'<>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>\x60]+)))?/g)) {
+    .matchAll(/([^\s=/"'<>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g)) {
     const key = name.toLowerCase();
     if (!attrs.has(key)) attrs.set(key, double ?? single ?? bare ?? "");
   }
@@ -29,7 +29,7 @@ function scriptAttributes(tag) {
 export function inlineScripts(html) {
   const scripts = [];
   for (const [, tag, code] of html.matchAll(
-    /(<script(?=[\s/>])(?:"[^"]*"|'[^']*'|[^'">])*>)([\s\S]*?)<\/script\s*>/gi,
+    /(<script(?=[\s/>])(?:"[^"]*"|'[^']*'|[^'">])*>)([\s\S]*?)<\/script(?:[\s/][^>]*)?>/gi,
   )) {
     const attrs = scriptAttributes(tag);
     if (!attrs.has("src") && executableType.test((attrs.get("type") ?? "").trim())) scripts.push([tag, code]);

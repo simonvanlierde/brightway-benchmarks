@@ -35,5 +35,9 @@ test("the build hook fails on an inline script without data-inline-ok", () => {
   expect(() => run("<script>evil()</script>")).toThrow(/data-inline-ok/);
   expect(() => run('<script type="module">start()</script>')).toThrow(/data-inline-ok/);
   expect(() => run('<script data-name="data-inline-ok">start()</script>')).toThrow(/data-inline-ok/);
+  expect(() => run("<script data-x=a=data-inline-ok>evil()</script>")).toThrow(/data-inline-ok/);
+  expect(() => run("<script data-x=a=src>evil()</script>")).toThrow(/data-inline-ok/);
+  expect(() => run("<script>evil()</script />")).toThrow(/data-inline-ok/);
+  expect(() => run("<script>evil()</script foo>")).toThrow(/data-inline-ok/);
   expect(() => run('<script type="module" data-inline-ok>start()</script>')).not.toThrow();
 });

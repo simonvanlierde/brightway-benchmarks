@@ -269,8 +269,9 @@ factorization already available, the ratio was 1.03 (0.99–1.05). Both arms use
 and checked the score against the synthetic reference. This measures the fresh-object overhead
 on one runner with bw2calc 3.1.0 and PyPardiso 0.4.7.
 
-[Windows run and samples](https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/46082192535).
-Rerun: `just codspeed bw2calc bw2calc==3.0.0 pypardiso`.
+[Windows run and samples](https://github.com/simonvanlierde/brightway-benchmarks/actions/runs/46082192535)
+(rerun with the `mkl-windows` workflow or `PYTHONPATH=src python -m scripts.mkl_path_probe`).
+Linux instruction check: `just codspeed bw2calc bw2calc==3.0.0 pypardiso`.
 
 ### Two upstream crashes skip cases
 

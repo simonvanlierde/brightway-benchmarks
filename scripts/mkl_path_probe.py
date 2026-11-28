@@ -25,6 +25,8 @@ def runtime() -> Path:
 
 def main() -> None:
     """Time first scores and a second demand with a factorization already ready."""
+    variable = "PYPARDISO_MKL_RT"
+    os.environ.pop(variable, None)  # ensure the initial PyPardiso import uses default MKL lookup
     from pypardiso.scipy_aliases import pypardiso_solver  # noqa: PLC0415 - pin BLAS threads before importing PyPardiso
 
     from benchmarks.bench_bw2calc import bench_lca  # noqa: PLC0415 - pin BLAS threads before importing bw2calc
@@ -32,7 +34,6 @@ def main() -> None:
     if not bench_lca.bc.PYPARDISO:
         msg = "bw2calc did not load PyPardiso"
         raise SystemExit(msg)
-    variable = "PYPARDISO_MKL_RT"
     path = runtime()
     loaded = Path(pypardiso_solver.libmkl._name)  # noqa: SLF001 - ctypes exposes the loaded library here
     if not loaded.is_file() or not loaded.samefile(path):

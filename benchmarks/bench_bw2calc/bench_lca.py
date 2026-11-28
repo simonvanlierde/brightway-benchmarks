@@ -261,7 +261,7 @@ def umfpack_context(lca: bc.LCA) -> object:
     timeout=600,
 )
 def redo_lci_refinement(size: str, refinement: str) -> BenchSetup:
-    """``redo_lci`` with UMFPACK's iterative refinement on (its default) or off (``UMFPACK_IRSTEP=0``).
+    """``redo_lci`` with UMFPACK's iterative refinement on or off.
 
     On ecoinvent 3.12 with reference BLAS, UMFPACK takes one refinement step per solve, and a solve
     takes 10.5 ms with it against 3.7 ms without (brightway2-calc#184). MKL takes none. The score
@@ -273,13 +273,19 @@ def redo_lci_refinement(size: str, refinement: str) -> BenchSetup:
     from scikits.umfpack import umfpack  # noqa: PLC0415
 
     inventory, methods, refs, _ = packages(size)
-    lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]])
+    config = getattr(bc, "CalculationConfig", None)
+    options = {}
+    if config is not None:
+        options["calculation_config"] = config(iterative_refinement=refinement == "on")
+    lca = bc.LCA(demand={0: 1}, data_objs=[inventory, methods[0]], **options)
     lca.lci(factorize=True)
     lca.lcia()
     context = umfpack_context(lca)
     irstep, taken = umfpack.umfDefines["UMFPACK_IRSTEP"], umfpack.umfDefines["UMFPACK_IR_TAKEN"]
-    if refinement == "off":
+    if refinement == "off" and config is None:
         context.control[irstep] = 0.0
+    if refinement == "off" and context.control[irstep] != 0:
+        raise AssertionError("UMFPACK still has iterative refinement enabled")
 
     def run() -> float:
         lca.redo_lci({1: 1})

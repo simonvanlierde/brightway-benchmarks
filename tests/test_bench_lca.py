@@ -274,3 +274,76 @@ def test_superlu_heating_sweep_is_not_applicable_after_the_size_check(monkeypatc
     monkeypatch.setattr(module, "background", lambda _size: (None, {}))
     with pytest.raises(NotApplicable, match="superlu rebuild"):
         module.heating_sweep.prepare(size="bafu", scenarios=16, variant="rebuild")
+
+
+def test_redo_lci_refinement_uses_calculation_config_when_available(
+    bench_lca: types.ModuleType, monkeypatch: pytest.MonkeyPatch
+):
+    umf_pkg = types.ModuleType("scikits")
+    umf_mod = types.ModuleType("scikits.umfpack")
+    vars(umf_mod)["umfpack"] = types.SimpleNamespace(umfDefines={"UMFPACK_IRSTEP": 0, "UMFPACK_IR_TAKEN": 1})
+    monkeypatch.setitem(sys.modules, "scikits", umf_pkg)
+    monkeypatch.setitem(sys.modules, "scikits.umfpack", umf_mod)
+    monkeypatch.setattr(bench_lca.bc, "UMFPACK", True, raising=False)
+    monkeypatch.setattr(bench_lca.bc, "PYPARDISO", False, raising=False)
+    monkeypatch.setattr(bench_lca, "skip_unless_factorizable", lambda *_a, **_kw: None)
+    monkeypatch.setattr(bench_lca, "packages", lambda _size: (object(), [object()], {1: [2.0]}, None))
+
+    seen: list[dict] = []
+    context = types.SimpleNamespace(control={0: 2.0}, info={1: 0.0})
+
+    class FakeLCA:
+        characterization_matrix = np.array([[2.0]])
+        inventory = np.array([[1.0]])
+
+        def __init__(self, *, demand: object, data_objs: object, **kwargs: object) -> None:  # noqa: ARG002
+            seen.append(kwargs)
+            cfg = kwargs.get("calculation_config")
+            if cfg is not None and not getattr(cfg, "iterative_refinement", True):
+                context.control[0] = 0.0
+
+        def lci(self, *, factorize: bool = False) -> None:
+            pass
+
+        def lcia(self) -> None:
+            pass
+
+        def redo_lci(self, _demand: object) -> None:
+            pass
+
+    monkeypatch.setattr(bench_lca.bc, "LCA", FakeLCA)
+    monkeypatch.setattr(bench_lca, "umfpack_context", lambda _lca: context)
+
+    # Older bw2calc without CalculationConfig mutates context.control directly.
+    monkeypatch.delattr(bench_lca.bc, "CalculationConfig", raising=False)
+    prepared = bench_lca.redo_lci_refinement.prepare(size="smoke", refinement="off")
+    assert seen[-1] == {}
+    assert context.control[0] == 0.0
+    prepared.verify(prepared())
+
+    # bw2calc 4.0.0+ passes CalculationConfig(iterative_refinement=...) and checks UMFPACK honoured it.
+    class FakeConfig:
+        def __init__(self, *, iterative_refinement: bool):
+            self.iterative_refinement = iterative_refinement
+
+    monkeypatch.setattr(bench_lca.bc, "CalculationConfig", FakeConfig, raising=False)
+    context.control[0] = 2.0
+    prepared_on = bench_lca.redo_lci_refinement.prepare(size="smoke", refinement="on")
+    assert seen[-1]["calculation_config"].iterative_refinement is True
+    assert context.control[0] == 2.0
+    prepared_on.verify(prepared_on())
+
+    prepared_off = bench_lca.redo_lci_refinement.prepare(size="smoke", refinement="off")
+    assert seen[-1]["calculation_config"].iterative_refinement is False
+    assert context.control[0] == 0.0
+    prepared_off.verify(prepared_off())
+
+    # If CalculationConfig(iterative_refinement=False) failed to disable UMFPACK refinement, assert.
+    class BrokenLCA(FakeLCA):
+        def __init__(self, *, demand: object, data_objs: object, **kwargs: object) -> None:  # noqa: ARG002
+            seen.append(kwargs)
+
+    monkeypatch.setattr(bench_lca.bc, "LCA", BrokenLCA)
+    context.control[0] = 2.0
+    with pytest.raises(AssertionError, match="iterative refinement enabled"):
+        bench_lca.redo_lci_refinement.prepare(size="smoke", refinement="off")

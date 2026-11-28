@@ -116,6 +116,16 @@ def test_a_case_new_in_the_latest_release_is_not_a_change(module: ModuleType, tm
     assert module.changes(tmp_path / "results", "s") == []
 
 
+def test_compares_parameterless_cases_missing_from_benchmark_metadata(module: ModuleType, tmp_path: Path):
+    name = "bench_import.timeraw_import"
+    for release, seconds in [("2.000000", 1.0), ("3.000000", 2.0)]:
+        data = result(release, "uv-py3.13" + STACK, [], [], [])
+        data["results"] = {name: [[seconds], []]}
+        write(tmp_path, data)
+    (row,) = module.changes(tmp_path / "results", "s")
+    assert (row.case, row.params, row.ratio) == ("timeraw_import", "", pytest.approx(2.0))
+
+
 def test_flags_a_dependency_stack_that_moved_between_releases(module: ModuleType, tmp_path: Path):
     write(tmp_path, result("2.000000", "uv-py3.12-BWBENCH_STACKaaaa1111", [1.0, 1.0], [5e8, 5e8], [0.0, 0.0]))
     write(tmp_path, result("3.000000", "uv-py3.12-BWBENCH_STACKbbbb2222", [2.0, 1.0], [5e8, 5e8], [0.0, 0.0]))

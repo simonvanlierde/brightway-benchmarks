@@ -1,0 +1,240 @@
+{
+ "format": "bwbench-ratios/1",
+ "tier": "contributed",
+ "machine": "Apple M1",
+ "created": "2026-11-28T13:32:01Z",
+ "source": {
+  "commit": "f8698673814c1e4f7deef2e3a71ac40833923391",
+  "run": null
+ },
+ "rounds": 20,
+ "repeats": 3,
+ "seed": 2357186107,
+ "resamples": 10000,
+ "fingerprint": {
+  "version": 1,
+  "os": "Darwin",
+  "kernel": "27.2.0",
+  "arch": "arm64",
+  "cpu_model": "Apple M1",
+  "core_type": null,
+  "smt": false,
+  "governor": null,
+  "power_profile": null,
+  "python": "CPython 3.14.3",
+  "blas": "accelerate unknown",
+  "lock": null
+ },
+ "comparisons": [
+  {
+   "id": "solvers",
+   "case": "bench_lca.SingleScore.time_first_score",
+   "params": {
+    "size": "smoke",
+    "cls": "LCA"
+   },
+   "baseline": "superlu",
+   "arms": {
+    "superlu": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc",
+      "scikit-umfpack",
+      "pypardiso"
+     ],
+     "solver": "superlu",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.5",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "27.2.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.12",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "ac46f6faef7f9aa09ee66238f5ba068587d55028a0f840c1c952e903e1d5449b"
+      }
+     },
+     "seconds": [
+      0.00136966699938057,
+      0.0013751660007983446,
+      0.0013706669997191057,
+      0.001377667002088856,
+      0.0013624159983010031,
+      0.0013855840006726794,
+      0.0014923330018064007,
+      0.0013895410011173226,
+      0.0013719580019824207,
+      0.0013637499941978604,
+      0.0013737080007558689,
+      0.0013794170008623041,
+      0.0013990840016049333,
+      0.0014042500042705797,
+      0.0013684169971384108,
+      0.0014007909994688816,
+      0.0014045829957467504,
+      0.0013725419994443655,
+      0.0013755420004599728,
+      0.0013730840000789613
+     ],
+     "missing": null
+    },
+    "umfpack": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc",
+      "scikit-umfpack",
+      "pypardiso"
+     ],
+     "solver": null,
+     "versions": {},
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "27.2.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.12",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "ac46f6faef7f9aa09ee66238f5ba068587d55028a0f840c1c952e903e1d5449b"
+      }
+     },
+     "seconds": [],
+     "missing": "bw2calc used superlu, not umfpack: scikit-umfpack did not install:          ../meson.build:21:7: ERROR: Program 'swig' not found or not executable /  /          A full log can be found at ~/.cache/uv/sdists-v11/pypi/scikit-umfpack/0.4.2/bZ1jjxzKsKtqxHbE/src/.mesonpy-ehneu055/meson-logs/meson-log.txt /  / hint: Build failures usually indicate a problem with the package or the build environment"
+    },
+    "pypardiso": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc",
+      "scikit-umfpack",
+      "pypardiso"
+     ],
+     "solver": null,
+     "versions": {},
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "27.2.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.12",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "ac46f6faef7f9aa09ee66238f5ba068587d55028a0f840c1c952e903e1d5449b"
+      }
+     },
+     "seconds": [],
+     "missing": "bw2calc used superlu, not pypardiso: pypardiso did not install: hint: Wheels are available for `mkl` (v2026.2.1) on the following platforms: `manylinux_2_28_x86_64`, `win_amd64` /  / hint: You require CPython 3.13 (`cp313`), but we only found wheels for `mkl-service` (v2.5.0) with the following Python ABI tags: `cp39`, `cp310`, `cp311`, `cp312` /  / hint: Wheels are available for `mkl-service` (v2.9.0) on the following platforms: `manylinux_2_28_x86_64`, `win_amd64`"
+    },
+    "accelerate": {
+     "installer": "uv",
+     "python": "3.13",
+     "requirements": [
+      "bw2calc",
+      "scikit-umfpack",
+      "pypardiso"
+     ],
+     "solver": "accelerate",
+     "versions": {
+      "bw2calc": "3.1.0",
+      "numpy": "2.5.5",
+      "scipy": "1.18.1"
+     },
+     "fingerprint": {
+      "version": 1,
+      "os": "Darwin",
+      "kernel": "27.2.0",
+      "arch": "arm64",
+      "cpu_model": "Apple M1",
+      "core_type": null,
+      "smt": false,
+      "governor": null,
+      "power_profile": null,
+      "python": "CPython 3.13.12",
+      "blas": "accelerate unknown",
+      "lock": {
+       "name": "requirements.txt",
+       "sha256": "ac46f6faef7f9aa09ee66238f5ba068587d55028a0f840c1c952e903e1d5449b"
+      }
+     },
+     "seconds": [
+      0.0027892090001842007,
+      0.0014767090033274144,
+      0.0014698750019306317,
+      0.0014751659982721321,
+      0.0014852079984848388,
+      0.0014823330056970008,
+      0.0014870000013615936,
+      0.0014794169983360916,
+      0.0014829580031801015,
+      0.00148004200309515,
+      0.0015093750043888576,
+      0.0014863329997751862,
+      0.0014826669939793646,
+      0.0014843750032014214,
+      0.0014916250001988374,
+      0.0014921670008334331,
+      0.0014700419997097924,
+      0.0015037500052130781,
+      0.0014822500015725382,
+      0.0015067090062075295
+     ],
+     "missing": null
+    }
+   },
+   "ratios": [
+    {
+     "candidate": "umfpack",
+     "ratio": null,
+     "ci95": null,
+     "seconds": null,
+     "missing": "candidate missing"
+    },
+    {
+     "candidate": "pypardiso",
+     "ratio": null,
+     "ci95": null,
+     "seconds": null,
+     "missing": "candidate missing"
+    },
+    {
+     "candidate": "accelerate",
+     "ratio": 1.1067961744871415,
+     "ci95": [
+      1.0641490130044624,
+      1.1850177449480837
+     ],
+     "seconds": {
+      "baseline": 0.0013753540006291587,
+      "candidate": 0.0014836665031907614
+     },
+     "missing": null
+    }
+   ]
+  }
+ ]
+}
